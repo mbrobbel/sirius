@@ -1,0 +1,8 @@
+{
+  "name": "nvcomp",
+  "version": "5.0.0.6",
+  "description": "NVIDIA nvCOMP - GPU compression library (proprietary binary distribution)",
+  "homepage": "https://developer.nvidia.com/nvcomp",
+  "license": "LicenseRef-Proprietary",
+  "supports": "linux & x64"
+}

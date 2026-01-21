@@ -1,5 +1,27 @@
 {
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
-    "openssl"
-  ]
+    "libconfig",
+    "cccl",
+    "flatbuffers",
+    "nvcomp",
+    "rmm",
+    "cudf",
+    "nanoarrow"
+  ],
+  "overrides": [
+    {
+      "name": "dlpack",
+      "version": "0.8"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "24.3.25"
+    }
+  ],
+  "configuration": {
+    "overlay-ports": ["vcpkg_ports"],
+    "overlay-triplets": ["vcpkg_triplets"]
+  },
+  "builtin-baseline": "bd4807ea7c837b3c4320618fccbdb47c2651b5d1"
 }

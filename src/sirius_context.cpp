@@ -22,9 +22,6 @@
 #include "log/logging.hpp"
 #include "memory/sirius_memory_reservation_manager.hpp"
 
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/spdlog.h>
-
 #include <cstdlib>  // for std::getenv
 #include <filesystem>
 #include <iostream>
@@ -205,42 +202,42 @@ SiriusContextExtensionCallback::SiriusContextExtensionCallback()
 
 void SiriusContextExtensionCallback::OnConnectionOpened(ClientContext& context)
 {
-  spdlog::info("Connection opened.");
+  SIRIUS_LOG_INFO("Connection opened.");
   if (context_) { context.registered_state->Insert("sirius_state", context_); }
 }
 
 void SiriusContextExtensionCallback::OnConnectionClosed(ClientContext& context)
 {
-  spdlog::info("Connection closed.");
+  SIRIUS_LOG_INFO("Connection closed.");
 }
 
 void SiriusContextExtensionCallback::OnExtensionLoaded(DatabaseInstance& db, const string& name)
 {
-  spdlog::info("Extension loaded: {}", name);
+  SIRIUS_LOG_INFO("Extension loaded: {}", name);
 }
 
 void SiriusContextExtensionCallback::OnBeginExtensionLoad(DatabaseInstance& db, const string& name)
 {
-  spdlog::info("Beginning to load extension: {}", name);
+  SIRIUS_LOG_INFO("Beginning to load extension: {}", name);
 }
 
 void SiriusContextExtensionCallback::OnExtensionLoadFail(DatabaseInstance& db,
                                                          const string& name,
                                                          const ErrorData& error)
 {
-  spdlog::error("Failed to load extension: {}. Error: {}", name, error.RawMessage());
+  SIRIUS_LOG_ERROR("Failed to load extension: {}. Error: {}", name, error.RawMessage());
 }
 
 void SiriusContextExtensionCallback::read_config_file_if_exists()
 {
   auto config_path = get_config_file_path();
   if (!std::filesystem::exists(config_path)) {
-    spdlog::info("Sirius configuration file does not exist at path: {}. Skipping loading.",
-                 config_path);
+    SIRIUS_LOG_INFO("Sirius configuration file does not exist at path: {}. Skipping loading.",
+                    config_path);
     return;
   }
   config_.load_from_file(config_path);
-  spdlog::info("Loaded Sirius configuration from file: {}", config_path);
+  SIRIUS_LOG_INFO("Loaded Sirius configuration from file: {}", config_path);
   extension_lock_ = std::make_unique<sirius::extension_lock>("sirius");
   context_        = duckdb::make_shared_ptr<SiriusContext>();
   context_->initialize(config_);

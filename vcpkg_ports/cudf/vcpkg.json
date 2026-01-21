@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "cudf",
+  "version": "25.10.0",
+  "description": "cuDF - GPU DataFrame Library. CUDA C++ library with Apache Arrow compliant data structures",
+  "homepage": "https://github.com/rapidsai/cudf",
+  "license": "Apache-2.0",
+  "supports": "linux & x64",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "arrow",
+    "benchmark",
+    "cccl",
+    "cuco",
+    "dlpack",
+    "flatbuffers",
+    "fmt",
+    "gtest",
+    "kvikio",
+    "nanoarrow",
+    "nvcomp",
+    "nvtx3",
+    "rmm",
+    "roaring",
+    "spdlog",
+    "zlib",
+    "zstd"
+  ]
+}

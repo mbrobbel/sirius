@@ -17,7 +17,8 @@ PROJ_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 # Configuration of extension
 EXT_NAME=sirius
 EXT_CONFIG=${PROJ_DIR}extension_config.cmake
-# EXT_FLAGS=-DBUILD_PYTHON=1
+
+# Use ninja as the build system generator
 GEN=ninja
 
 # Include the Makefile from extension-ci-tools

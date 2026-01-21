@@ -1,49 +1,58 @@
 [workspace]
-channels = ["rapidsai", "conda-forge", "nvidia" ]
+channels = ["rapidsai", "conda-forge"]
 name = "sirius"
 platforms = ["linux-64", "linux-aarch64"]
 requires-pixi = ">=0.59"
 
 [activation]
-scripts = ["setup_test_datasets.sh"]
+scripts = ["setup_test_datasets.sh", "vcpkg.sh"]
+
+[activation.env]
+CPM_LOCAL_PACKAGES_ONLY = "ON"
+VCPKG_BUILD_TYPE = "release"
+VCPKG_DISABLE_METRICS = "1"
+VCPKG_LIBRARY_LINKAGE = "static"
+VCPKG_TOOLCHAIN_PATH = "$PIXI_PROJECT_ROOT/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 [dependencies]
+autoconf = "*"
+autoconf-archive = "*"
+automake = "*"
+bison = "*"
 cmake = "4.1.*"
+cccl = "3.0.3.*"
 cuda-nvcc = "*"
 cuda-nvml-dev = "*"
+cuda-nvrtc-dev = "*"
+curl = "*"
 cxx-compiler = "*"
+libtool = "*"
 make = "*"
 ninja = "*"
+numactl = "*"
+pkg-config = "*"
+pre-commit = "*"
 sccache = "*"
 unzip = "*"
+zip = "*"
 
-libcudf = "25.10.*"
+# libcudf = "25.10.*"
 libcurand-dev = "*"
-pre-commit = "*"
-libconfig = "*"
+libnvjitlink-dev = "*"
 
 [tasks]
 
-# CUDA version features: use `pixi run -e cuda12` for CUDA 12.x systems
-[feature.cuda13.system-requirements]
-cuda = "13"
+[feature.cuda13]
+system-requirements = { cuda = "13" }
+dependencies = { cuda-version = "13.*" }
+# GPU architectures: Turing through Blackwell
+activation.env = { CUDAARCHS = "75-real;80-real;86-real;90a-real;100f-real;120a-real;120" }
 
-[feature.cuda13.dependencies]
-cuda-version = "13.*"
-
-[feature.cuda13.activation.env]
-# GPU architectures: Turing through Blackwell (75, 80, 86, 90a, 100f, 120a, 120)
-CUDAARCHS = "75-real;80-real;86-real;90a-real;100f-real;120a-real;120"
-
-[feature.cuda12.system-requirements]
-cuda = "12"
-
-[feature.cuda12.dependencies]
-cuda-version = "12.*"
-
-[feature.cuda12.activation.env]
-# GPU architectures: Turing through Hopper (75, 80, 86, 90a)
-CUDAARCHS = "75-real;80-real;86-real;90a-real"
+[feature.cuda12]
+system-requirements = { cuda = "12" }
+dependencies = { cuda-version = "12.*" }
+# GPU architectures: Turing through Hopper
+activation.env = { CUDAARCHS = "75-real;80-real;86-real;90a-real" }
 
 [environments]
 default = ["cuda13"]
