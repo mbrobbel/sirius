@@ -476,7 +476,9 @@ duckdb_scan_task::~duckdb_scan_task()
       _global_state->cast<duckdb_scan_task_global_state>().get_pipeline() == nullptr) {
     return;
   }
-  _global_state->cast<duckdb_scan_task_global_state>().get_pipeline()->mark_task_completed();
+  auto& g_state = _global_state->cast<duckdb_scan_task_global_state>();
+  g_state._total_task_count.fetch_sub(1, std::memory_order_acq_rel);
+  g_state.get_pipeline()->mark_task_completed();
 }
 
 bool duckdb_scan_task::get_next_chunk(duckdb_scan_task_local_state& l_state,
