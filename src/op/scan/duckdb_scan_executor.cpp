@@ -113,6 +113,7 @@ void duckdb_scan_executor::cache_scan_results_for_query(const std::string& query
     return;
   }
   SIRIUS_LOG_INFO("Caching scan results for query: {}", query);
+  std::lock_guard<std::mutex> lock(_cache_mutex);
   _query_hash = new_query_hash;
   _cache.clear();
 }
