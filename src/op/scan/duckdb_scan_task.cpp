@@ -491,8 +491,8 @@ bool duckdb_scan_task::get_next_chunk(duckdb_scan_task_local_state& l_state,
   g_state._op.function.function(l_state._exec_ctx.client, tf_input, l_state._chunk);
 
   if (l_state._chunk.size() == 0) {
-    if (!l_state._local_state_drained) {
-      l_state._local_state_drained = true;
+    bool expected = false;
+    if (l_state._local_state_drained.compare_exchange_strong(expected, true)) {
       g_state.decrement_local_states();
     }
     return false;
@@ -564,7 +564,7 @@ std::unique_ptr<op::operator_data> duckdb_scan_task::compute_task(rmm::cuda_stre
   }
 
   // Add tasks back to the queue if the local scan state is not finished
-  if (!l_state._local_state_drained) {
+  if (!l_state._local_state_drained.load(std::memory_order_acquire)) {
     // Create a new local state, passing the existing local_tf_state to continue the scan
     // This ensures DuckDB continues scanning from the current position rather than starting over
     auto new_local_state =

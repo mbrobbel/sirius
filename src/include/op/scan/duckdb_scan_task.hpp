@@ -335,7 +335,7 @@ class duckdb_scan_task_local_state : public sirius::pipeline::sirius_pipeline_ta
 
   duckdb::DataChunk _chunk;           ///< DataChunk buffer
   size_t _row_offset        = 0;      ///< Current row offset in buffers
-  bool _local_state_drained = false;  ///< Whether this local state has fully drained
+  std::atomic<bool> _local_state_drained{false};  ///< Whether this local state has fully drained
 
   std::unique_ptr<duckdb::LocalTableFunctionState>
     _local_tf_state;                    ///< Local state for the table function.
