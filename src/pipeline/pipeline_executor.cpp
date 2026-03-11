@@ -102,6 +102,13 @@ void pipeline_executor::stop()
   if (_management_thread.joinable()) { _management_thread.join(); }
 }
 
+void pipeline_executor::wait_for_in_flight_tasks()
+{
+  for (auto& [device_id, gpu_exec] : _gpu_executors) {
+    gpu_exec->wait_for_in_flight_tasks();
+  }
+}
+
 void pipeline_executor::set_task_creator(sirius::creator::task_creator& task_creator)
 {
   _task_creator = &task_creator;

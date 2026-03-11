@@ -157,6 +157,15 @@ class pipeline_executor {
   std::future<void> start_query();
 
   /**
+   * @brief Wait for all in-flight GPU and scan tasks to complete
+   *
+   * Blocks until all dispatched tasks have finished executing. Must be
+   * called after query completion and before destroying operators to
+   * prevent use-after-free.
+   */
+  void wait_for_in_flight_tasks();
+
+  /**
    * @brief Terminate the query execution and report the error to duckdb.
    *
    * @param error The error to report.

@@ -233,6 +233,8 @@ void gpu_pipeline_executor::set_task_creator(sirius::creator::task_creator* task
 
 void gpu_pipeline_executor::drain_leftover_tasks() { _task_queue.drain(); }
 
+void gpu_pipeline_executor::wait_for_in_flight_tasks() { _kiosk.wait_all(); }
+
 void gpu_pipeline_executor::set_completion_handler(completion_handler* handler) noexcept
 {
   _completion_handler = handler;

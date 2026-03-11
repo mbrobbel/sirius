@@ -201,11 +201,18 @@ void sirius_engine::execute()
     /// todo(bobbi) we should handle the error properly, clean the query context and then return the
     /// error to duckdb
     SIRIUS_LOG_ERROR("Error executing query: {}", e.what());
+    sirius_ctx->get_pipeline_executor().wait_for_in_flight_tasks();
     throw;
   } catch (...) {
     SIRIUS_LOG_ERROR("Unknown error executing query");
+    sirius_ctx->get_pipeline_executor().wait_for_in_flight_tasks();
     throw;
   }
+  // Ensure all GPU tasks have finished before returning. The completion
+  // signal fires when the result collector is done, but other GPU tasks
+  // may still be in-flight. Without this drain, a subsequent reset()
+  // could destroy operators while tasks still reference them.
+  sirius_ctx->get_pipeline_executor().wait_for_in_flight_tasks();
 }
 
 duckdb::unique_ptr<op::sirius_physical_operator> sirius_engine::construct_sirius_specific_operator(

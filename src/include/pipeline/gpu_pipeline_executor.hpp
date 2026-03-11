@@ -117,6 +117,14 @@ class gpu_pipeline_executor {
   void drain_leftover_tasks();
 
   /**
+   * @brief Wait for all in-flight tasks to complete
+   *
+   * Blocks until all kiosk tickets are released, meaning all GPU tasks
+   * dispatched to the thread pool have finished executing.
+   */
+  void wait_for_in_flight_tasks();
+
+  /**
    * @brief Set the completion handler for query completion signaling
    *
    * @param handler Pointer to the completion handler
