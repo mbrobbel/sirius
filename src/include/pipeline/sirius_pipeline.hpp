@@ -187,8 +187,7 @@ class sirius_pipeline : public duckdb::enable_shared_from_this<sirius_pipeline> 
   //! Whether the pipeline has been finished
   std::atomic<bool> pipeline_finished = false;
 
-  std::atomic<std::size_t> tasks_created   = 0;
-  std::atomic<std::size_t> tasks_completed = 0;
+  std::atomic<std::size_t> tasks_in_flight = 0;
 };
 
 }  // namespace pipeline

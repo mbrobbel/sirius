@@ -285,7 +285,7 @@ void sirius_pipeline::update_pipeline_status()
   } else if (get_source()->type == op::SiriusPhysicalOperatorType::PARQUET_SCAN) {
     auto& parquet_scan = get_source()->Cast<op::sirius_physical_parquet_scan>();
     if (!parquet_scan.has_more_partitions) {
-      if (tasks_created.load() == tasks_completed.load()) { pipeline_finished = true; }
+      if (tasks_in_flight.load() == 0) { pipeline_finished = true; }
       return;
     }
   } else {
@@ -303,21 +303,18 @@ void sirius_pipeline::update_pipeline_status()
         break;
       }
     }
-    // WSM TODO need to increment task created before pulling data?
-    // Lets fix this by putting task creation as a method in the pipeline class so that it can be
-    // done atomically.
     if (limit_exhausted ||
         (first_node->is_source_pipeline_finished() && first_node->all_ports_empty())) {
-      if (tasks_created.load() == tasks_completed.load()) { pipeline_finished = true; }
+      if (tasks_in_flight.load() == 0) { pipeline_finished = true; }
     }
   }
 }
 
-void sirius_pipeline::mark_task_created() { tasks_created++; }
+void sirius_pipeline::mark_task_created() { tasks_in_flight++; }
 
 void sirius_pipeline::mark_task_completed()
 {
-  tasks_completed++;
+  tasks_in_flight--;
   update_pipeline_status();
 }
 
