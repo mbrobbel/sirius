@@ -277,9 +277,8 @@ void sirius_pipeline::update_pipeline_status()
 {
   if (get_source()->type == op::SiriusPhysicalOperatorType::DUCKDB_SCAN) {
     auto& table_scan = get_source()->Cast<op::sirius_physical_duckdb_scan>();
-    if (table_scan.exhausted) {  // WSM amin TODO: can we use exhausted? how about we use
-                                 // get_next_task_hint() to check if the source is ready?
-      pipeline_finished.store(true);
+    if (table_scan.exhausted) {
+      if (tasks_created.load() == tasks_completed.load()) { pipeline_finished.store(true); }
       return;
     }
   } else if (get_source()->type == op::SiriusPhysicalOperatorType::PARQUET_SCAN) {
