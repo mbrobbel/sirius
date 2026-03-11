@@ -116,7 +116,7 @@ class duckdb_scan_task_global_state : public pipeline::sirius_pipeline_task_glob
    * fully drained. Only when all local states have exhausted their scan range is the table fully
    * read.
    */
-  void increment_local_states() { _active_local_states.fetch_add(1, std::memory_order_relaxed); }
+  void increment_local_states() { _active_local_states.fetch_add(1, std::memory_order_acq_rel); }
 
   /**
    * @brief Decrement the number of active local table function states
