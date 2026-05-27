@@ -45,18 +45,40 @@ libcurl = "*"
 
 [tasks]
 
-# CUDA version features: use `pixi run -e cuda12` for CUDA 12.x systems
+# CUDA version features:
+#   - `pixi run -e default` (= cuda13)  -> latest CUDA 13.x
+#   - `pixi run -e cuda13-0`            -> pinned to CUDA 13.0 (for hosts whose driver only supports 13.0)
+#   - `pixi run -e cuda13-1`            -> pinned to CUDA 13.1
+#   - `pixi run -e cuda12`              -> CUDA 12.x systems
+#
+# Shared bits for any CUDA 13.x env (libcudf pin, GPU arches, vcpkg major).
+# Each cuda13* feature below only carries the version-specific system-requirement
+# and cuda-version pin.
+[feature.cuda13-common.dependencies]
+libcudf = "26.04.*"
+
+[feature.cuda13-common.activation.env]
+# GPU architectures: Turing through Blackwell (75, 80, 86, 90a, 100f, 120a, 120)
+CUDAARCHS = "75-real;80-real;86-real;90a-real;100f-real;120a-real;120"
+VCPKG_CUDA_VERSION = "13"
+
 [feature.cuda13.system-requirements]
 cuda = "13"
 
 [feature.cuda13.dependencies]
 cuda-version = "13.*"
-libcudf = "26.04.*"
 
-[feature.cuda13.activation.env]
-# GPU architectures: Turing through Blackwell (75, 80, 86, 90a, 100f, 120a, 120)
-CUDAARCHS = "75-real;80-real;86-real;90a-real;100f-real;120a-real;120"
-VCPKG_CUDA_VERSION = "13"
+[feature.cuda13-0.system-requirements]
+cuda = "13.0"
+
+[feature.cuda13-0.dependencies]
+cuda-version = "13.0.*"
+
+[feature.cuda13-1.system-requirements]
+cuda = "13.1"
+
+[feature.cuda13-1.dependencies]
+cuda-version = "13.1.*"
 
 [feature.cuda12.system-requirements]
 cuda = "12"
@@ -103,9 +125,11 @@ nightly-shell = "scripts/generate_nightly_env.sh && env -u PIXI_ENVIRONMENT_NAME
 nightly-run = "scripts/generate_nightly_env.sh && env -u PIXI_ENVIRONMENT_NAME pixi run --manifest-path envs/nightly/pixi.toml"
 
 [environments]
-default = ["dev-libs", "cuda13"]
+default = ["dev-libs", "cuda13-common", "cuda13"]
+cuda13-0 = ["dev-libs", "cuda13-common", "cuda13-0"]
+cuda13-1 = ["dev-libs", "cuda13-common", "cuda13-1"]
 cuda12 = ["dev-libs", "cuda12"]
 duckdb-python = ["duckdb-python"]
-vcpkg = ["vcpkg", "cuda13"]
+vcpkg = ["vcpkg", "cuda13-common", "cuda13"]
 vcpkg-cuda12 = ["vcpkg", "cuda12"]
 nightly-runner = { features = ["nightly-runner"], no-default-feature = true }
