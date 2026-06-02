@@ -1,4 +1,5 @@
 use std::{
+    collections::{BTreeMap, BTreeSet},
     fmt,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, TcpListener, TcpStream},
     str::FromStr,
@@ -13,10 +14,15 @@ use std::{
 use anyhow::{Context, Result, anyhow, bail};
 use mysql_async::{OptsBuilder, Pool, Row, prelude::Queryable};
 use starrocks_thrift::{
+    agent_service, backend_service,
+    backend_service::{BackendServiceSyncHandler, BackendServiceSyncProcessor},
+    data,
+    frontend_service::{FrontendServiceSyncClient, TFrontendServiceSyncClient},
     heartbeat_service::{
         HeartbeatServiceSyncHandler, HeartbeatServiceSyncProcessor, TBackendInfo, THeartbeatResult,
         TMasterInfo,
     },
+    internal_service, master_service, starrocks_external_service,
     status::TStatus,
     status_code::TStatusCode,
     types,
@@ -24,18 +30,17 @@ use starrocks_thrift::{
 use thrift::{
     TransportErrorKind,
     protocol::{
-        TBinaryInputProtocolFactory, TBinaryOutputProtocolFactory, TInputProtocolFactory,
-        TOutputProtocolFactory,
+        TBinaryInputProtocol, TBinaryInputProtocolFactory, TBinaryOutputProtocol,
+        TBinaryOutputProtocolFactory, TInputProtocolFactory, TOutputProtocolFactory,
     },
     server::TProcessor,
     transport::{
-        TBufferedReadTransportFactory, TBufferedWriteTransportFactory, TIoChannel,
-        TReadTransportFactory, TTcpChannel, TWriteTransportFactory,
+        TBufferedReadTransport, TBufferedReadTransportFactory, TBufferedWriteTransport,
+        TBufferedWriteTransportFactory, TIoChannel, TReadTransportFactory, TTcpChannel,
+        TWriteTransportFactory,
     },
 };
 use tracing::{debug, info, warn};
-
-type HeartbeatProcessor = HeartbeatServiceSyncProcessor<ComputeNodeHeartbeatHandler>;
 
 const COMPUTE_NODE_PROC_PATH: &str = "/compute_nodes";
 
@@ -183,31 +188,63 @@ impl Default for FeConfig {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// Snapshot of FE-provided heartbeat identity and report sequencing state.
 pub struct HeartbeatStateSnapshot {
+    /// Sticky StarRocks cluster id learned from the first valid FE heartbeat.
     pub cluster_id: Option<types::TClusterId>,
+    /// Sticky FE auth token learned from the first valid FE heartbeat.
     pub token: Option<SecretString>,
+    /// Latest accepted FE epoch; older epochs are rejected as stale.
     pub epoch: Option<types::TEpoch>,
+    /// FE-assigned compute-node/backend id needed for follow-up reports.
     pub compute_node_id: Option<i64>,
+    /// FE thrift address used for `FrontendService.report` after heartbeat.
+    pub frontend_address: Option<types::TNetworkAddress>,
+    /// Local monotonic report version for empty CN inventory reports.
+    pub report_version: i64,
+    /// Wall-clock timestamp of the latest accepted heartbeat.
     pub last_heartbeat_ms: Option<u128>,
 }
 
 #[derive(Debug, Default)]
 struct HeartbeatState {
+    // Sticky cluster identity prevents a running CN from silently changing FE clusters.
     cluster_id: Option<types::TClusterId>,
+    // The FE token is stored redacted and must stay stable after first contact.
     token: Option<SecretString>,
+    // Epoch monotonicity lets the CN reject stale FE heartbeat state.
     epoch: Option<types::TEpoch>,
+    // FE-assigned id is required before the CN can send inventory reports.
     compute_node_id: Option<i64>,
+    // FE thrift endpoint is learned from heartbeat and used for reports.
+    frontend_address: Option<types::TNetworkAddress>,
+    // Report versions start at zero and increment only when a report is built.
+    report_version: i64,
+    // Used by the registration refresher to detect missing/stale heartbeats.
     last_heartbeat_ms: Option<u128>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+/// A prepared FE report plus the heartbeat identity it was built from.
+pub struct ComputeNodeReport {
+    /// FE-assigned backend id currently associated with this compute node.
+    pub backend_id: i64,
+    /// FE thrift address that should receive the report.
+    pub frontend_address: types::TNetworkAddress,
+    /// Empty-but-truthful report request for this storage-less CN.
+    pub request: master_service::TReportRequest,
 }
 
 #[derive(Clone, Debug)]
 pub struct SharedHeartbeatState(Arc<Mutex<HeartbeatState>>);
 
 impl SharedHeartbeatState {
+    /// Creates empty heartbeat state; reports are unavailable until heartbeat fills identity.
     pub fn new() -> Self {
         Self(Arc::new(Mutex::new(HeartbeatState::default())))
     }
 
+    /// Returns a copy of heartbeat state for tests and monitoring decisions.
     pub fn snapshot(&self) -> HeartbeatStateSnapshot {
         let state = self.0.lock().expect("heartbeat state mutex poisoned");
         HeartbeatStateSnapshot {
@@ -215,10 +252,28 @@ impl SharedHeartbeatState {
             token: state.token.clone(),
             epoch: state.epoch,
             compute_node_id: state.compute_node_id,
+            frontend_address: state.frontend_address.clone(),
+            report_version: state.report_version,
             last_heartbeat_ms: state.last_heartbeat_ms,
         }
     }
 
+    /// Builds the next FE report only after heartbeat supplies FE address and CN id.
+    pub fn next_report(&self, node: &ComputeNodeConfig) -> Option<ComputeNodeReport> {
+        let mut state = self.0.lock().expect("heartbeat state mutex poisoned");
+        let backend_id = state.compute_node_id?;
+        let frontend_address = state.frontend_address.clone()?;
+        // Saturating arithmetic avoids wrapping if a long-running process reaches i64::MAX.
+        state.report_version = state.report_version.saturating_add(1);
+
+        Some(ComputeNodeReport {
+            backend_id,
+            frontend_address,
+            request: build_report_request(node, state.report_version),
+        })
+    }
+
+    /// Returns how long ago the last accepted heartbeat arrived, if any.
     pub fn last_heartbeat_elapsed(&self) -> Option<Duration> {
         let state = self.0.lock().expect("heartbeat state mutex poisoned");
         let last_heartbeat_ms = state.last_heartbeat_ms?;
@@ -259,6 +314,7 @@ impl ComputeNodeHeartbeatHandler {
         &self,
         master_info: &TMasterInfo,
     ) -> std::result::Result<(), HeartbeatError> {
+        // Sirius is advertising itself as a StarRocks compute node, so reject BE heartbeats.
         let received_node_type = master_info
             .node_type
             .ok_or(HeartbeatError::MissingNodeType)?;
@@ -274,6 +330,7 @@ impl ComputeNodeHeartbeatHandler {
             .lock()
             .map_err(|_| HeartbeatError::StatePoisoned)?;
 
+        // StarRocks FE epochs are monotonic; accepting an older epoch would roll state back.
         if let Some(epoch) = state.epoch
             && master_info.epoch < epoch
         {
@@ -283,6 +340,7 @@ impl ComputeNodeHeartbeatHandler {
             });
         }
 
+        // Cluster id is learned once and then treated as immutable for this process.
         if let Some(cluster_id) = master_info.cluster_id {
             if let Some(current_cluster_id) = state.cluster_id {
                 if cluster_id != current_cluster_id {
@@ -296,6 +354,7 @@ impl ComputeNodeHeartbeatHandler {
             }
         }
 
+        // Token changes are treated as suspicious because later RPCs depend on FE identity.
         if let Some(token) = &master_info.token {
             if let Some(current_token) = &state.token {
                 if token != current_token.expose_secret() {
@@ -310,6 +369,8 @@ impl ComputeNodeHeartbeatHandler {
         if let Some(compute_node_id) = master_info.backend_id {
             state.compute_node_id = Some(compute_node_id);
         }
+        // FE sends its thrift address in heartbeat; reports wait until this is known.
+        state.frontend_address = Some(master_info.network_address.clone());
         state.last_heartbeat_ms = Some(unix_time_millis());
 
         Ok(())
@@ -380,54 +441,302 @@ impl HeartbeatServiceSyncHandler for ComputeNodeHeartbeatHandler {
     }
 }
 
-pub struct HeartbeatServer {
-    join_handle: Option<JoinHandle<Result<()>>>,
-    shutdown: HeartbeatServerShutdown,
-    local_addr: SocketAddr,
+#[derive(Clone, Debug)]
+/// StarRocks `BackendService` skeleton for FE/coordinator requests sent to the CN.
+pub struct ComputeNodeBackendHandler;
+
+impl ComputeNodeBackendHandler {
+    /// Creates a stateless backend handler because no RPC has executable state yet.
+    pub fn new() -> Self {
+        Self
+    }
 }
 
-impl HeartbeatServer {
-    pub fn shutdown_handle(&self) -> HeartbeatServerShutdown {
+impl Default for ComputeNodeBackendHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl BackendServiceSyncHandler for ComputeNodeBackendHandler {
+    // Plan execution is deferred until a real execution engine/brpc path is wired in.
+    fn handle_exec_plan_fragment(
+        &self,
+        _params: internal_service::TExecPlanFragmentParams,
+    ) -> thrift::Result<internal_service::TExecPlanFragmentResult> {
+        Ok(internal_service::TExecPlanFragmentResult::new(
+            Some(not_implemented_status("BackendService.execPlanFragment")),
+            None,
+        ))
+    }
+
+    // Cancellation is unsupported because this CN cannot start fragments yet.
+    fn handle_cancel_plan_fragment(
+        &self,
+        _params: internal_service::TCancelPlanFragmentParams,
+    ) -> thrift::Result<internal_service::TCancelPlanFragmentResult> {
+        Ok(internal_service::TCancelPlanFragmentResult::new(Some(
+            not_implemented_status("BackendService.cancelPlanFragment"),
+        )))
+    }
+
+    // Data exchange is unsupported until fragment execution and exchange tracking exist.
+    fn handle_transmit_data(
+        &self,
+        _params: internal_service::TTransmitDataParams,
+    ) -> thrift::Result<internal_service::TTransmitDataResult> {
+        Ok(internal_service::TTransmitDataResult::new(
+            Some(not_implemented_status("BackendService.transmitData")),
+            None,
+            None,
+            None,
+        ))
+    }
+
+    // Fetch returns an empty required batch plus NOT_IMPLEMENTED instead of panicking.
+    fn handle_fetch_data(
+        &self,
+        _params: internal_service::TFetchDataParams,
+    ) -> thrift::Result<internal_service::TFetchDataResult> {
+        Ok(internal_service::TFetchDataResult::new(
+            data::TResultBatch::new(Vec::new(), false, 0, None),
+            true,
+            0,
+            Some(not_implemented_status("BackendService.fetchData")),
+        ))
+    }
+
+    // Agent tasks mutate backend state/storage, so they are rejected explicitly.
+    fn handle_submit_tasks(
+        &self,
+        _tasks: Vec<agent_service::TAgentTaskRequest>,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.submitTasks"))
+    }
+
+    // Snapshot creation requires tablet storage, which this skeleton CN does not expose.
+    fn handle_make_snapshot(
+        &self,
+        _snapshot_request: agent_service::TSnapshotRequest,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.makeSnapshot"))
+    }
+
+    // Snapshot release is paired with snapshot creation and remains unsupported here.
+    fn handle_release_snapshot(
+        &self,
+        _snapshot_path: String,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.releaseSnapshot"))
+    }
+
+    // Cluster-state publishing is agent-task style coordination, not safe to fake.
+    fn handle_publish_cluster_state(
+        &self,
+        _request: agent_service::TAgentPublishRequest,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.publishClusterState"))
+    }
+
+    // Mini-load ETL work needs local execution/storage and is intentionally absent.
+    fn handle_submit_etl_task(
+        &self,
+        _request: agent_service::TMiniLoadEtlTaskRequest,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.submitEtlTask"))
+    }
+
+    // ETL status needs a required enum, so UNKNOWN accompanies NOT_IMPLEMENTED.
+    fn handle_get_etl_status(
+        &self,
+        _request: agent_service::TMiniLoadEtlStatusRequest,
+    ) -> thrift::Result<agent_service::TMiniLoadEtlStatusResult> {
+        Ok(agent_service::TMiniLoadEtlStatusResult::new(
+            not_implemented_status("BackendService.getEtlStatus"),
+            types::TEtlState::UNKNOWN,
+            None,
+            None,
+            None,
+        ))
+    }
+
+    // Deleting ETL files would affect storage paths this CN does not own.
+    fn handle_delete_etl_files(
+        &self,
+        _request: agent_service::TDeleteEtlFilesRequest,
+    ) -> thrift::Result<agent_service::TAgentResult> {
+        Ok(agent_result("BackendService.deleteEtlFiles"))
+    }
+
+    // Export execution is not present in this first thrift surface.
+    fn handle_submit_export_task(
+        &self,
+        _request: backend_service::TExportTaskRequest,
+    ) -> thrift::Result<TStatus> {
+        Ok(not_implemented_status("BackendService.submitExportTask"))
+    }
+
+    // Export status needs a required state, so UNKNOWN accompanies NOT_IMPLEMENTED.
+    fn handle_get_export_status(
+        &self,
+        _task_id: types::TUniqueId,
+    ) -> thrift::Result<internal_service::TExportStatusResult> {
+        Ok(internal_service::TExportStatusResult::new(
+            not_implemented_status("BackendService.getExportStatus"),
+            types::TExportState::UNKNOWN,
+            None,
+        ))
+    }
+
+    // Export task cleanup remains unsupported because no export task can be created.
+    fn handle_erase_export_task(&self, _task_id: types::TUniqueId) -> thrift::Result<TStatus> {
+        Ok(not_implemented_status("BackendService.eraseExportTask"))
+    }
+
+    // Empty tablet stats are truthful for a storage-less compute node.
+    fn handle_get_tablet_stat(&self) -> thrift::Result<backend_service::TTabletStatResult> {
+        Ok(backend_service::TTabletStatResult::new(BTreeMap::new()))
+    }
+
+    // Routine-load execution is deferred until load/execution support exists.
+    fn handle_submit_routine_load_task(
+        &self,
+        _tasks: Vec<backend_service::TRoutineLoadTask>,
+    ) -> thrift::Result<TStatus> {
+        Ok(not_implemented_status(
+            "BackendService.submitRoutineLoadTask",
+        ))
+    }
+
+    // Stream-load channels imply load state, so this skeleton reports unsupported.
+    fn handle_finish_stream_load_channel(
+        &self,
+        _stream_load_channel: backend_service::TStreamLoadChannel,
+    ) -> thrift::Result<TStatus> {
+        Ok(not_implemented_status(
+            "BackendService.finishStreamLoadChannel",
+        ))
+    }
+
+    // External scanner open is an execution path and remains unimplemented.
+    fn handle_open_scanner(
+        &self,
+        _params: starrocks_external_service::TScanOpenParams,
+    ) -> thrift::Result<starrocks_external_service::TScanOpenResult> {
+        Ok(starrocks_external_service::TScanOpenResult::new(
+            not_implemented_status("BackendService.openScanner"),
+            None,
+            None,
+        ))
+    }
+
+    // Scanner batches return EOS with NOT_IMPLEMENTED to satisfy required result fields.
+    fn handle_get_next(
+        &self,
+        _params: starrocks_external_service::TScanNextBatchParams,
+    ) -> thrift::Result<starrocks_external_service::TScanBatchResult> {
+        Ok(starrocks_external_service::TScanBatchResult::new(
+            not_implemented_status("BackendService.getNext"),
+            Some(true),
+            Some(Vec::new()),
+        ))
+    }
+
+    // Scanner close is unsupported because scanner contexts are never created.
+    fn handle_close_scanner(
+        &self,
+        _params: starrocks_external_service::TScanCloseParams,
+    ) -> thrift::Result<starrocks_external_service::TScanCloseResult> {
+        Ok(starrocks_external_service::TScanCloseResult::new(
+            not_implemented_status("BackendService.closeScanner"),
+        ))
+    }
+
+    // Tablet metadata is safe to report as empty because this CN has no tablet storage.
+    fn handle_get_tablets_info(
+        &self,
+        _request: backend_service::TGetTabletsInfoRequest,
+    ) -> thrift::Result<backend_service::TGetTabletsInfoResult> {
+        Ok(backend_service::TGetTabletsInfoResult::new(
+            ok_status(),
+            Some(0),
+            Some(BTreeMap::new()),
+        ))
+    }
+}
+
+/// Joinable handle for a blocking thrift server thread.
+pub struct ThriftServer {
+    // Owning the join handle lets shutdown wait for the accept loop to exit.
+    join_handle: Option<JoinHandle<Result<()>>>,
+    // Shared shutdown state used by signal handlers and Drop.
+    shutdown: ThriftServerShutdown,
+    // Bound address, useful for tests that bind port zero.
+    local_addr: SocketAddr,
+    // Static service label used in logs and join errors.
+    name: &'static str,
+}
+
+/// Heartbeat service server handle.
+pub type HeartbeatServer = ThriftServer;
+/// Backend service server handle.
+pub type BackendServer = ThriftServer;
+
+impl ThriftServer {
+    /// Clones the shutdown handle so async orchestration can stop the blocking thread.
+    pub fn shutdown_handle(&self) -> ThriftServerShutdown {
         self.shutdown.clone()
     }
 
+    /// Requests shutdown and wakes the blocking accept loop.
     pub fn shutdown(&self) {
         self.shutdown.shutdown();
     }
 
+    /// Returns the actual listen address, including the OS-selected port for port zero.
     pub fn local_addr(&self) -> SocketAddr {
         self.local_addr
     }
 
+    /// Waits for the server thread and reports any thread/server error.
     pub fn join(mut self) -> Result<()> {
         let join_handle = self
             .join_handle
             .take()
-            .context("heartbeat server join handle was already consumed")?;
-        join_heartbeat_thread(join_handle)
+            .with_context(|| format!("{} server join handle was already consumed", self.name))?;
+        join_thrift_thread(self.name, join_handle)
     }
 }
 
-impl Drop for HeartbeatServer {
+impl Drop for ThriftServer {
     fn drop(&mut self) {
         if self.join_handle.is_some() {
+            // Dropping an unjoined server should not leave the blocking accept loop alive.
             self.shutdown();
         }
     }
 }
 
 #[derive(Clone)]
-pub struct HeartbeatServerShutdown(Arc<HeartbeatServerShutdownState>);
+/// Shared shutdown state for a blocking thrift server.
+pub struct ThriftServerShutdown(Arc<ThriftServerShutdownState>);
 
-impl HeartbeatServerShutdown {
+/// Heartbeat service shutdown handle.
+pub type HeartbeatServerShutdown = ThriftServerShutdown;
+/// Backend service shutdown handle.
+pub type BackendServerShutdown = ThriftServerShutdown;
+
+impl ThriftServerShutdown {
+    /// Creates shutdown state and records the address used to wake `TcpListener::incoming`.
     fn new(wake_addr: SocketAddr) -> Self {
-        Self(Arc::new(HeartbeatServerShutdownState {
+        Self(Arc::new(ThriftServerShutdownState {
             requested: AtomicBool::new(false),
             active_connection: Arc::new(Mutex::new(None)),
             wake_addr,
         }))
     }
 
+    /// Marks shutdown requested, closes any in-flight client, and wakes the listener.
     pub fn shutdown(&self) {
         if self.0.requested.swap(true, Ordering::SeqCst) {
             return;
@@ -437,20 +746,22 @@ impl HeartbeatServerShutdown {
         let _ = TcpStream::connect(self.0.wake_addr);
     }
 
+    /// Returns whether shutdown has been requested.
     fn is_requested(&self) -> bool {
         self.0.requested.load(Ordering::SeqCst)
     }
 
+    /// Tracks the current connection so shutdown can interrupt a blocking thrift read.
     fn track_connection(&self, stream: &TcpStream) -> Result<ActiveConnectionGuard> {
         let shutdown_stream = stream
             .try_clone()
-            .context("failed to clone heartbeat client connection")?;
+            .context("failed to clone thrift client connection")?;
 
         let mut active_connection = self
             .0
             .active_connection
             .lock()
-            .map_err(|_| anyhow!("active heartbeat connection mutex poisoned"))?;
+            .map_err(|_| anyhow!("active thrift connection mutex poisoned"))?;
         *active_connection = Some(shutdown_stream);
 
         Ok(ActiveConnectionGuard {
@@ -458,6 +769,7 @@ impl HeartbeatServerShutdown {
         })
     }
 
+    /// Closes the active client connection if the processor is blocked waiting for input.
     fn close_active_connection(&self) {
         if let Ok(active_connection) = self.0.active_connection.lock()
             && let Some(connection) = active_connection.as_ref()
@@ -467,24 +779,30 @@ impl HeartbeatServerShutdown {
     }
 }
 
-struct HeartbeatServerShutdownState {
+struct ThriftServerShutdownState {
+    // Atomic flag lets the listener thread observe shutdown without locking.
     requested: AtomicBool,
+    // The current thrift connection is closed to unblock processor reads on shutdown.
     active_connection: Arc<Mutex<Option<TcpStream>>>,
+    // A loopback connection to this address wakes `TcpListener::incoming`.
     wake_addr: SocketAddr,
 }
 
 struct ActiveConnectionGuard {
+    // Dropping this guard clears the shutdown state's current active connection.
     active_connection: Arc<Mutex<Option<TcpStream>>>,
 }
 
 impl Drop for ActiveConnectionGuard {
     fn drop(&mut self) {
         if let Ok(mut active_connection) = self.active_connection.lock() {
+            // The processor finished or disconnected, so future shutdowns should not close it.
             *active_connection = None;
         }
     }
 }
 
+/// Starts the FE heartbeat thrift service on the configured heartbeat port.
 pub fn start_heartbeat_server(
     config: ComputeNodeConfig,
     state: SharedHeartbeatState,
@@ -495,30 +813,66 @@ pub fn start_heartbeat_server(
     let local_addr = listener
         .local_addr()
         .context("failed to read heartbeat Thrift server address")?;
-    let shutdown = HeartbeatServerShutdown::new(listener_wake_addr(local_addr));
+    let shutdown = ThriftServerShutdown::new(listener_wake_addr(local_addr));
     let server_shutdown = shutdown.clone();
 
     info!(address = %local_addr, "starting heartbeat Thrift server");
-    let join_handle =
-        thread::spawn(move || run_heartbeat_server(listener, config, state, server_shutdown));
-
-    Ok(HeartbeatServer {
-        join_handle: Some(join_handle),
-        shutdown,
-        local_addr,
-    })
-}
-
-fn run_heartbeat_server(
-    listener: TcpListener,
-    config: ComputeNodeConfig,
-    state: SharedHeartbeatState,
-    shutdown: HeartbeatServerShutdown,
-) -> Result<()> {
+    // The generated processor owns the handler and is shared across sequential connections.
     let processor = Arc::new(HeartbeatServiceSyncProcessor::new(
         ComputeNodeHeartbeatHandler::new(config, state),
     ));
+    let join_handle =
+        thread::spawn(move || run_thrift_server("heartbeat", listener, processor, server_shutdown));
 
+    Ok(ThriftServer {
+        join_handle: Some(join_handle),
+        shutdown,
+        local_addr,
+        name: "heartbeat",
+    })
+}
+
+/// Starts the StarRocks `BackendService` thrift skeleton on `--thrift-port`.
+pub fn start_backend_server(config: &ComputeNodeConfig) -> Result<BackendServer> {
+    let listen_addr = format!("{}:{}", config.bind_host, config.thrift_port);
+    let listener = TcpListener::bind(&listen_addr)
+        .with_context(|| format!("failed to bind backend Thrift server at {listen_addr}"))?;
+    let local_addr = listener
+        .local_addr()
+        .context("failed to read backend Thrift server address")?;
+    let shutdown = ThriftServerShutdown::new(listener_wake_addr(local_addr));
+    let server_shutdown = shutdown.clone();
+
+    info!(
+        address = %local_addr,
+        brpc_port = config.brpc_port,
+        "starting backend Thrift server; brpc execution is not implemented yet"
+    );
+    // BackendService is stateless for now because every non-inventory RPC is unsupported.
+    let processor = Arc::new(BackendServiceSyncProcessor::new(
+        ComputeNodeBackendHandler::new(),
+    ));
+    let join_handle =
+        thread::spawn(move || run_thrift_server("backend", listener, processor, server_shutdown));
+
+    Ok(ThriftServer {
+        join_handle: Some(join_handle),
+        shutdown,
+        local_addr,
+        name: "backend",
+    })
+}
+
+/// Runs one generated thrift processor behind a blocking TCP listener.
+fn run_thrift_server<P>(
+    name: &'static str,
+    listener: TcpListener,
+    processor: Arc<P>,
+    shutdown: ThriftServerShutdown,
+) -> Result<()>
+where
+    P: TProcessor + Send + Sync + 'static,
+{
     for stream in listener.incoming() {
         if shutdown.is_requested() {
             break;
@@ -529,32 +883,39 @@ fn run_heartbeat_server(
                 if shutdown.is_requested() {
                     break;
                 }
+                // StarRocks thrift clients use one connection for a sequence of calls.
                 let active_connection = shutdown.track_connection(&stream)?;
-                handle_heartbeat_connection(processor.clone(), stream, active_connection)?;
+                handle_thrift_connection(name, processor.clone(), stream, active_connection)?;
                 if shutdown.is_requested() {
                     break;
                 }
             }
             Err(_) if shutdown.is_requested() => break,
-            Err(err) => warn!(error = %err, "failed to accept heartbeat connection"),
+            Err(err) => warn!(service = name, error = %err, "failed to accept thrift connection"),
         }
     }
 
     shutdown.close_active_connection();
-    info!("heartbeat Thrift server stopped");
+    info!(service = name, "Thrift server stopped");
     Ok(())
 }
 
-fn handle_heartbeat_connection(
-    processor: Arc<HeartbeatProcessor>,
+/// Processes one client connection until EOF, thrift error, or server shutdown.
+fn handle_thrift_connection<P>(
+    name: &'static str,
+    processor: Arc<P>,
     stream: TcpStream,
     active_connection: ActiveConnectionGuard,
-) -> Result<()> {
+) -> Result<()>
+where
+    P: TProcessor + Send + Sync + 'static,
+{
+    // Keep the guard alive for the full processor loop so shutdown can close this stream.
     let _active_connection = active_connection;
     let channel = TTcpChannel::with_stream(stream);
     let (read_channel, write_channel) = channel
         .split()
-        .map_err(|err| anyhow!("failed to split heartbeat connection: {err}"))?;
+        .map_err(|err| anyhow!("failed to split {name} thrift connection: {err}"))?;
     let read_transport = TBufferedReadTransportFactory::new().create(Box::new(read_channel));
     let write_transport = TBufferedWriteTransportFactory::new().create(Box::new(write_channel));
     let mut input_protocol = TBinaryInputProtocolFactory::new().create(read_transport);
@@ -563,23 +924,27 @@ fn handle_heartbeat_connection(
     loop {
         match processor.process(&mut *input_protocol, &mut *output_protocol) {
             Ok(()) => {}
+            // EOF is a normal client disconnect; the server goes back to accepting.
             Err(thrift::Error::Transport(err)) if err.kind == TransportErrorKind::EndOfFile => {
                 return Ok(());
             }
             Err(err) => {
-                warn!(error = %err, "heartbeat processor completed with error");
+                // StarRocks may probe unsupported paths; keep the server alive after one error.
+                warn!(service = name, error = %err, "thrift processor completed with error");
                 return Ok(());
             }
         }
     }
 }
 
-fn join_heartbeat_thread(join_handle: JoinHandle<Result<()>>) -> Result<()> {
+/// Converts a blocking thread join into the crate's error type.
+fn join_thrift_thread(name: &'static str, join_handle: JoinHandle<Result<()>>) -> Result<()> {
     join_handle
         .join()
-        .map_err(|panic| anyhow!("heartbeat server thread panicked: {panic:?}"))?
+        .map_err(|panic| anyhow!("{name} server thread panicked: {panic:?}"))?
 }
 
+/// Maps an unspecified bind address to loopback so shutdown can wake the listener locally.
 fn listener_wake_addr(local_addr: SocketAddr) -> SocketAddr {
     match local_addr.ip() {
         IpAddr::V4(ip) if ip.is_unspecified() => {
@@ -590,6 +955,79 @@ fn listener_wake_addr(local_addr: SocketAddr) -> SocketAddr {
         }
         _ => local_addr,
     }
+}
+
+/// Sends one empty inventory report to FE if heartbeat has provided FE address and CN id.
+pub fn report_to_frontend_once(
+    node: &ComputeNodeConfig,
+    state: &SharedHeartbeatState,
+) -> Result<Option<master_service::TMasterResult>> {
+    // Returning None lets the caller poll without error before the first heartbeat arrives.
+    let report = match state.next_report(node) {
+        Some(report) => report,
+        None => return Ok(None),
+    };
+
+    // FE thrift address comes from TMasterInfo.network_address in heartbeat.
+    let frontend = report.frontend_address.clone();
+    let mut channel = TTcpChannel::new();
+    channel
+        .open((frontend.hostname.as_str(), frontend.port as u16))
+        .with_context(|| {
+            format!(
+                "failed to connect to FE thrift service at {}:{}",
+                frontend.hostname, frontend.port
+            )
+        })?;
+
+    // Client and server both use strict binary thrift protocols in this crate.
+    let (read_channel, write_channel) = channel
+        .split()
+        .map_err(|err| anyhow!("failed to split FE thrift connection: {err}"))?;
+    let read_transport = TBufferedReadTransport::new(read_channel);
+    let write_transport = TBufferedWriteTransport::new(write_channel);
+    let input_protocol = TBinaryInputProtocol::new(read_transport, true);
+    let output_protocol = TBinaryOutputProtocol::new(write_transport, true);
+    let mut client = FrontendServiceSyncClient::new(input_protocol, output_protocol);
+
+    client
+        .report(report.request)
+        .map(Some)
+        .map_err(|err| anyhow!("failed to report compute node inventory to FE: {err}"))
+}
+
+/// Builds the truthful "empty CN" report payload expected by `FrontendService.report`.
+fn build_report_request(
+    node: &ComputeNodeConfig,
+    report_version: i64,
+) -> master_service::TReportRequest {
+    // This skeleton has no agent tasks, local tablets, or disks to report.
+    let tasks: BTreeMap<types::TTaskType, BTreeSet<i64>> = BTreeMap::new();
+    let tablets: BTreeMap<types::TTabletId, master_service::TTablet> = BTreeMap::new();
+    let disks: BTreeMap<String, master_service::TDisk> = BTreeMap::new();
+
+    master_service::TReportRequest::new(
+        // StarRocks expects the backend identity to carry host plus thrift/http ports.
+        types::TBackend::new(
+            node.advertise_host.to_string(),
+            i32::from(node.thrift_port),
+            i32::from(node.http_port),
+        ),
+        Some(report_version),
+        Some(tasks),
+        Some(tablets),
+        Some(disks),
+        // No recovery is requested; this CN is only reporting current empty state.
+        Some(false),
+        // Tablet list mirrors the empty tablet map for newer FE report consumers.
+        Some(Vec::new()),
+        // With no tablets, max compaction score is naturally zero.
+        Some(0),
+        // No workgroup usage is known until execution is implemented.
+        Some(Vec::new()),
+        None,
+        None,
+    )
 }
 
 pub async fn register_node(fe: &FeConfig, node: &ComputeNodeConfig) -> Result<()> {
@@ -677,14 +1115,30 @@ async fn node_is_registered(
     Ok(false)
 }
 
+/// StarRocks success status helper.
 fn ok_status() -> TStatus {
     TStatus::new(TStatusCode::OK, None)
 }
 
+/// StarRocks unsupported status helper that names the RPC for operator diagnostics.
+fn not_implemented_status(rpc: &str) -> TStatus {
+    TStatus::new(
+        TStatusCode::NOT_IMPLEMENTED_ERROR,
+        Some(vec![format!("{rpc} is not implemented")]),
+    )
+}
+
+/// Heartbeat rejection status helper.
 fn error_status(message: String) -> TStatus {
     TStatus::new(TStatusCode::INTERNAL_ERROR, Some(vec![message]))
 }
 
+/// Agent-service unsupported result helper for methods returning `TAgentResult`.
+fn agent_result(rpc: &str) -> agent_service::TAgentResult {
+    agent_service::TAgentResult::new(not_implemented_status(rpc), None, None, None)
+}
+
+/// Current Unix time in seconds for heartbeat reboot metadata.
 fn unix_time_secs() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -693,6 +1147,7 @@ fn unix_time_secs() -> i64 {
         .min(i64::MAX as u64) as i64
 }
 
+/// Current Unix time in milliseconds for heartbeat staleness tracking.
 fn unix_time_millis() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -763,6 +1218,10 @@ mod tests {
         );
         assert_eq!(snapshot.epoch, Some(7));
         assert_eq!(snapshot.compute_node_id, Some(10001));
+        assert_eq!(
+            snapshot.frontend_address,
+            Some(types::TNetworkAddress::new("127.0.0.1".to_string(), 9020))
+        );
         assert!(snapshot.last_heartbeat_ms.is_some());
     }
 
@@ -927,6 +1386,97 @@ mod tests {
         assert_eq!(COMPUTE_NODE_PROC_PATH, "/compute_nodes");
     }
 
+    /// Verifies tablet stat inventory is truthfully empty for a storage-less CN.
+    #[test]
+    fn backend_tablet_stat_returns_empty_inventory() {
+        let result = ComputeNodeBackendHandler::new()
+            .handle_get_tablet_stat()
+            .unwrap();
+
+        assert!(result.tablets_stats.is_empty());
+    }
+
+    /// Verifies tablet metadata reporting succeeds with version zero and no tablets.
+    #[test]
+    fn backend_tablets_info_returns_empty_ok_report() {
+        let result = ComputeNodeBackendHandler::new()
+            .handle_get_tablets_info(backend_service::TGetTabletsInfoRequest::new())
+            .unwrap();
+
+        assert_eq!(result.status.status_code, TStatusCode::OK);
+        assert_eq!(result.report_version, Some(0));
+        assert!(result.tablets.as_ref().is_some_and(BTreeMap::is_empty));
+    }
+
+    /// Verifies unsupported backend RPCs return explicit NOT_IMPLEMENTED statuses.
+    #[test]
+    fn backend_unsupported_calls_return_not_implemented_status() {
+        let handler = ComputeNodeBackendHandler::new();
+
+        let routine_load_status = handler.handle_submit_routine_load_task(Vec::new()).unwrap();
+        assert_not_implemented(&routine_load_status, "BackendService.submitRoutineLoadTask");
+
+        let agent_result = handler.handle_submit_tasks(Vec::new()).unwrap();
+        assert_not_implemented(&agent_result.status, "BackendService.submitTasks");
+
+        let export_status = handler
+            .handle_erase_export_task(types::TUniqueId::new(0, 0))
+            .unwrap();
+        assert_not_implemented(&export_status, "BackendService.eraseExportTask");
+    }
+
+    /// Verifies FE reporting waits until heartbeat supplies FE address and backend id.
+    #[test]
+    fn report_waits_for_heartbeat_identity() {
+        let state = SharedHeartbeatState::new();
+
+        assert!(state.next_report(&test_config()).is_none());
+        assert_eq!(state.snapshot().report_version, 0);
+    }
+
+    /// Verifies FE report payload identity, empty maps, and monotonic report version.
+    #[test]
+    fn report_payload_includes_identity_empty_state_and_monotonic_version() {
+        let (handler, state) = handler();
+        let mut config = test_config();
+        config.advertise_host = Host::new("cn.example.test").unwrap();
+        config.thrift_port = 19060;
+        config.http_port = 18040;
+
+        assert_eq!(
+            handler
+                .handle_heartbeat(master(7))
+                .unwrap()
+                .status
+                .status_code,
+            TStatusCode::OK
+        );
+
+        let first = state.next_report(&config).unwrap();
+        let second = state.next_report(&config).unwrap();
+
+        assert_eq!(first.backend_id, 10001);
+        assert_eq!(
+            first.frontend_address,
+            types::TNetworkAddress::new("127.0.0.1".to_string(), 9020)
+        );
+        assert_eq!(first.request.backend.host, "cn.example.test");
+        assert_eq!(first.request.backend.be_port, 19060);
+        assert_eq!(first.request.backend.http_port, 18040);
+        assert_eq!(first.request.report_version, Some(1));
+        assert_eq!(second.request.report_version, Some(2));
+        assert!(first.request.tasks.as_ref().is_some_and(BTreeMap::is_empty));
+        assert!(
+            first
+                .request
+                .tablets
+                .as_ref()
+                .is_some_and(BTreeMap::is_empty)
+        );
+        assert!(first.request.disks.as_ref().is_some_and(BTreeMap::is_empty));
+        assert_eq!(state.snapshot().report_version, 2);
+    }
+
     /// Verifies secrets stay redacted in debug output.
     #[test]
     fn secret_string_debug_redacts_value() {
@@ -961,5 +1511,16 @@ mod tests {
                 .downcast_ref::<std::io::Error>()
                 .is_some_and(|err| err.kind() == std::io::ErrorKind::PermissionDenied)
         })
+    }
+
+    /// Verifies a status is NOT_IMPLEMENTED and includes the RPC name for diagnostics.
+    fn assert_not_implemented(status: &TStatus, rpc: &str) {
+        assert_eq!(status.status_code, TStatusCode::NOT_IMPLEMENTED_ERROR);
+        assert!(
+            status
+                .error_msgs
+                .as_ref()
+                .is_some_and(|messages| messages.iter().any(|message| message.contains(rpc)))
+        );
     }
 }
