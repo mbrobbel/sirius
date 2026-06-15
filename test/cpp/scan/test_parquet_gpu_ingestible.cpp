@@ -759,7 +759,7 @@ TEST_CASE("parquet_gpu_ingestible scan-side prewarm inserts column chunk ranges 
                                           /*row_count=*/2000,
                                           /*row_group_size=*/1000);
 
-  auto run = [&](bool enable_chunk_prewarm) {
+  auto run = [&](bool enable_chunk_prewarm, std::chrono::milliseconds wait_timeout) {
     host_cache_memory memory;
     sirius::scan_manager::scan_manager_config cfg{};
     cfg.use_sirius_datasource           = true;
@@ -796,7 +796,7 @@ TEST_CASE("parquet_gpu_ingestible scan-side prewarm inserts column chunk ranges 
     auto const range_before   = cache->range_miss_count_total();
     auto const partial_before = cache->partial_miss_count_total();
 
-    auto const hit = wait_for_cached_range(*cache, *ds->io_object(), first_range, 5s);
+    auto const hit = wait_for_cached_range(*cache, *ds->io_object(), first_range, wait_timeout);
 
     return std::tuple{hit,
                       cache->hit_count_total() - hits_before,
@@ -807,7 +807,7 @@ TEST_CASE("parquet_gpu_ingestible scan-side prewarm inserts column chunk ranges 
   SECTION("prewarm enabled")
   {
     auto const [hit, hit_delta, range_miss_delta, partial_miss_delta] =
-      run(/*enable_chunk_prewarm=*/true);
+      run(/*enable_chunk_prewarm=*/true, /*wait_timeout=*/5s);
     CHECK(hit);
     CHECK(hit_delta > 0);
     CHECK(range_miss_delta == 0);
@@ -816,8 +816,12 @@ TEST_CASE("parquet_gpu_ingestible scan-side prewarm inserts column chunk ranges 
 
   SECTION("prewarm disabled")
   {
+    // Negative case: with prewarm off the range is never cached, so this only
+    // needs long enough to confirm the miss — the worker has already drained
+    // the ingestible by now. A short wait avoids burning the full positive-case
+    // timeout (5s) just to observe an expected absence.
     auto const [hit, hit_delta, range_miss_delta, partial_miss_delta] =
-      run(/*enable_chunk_prewarm=*/false);
+      run(/*enable_chunk_prewarm=*/false, /*wait_timeout=*/1s);
     CHECK_FALSE(hit);
     CHECK(hit_delta == 0);
     INFO("range misses with prewarm disabled: " << range_miss_delta);

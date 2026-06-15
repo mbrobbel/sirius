@@ -2825,14 +2825,16 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by column not in select lineitem",
                  "[integration][gpu_execution][order_by][order_by_proj]")
 {
-  compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;");
+  compare_gpu_vs_cpu(
+    "select l_orderkey from lineitem where l_orderkey < 50000 order by l_linenumber;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by column not in select lineitem parquet",
                  "[integration][gpu_execution][parquet][order_by][order_by_proj]")
 {
-  compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;");
+  compare_gpu_vs_cpu(
+    "select l_orderkey from lineitem where l_orderkey < 50000 order by l_linenumber;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2842,7 +2844,11 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
   // Force small partition size (1 KB) so lineitem data is split into multiple partitions
   con->Query("SET max_sort_partition_bytes = 1024;");
 
-  compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem order by l_orderkey;");
+  // Input bounded to ~50k rows (l_orderkey < 50000); with max_sort_partition_bytes=1024
+  // this still splits into hundreds of partitions, exercising the multipartition sort path
+  // far faster than sorting all 600k rows (and comparing them in the harness).
+  compare_gpu_vs_cpu(
+    "select l_orderkey, l_partkey from lineitem where l_orderkey < 50000 order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2852,7 +2858,11 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
   // Force small partition size (1 KB) so lineitem data is split into multiple partitions
   con->Query("SET max_sort_partition_bytes = 1024;");
 
-  compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem order by l_orderkey;");
+  // Input bounded to ~50k rows (l_orderkey < 50000); with max_sort_partition_bytes=1024
+  // this still splits into hundreds of partitions, exercising the multipartition sort path
+  // far faster than sorting all 600k rows (and comparing them in the harness).
+  compare_gpu_vs_cpu(
+    "select l_orderkey, l_partkey from lineitem where l_orderkey < 50000 order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2861,7 +2871,8 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
 {
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_linenumber, l_quantity from lineitem order by l_orderkey, l_linenumber;");
+    "select l_orderkey, l_linenumber, l_quantity from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey, l_linenumber;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2870,7 +2881,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 {
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_linenumber, l_quantity from lineitem order by l_orderkey, l_linenumber;");
+    "select l_orderkey, l_linenumber, l_quantity from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey, l_linenumber;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2879,7 +2891,8 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
 {
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_partkey, l_suppkey from lineitem order by l_partkey desc;");
+    "select l_orderkey, l_partkey, l_suppkey from lineitem where l_orderkey < 50000 "
+    "order by l_partkey desc;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2888,7 +2901,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 {
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_partkey, l_suppkey from lineitem order by l_partkey desc;");
+    "select l_orderkey, l_partkey, l_suppkey from lineitem where l_orderkey < 50000 "
+    "order by l_partkey desc;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2898,7 +2912,7 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
     "select l_orderkey, l_partkey, l_suppkey, l_linenumber, l_quantity "
-    "from lineitem order by l_suppkey;");
+    "from lineitem where l_orderkey < 50000 order by l_suppkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2908,7 +2922,7 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
   con->Query("SET max_sort_partition_bytes = 1024;");
   compare_gpu_vs_cpu(
     "select l_orderkey, l_partkey, l_suppkey, l_linenumber, l_quantity "
-    "from lineitem order by l_suppkey;");
+    "from lineitem where l_orderkey < 50000 order by l_suppkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2929,14 +2943,14 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan lineitem with varchar column",
                  "[integration][gpu_execution][varchar_scan_lineitem]")
 {
-  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;");
+  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem where l_orderkey < 50000;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan lineitem with varchar column parquet",
                  "[integration][gpu_execution][parquet][varchar_scan_lineitem]")
 {
-  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;");
+  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem where l_orderkey < 50000;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2944,7 +2958,8 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "[integration][gpu_execution][order_by][varchar_order]")
 {
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_shipinstruct, l_linenumber from lineitem order by l_orderkey;");
+    "select l_orderkey, l_shipinstruct, l_linenumber from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2952,7 +2967,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "[integration][gpu_execution][parquet][order_by][varchar_order]")
 {
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_shipinstruct, l_linenumber from lineitem order by l_orderkey;");
+    "select l_orderkey, l_shipinstruct, l_linenumber from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
@@ -2960,7 +2976,8 @@ TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "[integration][gpu_execution][order_by][varchar_order]")
 {
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_comment, l_linenumber from lineitem order by l_orderkey;");
+    "select l_orderkey, l_comment, l_linenumber from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
@@ -2968,7 +2985,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "[integration][gpu_execution][parquet][order_by][varchar_order]")
 {
   compare_gpu_vs_cpu(
-    "select l_orderkey, l_comment, l_linenumber from lineitem order by l_orderkey;");
+    "select l_orderkey, l_comment, l_linenumber from lineitem where l_orderkey < 50000 "
+    "order by l_orderkey;");
 }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
