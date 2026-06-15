@@ -3,7 +3,13 @@ sirius:
     num_gpus: 1
   memory:
     gpu:
-      usage_limit_fraction: 0.5
+      # Explicit cap, not a fraction: these integration tests run TPC-H SF0.1 /
+      # ~50k-row sorts whose measured peak GPU pool usage is ~294 MiB (largest
+      # single allocation ~470 MiB). 2 GiB gives ~4x headroom. The previous
+      # usage_limit_fraction (0.5) eagerly reserved ~half the device (~51 GiB on
+      # a 96 GiB card), which both wasted setup time and made the suite OOM-prone
+      # under any concurrent GPU use; the byte cap is applied lazily.
+      usage_limit_bytes: 2 GiB
       reservation_limit_fraction: 1.0
     host:
       capacity_bytes: 32000000000
