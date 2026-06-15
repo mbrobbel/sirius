@@ -473,14 +473,18 @@ class GPUExecutionIcebergFixture : public MultiFormatFixtureBase {
     v1_path   = (root / "test/cpp/integration/data/iceberg_v1").string();
     v2_path   = (root / "test/cpp/integration/data/iceberg_v2_delete").string();
 
-    con->Query("INSTALL iceberg;");
-    auto load_result = con->Query("LOAD iceberg;");
     // Disabled: the legacy scan path (parquet/duckdb/iceberg scan tasks) was
     // removed, so iceberg_scan has no IO backend for delete data
     // ("read_iceberg_delete_data: no IO backend"). Force-skip every iceberg
     // integration case (all gate on iceberg_available, directly or via the
     // derived *_available flags) until iceberg is ported to the GPU scan path.
-    static_cast<void>(load_result);
+    //
+    // We deliberately do NOT `INSTALL iceberg; LOAD iceberg;` here: every test
+    // bails on iceberg_available == false before touching the extension, so the
+    // install/load was pure overhead — and on hosts without network access to
+    // the DuckDB extension repository each fixture construction blocked on a
+    // ~120s INSTALL timeout (x21 disabled cases). Re-add it alongside flipping
+    // iceberg_available to true when the GPU scan path regains iceberg support.
     iceberg_available = false;
   }
 
