@@ -189,8 +189,7 @@ void task_scheduler::drain_after_error()
   SIRIUS_LOG_INFO("task_scheduler: draining after error");
   // Teardown ordering is load-bearing. The scan/gpu executor drains below run
   // in-flight tasks to completion, and a completing task schedules its
-  // downstream consumers via task_creator::schedule() (gpu_pipeline_executor and
-  // duckdb_scan_executor both do this). Each such request holds a raw
+  // downstream consumers via task_creator::schedule(). Each such request holds a raw
   // sirius_physical_operator* owned by the engine, which is destroyed the moment
   // execute() returns. If the task_creator is live (or restarted) while those
   // requests are still in flight, its manager_loop dereferences a freed operator

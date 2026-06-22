@@ -233,12 +233,8 @@ void task_creator::manager_loop()
             port_info.next_operator->get_port(port_info.next_operator_port_name)->repo);
         }
 
-        // Create all possible tasks until all ports are empty
-        // TODO(amin) : do this based on the operator hint
-        // auto is_gpu_parquet_scan = node->type ==
-        // op::SiriusPhysicalOperatorType::GPU_PARQUET_SCAN; std::size_t count =
-        // is_gpu_parquet_scan ? 1 : std::numeric_limits<std::size_t>::max(); need to exhaust
-        // input batches until all ports are empty
+        // Create all possible tasks until all ports are empty.
+        // TODO(amin): cap per-dispatch task creation based on the operator hint.
         while (!node->all_ports_empty()) {
           auto task_lock  = pipeline->get_task_creation_lock();
           auto input_data = node->get_next_task_input_data();

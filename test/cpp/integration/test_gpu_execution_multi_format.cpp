@@ -508,8 +508,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
     WARN("iceberg extension not available — skipping");
     return;
   }
-  // TODO: Re-enable after cpu_source_task fix is merged (byte-range mismatch in parquet_scan_task).
-  WARN("count(*) skipped — pre-existing parquet_scan_task byte-range mismatch bug");
+  // TODO: Re-enable after the CPU_SOURCE/parquet scan byte-range mismatch is fixed.
+  WARN("count(*) skipped — pre-existing parquet scan byte-range mismatch bug");
   return;
 }
 
@@ -544,8 +544,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
     WARN("iceberg extension not available — skipping");
     return;
   }
-  // TODO: Re-enable after cpu_source_task fix is merged (byte-range mismatch in parquet_scan_task).
-  WARN("count(*) skipped — pre-existing parquet_scan_task byte-range mismatch bug");
+  // TODO: Re-enable after the CPU_SOURCE/parquet scan byte-range mismatch is fixed.
+  WARN("count(*) skipped — pre-existing parquet scan byte-range mismatch bug");
   return;
 }
 
@@ -869,8 +869,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergDVFixture,
     WARN("iceberg extension not available — skipping");
     return;
   }
-  // TODO: Re-enable after cpu_source_task fix is merged (byte-range mismatch in parquet_scan_task).
-  WARN("count(*) skipped — pre-existing parquet_scan_task byte-range mismatch bug");
+  // TODO: Re-enable after the CPU_SOURCE/parquet scan byte-range mismatch is fixed.
+  WARN("count(*) skipped — pre-existing parquet scan byte-range mismatch bug");
   return;
 }
 

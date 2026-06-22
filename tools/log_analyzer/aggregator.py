@@ -88,7 +88,7 @@ def build_rows(
 
         # Comma-joined distinct op types in first-seen order. We source from
         # task_outputs (not task_inputs) because scan pipelines like
-        # GPU_PARQUET_SCAN and DUCKDB_SCAN produce data from a source and
+        # GPU_SCAN and DUCKDB_SCAN produce data from a source and
         # therefore emit task_outputs but no task_inputs — sourcing from
         # task_inputs would leave operator_types empty for them.
         seen = []

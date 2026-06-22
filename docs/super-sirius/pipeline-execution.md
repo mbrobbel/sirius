@@ -339,7 +339,7 @@ One `gpu_pipeline_executor` exists per GPU device. It manages a thread pool for 
 
 ### Executor Class Hierarchy
 
-All executors (`gpu_pipeline_executor`, `downgrade_executor`, `duckdb_scan_executor`) inherit from `itask_executor`, which provides shared infrastructure: thread pool, task queue, `_running` flag, and `start/stop/schedule/drain_and_wait` lifecycle methods. Subclasses implement `manager_loop()` (required) and optional hooks `get_per_thread_init`, `on_start`, `on_stop`.
+The GPU and downgrade executors inherit from `itask_executor`, which provides shared infrastructure: thread pool, task queue, `_running` flag, and `start/stop/schedule/drain_and_wait` lifecycle methods. Subclasses implement `manager_loop()` (required) and optional hooks `get_per_thread_init`, `on_start`, `on_stop`. Scan split production is handled separately by `sirius_scan_manager` and `split_provider`.
 
 Concurrency is managed via `exec::bounded_thread_pool`, which uses a two-phase `reserve() -> pool.dispatch(slot, fn)` model with RAII slot release.
 

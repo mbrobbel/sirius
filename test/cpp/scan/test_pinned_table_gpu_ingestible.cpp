@@ -16,8 +16,7 @@
 
 // Unit tests for pinned_table_gpu_ingestible constructor-argument
 // invariants. These guard the contract that the ingestible enforces in
-// each ctor body (replacing the equivalent checks in the deleted
-// cached_split_provider). End-to-end pinned-table behavior is covered by
+// each ctor body. End-to-end pinned-table behavior is covered by
 // the [scan_manager] tests (test_pin_table_multi_gpu.cpp) and TPC-H
 // integration with CALL pin_table().
 

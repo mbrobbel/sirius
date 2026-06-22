@@ -139,8 +139,8 @@ sirius_physical_parquet_scan::sirius_physical_parquet_scan(
         // cudf::string_scalar / numeric_scalar device buffers via
         // cudaMallocAsync on whatever stream it's given; if it uses the
         // default stream, later kernels running on *other* streams (e.g.
-        // filter_row_groups_with_stats using a throwaway `planning_stream` in
-        // parquet_scan_task.cpp) can launch before the alloc event has fired,
+        // filter_row_groups_with_stats using a throwaway planning stream) can
+        // launch before the alloc event has fired,
         // yielding a use-before-alloc stream-ordered race (surfaces as
         // cudaErrorIllegalAddress inside cudf::detail::compute_column_kernel).
         // Confirmed by compute-sanitizer --track-stream-ordered-races=all.

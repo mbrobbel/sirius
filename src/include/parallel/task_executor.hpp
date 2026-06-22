@@ -38,8 +38,8 @@ namespace parallel {
 /**
  * @brief Abstract base class for all task executors.
  *
- * Holds the common infrastructure shared by gpu_pipeline_executor,
- * duckdb_scan_executor, and downgrade_executor:
+ * Holds the common infrastructure shared by gpu_pipeline_executor and
+ * downgrade_executor:
  *   - a bounded_thread_pool for concurrency control and task execution
  *   - an inspectable MPSC task queue
  *   - a manager thread that drives the dispatch loop

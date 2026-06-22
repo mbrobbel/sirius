@@ -13,15 +13,15 @@ graph TD
     ENGINE -->|"execute"| PE["task_scheduler"]
 
     PE --> GPE["gpu_pipeline_executor(s)"]
-    PE --> SE["duckdb_scan_executor"]
     PE --> TC["task_creator"]
+    ENGINE --> SM["sirius_scan_manager"]
 
-    TC -->|"schedule scan tasks"| SE
     TC -->|"schedule GPU tasks"| GPE
+    SM -->|"produce scan splits"| TC
 
     GPE -->|"memory reservations"| MRM["sirius_memory_reservation_manager"]
-    SE -->|"store scan output"| DRM["shared_data_repository_manager"]
     GPE -->|"consume/produce"| DRM
+    SM -->|"I/O backends"| IO["sirius_ioctx / datasource"]
 
     DE["downgrade_executor(s)"] -->|"monitor pressure"| MRM
     DE -->|"move GPU→Host"| DRM
@@ -31,6 +31,7 @@ graph TD
         DRM
         PE
         TC
+        SM
         DE
     end
 ```
@@ -140,6 +141,7 @@ A query through Super Sirius follows these steps:
 | `src/include/pipeline/task_scheduler.hpp` | Top-level executor |
 | `src/include/pipeline/gpu_pipeline_executor.hpp` | Per-GPU task executor |
 | `src/include/creator/task_creator.hpp` | Task creation and scheduling |
-| `src/include/op/scan/duckdb_scan_executor.hpp` | Scan task executor |
+| `src/include/op/scan/sirius_gpu_scan_operator.hpp` | Unified GPU scan operator |
+| `src/include/scan_manager/sirius_scan_manager.hpp` | Scan source registration and split scheduling |
 | `src/include/downgrade/downgrade_executor.hpp` | Memory spilling |
 | `src/include/memory/sirius_memory_reservation_manager.hpp` | Memory management |

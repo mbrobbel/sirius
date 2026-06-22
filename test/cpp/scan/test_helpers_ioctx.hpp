@@ -18,18 +18,11 @@
 
 // Phase 22.1 D-08 / D-09: shared per-GPU sirius_ioctx test helper.
 //
-// Lifted from test/cpp/scan/test_parquet_scan_task.cpp's local definition so
-// that multiple scan-manager test TUs (test_parquet_scan_task.cpp +
-// test_parquet_split_provider.cpp + future fixtures) can construct real
-// per-GPU sirius_ioctx instances without code duplication.
+// Shared per-GPU sirius_ioctx helper for scan-manager and ingestible tests.
 //
-// Phase 22.1 D-08 deletes the unit-test fallback in
-// parquet_split_provider::run_batch (the legacy
-// `else { datasource = cudf::io::datasource::create(file_path); }` branch
-// that bypassed the sirius IO framework). Tests that drive
-// parquet_split_provider in isolation must now seed _gpu_ioctxs via this
-// helper so the production `sirius_ioctx::make_datasource(io_object)` path
-// is the only path exercised in both test and production.
+// Tests that drive parquet ingestibles in isolation seed gpu_ioctxs via this
+// helper so the production `sirius_ioctx::make_datasource(io_object)` path is
+// the only path exercised in both test and production.
 
 // sirius IO framework
 #include <io/types.hpp>
@@ -50,18 +43,14 @@
 namespace sirius::scan_test_utils {
 
 /// Construct per-GPU @c sirius_ioctx instances for tests that directly seed
-/// scan-manager objects (parquet_scan_task_global_state, parquet_split_provider)
-/// with the IO framework (Phase 19 IO-15 / Phase 22.1 D-08).
+/// scan-manager objects with the IO framework (Phase 19 IO-15 / Phase 22.1 D-08).
 ///
 /// Mirrors the per-GPU init pattern used in
 /// @c SiriusContext::initialize() (src/sirius_context.cpp:283) — each
 /// @c uring_ioctx is constructed under @c rmm::cuda_set_device_raii so its
 /// pinned bounce slots bind to the right CUDA context (P11 lock).
 ///
-/// IO-05 / Plan 05-04 adds a mandatory-ioctx throw on empty gpu_ioctxs in
-/// parquet_scan_task_global_state. Phase 22.1 D-08 / D-09 likewise makes
-/// parquet_split_provider::run_batch throw on empty gpu_ioctxs. Tests
-/// constructing either object directly must seed the map via this helper.
+/// Tests constructing parquet ingestibles directly must seed the map via this helper.
 ///
 /// @param n_gpus  Desired GPU count. Clamped down to actual @c cudaGetDeviceCount
 ///                so the helper is safe on 1-GPU hosts (defaults to all visible

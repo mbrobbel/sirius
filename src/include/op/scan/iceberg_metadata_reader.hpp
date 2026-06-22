@@ -121,8 +121,7 @@ std::shared_ptr<const IcebergDeleteData> read_iceberg_delete_data(
  * Walks the flattened schema depth-first and collects field IDs for leaf
  * columns (num_children == 0).  Columns without a field_id are omitted.
  *
- * @param file_meta  Parquet file metadata (from read_parquet_footers or
- *                   parquet_scan_task_global_state::_file_metadatas).
+ * @param file_meta  Parquet file metadata from scan planning.
  * @return Map of column name to Iceberg field ID.
  */
 std::unordered_map<std::string, int32_t> extract_field_id_map(

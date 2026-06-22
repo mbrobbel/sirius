@@ -4501,11 +4501,11 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 }
 
 //===----------------------------------------------------------------------===//
-// cpu_source_task tests — STATISTICS_PROPAGATION / metadata-only queries
+// CPU_SOURCE tests — STATISTICS_PROPAGATION / metadata-only queries
 //
 // When STATISTICS_PROPAGATION is enabled, DuckDB folds ungrouped count(*),
 // MIN, and MAX into constant expressions (EXPRESSION_GET -> DUMMY_SCAN),
-// which the Sirius planner converts to COLUMN_DATA_SCAN -> cpu_source_task.
+// which the Sirius planner converts to COLUMN_DATA_SCAN -> CPU_SOURCE.
 // These tests ensure that path works and doesn't regress.
 //===----------------------------------------------------------------------===//
 

@@ -136,7 +136,7 @@ TEST_CASE("split_connector - multi-producer / multi-consumer preserves all items
           "[scan_manager][split_connector]")
 {
   // The connector is the choke point between N producers (e.g. file batches in
-  // parquet_split_provider) and M consumers (scan operator workers). Verify that
+  // a parquet ingestible) and M consumers (scan operator workers). Verify that
   // every pushed split is delivered exactly once and the consumers terminate
   // after close().
   constexpr int k_producers           = 4;

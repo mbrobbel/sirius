@@ -187,9 +187,9 @@ parquet_bind_result sirius_scan_manager::describe_parquet(std::string const& uri
                              uri);
   }
 
-  // Footer-only fetch + Thrift parse — the same path parquet_split_provider's
-  // run_batch takes on a metadata-cache miss, so bind and scan agree on how
-  // the footer is read.
+  // Footer-only fetch + Thrift parse: the same path parquet_gpu_ingestible
+  // takes on a metadata-cache miss, so bind and scan agree on how the footer is
+  // read.
   auto footer_buffer         = cudf::io::parquet::fetch_footer_to_host(*datasource);
   auto const footer_byte_len = footer_buffer->size();
   auto reader_options        = cudf::io::parquet_reader_options::builder().build();
@@ -396,7 +396,7 @@ void sirius_scan_manager::insert_pinned_entry(
       // Decide which column INDICES are new BEFORE iterating chunks. Doing
       // the contains() check per-chunk would let chunk 0 install a new
       // column and then chunks 1..N-1 see contains()==true and skip — leaving
-      // the new column with only chunk 0 and tripping cached_split_provider's
+      // the new column with only chunk 0 and tripping the pinned-table path's
       // "mismatched chunk count across requested columns" invariant.
       std::vector<bool> is_new_col(column_names.size(), false);
       for (std::size_t i = 0; i < column_names.size(); ++i) {

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-// Unit tests for parquet_gpu_ingestible. These cover the pieces that were
-// previously exercised by test_parquet_split_provider.cpp before step 10
-// deleted the legacy provider:
+// Unit tests for parquet_gpu_ingestible. These cover split-production and
+// reader-filter edge cases:
 //   - FLBA-decimal pushdown probe (DECIMAL(25,2) forces
 //     FIXED_LEN_BYTE_ARRAY physical type; cudf's stats filter cannot
 //     compare against a fixed_point_scalar AST literal, so the ingestible

@@ -170,12 +170,10 @@ class parquet_post_filter_and_projection_info : public io::post_filter_and_proje
  * the file list into per-task batches in its constructor (one batch per
  * @c max_file_processed files). @ref next_split_provider atomically claims
  * the next batch index and returns a callable that runs the footer-read /
- * row-group-pruning / partition-by-bytes work — port of
- * @c parquet_split_provider::run_batch.
+ * row-group-pruning / partition-by-bytes work.
  *
- * @ref materialize_table is the per-task read + filter step (port of
- * @c sirius_gpu_parquet_scan_operator::read_table_from_metadata, minus
- * assembly). @ref post_filter_and_project does assembly only.
+ * @ref materialize_table is the per-task read + filter step.
+ * @ref post_filter_and_project does assembly only.
  */
 class parquet_gpu_ingestible : public io::gpu_ingestible {
  public:

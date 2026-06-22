@@ -47,11 +47,10 @@ struct hive_partition_column {
 namespace sirius {
 
 /**
- * @brief Legacy-path closure: inject constant columns into a GPU table.
+ * @brief Closure that injects constant columns into a GPU table.
  *
- * Used by @c host_parquet_representation and @c parquet_scan_task (and through them, the iceberg
- * scan path). Carries @p file_path because the schema-reconciliation closure
- * (@c parquet_scan_task_global_state::build_schema_reconciliation) keys per-file column-set
+ * Used by @c host_parquet_representation and parquet scan assembly. Carries
+ * @p file_path because schema-reconciliation closures key per-file column-set
  * lookups by path. Simple closures (the standard hive-injection one built by
  * @c build_partition_inject_fn) accept the @p file_path argument but ignore it.
  *

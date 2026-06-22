@@ -210,11 +210,10 @@ TEST_CASE("Sirius configuration loading from file with spaces",
 //           inside cucascade::memory::memory_reservation_manager constructor.
 //    Status: VERIFIED — each GPU space is created with the correct device context.
 //
-// 4. duckdb_scan_executor
-//    File: src/op/scan/duckdb_scan_executor.cpp
-//    Role: Host-side DuckDB scanning. GPU upload goes through converters which
-//          are dispatched in the pipeline executor's GPU context.
-//    Status: N/A — no direct GPU operations; data upload handled by converters.
+// 4. scan_manager / GPU scan operators
+//    Role: Scan-side split production and GPU scan execution. GPU work is
+//          dispatched through the pipeline executor's GPU context.
+//    Status: VERIFIED through the scan-manager and pipeline executor tests.
 //
 // 5. Legacy CUDA wrappers (src/cuda/cudf/*.cu)
 //    Role: Only called from gpu_processing (legacy) path, never from gpu_execution.

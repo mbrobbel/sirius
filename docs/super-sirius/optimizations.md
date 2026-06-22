@@ -180,7 +180,8 @@ Query hash matching detects cache hits. On cache hit (PRELOAD mode), data is loa
 
 **Code path:**
 - `src/include/op/scan/config.hpp` — `cache_level` enum
-- `src/op/scan/duckdb_scan_executor.cpp` — cache/preload logic
+- `src/include/data/cached_data_representation.hpp` — cached table representation
+- `src/op/scan/prefetched_data_source.cpp` — prefetched split data source
 
 **Config:** `scan_cache_level` SET variable
 
@@ -197,7 +198,7 @@ If translation fails, filtering falls back to `gpu_expression_executor` on the d
 
 **Code path:**
 - `src/op/scan/scan_utils.cpp` — `convert_table_filters_to_expression()`, `filter_row_groups_with_stats()`
-- `src/op/scan/parquet_scan_task.cpp` — filter integration in global state initialization
+- `src/op/scan/parquet_gpu_ingestible.cpp` — filter translation, row-group pruning, reader filter installation
 
 ### Batch Coalescing for Small Files (PR #503)
 
@@ -213,20 +214,20 @@ If translation fails, filtering falls back to `gpu_expression_executor` on the d
 
 **Motivation:** Synchronous metadata parsing on the GPU pipeline thread blocks all pipeline tasks until file footers are read, AST filters are translated, and row-group partitions are computed.
 
-**Mechanism:** A dedicated `sirius_scan_manager` runs alongside the GPU executors and owns a thread pool that drives one `split_provider` per parquet scan operator. The provider parses footers (up to 8 files per task by default), translates AST filters, prunes row groups, and pushes `parquet_scan_data` splits into a per-operator `split_connector`. The GPU scan operator's `get_next_task_input_data()` blocks on the connector and returns each split as it arrives, so consumer scheduling is decoupled from production order. Providers are started sequentially in plan order so per-query memory pressure stays bounded.
+**Mechanism:** A dedicated `sirius_scan_manager` runs alongside the GPU executors and owns a thread pool that drives one `split_provider` per GPU scan operator. The provider calls the installed `gpu_ingestible` to parse footers, translate AST filters, prune row groups, and push scan input splits into a per-operator `split_connector`. The GPU scan operator's `get_next_task_input_data()` blocks on the connector and returns each split as it arrives, so consumer scheduling is decoupled from production order. Providers are started sequentially in plan order so per-query memory pressure stays bounded.
 
 **Code path:**
 - `src/scan_manager/sirius_scan_manager.cpp` — manager thread pool, provider registry, sequential driver loop
-- `src/scan_manager/parquet_split_provider.cpp` — metadata parsing, AST filter translation, row-group bundling
+- `src/op/scan/parquet_gpu_ingestible.cpp` — metadata parsing, AST filter translation, row-group bundling
 - `src/scan_manager/split_connector.cpp` — blocking queue between provider and operator
 
 ### Multifile Parquet Splits (PR #738)
 
 **Motivation:** Many small parquet files each yielding a tiny GPU batch causes per-task scheduling and kernel-launch overhead to dominate scan throughput.
 
-**Mechanism:** `parquet_split_provider` coalesces row-group slices from multiple parquet files into a single split when the bundled files share identical hive-partition values (so synthesized partition columns remain scalar). `accum.total_uncompressed_bytes` accumulates across files; a split is emitted once the total exceeds `approximate_batch_size` or partition values change. The downstream `cudf::io::read_parquet` reads from all bundled files in one invocation.
+**Mechanism:** `parquet_gpu_ingestible::run_batch()` coalesces row-group slices from multiple parquet files into a single split when the bundled files share identical hive-partition values (so synthesized partition columns remain scalar). `accum.total_uncompressed_bytes` accumulates across files; a split is emitted once the total exceeds `approximate_batch_size` or partition values change. The downstream `cudf::io::read_parquet` reads from all bundled files in one invocation.
 
-**Code path:** `src/scan_manager/parquet_split_provider.cpp` — `run_batch()` accumulator
+**Code path:** `src/op/scan/parquet_gpu_ingestible.cpp` — `run_batch()` accumulator
 
 **Config:** `scan_task_batch_size` (default: 512 MB) is forwarded as `approximate_batch_size` to the provider.
 

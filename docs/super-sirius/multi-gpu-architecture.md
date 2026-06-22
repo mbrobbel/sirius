@@ -122,11 +122,11 @@ The pin pipeline (`src/scan_manager/`):
 
 Repeat invocations of `pin_table('lineitem', ...)` are idempotent — duplicates dropped, existing `chunk_memory_spaces` preserved (Phase 22 Pitfall 3 invariant: any merge must verify `chunk_memory_spaces` integrity).
 
-When the new HOST-tier pinning path is used (`2e197c6` upstream feature, integrated in Phase 24), `pin_table` constructs a `cucascade::host_data_representation` and stores it in `pinned_entry`'s host-mode slot; subsequent scans go through a host-mode `cached_split_provider` that slices the host chunks per query and converts back to GPU only when a scan task starts. The GPU-tier and HOST-tier pinning paths coexist as parallel code paths — both maintain the `chunk_memory_spaces` invariant.
+When the new HOST-tier pinning path is used (`2e197c6` upstream feature, integrated in Phase 24), `pin_table` constructs a `cucascade::host_data_representation` and stores it in `pinned_entry`'s host-mode slot; subsequent scans go through `pinned_table_gpu_ingestible`, which slices the host chunks per query and converts back to GPU only when a scan task starts. The GPU-tier and HOST-tier pinning paths coexist as parallel code paths — both maintain the `chunk_memory_spaces` invariant.
 
 ## Scan-Time: Routing to the Right GPU
 
-When a query selects from a pinned table, the `cached_split_provider` walks `pinned_entry`'s chunks. For each chunk:
+When a query selects from a pinned table, `pinned_table_gpu_ingestible` walks `pinned_entry`'s chunks. For each chunk:
 
 1. **Look up the chunk's owning memory_space** from `chunk_memory_spaces[i]`.
 2. **Create a scan task** carrying the chunk plus the memory_space.
@@ -183,7 +183,7 @@ The Sirius path:
 3. **Schemes are resolved through `datasource_registry_`.** A scan task that wants to read `file:///path/to/x.parquet` passes the URL to the registry, which returns a factory bound to the per-GPU `sirius_ioctx`. No silent fallback.
 4. **Pin-table chunk reads route through the owning GPU's ioctx.** Chunk `i` reads through `gpu_ioctxs_.at(chunk_memory_spaces[i]->get_device_id())`. The read lands directly in the target GPU's pinned memory region.
 
-The 7 historical sites that bypassed this contract (kvikio-fallback in `sirius_gpu_parquet_scan_operator`, `sirius_extension`, `iceberg_metadata_reader`, `datasource_factory`, `parquet_split_provider`) were all migrated to `sirius_ioctx::make_datasource` over Phase 22.1; the remaining `cudf::io::datasource::create` callsites are reached only under the single-GPU `use_sirius_datasource=false` opt-out.
+The historical sites that bypassed this contract (the old parquet GPU scan operator, `sirius_extension`, `iceberg_metadata_reader`, `datasource_factory`, and the old parquet split provider) were all migrated to `sirius_ioctx::make_datasource` over Phase 22.1; the remaining `cudf::io::datasource::create` callsites are reached only under the single-GPU `use_sirius_datasource=false` opt-out.
 
 ## Memory Pressure: Reservations and Downgrade
 
@@ -229,11 +229,11 @@ After a downgrade frees enough space, the rescheduled task retries. The reservat
 | `src/sirius_context.{hpp,cpp}` | `SiriusContext`, per-GPU initialization, datasource registry |
 | `src/memory/sirius_memory_reservation_manager.{hpp,cpp}` | Extends `cucascade::memory_reservation_manager`; sets cudf device resource refs per GPU; synchronizes on destruction |
 | `src/include/scan_manager/sirius_scan_manager.hpp` | `pinned_entry`, `chunk_memory_spaces` invariant |
-| `src/scan_manager/parquet_split_provider.cpp` + `cached_split_provider.cpp` | Per-chunk memory_space lookup, GPU-mode + host-mode split providers |
+| `src/op/scan/parquet_gpu_ingestible.cpp` + `pinned_table_gpu_ingestible.cpp` | Per-chunk memory-space lookup for parquet and pinned-table scan sources |
 | `src/io/datasource_factory.{hpp,cpp}` | Strict scheme registry; routes every resolved URI through a registered `sirius_ioctx`. Used when `use_sirius_datasource=true` (always in multi-GPU). |
 | `src/io/uring/uring_reactor.cpp` | Per-GPU `uring_reactor` with RAII `cudaSetDevice` |
-| `src/op/scan/sirius_gpu_parquet_scan_operator.cpp` | Multi-GPU-aware GPU parquet scan |
-| `src/op/scan/duckdb_scan_executor.cpp` | NUMA-preference reservation requests |
+| `src/op/scan/sirius_gpu_scan_operator.cpp` | Multi-GPU-aware unified GPU scan |
+| `src/scan_manager/sirius_scan_manager.cpp` | Scan source registration, GPU binding, and split scheduling |
 | `src/include/pipeline/gpu_pipeline_task.hpp` | `preferred_device_id` two-level lookup |
 | `src/pipeline/gpu_pipeline_executor.cpp` + `task_scheduler.cpp` | SCHED-RR distribution, locality scoring |
 | `src/downgrade/downgrade_executor.cpp` | Per-tier downgrade workers, K.6-gated `cudaSetDevice` |

@@ -52,13 +52,8 @@ class balancing_strategy;
  * (first-writer-wins via atomic CAS) is forwarded so consumers see the
  * failure through @ref split_connector::get_next_split.
  *
- * Historical note: this class was abstract pre-gpu_ingestible refactor.
- * Legacy subclasses (parquet_split_provider, duckdb_native_split_provider,
- * cached_split_provider) override @ref has_more_splits and
- * @ref next_split_provider; they are scheduled for deletion in step 10 of
- * the refactor. The default (concrete) construction path takes a
- * @c shared_ptr<io::gpu_ingestible> and uses the base's default
- * implementations to delegate to it.
+ * The concrete construction path takes a @c shared_ptr<io::gpu_ingestible>
+ * and delegates split production to it.
  */
 class split_provider {
  public:

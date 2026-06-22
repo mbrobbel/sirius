@@ -26,6 +26,7 @@ from .validators import FormatWarnings
 SCAN_OP_TYPES = {
     "DUCKDB_SCAN",
     "TABLE_SCAN",
+    "GPU_SCAN",
     "GPU_PARQUET_SCAN",
     "PARQUET_SCAN",
 }

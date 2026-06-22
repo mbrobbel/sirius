@@ -1,27 +1,25 @@
 # Scan Subsystem
 
-This document covers the scan subsystem end-to-end: how data enters Super Sirius from storage through two scan paths, the scan executor, caching, and prefetched data sources.
+This document covers the scan subsystem end-to-end: how data enters Super Sirius from storage through the unified GPU scan path, the scan manager, caching, and prefetched data sources.
 
 ## Overview
 
-Super Sirius supports five scan paths:
+Super Sirius routes table-scan input through these active paths:
 
 | Path | Operator | Use Case | Data Flow |
 |------|----------|----------|-----------|
-| **DuckDB Scan** | `DUCKDB_SCAN` | General DuckDB-managed tables | DuckDB table function → column builders → `host_data_representation` |
-| **Parquet Scan** | `PARQUET_SCAN` | Legacy direct Parquet reading | Parquet byte ranges → `host_parquet_representation` |
-| **GPU Parquet Scan** | `GPU_PARQUET_SCAN` | Parquet file reading via the scan manager (local or S3) | `sirius_scan_manager` produces `parquet_scan_data` splits → GPU read |
-| **GPU DuckDB-Native Scan** | `GPU_DUCKDB_NATIVE_SCAN` | GPU-native `.duckdb` file reading | `sirius_scan_manager` walks per-row-group segment metadata → GPU decode |
-| **Iceberg Scan** | `ICEBERG_SCAN` | Apache Iceberg V1/V2/V3 tables | Parquet scan + GPU-accelerated delete filters |
+| **Unified GPU Scan** | `GPU_SCAN` | Parquet, S3, pinned tables, and DuckDB-native file reading | `sirius_scan_manager` builds a `gpu_ingestible` and `split_provider`; the source operator materializes splits on GPU |
+| **CPU Source** | `CPU_SOURCE` | Pre-computed DuckDB data such as column-data, empty-result, and dummy scans | CPU collection → pipeline source data |
+| **Iceberg Scan** | `ICEBERG_SCAN` | Apache Iceberg V1/V2/V3 tables | Iceberg metadata discovery → GPU parquet ingestible + delete filters |
 
-The DuckDB and legacy parquet paths funnel through `duckdb_scan_executor` and the data-repository infrastructure. The GPU parquet path is driven by `sirius_scan_manager` and a dedicated `split_provider` per scan operator (see [Scan Manager](#scan-manager)).
+The production scan path is driven by `sirius_scan_manager` and a `split_provider` per scan source (see [Scan Manager](#scan-manager)).
 
 ## Scan Operators
 
 ### `sirius_physical_table_scan`
 **File:** `src/include/op/sirius_physical_table_scan.hpp`
 
-Base scan operator wrapping a DuckDB table function. During pipeline construction (`initialize_internal()`), it is converted to either DUCKDB_SCAN or PARQUET_SCAN based on the table function bind data.
+Base scan operator wrapping a DuckDB table function. During pipeline conversion, scan bind data is normalized into a source operator suitable for the current execution path.
 
 Key members:
 - `function` — DuckDB `TableFunction`
@@ -49,56 +47,47 @@ Direct Parquet file scan. Maintains:
 
 Iceberg table scan. Inherits from `sirius_physical_parquet_scan`. Holds delete file lists (`positional_delete_files`, `equality_delete_files`) and routes through the GPU parquet scan pipeline with a post-convert delete filter hook. See [Iceberg Scan](#iceberg-scan) below.
 
-### `sirius_gpu_parquet_scan_operator` — `GPU_PARQUET_SCAN`
-**File:** `src/include/op/scan/sirius_gpu_parquet_scan_operator.hpp`
+### `sirius_gpu_scan_operator` — `GPU_SCAN`
+**File:** `src/include/op/scan/sirius_gpu_scan_operator.hpp`
 
-Source operator for parquet scans. Carries a `scan_info` (concrete subclass: `parquet_scan_info`) populated by the pipeline converter from the DuckDB bind data (file paths, projected column ids, table filters, hive partition indices, target batch size). The operator owns a bound `split_connector`; `get_next_task_input_data()` blocks inside `split_connector::get_next_split()` until either a `parquet_scan_data` is available or the connector is closed and drained.
+Unified source operator for GPU-backed scans. The pipeline converter gives it an `ingestible_table_info` for the table format. During `prepare_for_query`, the scan manager turns that info into a concrete `gpu_ingestible`, binds a `split_connector`, and drives a `split_provider` that pushes split metadata for the operator to consume.
 
-`execute(input_data)` runs per task: it calls `cudf::io::read_parquet` over the row-group slices in the split, optionally applies a fallback expression filter when AST translation failed, prunes pure-filter columns, and assembles the output table according to the `scan_plan` (data columns, hive-partition synthesis, output ordering).
+`execute(input_data)` runs per task: it delegates materialization and post-filter/projection to the installed `gpu_ingestible`, so the operator does not contain format-specific scan logic.
 
 Parquet files on S3 (`s3://…` paths) are routed through the `s3_ioctx` backend automatically — the pipeline converter detects the scheme from the bind data paths and the scan manager selects the appropriate `sirius_ioctx` per GPU device at provider-construction time.
-
-### `sirius_gpu_duckdb_native_scan_operator` — `GPU_DUCKDB_NATIVE_SCAN`
-**File:** `src/include/op/scan/sirius_gpu_duckdb_native_scan_operator.hpp`
-
-Source operator for GPU-native reading of DuckDB `.duckdb` format table entries. Carries a `duckdb_native_scan_info` populated by the pipeline converter. The scan manager walks per-row-group segment metadata once at `prepare_for_query` and emits one split per row-group batch via a `duckdb_native_split_provider`. Each split carries a slice of the row-group metadata vector plus a shared `duckdb_native_scan_info` handle. `execute()` decodes the segments described by the split into a `cudf::table` using the native DuckDB format decode kernels (`duckdb_native_decoder`).
 
 ## Scan Manager
 
 **Files:** `src/include/scan_manager/sirius_scan_manager.hpp`, `src/scan_manager/sirius_scan_manager.cpp`, `src/include/scan_manager/split_provider.hpp`, `src/include/scan_manager/split_connector.hpp`
 
-`sirius_scan_manager` owns a configurable thread pool and is responsible for producing the input splits consumed by every `GPU_PARQUET_SCAN` and `GPU_DUCKDB_NATIVE_SCAN` source operator. It runs alongside the GPU pipeline executors and is independent from the data repository / port machinery used between intermediate operators.
+`sirius_scan_manager` owns a configurable thread pool and is responsible for producing the input splits consumed by every `GPU_SCAN` source operator. It runs alongside the GPU pipeline executors and is independent from the data repository / port machinery used between intermediate operators.
 
 ### Components
 
 | Component | File | Role |
 |-----------|------|------|
 | `sirius_scan_manager` | `scan_manager/sirius_scan_manager.{hpp,cpp}` | Owns thread pool, holds providers and pinned-table entries, drives provider execution |
-| `split_provider` | `scan_manager/split_provider.hpp` | Abstract producer of `operator_data` splits |
-| `scan_info` | `op/scan/scan_info.hpp` | Polymorphic base for per-format scan bind data; subclasses implement `make_provider()` |
-| `parquet_scan_info` | `op/scan/parquet_scan_info.hpp` | Parquet-specific bind data; `make_provider()` returns a `parquet_split_provider` |
-| `duckdb_native_scan_info` | `op/scan/duckdb_native_scan_info.hpp` | DuckDB-format-specific bind data; `make_provider()` returns a `duckdb_native_split_provider` |
-| `parquet_split_provider` | `scan_manager/parquet_split_provider.{hpp,cpp}` | Provider that parses parquet metadata and emits `parquet_scan_data` per row-group partition |
-| `duckdb_native_split_provider` | `scan_manager/duckdb_native_split_provider.{hpp,cpp}` | Provider that walks DuckDB row-group segment metadata and emits splits for native GPU decode |
-| `cached_split_provider` | `scan_manager/cached_split_provider.{hpp,cpp}` | Provider that emits zero-copy splits over pinned columns (see [Pinned Tables](#pinned-tables)) |
+| `split_provider` | `scan_manager/split_provider.hpp` | Drives a `gpu_ingestible` and pushes `operator_data` splits |
+| `gpu_ingestible_factory` | `scan_manager/gpu_ingestible_factory.hpp` | Matches pinned entries or dispatches to the format-specific ingestible factory |
+| `gpu_ingestible` | `io/gpu_ingestible.hpp` | Per-format split production and materialization interface |
 | `split_connector` | `scan_manager/split_connector.hpp` | Lock-protected blocking queue between the provider and the operator |
 
 ### Lifecycle
 
-1. **Plan stage:** during pipeline conversion, `split_parquet_scan_source` packages the DuckDB bind data into a `scan_info` concrete subclass (`parquet_scan_info` for parquet / S3 paths, `duckdb_native_scan_info` for DuckDB-format tables) and constructs the corresponding source operator carrying that info. The operator is inserted at `operators[0]` of the pipeline; no separate metadata pipeline is created.
-2. **Per-query preparation:** `sirius_scan_manager::prepare_for_query(query)` walks the plan, picks each scan source, and calls `create_provider_for(op)`. For parquet scans the factory checks for a pinned-table cache hit first and returns a `cached_split_provider` on match; otherwise it calls `scan_info::make_provider()` to build the format-specific provider. A fresh `split_connector` is bound to the operator and the provider is stored in the manager's map.
-3. **Execution:** a driver thread runs providers **sequentially** in registration order. Each provider's `start(pool, connector)` schedules work onto the manager's thread pool and returns a future; the driver waits on it before starting the next provider. Inside the operator, `get_next_task_input_data()` blocks on `split_connector::get_next_split()` and returns each split as it arrives, so consumer-side scheduling is decoupled from production order.
+1. **Plan stage:** during pipeline conversion, table-scan bind data is packaged into an `ingestible_table_info` and attached to a `sirius_gpu_scan_operator`. The operator is inserted at `operators[0]` of the pipeline; no separate metadata pipeline is created.
+2. **Per-query preparation:** `sirius_scan_manager::prepare_for_query(query)` walks the plan, picks each scan source, and uses `gpu_ingestible_factory` to build the source ingestible. The factory checks for a pinned-table cache hit first and returns a `pinned_table_gpu_ingestible` on match; otherwise it dispatches to the format-specific ingestible factory. A fresh `split_connector` is bound to the operator and the provider is stored in the manager's map.
+3. **Execution:** a driver thread runs providers in registration order. Each provider schedules split-production work onto the manager's thread pool. Inside the operator, `get_next_task_input_data()` blocks on `split_connector::get_next_split()` and returns each split as it arrives, so consumer-side scheduling is decoupled from production order.
 4. **Teardown:** the provider closes the connector on every termination path (success, exception); on synchronous failure the manager closes it as a safety net. Once closed and drained, the operator's `all_ports_empty()` returns true and `get_next_task_hint()` returns `nullopt`.
 
-### `parquet_split_provider`
+### Parquet Split Production
 
-`start()` iterates over the file list in `_max_file_processed`-sized batches (default 8). Each batch:
+`parquet_gpu_ingestible::next_split_provider()` iterates over the file list in `max_file_processed`-sized batches. Each batch:
 
 1. Fetches parquet footers via `cudf::io::parquet::fetch_footer_to_host()`.
 2. Translates the cached DuckDB filter expression into a cuDF AST on a task-local CUDA stream (filter translation is deferred from construction so each task gets its own stream).
 3. Prunes row groups by min/max statistics (`filter_row_groups_with_stats`).
 4. Bundles row-group slices into partitions of approximately `approximate_batch_size` uncompressed bytes. Multiple files with identical hive-partition values may be coalesced into a single partition (see [Multifile Bundling](#multifile-bundling)).
-5. Pushes one `parquet_scan_data` per partition into the connector. Each split carries the row-group slices, the reader options, the AST filter (if translated), and a `shared_ptr<const scan_plan>`.
+5. Pushes one `scan_operator_input` per partition into the connector. Each split carries a `parquet_split_info` with the row-group slices, reader options, pushdown state, hive partition values, and a `shared_ptr<const scan_plan>`.
 
 ### `scan_plan`
 
@@ -128,17 +117,17 @@ For `SELECT *` with no partitions and no pure-filter columns, `build_inject_fn()
 
 ### Multifile Bundling
 
-When many small parquet files each yield a small batch, scheduling and kernel-launch overhead dominates. `parquet_split_provider` coalesces row-group slices from **multiple files** into a single split as long as the bundled files share identical hive-partition values (so the synthesized partition columns remain scalar). `accum.total_uncompressed_bytes` accumulates across files; a split is emitted once it exceeds `approximate_batch_size` or partition values change. The downstream `cudf::io::read_parquet` call reads from all bundled files in one invocation.
+When many small parquet files each yield a small batch, scheduling and kernel-launch overhead dominates. `parquet_gpu_ingestible::run_batch()` coalesces row-group slices from **multiple files** into a single split as long as the bundled files share identical hive-partition values (so the synthesized partition columns remain scalar). `accum.total_uncompressed_bytes` accumulates across files; a split is emitted once it exceeds `approximate_batch_size` or partition values change. The downstream `cudf::io::read_parquet` call reads from all bundled files in one invocation.
 
 ### Column Mapping
 
-Parquet column-chunk order is not guaranteed to match DuckDB's logical column order. `parquet_split_provider` builds a name-based DuckDB→parquet mapping via `parquet_schema_mapping::leaf_indices_for_column(schema, column_name)`, which walks the parquet schema's `path_in_schema` (case-insensitive, mirroring DuckDB).
+Parquet column-chunk order is not guaranteed to match DuckDB's logical column order. `parquet_gpu_ingestible` builds a name-based DuckDB→parquet mapping via `parquet_schema_mapping::leaf_indices_for_column(schema, column_name)`, which walks the parquet schema's `path_in_schema` (case-insensitive, mirroring DuckDB).
 
 For nested types (`STRUCT`, `LIST`), one DuckDB column maps to multiple parquet leaf chunks; the mapping returns all leaves under the top-level column name. The cuDF parquet reader, given a top-level column name, materializes the nested `cudf::column` natively without post-read reassembly.
 
 ## Pinned Tables
 
-**Files:** `src/include/pin_table.hpp`, `src/pin_table.cpp`, `src/include/scan_manager/cached_split_provider.hpp`
+**Files:** `src/include/pin_table.hpp`, `src/pin_table.cpp`, `src/include/op/scan/pinned_table_gpu_ingestible.hpp`, `src/op/scan/pinned_table_gpu_ingestible.cpp`
 
 The `pin_table` table function lets users pre-load a parquet table's columns into GPU memory (or, in the future, host memory) so subsequent scans of the same path bypass file I/O entirely.
 
@@ -158,126 +147,20 @@ CALL unpin_table('lineitem');
 
 `tier` accepts `gpu` (columns pinned to GPU device memory) or `host` (columns pinned to host memory). In both cases subsequent scans of the same paths are served from the pinned columns without file I/O.
 
-A `pinned_entry` stores the column projection, resolved file paths, per-column chunk vectors, and the memory space the columns reside in. When `prepare_for_query` runs, the scan manager matches the operator's `parquet_scan_info::file_paths` against pinned entries; on a hit, it constructs a `cached_split_provider` (zero-copy view-backed `data_batch` per chunk) instead of a `parquet_split_provider`. The cached provider forwards the same `scan_plan` and filter expression as the parquet path, so the operator's `execute()` is unchanged. When `needs_output_assembly(*plan)` is false (identity layout), the cached batch is forwarded straight through with no permute or prune.
+A `pinned_entry` stores the column projection, resolved file paths, per-column chunk vectors, and the memory space the columns reside in. When `prepare_for_query` runs, the scan manager matches the operator's `ingestible_table_info::file_paths()` against pinned entries; on a hit, it constructs a `pinned_table_gpu_ingestible` instead of a fresh file-reading ingestible. The pinned ingestible emits zero-copy view-backed `data_batch` inputs when possible and forwards the same `scan_plan` and filter expression as the parquet path, so the operator's `execute()` uses the same post-filter/projection surface.
 
 `insert_pinned_entry` supports re-pinning: if an entry exists with the same row count, only new columns are merged in (duplicates dropped); a different row count drops and replaces the entry.
 
-## DuckDB Scan Task
+## GPU Ingestibles
 
-**File:** `src/op/scan/duckdb_scan_task.cpp`, `src/include/op/scan/duckdb_scan_task.hpp`
+**Files:** `src/include/io/gpu_ingestible.hpp`, `src/io/gpu_ingestible.cpp`
 
-### Global State
+`gpu_ingestible` is the scan-format interface used by the unified GPU scan operator:
+- `has_more_splits()` / `next_split_provider()` produce split metadata.
+- `materialize_table()` reads or decodes one split into GPU-resident data.
+- `post_filter_and_project()` applies scan-local filter/projection work.
 
-`duckdb_scan_task_global_state`:
-- Manages DuckDB table function global state
-- Thread-safe shared state across all scan tasks
-- `MaxThreads()` — maximum concurrent scan threads
-- `is_source_drained()` — checks if all local states are complete
-- Filters are NOT passed to DuckDB (applied by `sirius_physical_table_scan` instead)
-
-### Local State
-
-`duckdb_scan_task_local_state`:
-- Maintains per-task state with target batch size (`DEFAULT_SCAN_TASK_BATCH_SIZE`)
-- **Column builder** — nested struct managing memory for individual columns:
-  - Fixed-width types: data array + validity mask
-  - VARCHAR: offset array + data + validity mask
-  - Uses `multiple_blocks_allocation_accessor` for writing
-  - 8-byte aligned column starts
-- Row estimation based on:
-  - Actual width of fixed-width types
-  - Default VARCHAR width (`DEFAULT_SCAN_TASK_VARCHAR_SIZE`)
-  - Per-column validity mask bits (1 bit per row, rounded up)
-
-### Execution Flow
-
-```
-1. get_next_chunk() → fetch from DuckDB table function
-2. chunk_fits() → check if data fits in pre-allocated buffers
-3. process_chunk() → write chunk into column builders
-4. Repeat until target batch size reached or source drained
-5. Build host_data_representation from column builders
-6. If scan incomplete: create next scan task (self-scheduling)
-```
-
-## Parquet Scan Task
-
-**File:** `src/op/scan/parquet_scan_task.cpp`, `src/include/op/scan/parquet_scan_task.hpp`
-
-### Global State
-
-`parquet_scan_task_global_state`:
-- Reads Parquet footers at construction via `cudf::io::parquet::fetch_footer_to_host()`
-- Extracts file paths, sizes, footer offsets from DuckDB `MultiFileBindData`
-- Computes compressed/uncompressed byte sizes per row group
-- Partitions row groups into scan tasks: groups by accumulated uncompressed bytes where each partition ≈ target batch size
-- Atomic counter `_next_rg_partition` for lock-free task scheduling
-- Supports rebinding for cache reuse across query re-executions
-- Only supports flat schemas (no nested columns)
-
-### Local State
-
-`parquet_scan_task_local_state`:
-- Stores file index and row group indices for this task
-- Reserves both compressed bytes (for allocation) and uncompressed bytes (metadata)
-
-### Execution Flow
-
-```
-1. Construct byte ranges covering:
-   - Parquet header (4 bytes PAR1 magic)
-   - Column chunk byte ranges for selected row groups
-   - Parquet footer + trailer
-2. Allocate into chunked host memory
-3. Read byte ranges asynchronously via host_read_async()
-4. Wait for all read futures
-5. Build host_parquet_representation wrapping:
-   - Cached allocation, hybrid scan reader, reader options
-   - Row group indices, byte ranges, file metadata
-6. Optional materialization: if enabled, decompress Parquet → GPU table → host table
-7. Wrap in cached_*_representation if caching enabled
-```
-
-## Scan Executor
-
-**File:** `src/op/scan/duckdb_scan_executor.cpp`, `src/include/op/scan/duckdb_scan_executor.hpp`
-
-### Thread Model
-
-- **Manager thread**: consumes scan tasks from queue, acquires kiosk tickets, submits to thread pool
-- **Worker thread pool** (default: 4 threads): executes scan tasks concurrently
-- **CUDA stream pool**: exclusive streams per thread for async Host→Device transfers
-
-### Manager Loop
-
-```
-while running:
-    1. kiosk.acquire()              -- wait for worker availability
-    2. task_queue.pop() or:
-       - Try non-blocking pop first
-       - If empty: submit scan task request to pipeline executor
-       - Then blocking pop
-    3. For parquet scans: acquire HOST memory reservation
-    4. Dispatch to thread pool:
-       a. Acquire CUDA stream
-       b. get_scan_output() — applies caching logic
-       c. scan_task->publish_output() — store to data repository
-       d. Schedule output consumers via task_creator
-```
-
-### Cache Handling
-
-`get_scan_output()` applies caching logic based on mode:
-
-| Mode | Behavior |
-|------|----------|
-| CACHE (first run) | Execute scan, save result to cache |
-| PRELOAD (cache hit) | Load from cache, clone if needed |
-
-Cloning logic:
-- `TABLE_GPU` cache level: return original (GPU-resident, no copy)
-- Other levels: clone batch to avoid sharing cache data
-- Parquet: `shallow_clone()` — increments refcount, zero-copy
+Concrete ingestibles cover parquet, DuckDB-native, and pinned-table scans.
 
 ## Caching Mechanism
 
@@ -300,7 +183,7 @@ Cache decoded table in GPU memory. Fastest — no data movement needed for GPU e
 ## Data Representations
 
 ### `host_data_representation`
-Fixed-width columnar data in host memory. Created directly by `duckdb_scan_task` from DuckDB chunks via column builders.
+Fixed-width columnar data in host memory. Used by CPU-side and cached representations before conversion to GPU batches.
 
 ### `host_parquet_representation`
 Raw Parquet bytes in host memory with deferred decompression. Contains:
@@ -407,10 +290,10 @@ The path from SQL to S3 reads:
 SELECT * FROM read_parquet('s3://bucket/key.parquet')
 ```
 
-1. Pipeline converter detects `s3://` prefix in bind data paths; sets scan_info to a `parquet_scan_info` with the S3 paths.
-2. `sirius_scan_manager::prepare_for_query` calls `scan_info::make_provider()` which builds a `parquet_split_provider` backed by an `s3_ioctx`.
+1. Pipeline converter detects `s3://` prefix in bind data paths; stores the resolved paths in `parquet_ingestible_table_info`.
+2. `sirius_scan_manager::prepare_for_query` builds a `parquet_gpu_ingestible` backed by an `s3_ioctx`.
 3. The scan manager selects the per-GPU `s3_ioctx` via `gpu_ioctxs` map (injected at initialization from `SiriusContext`).
-4. `parquet_split_provider` fetches parquet footers via the `s3_ioctx`, then produces `parquet_scan_data` splits served from S3 range GETs.
+4. `parquet_gpu_ingestible` fetches parquet footers via the `s3_ioctx`, then produces scan splits served from S3 range GETs.
 5. Each split's `cudf::io::read_parquet` call uses a `sirius_datasource` backed by `s3_ioctx`, routing every read through libcurl.
 
 `s3_ioctx_config` controls authentication, connection limits, per-call timeout, retry count and backoff, and optional host-memory staging (FSMR-backed bounded staging buffer for device reads).
@@ -442,11 +325,11 @@ SELECT * FROM read_parquet('s3://bucket/key.parquet')
 
 When filter pushdown is enabled and the `gpu_expression_translator` successfully converts DuckDB `TableFilterSet` filters into a cuDF AST, two optimizations activate:
 
-1. **Row group statistics pruning:** `parquet_split_provider::run_batch` calls `filter_row_groups_with_stats()` on each fetched footer; row groups whose Parquet column min/max statistics cannot match the filter are dropped before any read is scheduled. Pure hive-partition filters are dropped during plan construction since hive columns aren't in the parquet file.
+1. **Row group statistics pruning:** `parquet_gpu_ingestible::run_batch()` calls `filter_row_groups_with_stats()` on each fetched footer; row groups whose Parquet column min/max statistics cannot match the filter are dropped before any read is scheduled. Pure hive-partition filters are dropped during plan construction since hive columns aren't in the parquet file.
 
 2. **Reader-level filter pushdown:** The cuDF AST is set on `parquet_reader_options` via `set_filter()`, so cuDF applies the filter inside `read_parquet`. The `TABLE_SCAN` operator is set to passthrough (`passthrough = true`) since filtering is already done by the reader.
 
-If AST translation fails (e.g., unsupported expression types), `GPU_PARQUET_SCAN`'s `execute()` runs the cached DuckDB filter expression through `gpu_expression_executor` on the decoded batch.
+If AST translation fails (e.g., unsupported expression types), the GPU scan path runs the cached DuckDB filter expression through `gpu_expression_executor` on the decoded batch.
 
 **Filter translation path:** `TableFilterSet` → `convert_table_filters_to_expression()` (skips `OPTIONAL_FILTER`, `IS_NOT_NULL`, and partition-column filters) → `gpu_expression_translator` → cuDF AST tree.
 
@@ -454,7 +337,7 @@ If AST translation fails (e.g., unsupported expression types), `GPU_PARQUET_SCAN
 
 When many small files each produce a tiny GPU batch, per-task scheduling and kernel-launch overhead dominates. Two mechanisms address this depending on the scan path:
 
-1. **Multifile bundling in `parquet_split_provider`** (GPU_PARQUET_SCAN): a single split may bundle row-group slices from multiple parquet files when those files share the same hive-partition values, up to `approximate_batch_size` uncompressed bytes. The downstream `cudf::io::read_parquet` call reads the bundled slices in one invocation.
+1. **Multifile bundling in `parquet_gpu_ingestible`** (`GPU_SCAN`): a single split may bundle row-group slices from multiple parquet files when those files share the same hive-partition values, up to `approximate_batch_size` uncompressed bytes. The downstream `cudf::io::read_parquet` call reads the bundled slices in one invocation.
 
 2. **Post-read coalescing in `sirius_physical_table_scan`** (DUCKDB_SCAN): `get_next_task_input_data()` pops batches in a loop until `accumulated_bytes >= scan_task_batch_size` OR `batch_count >= 32`, returning a `pipelineable_operator_data` wrapping the accumulated batches. `execute()` then calls `cudf::concatenate()` before filtering/projecting.
 
@@ -462,7 +345,7 @@ When the GPU parquet scan applies filter+projection via the cuDF reader (passthr
 
 ## Iceberg Scan
 
-**File:** `src/include/op/sirius_physical_iceberg_scan.hpp`, `src/op/scan/iceberg_scan_task.cpp`
+**Files:** `src/include/op/sirius_physical_iceberg_scan.hpp`, `src/op/scan/iceberg_metadata_reader.cpp`, `src/op/scan/iceberg_delete_pipeline.cpp`
 
 `sirius_physical_iceberg_scan` inherits from `sirius_physical_parquet_scan` and adds support for Iceberg V1, V2, and V3 tables.
 
@@ -480,7 +363,7 @@ When the GPU parquet scan applies filter+projection via the cuDF reader (passthr
 
 ### Architecture
 
-- `iceberg_scan_task_global_state` inherits from `parquet_scan_task_global_state`. Its `build_delete_pipeline()` reads delete files (manifest discovery delegates to DuckDB's `iceberg_metadata()`; the custom Avro reader in `iceberg_avro_reader.cpp` is the fallback for V3 deletion-vector PUFFIN files) and installs a composed `iceberg_delete_pipeline` as a `post_convert_fn_t` hook.
+- Iceberg manifest discovery delegates to DuckDB's `iceberg_metadata()`; the custom Avro reader in `iceberg_avro_reader.cpp` is the fallback for V3 deletion-vector PUFFIN files. Delete handling is composed through `iceberg_delete_pipeline`.
 - The `post_convert_fn_t` hook fires after each row-group batch is decompressed to a `cudf::table`, applying all delete filters in-place with zero `cudaMemcpy D2H` in the hot path.
 - Equality-delete key columns not in the user's projection are force-projected at read time, then stripped via zero-copy `release()` + truncate after all filters run, so downstream operators see only the requested columns.
 - Equality deletes apply only to data files whose sequence number is less than the delete group's, mirroring Iceberg's snapshot semantics.
@@ -489,34 +372,26 @@ When the GPU parquet scan applies filter+projection via the cuDF reader (passthr
 
 ```mermaid
 graph TD
-    TS[sirius_physical_table_scan] -->|"convert"| GPS[GPU_PARQUET_SCAN]
-    TS -->|"or"| DS[DUCKDB_SCAN]
+    TS[sirius_physical_table_scan] -->|"convert"| GPS[GPU_SCAN]
     TS -->|"or"| IS[ICEBERG_SCAN]
 
-    SM[sirius_scan_manager] -->|"build provider"| PSP[parquet_split_provider]
-    SM -->|"on pinned-table hit"| CSP[cached_split_provider]
+    SM[sirius_scan_manager] -->|"build ingestible"| GIF[gpu_ingestible_factory]
+    GIF -->|"fresh read"| GI[gpu_ingestible]
+    GIF -->|"pinned hit"| PI[pinned_table_gpu_ingestible]
+    SM -->|"drive"| SP[split_provider]
 
-    PSP -->|"push split"| SC["split_connector<br/>(per operator)"]
-    CSP -->|"push split"| SC
+    GI --> SP
+    PI --> SP
+    SP -->|"push split"| SC["split_connector<br/>(per operator)"]
     SC -->|"get_next_split()"| GPS
 
-    DS -->|"task_creator.schedule()"| TC[task_creator]
     IS -->|"task_creator.schedule()"| TC
     GPS -->|"task_creator.schedule()"| TC
 
-    TC -->|"create task"| DST[duckdb_scan_task]
-    TC -->|"create task"| GPT["gpu_pipeline_task<br/>(reads parquet_scan_data)"]
-    TC -->|"create task"| IST["iceberg_scan_task<br/>(parquet + delete filters)"]
+    TC -->|"create task"| GPT["gpu_pipeline_task<br/>(reads scan split)"]
 
-    DST -->|"dispatch"| SE[duckdb_scan_executor]
-    IST -->|"dispatch"| SE
+    GPT -->|"execute on GPU executor"| GPS2["materialize_table → post_filter_and_project → gpu_table_representation"]
 
-    SE -->|"execute on worker"| DST2[DuckDB table function → column builders → host_data_representation]
-    SE -->|"execute on worker"| IST2["Parquet reads → GPU delete filters → host_parquet_representation"]
-    GPT -->|"execute on GPU executor"| GPS2["cudf::io::read_parquet → scan_plan assembly → gpu_table_representation"]
-
-    DST2 -->|"publish"| DR[data_repository]
-    IST2 -->|"publish"| DR
     GPS2 -->|"to next operator"| DR
 
     DR -->|"consumed by"| GPT2[gpu_pipeline_task]
@@ -526,39 +401,35 @@ graph TD
 
 | File | Purpose |
 |------|---------|
-| `src/op/scan/duckdb_scan_task.cpp` | DuckDB scan implementation |
-| `src/include/op/scan/duckdb_scan_task.hpp` | DuckDB scan task, column builders |
-| `src/op/scan/parquet_scan_task.cpp` | Legacy parquet scan implementation |
-| `src/include/op/scan/parquet_scan_task.hpp` | Legacy parquet scan task, row group partitioning |
-| `src/op/scan/duckdb_scan_executor.cpp` | Scan executor manager loop |
-| `src/include/op/scan/duckdb_scan_executor.hpp` | Scan executor interface |
-| `src/op/scan/prefetched_data_source.cpp` | Legacy cached datasource for cuDF |
-| `src/include/op/scan/prefetched_data_source.hpp` | Legacy cached datasource interface |
+| `src/include/op/scan/sirius_gpu_scan_operator.hpp` | Unified GPU scan source operator |
+| `src/op/scan/sirius_gpu_scan_operator.cpp` | GPU scan source execution |
+| `src/include/op/scan/sirius_gpu_scan_operator_data.hpp` | Scan split operator-data types |
+| `src/include/io/gpu_ingestible.hpp` | Per-format scan ingestible interface |
+| `src/io/gpu_ingestible.cpp` | Ingestible factory dispatch |
+| `src/include/op/scan/parquet_gpu_ingestible.hpp` | Parquet ingestible interface |
+| `src/op/scan/parquet_gpu_ingestible.cpp` | Parquet metadata and split materialization |
+| `src/include/op/scan/duckdb_native_gpu_ingestible.hpp` | DuckDB-native ingestible interface |
+| `src/op/scan/duckdb_native_gpu_ingestible.cpp` | DuckDB-native split materialization |
+| `src/include/op/scan/pinned_table_gpu_ingestible.hpp` | Pinned-table ingestible interface |
+| `src/op/scan/pinned_table_gpu_ingestible.cpp` | Pinned-table split materialization |
+| `src/op/scan/prefetched_data_source.cpp` | Cached datasource for cuDF |
+| `src/include/op/scan/prefetched_data_source.hpp` | Cached datasource interface |
 | `src/op/scan/cached_ranges.cpp` | Byte range coalescing and lookup |
 | `src/include/op/scan/cached_ranges.hpp` | Cache range structure |
 | `src/include/op/scan/config.hpp` | Scan config, cache_level enum |
-| `src/include/op/scan/sirius_gpu_parquet_scan_operator.hpp` | GPU parquet scan source operator |
-| `src/include/op/scan/sirius_gpu_duckdb_native_scan_operator.hpp` | GPU DuckDB-native scan source operator |
-| `src/include/op/scan/scan_info.hpp` | Polymorphic base for per-format scan bind data |
-| `src/include/op/scan/parquet_scan_info.hpp` | Parquet-specific scan bind data (concrete `scan_info`) |
-| `src/include/op/scan/duckdb_native_scan_info.hpp` | DuckDB-format-specific scan bind data (concrete `scan_info`) |
 | `src/include/op/scan/duckdb_native_metadata.hpp` | DuckDB row-group segment metadata walker |
 | `src/include/op/scan/duckdb_native_decoder.hpp` | DuckDB format GPU decode kernels |
-| `src/include/op/scan/parquet_scan_operator_data.hpp` | `parquet_scan_data` split type emitted by providers |
 | `src/include/op/scan/scan_plan.hpp` | Index-space mapping (P/C/D), output layout, partition injection |
 | `src/include/op/scan/parquet_schema_mapping.hpp` | Name-based DuckDB→parquet column resolution |
 | `src/include/scan_manager/sirius_scan_manager.hpp` | Scan manager: thread pool, providers, pinned-table registry |
+| `src/include/scan_manager/gpu_ingestible_factory.hpp` | Ingestible selection and pinned-table matching |
 | `src/include/scan_manager/split_provider.hpp` | Abstract split producer |
-| `src/include/scan_manager/parquet_split_provider.hpp` | Parquet metadata-driven split provider |
-| `src/include/scan_manager/duckdb_native_split_provider.hpp` | DuckDB-native metadata-driven split provider |
-| `src/include/scan_manager/cached_split_provider.hpp` | Pinned-column split provider |
 | `src/include/scan_manager/split_connector.hpp` | Blocking queue between provider and operator |
 | `src/include/io/s3/s3_ioctx.hpp` | S3 ioctx: libcurl HTTP Range GET backend |
 | `src/include/io/s3/s3_request_authorizer.hpp` | Authentication abstraction (SigV4 presigned / header-signing) |
 | `src/include/io/s3/s3_io_object.hpp` | S3 io_object with bucket/key/size metadata |
 | `src/include/pin_table.hpp` / `src/pin_table.cpp` | `pin_table` / `unpin_table` table-function bindings |
 | `src/include/op/sirius_physical_iceberg_scan.hpp` | Iceberg scan operator |
-| `src/include/op/scan/iceberg_scan_task.hpp` | Iceberg scan task with delete filters |
 | `src/include/op/scan/iceberg_metadata_reader.hpp` | Iceberg manifest reader (DuckDB `iceberg_metadata()` + Avro fallback) |
 | `src/include/op/scan/puffin_reader.hpp` | V3 deletion-vector PUFFIN reader |
 | `src/op/scan/scan_utils.cpp` | Row group pruning, filter expression conversion |

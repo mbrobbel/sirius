@@ -43,8 +43,8 @@ def parse(lines: List[str], warnings: FormatWarnings) -> List[dict]:
             continue
         if " produced " not in line or " operator " not in line:
             continue
-        # The parquet_scan_task.cpp variant is filtered out by the anchor
-        # (it has no "peak allocated:" segment).
+        # The legacy scan-task variant is filtered out by the anchor (it has no
+        # "peak allocated:" segment).
         m = patterns.TASK_OUTPUT_RE.search(line)
         if not m:
             warnings.record_drift("task_output", line)

@@ -127,18 +127,15 @@ After meta-pipeline construction, `initialize_internal()` applies Sirius-specifi
 
 ## Step 6: Scan Execution
 
-**File:** `src/op/scan/duckdb_scan_executor.cpp`
+**Files:** `src/scan_manager/sirius_scan_manager.cpp`, `src/op/scan/sirius_gpu_scan_operator.cpp`
 
-The scan executor's manager loop:
+The scan manager prepares each GPU scan source:
 
-1. Acquires a kiosk ticket (blocks until a worker thread is free)
-2. Pops a scan task from the queue
-3. For parquet scans: acquires host memory reservation
-4. Dispatches to the worker thread pool:
-   - Executes the scan task (DuckDB table function or Parquet byte reads)
-   - Applies caching logic (CACHE mode: compute + save; PRELOAD mode: load from cache)
-   - Publishes output data batches to the data repository
-   - Schedules downstream consumer operators via `task_creator->schedule()`
+1. Builds a format-specific `gpu_ingestible` or pinned-table ingestible
+2. Binds a `split_connector` to the `GPU_SCAN` source operator
+3. Drives a `split_provider` on the scan-manager thread pool
+4. Schedules GPU pipeline tasks as scan splits become available
+5. `sirius_gpu_scan_operator::execute()` materializes each split and applies scan-local post-filter/projection work
 
 ## Step 7: GPU Pipeline Execution
 
@@ -192,7 +189,7 @@ If any task throws an exception during execution:
 2. `drain_after_error()` is called on the pipeline executor which:
    - Stops the task creator threads
    - Drains the task queue
-   - Calls `drain_and_wait()` on scan and GPU executors
+   - Calls `drain_and_wait()` on GPU executors and resets scan-manager providers
    - Restarts the task creator for the next query
 3. The error propagates through the future to the main thread
 
@@ -205,7 +202,7 @@ sequenceDiagram
     participant Iface as sirius_interface
     participant Engine as sirius_engine
     participant PE as task_scheduler
-    participant SE as scan_executor
+    participant SM as sirius_scan_manager
     participant GPE as gpu_pipeline_executor
     participant TC as task_creator
     participant CH as completion_handler
@@ -218,9 +215,9 @@ sequenceDiagram
     Iface->>Engine: execute()
     Engine->>PE: start_query(pipelines)
     PE->>CH: create completion_handler
-    PE->>SE: schedule initial scans
-    SE->>SE: Scan data, publish to repos
-    SE->>TC: schedule(downstream_op)
+    Engine->>SM: prepare_for_query(query)
+    SM->>SM: Produce scan splits into connectors
+    SM->>TC: schedule(GPU_SCAN source)
     TC->>TC: get_next_task_hint() → READY
     TC->>GPE: schedule(gpu_pipeline_task)
     GPE->>GPE: reserve memory, execute on CUDA stream

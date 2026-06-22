@@ -72,7 +72,7 @@ to walk each per-query folder.
 | `pipeline_begin` | `min(timestamp)` from `task_inputs.csv` | earliest task input |
 | `pipeline_end` | `max(timestamp)` from `task_outputs.csv` | latest task output |
 | `num_tasks` | `count(*)` from `task_outputs.csv` |  |
-| `operator_types` | comma-joined distinct op types from `task_outputs.csv` | first-seen order; sourced from outputs so scan pipelines (`GPU_PARQUET_SCAN`, `DUCKDB_SCAN`) — which emit no task_inputs — are still populated |
+| `operator_types` | comma-joined distinct op types from `task_outputs.csv` | first-seen order; sourced from outputs so scan pipelines (`GPU_SCAN`, `DUCKDB_SCAN`) — which emit no task_inputs — are still populated |
 | `sum_input_num_rows` | sum from `task_inputs.csv` |  |
 | `sum_input_size_bytes` | sum from `task_inputs.csv` |  |
 | `sum_output_num_rows` | sum from `task_outputs.csv` |  |

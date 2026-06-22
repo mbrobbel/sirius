@@ -132,8 +132,6 @@ struct sirius_config {
   [[nodiscard]] const exec::downgrade_executor_config& get_downgrade_executor_config()
     const noexcept;
 
-  [[nodiscard]] const exec::thread_pool_config& get_duckdb_scan_executor_config() const noexcept;
-
   [[nodiscard]] bool is_scan_caching_enabled() const noexcept
   {
     return _scan_executor_config.cache != op::scan::cache_level::NONE;

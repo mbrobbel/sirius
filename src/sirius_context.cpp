@@ -280,7 +280,7 @@ void SiriusContext::QueryEnd()
       }
     }
 
-    // Drop scan-manager providers for this query. Each cached_split_provider
+    // Drop scan-manager providers for this query. A pinned-table ingestible
     // holds shared_ptr copies of the pinned entry's host_chunks; if kept past
     // the query, those refs prevent fixed_size_host_memory_resource blocks from
     // returning to the pool even after unpin_table runs. Repositories are
@@ -294,13 +294,10 @@ void SiriusContext::QueryEnd()
     throw;
   }
 
-  // Drop per-query global states held by task_creator. These include
-  // duckdb_scan_task_global_state, which transitively owns a
-  // duckdb::DuckTableScanState referencing BufferManager-owned BlockHandles.
-  // If we leave this state alive past QueryEnd, ~task_creator at SiriusContext
-  // teardown ends up releasing those BlockHandles after parts of DuckDB's
-  // DatabaseInstance have already been torn down (~DBConfig fires ~SiriusContext
-  // mid-DB destruction), which SIGSEGVs in ~BlockMemory.
+  // Drop per-query global states held by task_creator before engine teardown.
+  // If we leave source/operator state alive past QueryEnd, ~task_creator at
+  // SiriusContext teardown may release objects after parts of DuckDB's
+  // DatabaseInstance have already been torn down.
   if (task_creator_) { task_creator_->reset(/*keep_parquet_metadata=*/true); }
   release_query_lifecycle_slot();
 }
@@ -757,11 +754,10 @@ void SiriusContext::create_query(
     std::move(pipelines), telemetry_context_->context(), telemetry_info);
   task_scheduler_->prepare_for_query(query_);
   task_creator_->prepare_for_query(*query_);
-  // Pass per-GPU sirius_ioctx map to scan_manager so parquet_split_provider
-  // can construct sirius_datasources via ioctx->make_datasource(io_object)
-  // instead of cudf's bundled file_source factory. Also build a device_id ->
-  // GPU memory_space map for the HOST-tier cached_split_provider's
-  // host->gpu materialization at produce_split time (pin_table tier='host').
+  // Pass per-GPU sirius_ioctx map to scan_manager so parquet ingestibles can
+  // construct sirius_datasources via ioctx->make_datasource(io_object) instead
+  // of cudf's bundled file_source factory. Also build a device_id -> GPU
+  // memory_space map for HOST-tier pinned-table materialization.
   std::unordered_map<int, cucascade::memory::memory_space*> gpu_memory_spaces;
   for (auto const* gpu_space :
        memory_manager_->get_memory_spaces_for_tier(cucascade::memory::Tier::GPU)) {

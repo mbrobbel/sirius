@@ -155,7 +155,7 @@ IcebergManifestDiscovery discover_from_manifests(duckdb::ClientContext& context,
 }
 
 // =========================================================================
-// Content readers (moved from iceberg_scan_task.cpp)
+// Content readers
 // =========================================================================
 
 /**

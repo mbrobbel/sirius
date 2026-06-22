@@ -95,9 +95,10 @@ sirius:
       num_threads: 1
       thread_name_prefix: "sirius_downgrade_executor"
       monitor_period_ms: 10
+    scan_manager:
+      num_threads: 8
+      thread_name_prefix: "sirius_scan_manager"
     duckdb_scan:
-      num_threads: 4
-      thread_name_prefix: "sirius_scan_executor"
       cache: "parquet"
     task_creator:
       num_threads: 2
@@ -288,7 +289,7 @@ Then open `http://localhost:8080` and select the captured Sirius engine/query.
 | `task_creator` | 2 | `task_creator` | Task creation from scheduling requests |
 | `gpu_pipeline_executor` | 4 | `gpu_pipeline` | GPU pipeline task execution |
 | `downgrade_executor` | 4 | `downgrade` | Data tier migration (GPU→Host) |
-| `duckdb_scan_executor` | 4 | `scan_executor` | Scan task execution (DuckDB/Parquet) |
+| `scan_manager` | 8 | `scan_manager` | Scan split production, metadata parsing, and I/O backend work |
 
 Each pool supports optional CPU affinity lists for core pinning.
 
@@ -379,4 +380,4 @@ These are compile-time defaults. Runtime configuration via `sirius_config` and D
 | `src/include/sirius_config.hpp` | Config class, operator_params, thread pool configs |
 | `src/include/config.hpp` | Legacy config flags |
 | `src/sirius_extension.cpp` | SET variable registration |
-| `src/include/op/scan/config.hpp` | Scan executor config, cache_level enum |
+| `src/include/op/scan/config.hpp` | Scan cache-level enum |

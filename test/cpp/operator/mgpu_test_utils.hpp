@@ -262,8 +262,7 @@ struct audit_counts {
  * @brief Walk @p log_dir and return the per-GPU audit counts observed in
  * [mgpu-audit] log lines. Mirrors the parse_audit_log() in
  * test_gpu_execution_tpch_mgpu_audit.cpp verbatim so tests share one
- * grep-stable contract with pipeline_executor.cpp:255 and
- * duckdb_scan_executor.cpp:216.
+ * grep-stable contract with the pipeline task audit logs.
  */
 inline std::map<int, audit_counts> parse_audit_log(std::filesystem::path const& log_dir)
 {

@@ -6,7 +6,7 @@ This document covers the task creation subsystem: how the system decides when an
 
 **File:** `src/include/creator/task_creator.hpp`, `src/creator/task_creator.cpp`
 
-The `task_creator` is a multi-threaded component that converts operator scheduling requests into concrete scan or GPU pipeline tasks. It maintains global state maps for each operator type and uses a hint-chain recursion to find the deepest ready operator.
+The `task_creator` is a multi-threaded component that converts operator scheduling requests into concrete GPU pipeline tasks. Scan metadata production is handled by `sirius_scan_manager`; the task creator sees scan sources through the same operator hint/input-data interface as other source operators.
 
 ## Core Flow
 
@@ -21,9 +21,9 @@ get_operator_for_next_task(operator) — follows hint chain
     ↓
 operator->get_next_task_hint() → READY or WAITING_FOR_INPUT_DATA
     ↓
-Create task (duckdb_scan_task, parquet_scan_task, or gpu_pipeline_task)
+Create gpu_pipeline_task
     ↓
-Dispatch to executor (scan_executor or task_scheduler)
+Dispatch to task_scheduler
 ```
 
 ## Global State Maps
@@ -32,8 +32,6 @@ Initialized during `prepare_for_query()`, cleared during `reset()`:
 
 | Map | Key | Value | Purpose |
 |-----|-----|-------|---------|
-| `_scan_operator_global_state_map` | operator ID | `duckdb_scan_task_global_state` | DuckDB scan batching state |
-| `_parquet_scan_operator_global_state_map` | operator ID | `parquet_scan_task_global_state` | Parquet metadata, row group partitions (preserved across warm runs) |
 | `_gpu_operator_global_state_map` | operator ID | `gpu_pipeline_task_global_state` | Shared pipeline state |
 
 All map access is protected by `_global_state_mutex`.
@@ -223,26 +221,12 @@ while running:
     4. if node is nullptr: continue
 
     5. Schedule work on thread pool:
-       For DUCKDB_SCAN:
-           - Create one duckdb_scan_task
-           - pipeline.mark_task_created()
-           - Dispatch to scan executor
-
-       For PARQUET_SCAN:
-           - Loop: acquire next row group partition
-           - Create one parquet_scan_task per partition
-           - pipeline.mark_task_created() for each
-           - Dispatch to scan executor
-
-       For GPU operators:
+       For ready operators:
            - Loop while (!node.all_ports_empty()):
-             - pipeline.mark_task_created()  // BEFORE popping data
-             - data = node.get_next_task_input_data()
-             - If data: create gpu_pipeline_task, dispatch to task_scheduler
-             - If no data: pipeline.mark_task_completed()
+           - Pull one operator_data input from the source/operator
+           - Create one gpu_pipeline_task
+           - Dispatch to task_scheduler
 ```
-
-The `mark_task_created()` call before data popping prevents a race condition where the pipeline could appear finished between data check and task creation.
 
 ## `can_create_more_tasks()` and `has_processed_all_tasks()`
 

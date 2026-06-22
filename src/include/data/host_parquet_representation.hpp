@@ -62,9 +62,9 @@ using post_convert_fn_t =
                                              int64_t first_row_offset,
                                              rmm::cuda_stream_view)>;
 
-// partition_inject_fn_t is the legacy typedef declared in <op/scan/hive_partition.hpp>
-// (sirius:: namespace). It carries file_path so the schema-reconciliation closure built by
-// parquet_scan_task_global_state::build_schema_reconciliation can do per-file column-set lookups.
+// partition_inject_fn_t is declared in <op/scan/hive_partition.hpp>
+// (sirius:: namespace). It carries file_path so schema-reconciliation closures
+// can do per-file column-set lookups.
 
 /**
  * @brief A host representation of Parquet data for use in a hybrid scan.
@@ -309,9 +309,8 @@ class host_parquet_representation : public cucascade::idata_representation {
   /**
    * @brief Install a post-convert hook.
    *
-   * Copied from parquet_scan_task_global_state::get_post_convert_fn() in
-   * parquet_scan_task::compute_task() so that the host->GPU converter can
-   * invoke it immediately after cudf::io::read_parquet returns.
+   * Lets the host->GPU converter invoke Iceberg delete filtering immediately
+   * after cudf::io::read_parquet returns.
    */
   void set_post_convert_fn(post_convert_fn_t fn) { _post_convert_fn = std::move(fn); }
 
@@ -335,8 +334,8 @@ class host_parquet_representation : public cucascade::idata_representation {
   /**
    * @brief Set the path of the Iceberg data file this batch was produced from.
    *
-   * Called by parquet_scan_task::compute_task() so the converter can forward
-   * the path to the post-convert hook.
+   * Called by the parquet scan path so the converter can forward the path to
+   * the post-convert hook.
    */
   void set_data_file_path(std::string path) { _data_file_path = std::move(path); }
 

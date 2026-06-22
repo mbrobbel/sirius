@@ -39,10 +39,8 @@ using hybrid_scan_reader = cudf::io::parquet::experimental::hybrid_scan_reader;
 /**
  * @brief Represents a set of row groups within a single parquet file.
  *
- * Multiple slices can be bundled together to form a single parquet partition corresponding
- * to a data batch. Used by @c parquet_gpu_ingestible (new path) and @c parquet_scan_task
- * (legacy gpu_processing path) — kept in a neutral header so both consumers share without
- * cross-depending on each other's headers.
+ * Multiple slices can be bundled together to form a single parquet partition
+ * corresponding to a data batch.
  */
 struct row_group_slice {
   row_group_slice(std::shared_ptr<cudf::io::parquet::FileMetaData const> file_metadata,
@@ -76,7 +74,7 @@ struct row_group_slice {
 /**
  * @brief Represents a set of row groups within a single parquet file.
  *
- * Used as the unit of work for the legacy parquet_scan_task path (byte-range preloading).
+ * Used as the unit of work for the legacy byte-range preloading path.
  *
  * @todo This needs to be deleted once Iceberg is integrated into scan manager framework.
  */

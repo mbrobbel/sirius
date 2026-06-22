@@ -99,7 +99,7 @@ Key methods:
 - `mark_task_completed()` — increments `tasks_completed`, calls `update_pipeline_status()`
 - `update_pipeline_status()` — checks source-dependent completion logic:
   - DUCKDB_SCAN: finished when `exhausted` flag is set
-  - GPU_PARQUET_SCAN: finished when the bound `split_connector` is closed and drained and `tasks_created == tasks_completed`
+  - GPU_SCAN: finished when the bound `split_connector` is closed and drained and `tasks_created == tasks_completed`
   - Others: finished when upstream done, ports empty, and all tasks completed
 - `is_ready()` — marks pipeline ready and reverses operators to execution order
 - `register_new_batch_index()` / `update_batch_index()` — batch ordering for order-preserving execution
@@ -208,9 +208,9 @@ In the diagrams below, `[A, B, C]` denotes a pipeline where A is `operators[0]` 
 
 TABLE_SCAN splits along two paths depending on the table function:
 
-**Parquet (`parquet_scan` / `read_parquet`, including `s3://` paths):** TABLE_SCAN is replaced with `GPU_PARQUET_SCAN` at `operators[0]` of the same pipeline — no separate scan pipeline is created. The DuckDB bind data is captured into a `parquet_scan_info` (a concrete `scan_info` subclass) and parked on the operator. During `prepare_for_query`, `sirius_scan_manager` reads the info, builds a `split_provider` via `scan_info::make_provider()` (parquet or cached), and binds a `split_connector` to the operator. The operator pulls splits from the connector inside `get_next_task_input_data()` (see [Scan — Scan Manager](scan.md#scan-manager)).
+**Parquet (`parquet_scan` / `read_parquet`, including `s3://` paths):** TABLE_SCAN is replaced with `GPU_SCAN` at `operators[0]` of the same pipeline. The DuckDB bind data is captured into a `parquet_ingestible_table_info` and parked on the operator. During `prepare_for_query`, `sirius_scan_manager` builds either a `parquet_gpu_ingestible` or a `pinned_table_gpu_ingestible`, then binds a `split_connector` to the operator. The operator pulls splits from the connector inside `get_next_task_input_data()` (see [Scan — Scan Manager](scan.md#scan-manager)).
 
-**DuckDB-native (`seq_scan` against an attached `.duckdb` file):** TABLE_SCAN is replaced with `GPU_DUCKDB_NATIVE_SCAN` at `operators[0]` when the bound table entry is a native DuckDB format table. A `duckdb_native_scan_info` is parked on the operator and consumed by a `duckdb_native_split_provider` during `prepare_for_query`.
+**DuckDB-native (`seq_scan` against an attached `.duckdb` file):** TABLE_SCAN is replaced with `GPU_SCAN` at `operators[0]` when the bound table entry is a native DuckDB format table. The converter parks a `duckdb_native_ingestible_table_info` on the operator; `prepare_for_query` turns it into a `duckdb_native_gpu_ingestible`.
 
 **DuckDB-managed (`seq_scan`, `iceberg_scan`):** A separate scan pipeline is created, and the original TABLE_SCAN is kept as the first operator of the main pipeline:
 

@@ -124,7 +124,7 @@ class sirius_physical_table_scan : public sirius_physical_operator {
   bool exhausted = false;
 
   //! When true, execute() is a no-op passthrough. Set for parquet scan
-  //! pipelines where filter and projection are handled in parquet_scan_task.
+  //! pipelines where filter and projection are handled upstream.
   bool passthrough = false;
 
   //! The composite filter expression from the table filter set, if any

@@ -44,8 +44,8 @@
 // duckdb
 #include <duckdb/common/hive_partitioning.hpp>
 
-// uring_reactor MUST be included last among sirius headers — see
-// parquet_split_provider.cpp for the BLOCK_SIZE macro-collision rationale.
+// uring_reactor MUST be included last among sirius headers; its platform
+// includes define BLOCK_SIZE on some systems.
 #include <io/uring/uring_reactor.hpp>
 
 // standard library
@@ -115,8 +115,8 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<io::ingestible_ta
 {
   auto const& bind = static_cast<parquet_ingestible_table_info const&>(table_info());
 
-  // Any non-trivial scan shape — reader-side projection, filter pushdown, or hive-partition
-  // injection — needs column names. Matches parquet_split_provider's ctor invariant.
+  // Any non-trivial scan shape - reader-side projection, filter pushdown, or
+  // hive-partition injection - needs column names.
   bool const needs_names = !bind.projection_ids.empty() ||
                            (bind.table_filters && !bind.table_filters->filters.empty()) ||
                            !bind.partition_indices.empty();
@@ -183,7 +183,7 @@ parquet_gpu_ingestible::next_split_provider()
 }
 
 //===----------------------------------------------------------------------===//
-// run_batch — ports parquet_split_provider::run_batch
+// run_batch
 //===----------------------------------------------------------------------===//
 void parquet_gpu_ingestible::run_batch(file_batch const& batch,
                                        std::vector<std::unique_ptr<op::operator_data>>& out)
@@ -210,7 +210,9 @@ void parquet_gpu_ingestible::run_batch(file_batch const& batch,
     auto sirius_filter_ast = sirius::ast::from_duckdb(*_duckdb_filter_expression);
     ast_expression = translator.translate_expression_with_names(*sirius_filter_ast, name_resolver);
     if (ast_expression) {
-      // FLBA-decimal pushdown probe — see parquet_split_provider.cpp:276-326.
+      // FLBA-decimal pushdown probe: if any selected row-group metadata has a
+      // fixed-len byte array decimal column, keep the filter as a post-decode
+      // expression because cudf cannot compare those stats against AST literals.
       if (!batch.file_paths.empty()) {
         auto const& probe_path = batch.file_paths.front();
         try {

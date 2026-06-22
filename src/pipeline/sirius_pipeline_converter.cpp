@@ -388,7 +388,7 @@ void sirius_pipeline_converter::split_cpu_source(
   auto src_type = current_pipeline->source->type;
   // COLUMN_DATA_SCAN with a null collection is LEFT_DELIM_JOIN's cached chunk
   // scan — populated at runtime by the delim-join sink, not by a
-  // cpu_source_task. Splitting it would create a second pipeline referencing
+  // CPU_SOURCE. Splitting it would create a second pipeline referencing
   // the same operator and trip "Repository already exists" on complex queries.
   bool is_column_data_scan =
     src_type == op::SiriusPhysicalOperatorType::COLUMN_DATA_SCAN &&

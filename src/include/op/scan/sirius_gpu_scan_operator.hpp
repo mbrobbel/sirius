@@ -38,8 +38,7 @@ namespace sirius::op::scan {
 /**
  * @brief Unified GPU scan source operator.
  *
- * Replaces the per-format @c sirius_gpu_parquet_scan_operator and
- * @c sirius_gpu_duckdb_native_scan_operator. The operator carries no
+ * Replaces the legacy per-format GPU scan operators. The operator carries no
  * format-specific code: it pulls @c op::operator_data splits from its
  * bound @c split_connector, delegates per-split materialize/post-process
  * work to an installed @c io::gpu_ingestible, and wraps the result for the

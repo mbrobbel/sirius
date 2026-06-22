@@ -110,8 +110,8 @@ std::optional<task_creation_hint> sirius_gpu_scan_operator::get_next_task_hint()
   if (_split_connector->is_closed()) { return std::nullopt; }
   // Returns READY even when the queue is empty but not yet closed; the dispatched
   // worker parks in split_connector::get_next_split until a split arrives or the
-  // connector is closed. See sirius_gpu_parquet_scan_operator::get_next_task_hint
-  // for the deeper lifecycle note this preserves.
+  // connector is closed. This lets task creation wait on the connector instead
+  // of spinning while scan-manager split production is still active.
   return task_creation_hint{TaskCreationHint::READY, this};
 }
 

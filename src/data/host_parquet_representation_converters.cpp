@@ -161,7 +161,7 @@ convert_host_parquet_to_gpu_with_prefetched_data_source(
 
   // Reshape the cuDF table to the pipeline-expected layout: inject hive partition columns and,
   // under schema evolution, NULL-fill any columns missing from this file. The closure is built
-  // by parquet_scan_task_global_state (init_hive_partitions / build_schema_reconciliation).
+  // by the parquet scan path during hive-partition/schema-reconciliation setup.
   if (host_src.has_partition_inject_fn()) {
     table = host_src.apply_partition_inject(std::move(table), target_stream);
   }

@@ -231,10 +231,8 @@ TEST_CASE("scan batches distributed across multiple GPUs", "[.][data_locality][m
     INFO("GPU " << i << ": " << props.name);
   }
 
-  // With multiple GPUs, scan batches should be distributable
-  // The actual distribution test requires a full duckdb_scan_executor instance
-  // which needs a memory_reservation_manager -- this is covered by the
-  // proportional distribution algorithm test above
+  // With multiple GPUs, scan batches should be distributable. The proportional
+  // distribution algorithm is covered by the test below.
   SUCCEED("Multi-GPU hardware detected with " + std::to_string(device_count) + " GPUs");
 }
 
@@ -243,8 +241,7 @@ TEST_CASE("scan batches distributed across multiple GPUs", "[.][data_locality][m
 // End-to-end integration scenario: constructs a real 2-GPU memory manager,
 // pre-loads GPU 0 to ~80% via memory_space::make_reservation_or_null (Pitfall 5
 // pattern — the reservation_manager_configurator builder cannot configure
-// asymmetric capacity), then exercises the same weighted-pick algorithm used by
-// duckdb_scan_executor::select_target_gpu (src/op/scan/duckdb_scan_executor.cpp:151).
+// asymmetric capacity), then exercises the scan-side weighted-pick algorithm.
 // Asserts batch-count skew >= 2x matching the free-memory ratio within 10%
 // (CONTEXT success criterion 3). Complements the unit TEST_CASE in
 // test/cpp/downgrade/test_downgrade_executor.cpp by producing a second
@@ -310,8 +307,8 @@ TEST_CASE("adaptive scan + P2P path distributes asymmetric preload (MGPU-07)",
        << " free_ratio_gpu1_over_gpu0=" << free_ratio_gpu1_over_gpu0);
   REQUIRE(free_ratio_gpu1_over_gpu0 >= 2.0);
 
-  // Histogram over 32 distribution decisions using the same weighted-pick
-  // algorithm shape as duckdb_scan_executor::select_target_gpu (line 151-184).
+  // Histogram over 32 distribution decisions using the scan-side weighted-pick
+  // algorithm shape.
   // The production algorithm expects many-thousand calls and uses
   // `counter % total_available`; sampled over only 32 decisions with
   // total_available measured in bytes, a naive 0..31 counter stream would

@@ -41,7 +41,7 @@ These operators produce data for pipelines. See [Scan](scan.md) for in-depth cov
 ### `sirius_physical_table_scan` — `TABLE_SCAN`
 **File:** `src/include/op/sirius_physical_table_scan.hpp`
 
-Base scan operator wrapping a DuckDB table function. Stores column IDs, projection IDs, and optional table filters for predicate pushdown. During pipeline construction, converted to either DUCKDB_SCAN or PARQUET_SCAN.
+Base scan operator wrapping a DuckDB table function. Stores column IDs, projection IDs, and optional table filters for predicate pushdown. During pipeline construction, it is either left on a DuckDB-managed path or lowered to the unified GPU scan path.
 
 ### `sirius_physical_duckdb_scan` — `DUCKDB_SCAN`
 **File:** `src/include/op/sirius_physical_duckdb_scan.hpp`
@@ -63,15 +63,10 @@ Apache Iceberg table scan with GPU-accelerated delete filters. Inherits from `si
 
 See [Scan — Iceberg Scan](scan.md#iceberg-scan) for details.
 
-### `sirius_gpu_parquet_scan_operator` — `GPU_PARQUET_SCAN`
-**File:** `src/include/op/scan/sirius_gpu_parquet_scan_operator.hpp`
+### `sirius_gpu_scan_operator` — `GPU_SCAN`
+**File:** `src/include/op/scan/sirius_gpu_scan_operator.hpp`
 
-Source operator for parquet scans (local or S3). Carries a `scan_info` (concrete subclass: `parquet_scan_info`) populated by the pipeline converter and pulls splits from a `split_connector` populated by `sirius_scan_manager` on its own thread pool. Each `parquet_scan_data` split drives a `cudf::io::read_parquet` call followed by `scan_plan`-driven output assembly (data columns, hive-partition synthesis, output ordering). See [Scan — Scan Manager](scan.md#scan-manager).
-
-### `sirius_gpu_duckdb_native_scan_operator` — `GPU_DUCKDB_NATIVE_SCAN`
-**File:** `src/include/op/scan/sirius_gpu_duckdb_native_scan_operator.hpp`
-
-Source operator for GPU-native reading of DuckDB `.duckdb` format tables. Carries a `duckdb_native_scan_info` and pulls splits from a `split_connector` fed by a `duckdb_native_split_provider`. Each split carries a slice of per-row-group segment metadata; `execute()` decodes the segments into a `cudf::table` using the native DuckDB format decode kernels. See [Scan — GPU DuckDB-Native Scan](scan.md#sirius_gpu_duckdb_native_scan_operator----gpu_duckdb_native_scan).
+Unified source operator for GPU-backed scans. The pipeline converter attaches an `ingestible_table_info` to the operator; during `prepare_for_query`, `sirius_scan_manager` builds the matching `gpu_ingestible` (`parquet_gpu_ingestible`, `duckdb_native_gpu_ingestible`, or `pinned_table_gpu_ingestible`) and binds a `split_connector`. Each split is materialized by the ingestible and optionally post-filtered/projected before flowing through the downstream pipeline. See [Scan — Scan Manager](scan.md#scan-manager).
 
 ### `sirius_physical_dummy_scan` — `DUMMY_SCAN`
 **File:** `src/include/op/sirius_physical_dummy_scan.hpp`
@@ -304,8 +299,7 @@ After pipeline finalization, `source` and `sink` are just aliases for the first 
 | DUCKDB_SCAN | Scan | DuckDB table function |
 | PARQUET_SCAN | Scan | Direct Parquet reading |
 | ICEBERG_SCAN | Scan | Parquet reading with Iceberg delete filters |
-| GPU_PARQUET_SCAN | Scan | Source operator served by `sirius_scan_manager` (local or S3) |
-| GPU_DUCKDB_NATIVE_SCAN | Scan | GPU-native DuckDB format scan via `duckdb_native_split_provider` |
+| GPU_SCAN | Scan | Unified GPU source operator served by `sirius_scan_manager` |
 | DUMMY_SCAN | Scan | Generates 1 row |
 | COLUMN_DATA_SCAN | Scan | Reads ColumnDataCollection |
 | FILTER | Relational | `gpu_expression_executor::select()` |

@@ -130,10 +130,10 @@ TASK_INPUT_RE = re.compile(
 # --- Metric: task output (produced N batches) --------------------------------
 # "[ts] [trace] [gpu_pipeline_task.cpp:115] [GPU:0] Pipeline 1: operator TABLE_SCAN (id=5) task=2 produced 1 batches, num rows: 93150  , size: 3912308 bytes (3.73 MB). execution time: 8.87 ms, peak allocated: 10336768 bytes (9.86 MB)"
 #
-# Note: a different log line from parquet_scan_task.cpp produces a similar
-# but distinct format ("produced N batches with num rows: M, execution time: ..."
-# — no `size:` field, no `peak allocated:`). We anchor on `peak allocated:` so
-# only the full gpu_pipeline_task.cpp:115 form is captured here.
+# Note: a legacy scan-task log line produces a similar but distinct format
+# ("produced N batches with num rows: M, execution time: ..." with no `size:`
+# field and no `peak allocated:`). We anchor on `peak allocated:` so only the
+# full gpu_pipeline_task.cpp:115 form is captured here.
 #
 # The "[GPU:N]" tag and `task=` field were added with the multi-GPU executor
 # split; both are optional so older logs still parse.
