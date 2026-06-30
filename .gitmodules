@@ -27,3 +27,7 @@
 [submodule "starrocks/brpc"]
 	path = experimental/starrocks/brpc
 	url = https://github.com/apache/brpc
+[submodule "starrocks/nixl"]
+	path = experimental/starrocks/thirdparty/nixl
+	url = https://github.com/ai-dynamo/nixl.git
+	ignore = dirty
