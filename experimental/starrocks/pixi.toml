@@ -49,9 +49,9 @@ thrift-compiler = "*"
 
 # Toolchain to build nixl from source and link nixl-sys. Kept out of the `cn`
 # feature so the CPU-only `--no-default-features` CI env stays lean. clangdev drives
-# nixl-sys' bindgen; meson/ninja/pkg-config/pybind11/ucx build the nixl C++ library.
-# Note: nixl-sys' build.rs compiles its wrapper with the system `g++` against
-# /usr/include, so a host C++ toolchain is required (as on standard Linux/CI images).
+# nixl-sys' bindgen; meson/ninja/pkg-config/pybind11/ucx build the nixl C++ library;
+# nixl-sys' wrapper compiles with the engine's cxx-compiler (its build.rs honors
+# CXX via the [patch.crates-io] fork in Cargo.toml, so no host g++ is needed).
 [feature.nixl.dependencies]
 clangdev = "*"
 meson = ">=1.0"

@@ -10,6 +10,12 @@ members = [
 ]
 resolver = "2"
 
+# Patched nixl-sys build.rs (honors CXX, drops the hardcoded /usr/include) so the
+# wrapper builds with the conda/pixi toolchain instead of a host g++. Branched off
+# the v1.3.0 tag this links against; to be upstreamed to github.com/ai-dynamo/nixl.
+[patch.crates-io]
+nixl-sys = { git = "https://github.com/mbrobbel/nixl.git", rev = "81ec4191fba58f1ea78e54b1679fba0b0e887424" }
+
 [workspace.dependencies]
 anyhow = "1"
 backon = { version = "1", default-features = false, features = ["tokio-sleep"] }
