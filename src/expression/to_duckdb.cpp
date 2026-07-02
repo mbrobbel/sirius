@@ -68,14 +68,10 @@ namespace {
 // These small adapters convert between the two without copying — both share the
 // std::default_delete<T> deleter so a release/wrap round-trip is well-defined.
 duckdb::unique_ptr<duckdb::Expression> to_duck_ptr(std::unique_ptr<duckdb::Expression> p)
-{
-  return duckdb::unique_ptr<duckdb::Expression>(p.release());
-}
+{ return duckdb::unique_ptr<duckdb::Expression>(p.release()); }
 
 std::unique_ptr<duckdb::Expression> from_duck_ptr(duckdb::unique_ptr<duckdb::Expression> p)
-{
-  return std::unique_ptr<duckdb::Expression>(p.release());
-}
+{ return std::unique_ptr<duckdb::Expression>(p.release()); }
 
 template <class T>
 std::unique_ptr<duckdb::Expression> from_duck_derived_ptr(duckdb::unique_ptr<T> p)

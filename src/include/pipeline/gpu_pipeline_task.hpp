@@ -215,9 +215,7 @@ class gpu_pipeline_task : public sirius_pipeline_itask {
    */
   [[nodiscard]] const std::vector<cucascade::shared_data_repository*>& get_data_repos()
     const noexcept
-  {
-    return _data_repos;
-  }
+  { return _data_repos; }
 
   /**
    * @brief Get the shared global state.
@@ -225,9 +223,7 @@ class gpu_pipeline_task : public sirius_pipeline_itask {
    * Used by the executor to create a rescheduled task sharing the same pipeline context.
    */
   [[nodiscard]] std::shared_ptr<sirius_pipeline_task_global_state> get_shared_global_state() const
-  {
-    return std::dynamic_pointer_cast<sirius_pipeline_task_global_state>(_global_state);
-  }
+  { return std::dynamic_pointer_cast<sirius_pipeline_task_global_state>(_global_state); }
 
   /**
    * @brief Create a rescheduled task after an OOM event.

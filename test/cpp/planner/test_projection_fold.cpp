@@ -56,9 +56,7 @@ duckdb::vector<sirius::logical_type> make_integer_types(std::size_t count)
 }
 
 duckdb::unique_ptr<sirius::op::sirius_physical_operator> make_dummy_scan(std::size_t column_count)
-{
-  return duckdb::make_uniq<sirius_physical_dummy_scan>(make_integer_types(column_count), 1);
-}
+{ return duckdb::make_uniq<sirius_physical_dummy_scan>(make_integer_types(column_count), 1); }
 
 duckdb::unique_ptr<sirius::op::sirius_physical_operator> make_projection(
   duckdb::vector<std::unique_ptr<sirius::ast::node>> select_list,

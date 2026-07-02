@@ -78,9 +78,7 @@ std::string query_value(std::string_view url, std::string_view key)
 }
 
 bool contains(std::string_view haystack, std::string_view needle)
-{
-  return haystack.find(needle) != std::string_view::npos;
-}
+{ return haystack.find(needle) != std::string_view::npos; }
 
 bool is_lower_hex_64(std::string_view value)
 {
@@ -217,12 +215,12 @@ TEST_CASE("presign_url matches AWS S3 published query-auth vector", "[s3][sigv4]
 TEST_CASE("presign_url binds the signature to the HTTP method", "[s3][sigv4]")
 {
   auto get_url  = presign_url("GET",
-                             "https",
-                             "examplebucket.s3.amazonaws.com",
-                             "/test.txt",
-                             aws_example_creds(),
-                             1369353600,
-                             std::chrono::seconds{300});
+                              "https",
+                              "examplebucket.s3.amazonaws.com",
+                              "/test.txt",
+                              aws_example_creds(),
+                              1369353600,
+                              std::chrono::seconds{300});
   auto head_url = presign_url("HEAD",
                               "https",
                               "examplebucket.s3.amazonaws.com",
@@ -248,12 +246,12 @@ TEST_CASE("presign_url injects session token only when present", "[s3][sigv4]")
   auto creds          = aws_example_creds();
   creds.session_token = "temporary/session+token=";
   auto with_token     = presign_url("GET",
-                                "https",
-                                "examplebucket.s3.amazonaws.com",
-                                "/test.txt",
-                                creds,
-                                1369353600,
-                                std::chrono::seconds{300});
+                                    "https",
+                                    "examplebucket.s3.amazonaws.com",
+                                    "/test.txt",
+                                    creds,
+                                    1369353600,
+                                    std::chrono::seconds{300});
 
   CHECK(contains(with_token, "X-Amz-Security-Token=temporary%2Fsession%2Btoken%3D"));
   CHECK(query_value(with_token, "X-Amz-Signature") !=
@@ -265,12 +263,12 @@ TEST_CASE("presign_url keeps canonical query ordering deterministic", "[s3][sigv
   auto creds          = aws_example_creds();
   creds.session_token = "token";
   auto url            = presign_url("GET",
-                         "https",
-                         "examplebucket.s3.amazonaws.com",
-                         "/test.txt",
-                         creds,
-                         1369353600,
-                         std::chrono::seconds{300});
+                                    "https",
+                                    "examplebucket.s3.amazonaws.com",
+                                    "/test.txt",
+                                    creds,
+                                    1369353600,
+                                    std::chrono::seconds{300});
   auto query          = query_string(url);
 
   auto algorithm      = query.find("X-Amz-Algorithm=");
@@ -313,12 +311,12 @@ TEST_CASE("presign_url signs only the host header", "[s3][sigv4]")
 TEST_CASE("presign_url propagates ttl into X-Amz-Expires", "[s3][sigv4]")
 {
   auto url_300   = presign_url("GET",
-                             "https",
-                             "examplebucket.s3.amazonaws.com",
-                             "/test.txt",
-                             aws_example_creds(),
-                             1369353600,
-                             std::chrono::seconds{300});
+                               "https",
+                               "examplebucket.s3.amazonaws.com",
+                               "/test.txt",
+                               aws_example_creds(),
+                               1369353600,
+                               std::chrono::seconds{300});
   auto url_86400 = presign_url("GET",
                                "https",
                                "examplebucket.s3.amazonaws.com",

@@ -101,21 +101,15 @@ class itask {
 
   template <typename T>
   T* as() noexcept
-  {
-    return dynamic_cast<T*>(this);
-  }
+  { return dynamic_cast<T*>(this); }
 
   template <typename T>
   const T* as() const noexcept
-  {
-    return dynamic_cast<const T*>(this);
-  }
+  { return dynamic_cast<const T*>(this); }
 
   template <typename T>
   [[nodiscard]] bool is() const noexcept
-  {
-    return dynamic_cast<const T*>(this) != nullptr;
-  }
+  { return dynamic_cast<const T*>(this) != nullptr; }
 
   itask_local_state* local_state() noexcept { return _local_state.get(); }
   [[nodiscard]] itask_global_state* global_state() noexcept { return _global_state.get(); }

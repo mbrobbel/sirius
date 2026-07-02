@@ -151,9 +151,7 @@ class completion_controller {
   /// on the calling thread before this returns.
   template <typename Fn, typename... Args>
   [[nodiscard]] completion_token on_completion(Fn&& fn, Args&&... args)
-  {
-    return completion_token(_token, std::forward<Fn>(fn), std::forward<Args>(args)...);
-  }
+  { return completion_token(_token, std::forward<Fn>(fn), std::forward<Args>(args)...); }
 
   /// True once completion has been signalled.
   [[nodiscard]] bool completed() const noexcept { return _token.stop_requested(); }

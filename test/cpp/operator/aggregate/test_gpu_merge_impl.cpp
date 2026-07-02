@@ -866,12 +866,12 @@ batches_with_handles create_batches_with_local_orderby_result(
   for (int i = 0; i < num_batches; ++i) {
     auto ro_batch = base_input.batches[i]->to_read_only();
     auto batch    = gpu_order_impl::local_order_by(ro_batch,
-                                                order_key_idx,
-                                                column_order,
-                                                null_precedence,
-                                                projections,
-                                                cudf::get_default_stream(),
-                                                mem_space);
+                                                   order_key_idx,
+                                                   column_order,
+                                                   null_precedence,
+                                                   projections,
+                                                   cudf::get_default_stream(),
+                                                   mem_space);
     result.batches.push_back(std::move(batch));
   }
   return result;
@@ -990,12 +990,12 @@ TEST_CASE("Merge order-by with invalid input", "[operator][merge_order_by]")
   num_batches         = 10;
   num_base_input_rows = std::vector<int>(num_batches, num_base_input_rows_per_batch);
   auto input2         = create_batches_with_local_orderby_result(num_batches,
-                                                         num_base_input_rows,
-                                                         column_types,
-                                                         order_key_idx,
-                                                         column_order,
-                                                         null_precedence,
-                                                         *mem_space);
+                                                                 num_base_input_rows,
+                                                                 column_types,
+                                                                 order_key_idx,
+                                                                 column_order,
+                                                                 null_precedence,
+                                                                 *mem_space);
   order_key_idx.push_back(3);
   {
     std::vector<read_only_data_batch> ro;

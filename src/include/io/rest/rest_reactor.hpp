@@ -137,14 +137,10 @@ class rest_reactor {
 
     [[nodiscard]] const config& cfg() const noexcept { return _config; }
     [[nodiscard]] const std::shared_ptr<s3::s3_request_authorizer>& authorizer() const noexcept
-    {
-      return _authorizer;
-    }
+    { return _authorizer; }
     [[nodiscard]] cucascade::memory::fixed_size_host_memory_resource* host_memory_resource()
       const noexcept
-    {
-      return _host_mr;
-    }
+    { return _host_mr; }
 
    private:
     config _config;

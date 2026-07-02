@@ -80,9 +80,7 @@ class try_t {
 
   template <class... arg_ts>
   value_t& emplace(arg_ts&&... args)
-  {
-    return _v.template emplace<1>(std::forward<arg_ts>(args)...);
-  }
+  { return _v.template emplace<1>(std::forward<arg_ts>(args)...); }
 
   // Returns the value or rethrows the captured exception.
   value_t get() &&
@@ -178,8 +176,6 @@ auto make_try_with(fn_t&& f, arg_ts&&... args)
 
 template <class r_t>
 auto make_empty_try()
-{
-  return try_t<r_t>{};
-}
+{ return try_t<r_t>{}; }
 
 }  // namespace sirius::exec

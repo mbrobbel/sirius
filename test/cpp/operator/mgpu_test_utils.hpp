@@ -244,9 +244,7 @@ inline void generate_parquet_surface(std::filesystem::path const& dir,
  * inside a read_parquet(...) call.
  */
 inline std::string parquet_glob(std::filesystem::path const& dir)
-{
-  return (dir / "*.parquet").string();
-}
+{ return (dir / "*.parquet").string(); }
 
 /**
  * @brief Per-GPU audit counts populated by parse_audit_log().

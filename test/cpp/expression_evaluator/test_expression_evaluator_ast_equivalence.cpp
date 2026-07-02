@@ -111,9 +111,7 @@ memory_space* get_default_gpu_space()
 }
 
 rmm::device_async_resource_ref get_resource_ref(memory_space& space)
-{
-  return space.get_default_allocator();
-}
+{ return space.get_default_allocator(); }
 
 std::shared_ptr<data_batch> make_input_batch(
   memory_space& space,
@@ -200,9 +198,7 @@ void expect_hand_eq_translated(duckdb::Expression& duck_expr,
 // Convenience: single-INT32-column input with the given value range.
 std::vector<cudf::data_type> int32_col() { return {cudf::data_type{cudf::type_id::INT32}}; }
 std::vector<std::optional<std::pair<int, int>>> range(int lo, int hi)
-{
-  return {std::pair<int, int>{lo, hi}};
-}
+{ return {std::pair<int, int>{lo, hi}}; }
 
 }  // namespace
 

@@ -329,20 +329,14 @@ TEST_CASE("ast_function_id - substring and substr both resolve to function_id::s
 TEST_CASE(
   "ast_function_id - to_duckdb_function_name(substring) returns the canonical \"substring\"",
   "[ast_function_id]")
-{
-  REQUIRE(to_duckdb_function_name(function_id::substring) == "substring");
-}
+{ REQUIRE(to_duckdb_function_name(function_id::substring) == "substring"); }
 
 // ============================================================================
 // Unknown name → std::nullopt (D-01 — no sentinel enum value)
 // ============================================================================
 
 TEST_CASE("ast_function_id - unknown function name returns std::nullopt", "[ast_function_id]")
-{
-  REQUIRE_FALSE(from_duckdb_function_name("nonexistent_fn").has_value());
-}
+{ REQUIRE_FALSE(from_duckdb_function_name("nonexistent_fn").has_value()); }
 
 TEST_CASE("ast_function_id - empty function name returns std::nullopt", "[ast_function_id]")
-{
-  REQUIRE_FALSE(from_duckdb_function_name("").has_value());
-}
+{ REQUIRE_FALSE(from_duckdb_function_name("").has_value()); }

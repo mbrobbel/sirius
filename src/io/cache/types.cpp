@@ -137,9 +137,7 @@ void buffer_pool::deallocate_bulk(std::vector<std::byte*>&& out, int numa) noexc
 size_t buffer_pool::reservation_size_for_prefetching() const noexcept { return _reserved_size; }
 
 size_t buffer_pool::max_allowed_budget_for_prefetching() const noexcept
-{
-  return _max_allowed_budget_for_prefetching;
-}
+{ return _max_allowed_budget_for_prefetching; }
 
 size_t buffer_pool::max_system_wide_usage() const noexcept
 {

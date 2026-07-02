@@ -109,9 +109,7 @@ void FallbackChecker::CheckExpression(const BoundCaseExpression& expr) const
 }
 
 void FallbackChecker::CheckExpression(const BoundCastExpression& expr) const
-{
-  CheckExpression(*expr.child);
-}
+{ CheckExpression(*expr.child); }
 
 void FallbackChecker::CheckExpression(const BoundComparisonExpression& expr) const
 {

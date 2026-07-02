@@ -63,12 +63,12 @@ std::unique_ptr<cudf::column> GpuDispatcher::DispatchStringMatching(
                 MatchType == StringMatchingType::NOT_LIKE) {
     std::vector<std::string> match_terms = string_split(match_str, SPLIT_DELIMITER);
     auto result                          = DoMultiStringMatching(input.data<char>(),
-                                        input.size(),
-                                        input.child(0).data<uint64_t>(),
-                                        byte_count,
-                                        match_terms,
-                                        mr,
-                                        stream);
+                                                                 input.size(),
+                                                                 input.child(0).data<uint64_t>(),
+                                                                 byte_count,
+                                                                 match_terms,
+                                                                 mr,
+                                                                 stream);
     if constexpr (MatchType == StringMatchingType::LIKE) { return std::move(result); }
 
     // Otherwise, we need to invert the result

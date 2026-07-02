@@ -35,9 +35,7 @@ sirius_physical_merge_sort::sirius_physical_merge_sort(sirius_physical_order* or
       order_by->projections,          // copied by value
       order_by->estimated_cardinality,
       order_by->is_index_sort)
-{
-  child_op = order_by;
-}
+{ child_op = order_by; }
 
 sirius_physical_merge_sort::sirius_physical_merge_sort(
   duckdb::vector<sirius::logical_type> types,

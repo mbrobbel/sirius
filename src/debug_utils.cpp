@@ -279,7 +279,7 @@ std::string format_timestamp_ms(int64_t raw_ms)
   int frac_ms           = static_cast<int>(raw_ms - total_seconds * 1'000);
 
   int32_t days       = static_cast<int32_t>((total_seconds >= 0) ? total_seconds / 86400
-                                                           : (total_seconds - 86399) / 86400);
+                                                                 : (total_seconds - 86399) / 86400);
   int seconds_in_day = static_cast<int>(total_seconds - static_cast<int64_t>(days) * 86400);
   auto [y, m, d]     = civil_from_days(days);
   int hh             = seconds_in_day / 3600;
@@ -306,7 +306,7 @@ std::string format_timestamp_us(int64_t raw_us)
   int frac_us           = static_cast<int>(raw_us - total_seconds * 1'000'000);
 
   int32_t days       = static_cast<int32_t>((total_seconds >= 0) ? total_seconds / 86400
-                                                           : (total_seconds - 86399) / 86400);
+                                                                 : (total_seconds - 86399) / 86400);
   int seconds_in_day = static_cast<int>(total_seconds - static_cast<int64_t>(days) * 86400);
   auto [y, m, d]     = civil_from_days(days);
   int hh             = seconds_in_day / 3600;
@@ -334,7 +334,7 @@ std::string format_timestamp_ns(int64_t raw_ns)
   int frac_ns = static_cast<int>(raw_ns - total_seconds * 1'000'000'000);
 
   int32_t days       = static_cast<int32_t>((total_seconds >= 0) ? total_seconds / 86400
-                                                           : (total_seconds - 86399) / 86400);
+                                                                 : (total_seconds - 86399) / 86400);
   int seconds_in_day = static_cast<int>(total_seconds - static_cast<int64_t>(days) * 86400);
   auto [y, m, d]     = civil_from_days(days);
   int hh             = seconds_in_day / 3600;

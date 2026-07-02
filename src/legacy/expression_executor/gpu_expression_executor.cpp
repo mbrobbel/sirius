@@ -61,9 +61,7 @@ namespace sirius {
 GpuExpressionExecutor::GpuExpressionExecutor(const Expression& expr,
                                              rmm::device_async_resource_ref resource_ref)
   : resource_ref(resource_ref)
-{
-  AddExpression(expr);
-}
+{ AddExpression(expr); }
 
 GpuExpressionExecutor::GpuExpressionExecutor(const vector<unique_ptr<Expression>>& expressions,
                                              rmm::device_async_resource_ref resource_ref)

@@ -91,8 +91,6 @@ void GPUPhysicalCTE::BuildPipelines(GPUPipeline& current, GPUMetaPipeline& meta_
 }
 
 vector<const_reference<GPUPhysicalOperator>> GPUPhysicalCTE::GetSources() const
-{
-  return children[1]->GetSources();
-}
+{ return children[1]->GetSources(); }
 
 }  // namespace duckdb

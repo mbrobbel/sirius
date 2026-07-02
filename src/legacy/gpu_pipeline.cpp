@@ -204,33 +204,23 @@ void GPUPipelineBuildState::AddPipelineOperator(GPUPipeline& pipeline, GPUPhysic
 }
 
 optional_ptr<GPUPhysicalOperator> GPUPipelineBuildState::GetPipelineSource(GPUPipeline& pipeline)
-{
-  return pipeline.source;
-}
+{ return pipeline.source; }
 
 optional_ptr<GPUPhysicalOperator> GPUPipelineBuildState::GetPipelineSink(GPUPipeline& pipeline)
-{
-  return pipeline.sink;
-}
+{ return pipeline.sink; }
 
 void GPUPipelineBuildState::SetPipelineOperators(GPUPipeline& pipeline,
                                                  vector<reference<GPUPhysicalOperator>> operators)
-{
-  pipeline.operators = std::move(operators);
-}
+{ pipeline.operators = std::move(operators); }
 
 shared_ptr<GPUPipeline> GPUPipelineBuildState::CreateChildPipeline(GPUExecutor& executor,
                                                                    GPUPipeline& pipeline,
                                                                    GPUPhysicalOperator& op)
-{
-  return executor.CreateChildPipeline(pipeline, op);
-}
+{ return executor.CreateChildPipeline(pipeline, op); }
 
 vector<reference<GPUPhysicalOperator>> GPUPipelineBuildState::GetPipelineOperators(
   GPUPipeline& pipeline)
-{
-  return pipeline.operators;
-}
+{ return pipeline.operators; }
 
 // bool GPUPipeline::is_pipeline_finished() { return pipeline_finished; }
 

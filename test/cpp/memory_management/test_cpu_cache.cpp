@@ -25,9 +25,7 @@ using namespace duckdb;
 constexpr size_t CPU_CACHE_TEST_MEM_SF =
   8;  // Factor used to determine the initial size of the CPU cache
 size_t calculate_test_cpu_cache_size(size_t bytes_to_cache)
-{
-  return std::pow(2.0, std::ceil(std::log2(CPU_CACHE_TEST_MEM_SF * bytes_to_cache)));
-}
+{ return std::pow(2.0, std::ceil(std::log2(CPU_CACHE_TEST_MEM_SF * bytes_to_cache))); }
 
 TEST_CASE("test_cpu_cache_basic_fixed_single_col", "[.][cpu_cache]")
 {

@@ -58,7 +58,7 @@ _CCCL_DEVICE _CCCL_FORCEINLINE void stage_packed_to_shmem(uint32_t* dst_words,
   auto* const dst_bytes = reinterpret_cast<uint8_t*>(dst_words);
   auto const n_bytes    = static_cast<::cuda::std::size_t>(n_live_words) * sizeof(uint32_t);
   auto const low        = reinterpret_cast<::cuda::std::uintptr_t>(src_bytes) |
-                   reinterpret_cast<::cuda::std::uintptr_t>(dst_bytes) | n_bytes;
+                          reinterpret_cast<::cuda::std::uintptr_t>(dst_bytes) | n_bytes;
 
   if ((low & 0x3u) == 0) {
     // Aligned: inform memcpy_async of the widest cp.async transaction the data jointly supports.

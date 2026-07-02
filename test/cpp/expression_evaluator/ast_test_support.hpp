@@ -73,14 +73,10 @@ using ast_node = sirius::ast::node;
 //===----------------------------------------------------------------------===//
 
 inline std::unique_ptr<ast_node> make_ref(uint32_t idx)
-{
-  return std::make_unique<ast_node>(sirius::ast::reference{idx});
-}
+{ return std::make_unique<ast_node>(sirius::ast::reference{idx}); }
 
 inline std::unique_ptr<ast_node> make_ref_typed(uint32_t idx, sirius::logical_type type)
-{
-  return std::make_unique<ast_node>(sirius::ast::reference{idx, type});
-}
+{ return std::make_unique<ast_node>(sirius::ast::reference{idx, type}); }
 
 inline std::unique_ptr<ast_node> make_int_const(int32_t v)
 {
@@ -108,9 +104,7 @@ inline std::unique_ptr<ast_node> make_str_const(std::string s)
 
 // A typed NULL constant (no cuDF AST literal representation).
 inline std::unique_ptr<ast_node> make_null_const(sirius::logical_type type)
-{
-  return std::make_unique<ast_node>(sirius::ast::constant{sirius::value{}, type});
-}
+{ return std::make_unique<ast_node>(sirius::ast::constant{sirius::value{}, type}); }
 
 inline std::unique_ptr<ast_node> make_dec32_const(int32_t unscaled,
                                                   uint8_t precision,
@@ -149,15 +143,11 @@ inline std::unique_ptr<ast_node> make_cmp(sirius::comparison_type op,
 inline std::unique_ptr<ast_node> make_func(sirius::function_id id,
                                            std::vector<std::unique_ptr<ast_node>> args,
                                            sirius::logical_type return_type)
-{
-  return std::make_unique<ast_node>(sirius::ast::function_call{id, std::move(args), return_type});
-}
+{ return std::make_unique<ast_node>(sirius::ast::function_call{id, std::move(args), return_type}); }
 
 inline std::unique_ptr<ast_node> make_conj(sirius::ast::conjunction::kind kind,
                                            std::vector<std::unique_ptr<ast_node>> children)
-{
-  return std::make_unique<ast_node>(sirius::ast::conjunction{kind, std::move(children)});
-}
+{ return std::make_unique<ast_node>(sirius::ast::conjunction{kind, std::move(children)}); }
 
 inline std::unique_ptr<ast_node> make_between(std::unique_ptr<ast_node> input,
                                               std::unique_ptr<ast_node> lower,
@@ -172,15 +162,11 @@ inline std::unique_ptr<ast_node> make_between(std::unique_ptr<ast_node> input,
 inline std::unique_ptr<ast_node> make_cast(std::unique_ptr<ast_node> child,
                                            sirius::logical_type target_type,
                                            bool try_cast)
-{
-  return std::make_unique<ast_node>(sirius::ast::cast{std::move(child), target_type, try_cast});
-}
+{ return std::make_unique<ast_node>(sirius::ast::cast{std::move(child), target_type, try_cast}); }
 
 inline std::unique_ptr<ast_node> make_coalesce(std::vector<std::unique_ptr<ast_node>> children,
                                                sirius::logical_type return_type)
-{
-  return std::make_unique<ast_node>(sirius::ast::coalesce{std::move(children), return_type});
-}
+{ return std::make_unique<ast_node>(sirius::ast::coalesce{std::move(children), return_type}); }
 
 inline std::unique_ptr<ast_node> make_in(std::unique_ptr<ast_node> probe,
                                          std::vector<std::unique_ptr<ast_node>> values,
@@ -192,9 +178,7 @@ inline std::unique_ptr<ast_node> make_in(std::unique_ptr<ast_node> probe,
 
 inline std::unique_ptr<ast_node> make_unary(sirius::ast::unary_op::kind kind,
                                             std::unique_ptr<ast_node> child)
-{
-  return std::make_unique<ast_node>(sirius::ast::unary_op{kind, std::move(child)});
-}
+{ return std::make_unique<ast_node>(sirius::ast::unary_op{kind, std::move(child)}); }
 
 //===----------------------------------------------------------------------===//
 // GPU -> host column copy helpers

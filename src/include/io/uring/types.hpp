@@ -71,9 +71,7 @@ struct chunked_rx_request {
   /// already read (vectored-read resume path).  Fills @p out in place, reusing
   /// its capacity across resubmissions; @c chunk.buffers is untouched.
   void fill_remaining_iovecs(size_t skip, std::vector<iovec>& out) const
-  {
-    chunk.fill_remaining_buffers(skip, out);
-  }
+  { chunk.fill_remaining_buffers(skip, out); }
 
   cudaError_t copy_h2d_async(cudaEvent_t event = nullptr) noexcept
   {
@@ -85,9 +83,7 @@ struct chunked_rx_request {
   }
 
   [[nodiscard]] bool needs_event_for_synchronization() const noexcept
-  {
-    return !chunk.is_buffer_allocated() && cpy_req != nullptr;
-  }
+  { return !chunk.is_buffer_allocated() && cpy_req != nullptr; }
 
   std::unique_ptr<device_cpy_request> cpy_req;
   std::shared_ptr<request_manager> manager;

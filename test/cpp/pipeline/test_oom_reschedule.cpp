@@ -137,9 +137,7 @@ class oom_test_task_base : public sirius::pipeline::gpu_pipeline_task {
   }
 
   std::unique_ptr<sirius::op::operator_data> compute_task(rmm::cuda_stream_view) override
-  {
-    return nullptr;
-  }
+  { return nullptr; }
 
   void publish_output(sirius::op::operator_data&, rmm::cuda_stream_view) override {}
 

@@ -322,9 +322,7 @@ class core {
 
   template <class rep, class period>
   bool wait_for(std::chrono::duration<rep, period> const& dur)
-  {
-    return wait_until(std::chrono::steady_clock::now() + dur);
-  }
+  { return wait_until(std::chrono::steady_clock::now() + dur); }
 
   bool wait_until(std::chrono::steady_clock::time_point deadline)
   {
@@ -357,9 +355,7 @@ class core {
   // Caller must have observed ready() == true. Single-shot; mutually
   // exclusive with set_callback().
   try_t<value_t> steal() noexcept(std::is_nothrow_move_constructible_v<try_t<value_t>>)
-  {
-    return std::move(_try);
-  }
+  { return std::move(_try); }
 
  private:
   static constexpr std::uint32_t empty        = 0;
@@ -430,9 +426,7 @@ class leaf_state final : public state<value_t> {
 
   void await() override { _core->wait(); }
   bool await_until(std::chrono::steady_clock::time_point deadline) override
-  {
-    return _core->wait_until(deadline);
-  }
+  { return _core->wait_until(deadline); }
   [[nodiscard]] bool peek_ready() const noexcept override { return _core->ready(); }
   try_t<value_t> consume() override
   {
@@ -481,9 +475,7 @@ class deferred_state final : public state<value_t> {
 
   void await() override { _upstream->await(); }
   bool await_until(std::chrono::steady_clock::time_point deadline) override
-  {
-    return _upstream->await_until(deadline);
-  }
+  { return _upstream->await_until(deadline); }
   [[nodiscard]] bool peek_ready() const noexcept override { return _upstream->peek_ready(); }
   try_t<value_t> consume() override
   {
@@ -827,9 +819,7 @@ class semi_future {
 
   template <class rep, class period>
   bool wait_for(std::chrono::duration<rep, period> const& dur)
-  {
-    return _state->await_until(std::chrono::steady_clock::now() + dur);
-  }
+  { return _state->await_until(std::chrono::steady_clock::now() + dur); }
 
   std::unique_ptr<detail::state<value_t>> _state;
 };
@@ -894,9 +884,7 @@ class promise {
 
   template <class exc_t>
   void set_exception(exc_t&& e)
-  {
-    set_exception(std::make_exception_ptr(std::forward<exc_t>(e)));
-  }
+  { set_exception(std::make_exception_ptr(std::forward<exc_t>(e))); }
 
   void set_try(try_t<value_t>&& t)
   {
@@ -1130,9 +1118,7 @@ future<value_t, exec_t> semi_future<value_t>::via(exec_t* exe) &&
 template <class value_t>
 template <executor_concept exec_t>
 future<value_t, exec_t> promise<value_t>::get_future(exec_t* exe)
-{
-  return get_semi_future().via(exe);
-}
+{ return get_semi_future().via(exe); }
 
 namespace detail {
 
@@ -1159,9 +1145,7 @@ void flat_map_state<value_t, upstream_t, fn_t>::set_callback(typename state<valu
 
 template <class value_t>
 semi_future<value_t> make_semi_future(try_t<value_t> t)
-{
-  return semi_future<value_t>(std::make_unique<detail::ready_state<value_t>>(std::move(t)));
-}
+{ return semi_future<value_t>(std::make_unique<detail::ready_state<value_t>>(std::move(t))); }
 
 template <class value_t,
           std::enable_if_t<!detail::is_try_v<std::decay_t<value_t>> &&

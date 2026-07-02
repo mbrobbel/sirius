@@ -130,9 +130,7 @@ class task_scheduler {
    * @brief Get a pointer to the pipeline-level task queue.
    */
   [[nodiscard]] exec::inspectable_mpsc<sirius::parallel::itask>* get_pipeline_task_queue() noexcept
-  {
-    return &_task_queue;
-  }
+  { return &_task_queue; }
 
   /**
    * @brief Set the priority scan operators
@@ -198,9 +196,7 @@ class task_scheduler {
    * `management_eventloop`. Concurrent calls are safe (atomic store).
    */
   void set_no_pref_rr_counter_for_testing(size_t value) noexcept
-  {
-    _no_pref_rr_counter.store(value, std::memory_order_relaxed);
-  }
+  { _no_pref_rr_counter.store(value, std::memory_order_relaxed); }
 
  private:
   void management_eventloop();

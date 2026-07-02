@@ -69,9 +69,7 @@ __device__ __forceinline__ bool parse_dict_header(uint8_t const* base,
 // The index buffer holds uint32 forward-cumulative byte offsets at base+index_buffer_offset. The
 // segment base is not guaranteed uint32-aligned, so read each entry alignment-agnostically.
 __device__ __forceinline__ uint32_t dict_index_at(uint8_t const* idx_bytes, int i)
-{
-  return detail::load_unaligned<uint32_t>(idx_bytes + static_cast<size_t>(i) * sizeof(uint32_t));
-}
+{ return detail::load_unaligned<uint32_t>(idx_bytes + static_cast<size_t>(i) * sizeof(uint32_t)); }
 
 //! @brief Compute decoded string lengths for a DICTIONARY segment.
 //!

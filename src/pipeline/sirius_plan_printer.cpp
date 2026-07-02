@@ -292,9 +292,7 @@ std::string sirius_plan_printer::barrier_type_to_string(op::MemoryBarrierType ty
 }
 
 std::string sirius_plan_printer::format_operator_with_id(const op::sirius_physical_operator& op)
-{
-  return op.get_name() + " (id=" + std::to_string(op.get_operator_id()) + ")";
-}
+{ return op.get_name() + " (id=" + std::to_string(op.get_operator_id()) + ")"; }
 
 std::vector<std::string> sirius_plan_printer::get_operator_detail_lines(
   const op::sirius_physical_operator& op)

@@ -102,9 +102,7 @@ void attach_port(sirius_physical_sort_sample& sample_op,
 }
 
 std::size_t batch_count(const operator_data& data)
-{
-  return dynamic_cast<const pipelineable_operator_data&>(data).get_data_batches().size();
-}
+{ return dynamic_cast<const pipelineable_operator_data&>(data).get_data_batches().size(); }
 
 int32_t read_int32_column(const cudf::column_view& col, cudf::size_type row)
 {

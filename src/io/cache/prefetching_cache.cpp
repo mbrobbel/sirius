@@ -120,14 +120,10 @@ class prefetching_handle::prefetch_lifecycle_manager {
   void cancel() noexcept { _user_state->store(prefetching_handle_state::cancelled); }
 
   [[nodiscard]] bool is_active() const noexcept
-  {
-    return _user_state->load(std::memory_order_acquire) == prefetching_handle_state::active;
-  }
+  { return _user_state->load(std::memory_order_acquire) == prefetching_handle_state::active; }
 
   [[nodiscard]] std::shared_ptr<prefetch_request_context> get_context() const noexcept
-  {
-    return _ctx;
-  }
+  { return _ctx; }
 
   void evict() noexcept
   {
@@ -162,9 +158,7 @@ void prefetching_handle::cancel() noexcept
 bool prefetching_handle::is_active() const noexcept { return _state && _state->is_active(); }
 
 std::shared_ptr<prefetch_request_context> prefetching_handle::get_context() const noexcept
-{
-  return _state ? _state->get_context() : nullptr;
-}
+{ return _state ? _state->get_context() : nullptr; }
 
 prefetching_handle::prefetching_handle(std::unique_ptr<prefetch_lifecycle_manager> mgr) noexcept
   : _state(std::move(mgr))
@@ -280,9 +274,9 @@ prefetching_cache::prefetching_cache(
   _preparation_thread = std::jthread([this](const std::stop_token& st) { prepare_loop(st); },
                                      _preparation_stop_source.get_token());
   _prefetch_thread    = std::jthread([this](const std::stop_token& st) { prefetch_loop(st); },
-                                  _prefetch_stop_source.get_token());
+                                     _prefetch_stop_source.get_token());
   _evictor_thread     = std::jthread([this](const std::stop_token& st) { evict_loop(st); },
-                                 _evictor_stop_source.get_token());
+                                     _evictor_stop_source.get_token());
   _chunk_size         = _pool->chunk_size();
 }
 

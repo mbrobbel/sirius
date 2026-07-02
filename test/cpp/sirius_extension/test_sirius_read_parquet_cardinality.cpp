@@ -20,9 +20,7 @@ constexpr duckdb::idx_t orders_row_count = 150000;
 
 struct unrelated_function_data : public duckdb::FunctionData {
   duckdb::unique_ptr<duckdb::FunctionData> Copy() const override
-  {
-    return duckdb::unique_ptr<duckdb::FunctionData>(new unrelated_function_data());
-  }
+  { return duckdb::unique_ptr<duckdb::FunctionData>(new unrelated_function_data()); }
 
   bool Equals(duckdb::FunctionData const& other) const override { return this == &other; }
 };

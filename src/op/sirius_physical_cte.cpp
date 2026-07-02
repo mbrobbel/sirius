@@ -68,9 +68,7 @@ void sirius_physical_cte::build_pipelines(pipeline::sirius_pipeline& current,
 
 duckdb::vector<duckdb::const_reference<sirius_physical_operator>> sirius_physical_cte::get_sources()
   const
-{
-  return children[1]->get_sources();
-}
+{ return children[1]->get_sources(); }
 
 std::unique_ptr<operator_data> sirius_physical_cte::execute(const operator_data& input_data,
                                                             rmm::cuda_stream_view stream)

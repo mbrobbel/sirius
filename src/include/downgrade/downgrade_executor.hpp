@@ -165,9 +165,7 @@ class downgrade_executor {
    * or is actively issuing requests.
    */
   size_t monitor_requests_issued_for_testing() const
-  {
-    return _monitor_requests_issued.load(std::memory_order_relaxed);
-  }
+  { return _monitor_requests_issued.load(std::memory_order_relaxed); }
 
  private:
   void processing_loop();

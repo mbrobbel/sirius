@@ -96,7 +96,7 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator> extract_aggregate_expre
     if (bound_aggr.filter) {
       auto& filter = bound_aggr.filter;
       auto ref     = duckdb::make_uniq<duckdb::BoundReferenceExpression>(filter->return_type,
-                                                                     expressions.size());
+                                                                         expressions.size());
       types.push_back(filter->return_type);
       expressions.push_back(std::move(filter));
       bound_aggr.filter = std::move(ref);

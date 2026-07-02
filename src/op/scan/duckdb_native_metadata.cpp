@@ -228,9 +228,7 @@ void compute_segment_bytes_size(std::vector<duckdb_row_group_metadata>& row_grou
 /// its bounds come from a runtime source (e.g. a hash-join build) and are not
 /// currently populated at metadata-walk time.
 bool filter_is_prunable(duckdb::TableFilterType t)
-{
-  return t != duckdb::TableFilterType::DYNAMIC_FILTER;
-}
+{ return t != duckdb::TableFilterType::DYNAMIC_FILTER; }
 
 std::size_t estimate_decoded_bytes_budget(duckdb::idx_t row_count,
                                           const std::vector<projected_column>& projected_cols,

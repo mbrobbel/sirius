@@ -24,25 +24,19 @@ sirius_meta_pipeline::sirius_meta_pipeline(
   sirius_pipeline_build_state& state_p,
   sirius::optional_ptr<op::sirius_physical_operator> sink_p)
   : build_ctx(ctx), state(state_p), sink(sink_p), recursive_cte(false), next_batch_index(0)
-{
-  create_pipeline();
-}
+{ create_pipeline(); }
 
 const pipeline_build_context& sirius_meta_pipeline::get_build_context() const { return build_ctx; }
 
 sirius_pipeline_build_state& sirius_meta_pipeline::get_state() const { return state; }
 
 sirius::optional_ptr<op::sirius_physical_operator> sirius_meta_pipeline::get_sink() const
-{
-  return sink;
-}
+{ return sink; }
 
 sirius::optional_ptr<sirius_pipeline> sirius_meta_pipeline::get_parent() const { return parent; }
 
 duckdb::shared_ptr<sirius_pipeline>& sirius_meta_pipeline::get_base_pipeline()
-{
-  return pipelines[0];
-}
+{ return pipelines[0]; }
 
 void sirius_meta_pipeline::get_pipelines(
   duckdb::vector<duckdb::shared_ptr<sirius_pipeline>>& result, bool recursive)
@@ -95,9 +89,7 @@ bool sirius_meta_pipeline::has_recursive_cte() const { return recursive_cte; }
 void sirius_meta_pipeline::set_recursive_cte() { recursive_cte = true; }
 
 void sirius_meta_pipeline::assign_next_batch_index(sirius_pipeline& pipeline)
-{
-  pipeline.base_batch_index = next_batch_index++ * sirius_pipeline_build_state::BATCH_INCREMENT;
-}
+{ pipeline.base_batch_index = next_batch_index++ * sirius_pipeline_build_state::BATCH_INCREMENT; }
 
 void sirius_meta_pipeline::build(op::sirius_physical_operator& op)
 {
@@ -218,9 +210,7 @@ void sirius_meta_pipeline::add_finish_event(sirius_pipeline& pipeline)
 }
 
 bool sirius_meta_pipeline::has_finish_event(sirius_pipeline& pipeline) const
-{
-  return finish_pipelines.find(pipeline) != finish_pipelines.end();
-}
+{ return finish_pipelines.find(pipeline) != finish_pipelines.end(); }
 
 sirius::optional_ptr<sirius_pipeline> sirius_meta_pipeline::get_finish_group(
   sirius_pipeline& pipeline) const

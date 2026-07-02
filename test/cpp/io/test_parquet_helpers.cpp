@@ -97,9 +97,9 @@ TEST_CASE("parquet_helpers extract_schema maps flat parquet leaves", "[parquet_h
   auto const dir       = fresh_tmp_dir("flat");
   auto [db_owner, con] = sirius::make_test_db_and_connection();
   auto const path      = write_parquet(con,
-                                  dir,
-                                  "flat_types",
-                                  "CREATE TABLE flat_types AS SELECT "
+                                       dir,
+                                       "flat_types",
+                                       "CREATE TABLE flat_types AS SELECT "
                                        "42::INTEGER AS i32_col, "
                                        "9000000000::BIGINT AS i64_col, "
                                        "1.25::DOUBLE AS double_col, "
@@ -124,9 +124,9 @@ TEST_CASE("parquet_helpers extract_schema maps decimal date and timestamp annota
   auto const dir       = fresh_tmp_dir("annotations");
   auto [db_owner, con] = sirius::make_test_db_and_connection();
   auto const path      = write_parquet(con,
-                                  dir,
-                                  "annotated_types",
-                                  "CREATE TABLE annotated_types AS SELECT "
+                                       dir,
+                                       "annotated_types",
+                                       "CREATE TABLE annotated_types AS SELECT "
                                        "12.34::DECIMAL(12,2) AS amount, "
                                        "DATE '2024-01-02' AS day_value, "
                                        "TIMESTAMP '2024-01-02 03:04:05' AS ts_value");
@@ -147,9 +147,9 @@ TEST_CASE("parquet_helpers extract_schema rejects nested top-level columns clean
   auto const dir       = fresh_tmp_dir("nested");
   auto [db_owner, con] = sirius::make_test_db_and_connection();
   auto const path      = write_parquet(con,
-                                  dir,
-                                  "nested_types",
-                                  "CREATE TABLE nested_types AS SELECT "
+                                       dir,
+                                       "nested_types",
+                                       "CREATE TABLE nested_types AS SELECT "
                                        "struct_pack(child := 7) AS payload");
 
   auto meta = read_metadata(path);

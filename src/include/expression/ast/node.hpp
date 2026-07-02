@@ -160,23 +160,17 @@ struct node {
   /// Returns true if this node currently holds an alternative of type T.
   template <class T>
   [[nodiscard]] bool holds() const noexcept
-  {
-    return std::holds_alternative<T>(v);
-  }
+  { return std::holds_alternative<T>(v); }
 
   /// Returns a reference to the held alternative of type T.
   /// Throws std::bad_variant_access if the held alternative is a different type.
   template <class T>
   [[nodiscard]] T& get()
-  {
-    return std::get<T>(v);
-  }
+  { return std::get<T>(v); }
 
   template <class T>
   [[nodiscard]] T const& get() const
-  {
-    return std::get<T>(v);
-  }
+  { return std::get<T>(v); }
 
   [[nodiscard]] bool is_reference() const noexcept;
   [[nodiscard]] bool is_aggregate() const noexcept;

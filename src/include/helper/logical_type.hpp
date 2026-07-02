@@ -109,9 +109,7 @@ class logical_type {
    * @param scale      Fractional digits (0–precision).
    */
   static logical_type make_decimal(uint8_t precision, uint8_t scale)
-  {
-    return logical_type(type_id::DECIMAL, precision, scale);
-  }
+  { return logical_type(type_id::DECIMAL, precision, scale); }
 
   //===--------------------------------------------------------------------===//
   // Type inspection
@@ -267,9 +265,7 @@ class logical_type {
   //===--------------------------------------------------------------------===//
 
   bool operator==(const logical_type& other) const noexcept
-  {
-    return _id == other._id && _precision == other._precision && _scale == other._scale;
-  }
+  { return _id == other._id && _precision == other._precision && _scale == other._scale; }
 
   bool operator!=(const logical_type& other) const noexcept { return !(*this == other); }
 

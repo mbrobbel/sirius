@@ -612,9 +612,9 @@ prepared_dict_fsst prepare_dict_fsst(gpu_string_codec_run const& run,
   size_t const d2h_bytes = num_segs * sizeof(fsst_decoder_compact) +
                            2 * total_dict_entries * sizeof(uint32_t) + num_segs * sizeof(uint32_t) +
                            num_segs * sizeof(uint8_t);
-  auto* staging      = static_cast<uint8_t*>(d2h_pool.get(d2h_bytes));
-  size_t off         = 0;
-  auto* pin_decoders = reinterpret_cast<fsst_decoder_compact*>(staging + off);
+  auto* staging          = static_cast<uint8_t*>(d2h_pool.get(d2h_bytes));
+  size_t off             = 0;
+  auto* pin_decoders     = reinterpret_cast<fsst_decoder_compact*>(staging + off);
   off += num_segs * sizeof(fsst_decoder_compact);
   auto* pin_byte_off = reinterpret_cast<uint32_t*>(staging + off);
   off += total_dict_entries * sizeof(uint32_t);

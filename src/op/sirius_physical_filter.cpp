@@ -52,9 +52,7 @@ sirius_physical_filter::sirius_physical_filter(duckdb::vector<sirius::logical_ty
       SiriusPhysicalOperatorType::FILTER, std::move(types), estimated_cardinality),
     expression(std::move(expression_p)),
     output_columns(passthrough{})
-{
-  D_ASSERT(expression != nullptr);
-}
+{ D_ASSERT(expression != nullptr); }
 
 std::unique_ptr<operator_data> sirius_physical_filter::execute(const operator_data& input_data,
                                                                rmm::cuda_stream_view stream)

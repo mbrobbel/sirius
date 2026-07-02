@@ -68,7 +68,7 @@ unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::PlanComparisonJoin(
     //                                     std::move(op.filter_pushdown));
     // join.Cast<PhysicalHashJoin>().join_stats = std::move(op.join_stats);
     // return join;
-    auto join                                    = make_uniq<GPUPhysicalHashJoin>(op,
+    auto join = make_uniq<GPUPhysicalHashJoin>(op,
                                                std::move(left),
                                                std::move(right),
                                                std::move(op.conditions),

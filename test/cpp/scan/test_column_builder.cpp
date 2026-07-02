@@ -40,9 +40,7 @@ using namespace cucascade::memory;
 //===----------------------------------------------------------------------===//
 
 static std::filesystem::path get_test_config_path()
-{
-  return std::filesystem::path(__FILE__).parent_path() / "memory.yaml";
-}
+{ return std::filesystem::path(__FILE__).parent_path() / "memory.yaml"; }
 
 static memory_space* get_host_space(duckdb::SiriusContext& sirius_ctx)
 {
@@ -561,7 +559,7 @@ TEST_CASE("column_builder - process_column for VARCHAR",
     size_t total_size = sizeof(int64_t) * (num_rows + 1) +    // offsets
                         DEFAULT_VARCHAR_SIZE * num_rows +     // data
                         sirius::utils::ceil_div_8(num_rows);  // mask
-    auto allocation = create_test_allocation(*sirius_ctx, total_size);
+    auto allocation   = create_test_allocation(*sirius_ctx, total_size);
     builder.initialize_accessors(num_rows, 0, allocation);
 
     // Create a DuckDB vector with string data
@@ -608,7 +606,7 @@ TEST_CASE("column_builder - process_column for VARCHAR",
     size_t total_size = sizeof(int64_t) * (num_rows + 1) +    // offsets
                         DEFAULT_VARCHAR_SIZE * num_rows +     // data
                         sirius::utils::ceil_div_8(num_rows);  // mask
-    auto allocation = create_test_allocation(*sirius_ctx, total_size);
+    auto allocation   = create_test_allocation(*sirius_ctx, total_size);
     builder.initialize_accessors(num_rows, 0, allocation);
 
     // Create a DuckDB vector with string data
@@ -701,7 +699,7 @@ TEST_CASE("column_builder - multiple batch processing",
     size_t total_size = sizeof(int64_t) * (num_rows + 1) +    // offsets
                         256 * num_rows +                      // data
                         sirius::utils::ceil_div_8(num_rows);  // mask
-    auto allocation = create_test_allocation(*sirius_ctx, total_size);
+    auto allocation   = create_test_allocation(*sirius_ctx, total_size);
     builder.initialize_accessors(num_rows, 0, allocation);
 
     // Process first batch

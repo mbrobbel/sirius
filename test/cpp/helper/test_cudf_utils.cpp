@@ -85,13 +85,9 @@ TEST_CASE("estimate_referenced_column_bytes: fixed vs. single variable-width col
     REQUIRE(estimate_referenced_column_bytes(input, {0, 2}, total) == fixed_total);
   }
   SECTION("variable-width column gets the non-fixed remainder")
-  {
-    REQUIRE(estimate_referenced_column_bytes(input, {1}, total) == string_bytes);
-  }
+  { REQUIRE(estimate_referenced_column_bytes(input, {1}, total) == string_bytes); }
   SECTION("referencing every column reconstructs the total")
-  {
-    REQUIRE(estimate_referenced_column_bytes(input, {0, 1, 2}, total) == total);
-  }
+  { REQUIRE(estimate_referenced_column_bytes(input, {0, 1, 2}, total) == total); }
   SECTION("duplicate indices are counted once")
   {
     REQUIRE(estimate_referenced_column_bytes(input, {0, 0, 0}, total) == i64_bytes);

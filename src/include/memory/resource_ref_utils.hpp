@@ -39,35 +39,25 @@ class host_device_resource_view {
   void* allocate(::cuda::stream_ref stream,
                  std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t))
-  {
-    return resource_->allocate(stream, bytes, alignment);
-  }
+  { return resource_->allocate(stream, bytes, alignment); }
 
   void deallocate(::cuda::stream_ref stream,
                   void* ptr,
                   std::size_t bytes,
                   std::size_t alignment = alignof(std::max_align_t)) noexcept
-  {
-    resource_->deallocate(stream, ptr, bytes, alignment);
-  }
+  { resource_->deallocate(stream, ptr, bytes, alignment); }
 
   void* allocate_sync(std::size_t bytes, std::size_t alignment = alignof(std::max_align_t))
-  {
-    return resource_->allocate_sync(bytes, alignment);
-  }
+  { return resource_->allocate_sync(bytes, alignment); }
 
   void deallocate_sync(void* ptr,
                        std::size_t bytes,
                        std::size_t alignment = alignof(std::max_align_t)) noexcept
-  {
-    resource_->deallocate_sync(ptr, bytes, alignment);
-  }
+  { resource_->deallocate_sync(ptr, bytes, alignment); }
 
   friend bool operator==(host_device_resource_view const& lhs,
                          host_device_resource_view const& rhs) noexcept
-  {
-    return lhs.resource_ == rhs.resource_;
-  }
+  { return lhs.resource_ == rhs.resource_; }
 
   friend void get_property(host_device_resource_view const&, ::cuda::mr::device_accessible) noexcept
   {

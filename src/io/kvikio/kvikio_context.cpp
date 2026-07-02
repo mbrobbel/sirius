@@ -62,17 +62,13 @@ bool kvikio_context::supports(std::string_view /*path*/) const noexcept
 std::vector<cudf::io::text::byte_range_info> kvikio_context::align_and_coalesce(
   std::span<const cudf::io::text::byte_range_info> ranges,
   std::optional<size_t> /*alignment*/) const noexcept
-{
-  return {ranges.begin(), ranges.end()};
-}
+{ return {ranges.begin(), ranges.end()}; }
 
 size_t kvikio_context::host_read_io(const sirius_io_object& obj,
                                     size_t offset,
                                     size_t size,
                                     uint8_t* dst)
-{
-  return as_kvikio(obj).datasource().host_read(offset, size, reinterpret_cast<uint8_t*>(dst));
-}
+{ return as_kvikio(obj).datasource().host_read(offset, size, reinterpret_cast<uint8_t*>(dst)); }
 
 exec::semi_future<size_t> kvikio_context::host_read_async_io(const sirius_io_object& obj,
                                                              size_t offset,

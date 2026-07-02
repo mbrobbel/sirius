@@ -96,14 +96,10 @@ scan_manager_config make_minio_rest_config(bool perf_instrumentation = false)
 }
 
 std::string parquet_uri(std::string const& bucket, std::string const& file_name)
-{
-  return "s3://" + bucket + "/parquet/" + file_name;
-}
+{ return "s3://" + bucket + "/parquet/" + file_name; }
 
 std::vector<std::string> bind_names(parquet_bind_result const& result)
-{
-  return {result.names.begin(), result.names.end()};
-}
+{ return {result.names.begin(), result.names.end()}; }
 
 std::vector<std::string> bind_type_strings(parquet_bind_result const& result)
 {
@@ -134,9 +130,7 @@ rest_ioctx* require_rest_ioctx(std::shared_ptr<sirius::io::sirius_datasource> co
 }
 
 rest_ioctx* require_rest_ioctx_for(sirius_scan_manager& manager, std::string const& uri)
-{
-  return require_rest_ioctx(manager.create_datasource(uri));
-}
+{ return require_rest_ioctx(manager.create_datasource(uri)); }
 
 std::uint64_t chunk_get_count(rest_ioctx const& ctx) { return ctx.perf_snapshot().chunk_get_count; }
 

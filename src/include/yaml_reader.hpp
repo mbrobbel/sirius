@@ -134,9 +134,7 @@ inline void read_yaml(const YAML::Node& node, std::string& out) { out = node.as<
 
 template <std::floating_point T>
 void read_yaml(const YAML::Node& node, T& out)
-{
-  out = static_cast<T>(node.as<double>());
-}
+{ out = static_cast<T>(node.as<double>()); }
 
 template <std::integral T>
   requires(!std::is_same_v<T, bool>)
@@ -157,9 +155,7 @@ struct bytes_value {
 
 template <std::integral T>
 bytes_value<T> bytes(T& v)
-{
-  return {v};
-}
+{ return {v}; }
 
 template <std::integral T>
 void read_yaml(const YAML::Node& node, bytes_value<T>& out)
@@ -182,9 +178,7 @@ struct optional_bytes_value {
 
 template <std::integral T>
 optional_bytes_value<T> bytes(std::optional<T>& v)
-{
-  return {v};
-}
+{ return {v}; }
 
 template <std::integral T>
 void read_yaml(const YAML::Node& node, optional_bytes_value<T>& out)
@@ -206,9 +200,7 @@ void read_yaml(const YAML::Node& node, optional_bytes_value<T>& out)
 /// std::chrono::milliseconds, seconds for std::chrono::seconds, etc.).
 template <typename Rep, typename Period>
 void read_yaml(const YAML::Node& node, std::chrono::duration<Rep, Period>& out)
-{
-  out = std::chrono::duration<Rep, Period>{node.as<Rep>()};
-}
+{ out = std::chrono::duration<Rep, Period>{node.as<Rep>()}; }
 
 template <StringEnum T>
 void read_yaml(const YAML::Node& node, T& out)
@@ -221,16 +213,12 @@ void read_yaml(const YAML::Node& node, T& out)
 
 template <IntEnum T>
 void read_yaml(const YAML::Node& node, T& out)
-{
-  out = static_cast<T>(node.as<int>());
-}
+{ out = static_cast<T>(node.as<int>()); }
 
 /// Struct with a static from_yaml method.
 template <HasFromYaml T>
 void read_yaml(const YAML::Node& node, T& out)
-{
-  T::from_yaml(node, out);
-}
+{ T::from_yaml(node, out); }
 
 /// Vector of any supported type.
 template <typename T>

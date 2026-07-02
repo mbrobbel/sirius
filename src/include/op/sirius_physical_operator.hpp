@@ -186,9 +186,7 @@ class operator_data {
 class pipelineable_operator_data : public operator_data {
  public:
   pipelineable_operator_data()
-  {
-    _data_batches = std::vector<std::shared_ptr<::cucascade::data_batch>>();
-  }
+  { _data_batches = std::vector<std::shared_ptr<::cucascade::data_batch>>(); }
   explicit pipelineable_operator_data(
     std::vector<std::shared_ptr<::cucascade::data_batch>> data_batches)
     : _data_batches(std::move(data_batches))
@@ -201,9 +199,7 @@ class pipelineable_operator_data : public operator_data {
   }
 
   [[nodiscard]] operator_data_type get_type() const override
-  {
-    return operator_data_type::PIPELINEABLE;
-  }
+  { return operator_data_type::PIPELINEABLE; }
 
   /**
    * @brief Get idle data batch pointers, lazily populating from read-only batches if needed.
@@ -270,9 +266,7 @@ class partitioned_operator_data : public pipelineable_operator_data {
   }
 
   [[nodiscard]] operator_data_type get_type() const override
-  {
-    return operator_data_type::PARTITIONED;
-  }
+  { return operator_data_type::PARTITIONED; }
 
   /**
    * @brief Get the partition index.
@@ -378,18 +372,14 @@ class sirius_physical_operator {
    * @return Estimated peak GPU bytes this operator will allocate.
    */
   [[nodiscard]] virtual std::size_t no_history_peak_memory_estimate(const input_stats& stats) const
-  {
-    return stats.bytes * 2;
-  }
+  { return stats.bytes * 2; }
 
   virtual std::unique_ptr<operator_data> execute(const operator_data& input_data,
                                                  rmm::cuda_stream_view stream);
 
   //! The influence the operator has on order (insertion order means no influence)
   virtual sirius::OrderPreservationType operator_order() const
-  {
-    return sirius::OrderPreservationType::INSERTION_ORDER;
-  }
+  { return sirius::OrderPreservationType::INSERTION_ORDER; }
 
  public:
   // Source interface
@@ -397,9 +387,7 @@ class sirius_physical_operator {
 
   //! The type of order emitted by the operator (as a source)
   virtual sirius::OrderPreservationType source_order() const
-  {
-    return sirius::OrderPreservationType::INSERTION_ORDER;
-  }
+  { return sirius::OrderPreservationType::INSERTION_ORDER; }
 
  public:
   // Sink interface

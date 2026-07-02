@@ -56,9 +56,7 @@ namespace {
 
 /// True iff @p v is a multiple of IO_BLOCK_SIZE (O_DIRECT page size).
 [[nodiscard]] constexpr bool is_block_aligned(size_t v) noexcept
-{
-  return (v & (static_cast<size_t>(IO_BLOCK_SIZE) - 1)) == 0;
-}
+{ return (v & (static_cast<size_t>(IO_BLOCK_SIZE) - 1)) == 0; }
 
 /// True iff @p errc (a positive errno) means the kernel could not serve a
 /// fixed-buffer (IORING_OP_READ_FIXED) read because the registered-buffer table
@@ -66,9 +64,7 @@ namespace {
 /// Other errno values are genuine I/O failures and must be reported, not masked
 /// by a silent fallback.
 [[nodiscard]] constexpr bool is_fixed_buffer_error(int errc) noexcept
-{
-  return errc == EOPNOTSUPP || errc == EINVAL || errc == EFAULT || errc == ENOBUFS;
-}
+{ return errc == EOPNOTSUPP || errc == EINVAL || errc == EFAULT || errc == ENOBUFS; }
 
 struct io_slot {
   enum class h2d_sync_hint {
@@ -84,9 +80,7 @@ struct io_slot {
     : slot_index(slot_index),
       internal_buffer(internal_buffer),
       support_fixed_buffers(support_fixed_buffers)
-  {
-    assert(internal_buffer && "io_slot: internal_buffer must not be null");
-  }
+  { assert(internal_buffer && "io_slot: internal_buffer must not be null"); }
 
   void register_sqe(io_uring_sqe* sqe)
   {
@@ -462,9 +456,7 @@ struct unique_ring {
   [[nodiscard]] io_uring_sqe* get_sqe_with_drain() const { return io_uring_get_sqe(ring.get()); }
 
   [[nodiscard]] unsigned peek_cqe_batch(std::span<io_uring_cqe*> cqes) const
-  {
-    return io_uring_peek_batch_cqe(ring.get(), cqes.data(), cqes.size());
-  }
+  { return io_uring_peek_batch_cqe(ring.get(), cqes.data(), cqes.size()); }
 
   [[nodiscard]] void mark_cqe_seen(io_uring_cqe* cqe) const { io_uring_cqe_seen(ring.get(), cqe); }
 
@@ -744,7 +736,7 @@ cudf::io::text::byte_range_info uring_reactor::align_to_physical(
   auto size      = static_cast<size_t>(logical.size());
   size_t a_start = offset & ~(IO_BLOCK_SIZE - 1);
   size_t a_end   = std::min((offset + size + IO_BLOCK_SIZE - 1) & ~(IO_BLOCK_SIZE - 1),
-                          (file_size + IO_BLOCK_SIZE - 1) & ~(IO_BLOCK_SIZE - 1));
+                            (file_size + IO_BLOCK_SIZE - 1) & ~(IO_BLOCK_SIZE - 1));
   return {static_cast<int64_t>(a_start), static_cast<int64_t>(a_end - a_start)};
 }
 

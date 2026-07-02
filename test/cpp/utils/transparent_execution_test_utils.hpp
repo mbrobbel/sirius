@@ -33,9 +33,7 @@ inline duckdb::shared_ptr<duckdb::SiriusContext> get_registered_sirius_context(
 
 inline duckdb::SiriusContext::transparent_execution_stats get_transparent_execution_stats(
   duckdb::Connection& con)
-{
-  return get_registered_sirius_context(con)->get_transparent_execution_stats();
-}
+{ return get_registered_sirius_context(con)->get_transparent_execution_stats(); }
 
 inline void require_transparent_execution_delta(
   const duckdb::SiriusContext::transparent_execution_stats& before,

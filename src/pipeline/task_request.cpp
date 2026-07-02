@@ -39,9 +39,7 @@ void task_request_queue::close()
 }
 
 void task_request_queue::push(std::unique_ptr<task_request> request)
-{
-  _request_queue.enqueue(std::move(request));
-}
+{ _request_queue.enqueue(std::move(request)); }
 
 std::unique_ptr<task_request> task_request_queue::pull()
 {

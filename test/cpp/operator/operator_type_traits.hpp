@@ -34,9 +34,7 @@ struct gpu_type_traits<int32_t> {
   using agg_output_type     = type;
   using min_max_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::INTEGER);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::INTEGER); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::INT32;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -51,9 +49,7 @@ struct gpu_type_traits<int64_t> {
   using agg_output_type     = type;
   using min_max_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::BIGINT);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::BIGINT); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::INT64;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -68,9 +64,7 @@ struct gpu_type_traits<float> {
   using agg_output_type     = type;
   using min_max_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::FLOAT);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::FLOAT); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::FLOAT32;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -85,9 +79,7 @@ struct gpu_type_traits<double> {
   using agg_output_type     = type;
   using min_max_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::DOUBLE);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::DOUBLE); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::FLOAT64;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -101,9 +93,7 @@ struct gpu_type_traits<int16_t> {
   using type            = int16_t;
   using agg_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::SMALLINT);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::SMALLINT); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::INT16;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -117,9 +107,7 @@ struct gpu_type_traits<bool> {
   using type            = bool;
   using agg_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::BOOLEAN);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::BOOLEAN); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::BOOL8;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -150,9 +138,7 @@ struct gpu_type_traits<string_tag> {
   using type            = std::string;
   using agg_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::VARCHAR);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::VARCHAR); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::STRING;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = true;
@@ -167,9 +153,7 @@ struct gpu_type_traits<timestamp_us_tag> {
   using type            = int64_t;  // microseconds since epoch
   using agg_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::TIMESTAMP);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::TIMESTAMP); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::TIMESTAMP_MICROSECONDS;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;
@@ -184,9 +168,7 @@ struct gpu_type_traits<date32_tag> {
   using type            = int32_t;  // days since epoch
   using agg_output_type = type;
   static duckdb::LogicalType logical_type()
-  {
-    return duckdb::LogicalType(duckdb::LogicalTypeId::DATE);
-  }
+  { return duckdb::LogicalType(duckdb::LogicalTypeId::DATE); }
   static constexpr cudf::type_id cudf_type = cudf::type_id::TIMESTAMP_DAYS;
   static constexpr bool is_decimal         = false;
   static constexpr bool is_string          = false;

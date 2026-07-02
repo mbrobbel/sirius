@@ -62,14 +62,10 @@ bool starts_with_at(std::string_view text, std::size_t pos, std::string_view tok
 }
 
 bool is_identifier_char(char c)
-{
-  return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_';
-}
+{ return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_'; }
 
 bool has_identifier_boundary_before(std::string_view text, std::size_t pos)
-{
-  return pos == 0 || !is_identifier_char(text[pos - 1]);
-}
+{ return pos == 0 || !is_identifier_char(text[pos - 1]); }
 
 bool is_digit_separator(std::string_view text, std::size_t pos)
 {
@@ -233,9 +229,7 @@ std::vector<test_case_span> collect_test_cases(std::string const& source)
 }
 
 bool has_tag(std::string_view header, std::string_view tag)
-{
-  return header.find("[" + std::string{tag} + "]") != std::string_view::npos;
-}
+{ return header.find("[" + std::string{tag} + "]") != std::string_view::npos; }
 
 bool hidden_by_default(std::string_view header)
 {
@@ -250,9 +244,7 @@ bool references_live_s3_guard(std::string_view body)
 }
 
 bool should_scan_file(std::filesystem::path const& path)
-{
-  return path.filename() != kGuardSourceFilename;
-}
+{ return path.filename() != kGuardSourceFilename; }
 
 std::vector<std::filesystem::path> discover_cpp_test_files(std::filesystem::path const& root)
 {
@@ -322,9 +314,7 @@ TEST_CASE("S3 default-visibility guard classifies synthetic test sources", "[s3]
   {
     auto const source = R"cpp(
       TEST_CASE("self-referential guard", "[s3][test_hygiene]")
-      {
-        read_s3_test_env();
-      }
+      { read_s3_test_env(); }
     )cpp";
 
     CHECK(
@@ -336,9 +326,7 @@ TEST_CASE("S3 default-visibility guard classifies synthetic test sources", "[s3]
   {
     auto const source = R"cpp(
       TEST_CASE("new file with live S3 work", "[s3]")
-      {
-        auto env = read_s3_test_env();
-      }
+      { auto env = read_s3_test_env(); }
     )cpp";
 
     auto const violations =
@@ -351,9 +339,7 @@ TEST_CASE("S3 default-visibility guard classifies synthetic test sources", "[s3]
   {
     auto const source = R"cpp(
       TEMPLATE_TEST_CASE("template S3 file with live work", "[s3]", int, long)
-      {
-        auto env = read_s3_test_env();
-      }
+      { auto env = read_s3_test_env(); }
 
       MY_TEST_CASE("not a Catch test", "[s3]") { auto env = read_s3_test_env(); }
     )cpp";
@@ -368,15 +354,11 @@ TEST_CASE("S3 default-visibility guard classifies synthetic test sources", "[s3]
   {
     auto const integration_source = R"cpp(
       TEST_CASE("hidden live S3 test", "[.][s3][integration]")
-      {
-        read_s3_test_env();
-      }
+      { read_s3_test_env(); }
     )cpp";
     auto const benchmark_source   = R"cpp(
       TEST_CASE("hidden S3 benchmark", "[!benchmark][s3]")
-      {
-        skip_if_no_s3_env();
-      }
+      { skip_if_no_s3_env(); }
     )cpp";
 
     CHECK(
@@ -394,9 +376,7 @@ TEST_CASE("S3 default-visibility guard classifies synthetic test sources", "[s3]
     )cpp";
     auto const non_s3_source   = R"cpp(
       TEST_CASE("helper with live guard", "[test_hygiene]")
-      {
-        read_s3_test_env();
-      }
+      { read_s3_test_env(); }
     )cpp";
 
     CHECK(collect_visibility_violations("test/cpp/io/s3/test_clean.cpp", clean_s3_source).empty());

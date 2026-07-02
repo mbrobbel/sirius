@@ -146,9 +146,7 @@ class my_view {
   /// copies the selected view (allocating).
   [[nodiscard]] std::unique_ptr<cudf::table> materialize(rmm::cuda_stream_view stream,
                                                          rmm::device_async_resource_ref mr)
-  {
-    return _model->materialize(_selection, stream, mr);
-  }
+  { return _model->materialize(_selection, stream, mr); }
 
  private:
   struct owner_concept {

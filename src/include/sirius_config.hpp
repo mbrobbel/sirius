@@ -110,9 +110,7 @@ struct sirius_config {
   void apply_defaults();
 
   [[nodiscard]] const cucascade::memory::system_topology_info& get_hw_topology() const noexcept
-  {
-    return _hw_topology;
-  }
+  { return _hw_topology; }
 
   [[nodiscard]] const std::vector<cucascade::memory::memory_space_config>&
   get_memory_space_configs() const noexcept;
@@ -134,21 +132,15 @@ struct sirius_config {
   /// Pop ordering for the task_scheduler's pipeline-level task queue. See
   /// exec::queue_ordering for semantics. Defaults to FIFO (legacy behavior).
   [[nodiscard]] exec::queue_ordering get_task_queue_ordering() const noexcept
-  {
-    return _task_queue_ordering;
-  }
+  { return _task_queue_ordering; }
 
   [[nodiscard]] const operator_params& get_operator_params() const noexcept
-  {
-    return _operator_params;
-  }
+  { return _operator_params; }
 
   [[nodiscard]] operator_params& get_operator_params() noexcept { return _operator_params; }
 
   [[nodiscard]] const telemetry_config& get_telemetry_config() const noexcept
-  {
-    return _telemetry_config;
-  }
+  { return _telemetry_config; }
 
  private:
   /// When @c _memory_space_configs contains more than one GPU memory space,

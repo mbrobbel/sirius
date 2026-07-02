@@ -93,8 +93,6 @@ std::optional<aggregate_id> from_duckdb_aggregate_name(std::string_view name)
 }
 
 std::string_view to_duckdb_aggregate_name(aggregate_id id)
-{
-  return kReverseTable[static_cast<std::size_t>(id)];
-}
+{ return kReverseTable[static_cast<std::size_t>(id)]; }
 
 }  // namespace sirius

@@ -92,9 +92,7 @@ class scoped_env_vars {
   }
 
   void set(std::string const& name, std::string const& value)
-  {
-    setenv(name.c_str(), value.c_str(), 1);
-  }
+  { setenv(name.c_str(), value.c_str(), 1); }
 
   void unset(std::string const& name) { unsetenv(name.c_str()); }
 
@@ -220,9 +218,7 @@ std::optional<s3_test_env> read_aws_live_env()
 }
 
 std::string s3_uri(std::string_view bucket, std::string_view key)
-{
-  return "s3://" + std::string{bucket} + "/" + std::string{key};
-}
+{ return "s3://" + std::string{bucket} + "/" + std::string{key}; }
 
 std::string sql_quote(std::string_view value)
 {
@@ -496,9 +492,7 @@ void check_rows_equal_with_tolerant_columns(duckdb::MaterializedQueryResult& act
 }
 
 fs::path local_parquet_path(s3_test_env const& env, std::string_view table)
-{
-  return env.local_dir / "parquet" / (std::string{table} + ".parquet");
-}
+{ return env.local_dir / "parquet" / (std::string{table} + ".parquet"); }
 
 fs::path local_sf10_lineitem_path()
 {
@@ -511,14 +505,10 @@ fs::path local_sf10_lineitem_path()
 }
 
 std::string local_parquet_scan(s3_test_env const& env, std::string_view table)
-{
-  return "read_parquet(" + sql_quote(local_parquet_path(env, table).string()) + ")";
-}
+{ return "read_parquet(" + sql_quote(local_parquet_path(env, table).string()) + ")"; }
 
 std::string local_parquet_file_scan(fs::path const& path)
-{
-  return "read_parquet(" + sql_quote(path.string()) + ")";
-}
+{ return "read_parquet(" + sql_quote(path.string()) + ")"; }
 
 std::string s3_parquet_scan(s3_test_env const& env, std::string_view table)
 {
@@ -539,19 +529,13 @@ std::string sf10_lineitem_key()
 }
 
 std::string s3_large_lineitem_uri(s3_test_env const& env)
-{
-  return s3_uri(env.bucket, sf10_lineitem_key());
-}
+{ return s3_uri(env.bucket, sf10_lineitem_key()); }
 
 std::string s3_large_lineitem_scan(s3_test_env const& env)
-{
-  return "read_parquet(" + sql_quote(s3_large_lineitem_uri(env)) + ")";
-}
+{ return "read_parquet(" + sql_quote(s3_large_lineitem_uri(env)) + ")"; }
 
 std::string s3_sirius_large_lineitem_scan(s3_test_env const& env)
-{
-  return "sirius_read_parquet(" + sql_quote(s3_large_lineitem_uri(env)) + ")";
-}
+{ return "sirius_read_parquet(" + sql_quote(s3_large_lineitem_uri(env)) + ")"; }
 
 duckdb::SiriusContext& require_sirius_context(s3_sql_fixture& fixture)
 {
@@ -573,14 +557,10 @@ sirius::io::rest::rest_ioctx& require_rest_ioctx(s3_sql_fixture& fixture, std::s
 }
 
 std::uint64_t rest_chunk_get_count(s3_sql_fixture& fixture, std::string const& uri)
-{
-  return require_rest_ioctx(fixture, uri).perf_snapshot().chunk_get_count;
-}
+{ return require_rest_ioctx(fixture, uri).perf_snapshot().chunk_get_count; }
 
 std::uint64_t rest_terminal_failures(s3_sql_fixture& fixture, std::string const& uri)
-{
-  return require_rest_ioctx(fixture, uri).perf_snapshot().terminal_failures_total;
-}
+{ return require_rest_ioctx(fixture, uri).perf_snapshot().terminal_failures_total; }
 
 struct large_lineitem_fixture {
   std::string uri;
@@ -647,9 +627,7 @@ duckdb::idx_t local_parquet_file_row_count(fs::path const& path)
 using bench_clock = std::chrono::steady_clock;
 
 double elapsed_ms(bench_clock::time_point start, bench_clock::time_point stop)
-{
-  return std::chrono::duration<double, std::milli>(stop - start).count();
-}
+{ return std::chrono::duration<double, std::milli>(stop - start).count(); }
 
 double mean_ns_as_ms(std::uint64_t total_ns, std::uint64_t count)
 {
@@ -658,9 +636,7 @@ double mean_ns_as_ms(std::uint64_t total_ns, std::uint64_t count)
 }
 
 std::uint64_t sat_sub(std::uint64_t after, std::uint64_t before)
-{
-  return after >= before ? after - before : 0;
-}
+{ return after >= before ? after - before : 0; }
 
 sirius::io::rest::rest_perf_snapshot delta_snapshot(
   sirius::io::rest::rest_perf_snapshot const& after,
@@ -876,14 +852,10 @@ std::string projection_signature(std::vector<std::string> const& columns)
 }
 
 std::string transport_signature(std::string const& endpoint)
-{
-  return endpoint.rfind("https://", 0) == 0 ? "https" : "http";
-}
+{ return endpoint.rfind("https://", 0) == 0 ? "https" : "http"; }
 
 std::string prefetch_cache_signature(bool enable_prefetch_cache)
-{
-  return enable_prefetch_cache ? "on" : "off";
-}
+{ return enable_prefetch_cache ? "on" : "off"; }
 
 fs::path unittest_log_dir()
 {
@@ -1276,14 +1248,10 @@ std::vector<std::string> bench_full_lineitem_projection()
 }
 
 std::string aws_bench_lineitem_key()
-{
-  return env_or("SIRIUS_BENCH_S3_KEY", "tpch/lineitem_sf1.parquet");
-}
+{ return env_or("SIRIUS_BENCH_S3_KEY", "tpch/lineitem_sf1.parquet"); }
 
 std::string aws_bench_lineitem_uri(s3_test_env const& env)
-{
-  return s3_uri(env.bucket, aws_bench_lineitem_key());
-}
+{ return s3_uri(env.bucket, aws_bench_lineitem_key()); }
 
 bench_record run_rest_minio_bench_scenario(
   s3_test_env const& env,
@@ -1704,16 +1672,16 @@ TEST_CASE("S3 REST perf benchmark emits HTTP and HTTPS JSON baseline", "[.][s3][
   // compat_* mirrors the old async-S3 benchmark shape: seven projected columns,
   // mc=32, and no scan-manager prefetch cache mixed into the raw S3 read path.
   auto compat_http  = run_rest_minio_bench_scenario(*env,
-                                                   *large,
-                                                   "compat_http",
-                                                   env->endpoint,
-                                                   std::nullopt,
-                                                   false,
-                                                   /*perf_instrumentation=*/true,
-                                                   bench_compat_projection(),
-                                                   std::size_t{32},
-                                                   std::size_t{1},
-                                                   /*enable_prefetch_cache=*/false);
+                                                    *large,
+                                                    "compat_http",
+                                                    env->endpoint,
+                                                    std::nullopt,
+                                                    false,
+                                                    /*perf_instrumentation=*/true,
+                                                    bench_compat_projection(),
+                                                    std::size_t{32},
+                                                    std::size_t{1},
+                                                    /*enable_prefetch_cache=*/false);
   auto compat_https = run_rest_minio_bench_scenario(*env,
                                                     *large,
                                                     "compat_https",
@@ -1726,21 +1694,21 @@ TEST_CASE("S3 REST perf benchmark emits HTTP and HTTPS JSON baseline", "[.][s3][
                                                     std::size_t{1},
                                                     /*enable_prefetch_cache=*/false);
   auto http         = run_rest_minio_bench_scenario(*env,
-                                            *large,
-                                            "async_http",
-                                            env->endpoint,
-                                            std::nullopt,
-                                            false,
-                                            /*perf_instrumentation=*/true,
-                                            bench_single_column_projection());
+                                                    *large,
+                                                    "async_http",
+                                                    env->endpoint,
+                                                    std::nullopt,
+                                                    false,
+                                                    /*perf_instrumentation=*/true,
+                                                    bench_single_column_projection());
   auto https        = run_rest_minio_bench_scenario(*env,
-                                             *large,
-                                             "async_https",
-                                             env->https_endpoint,
-                                             env->ca_bundle_path,
-                                             true,
-                                             /*perf_instrumentation=*/true,
-                                             bench_single_column_projection());
+                                                    *large,
+                                                    "async_https",
+                                                    env->https_endpoint,
+                                                    env->ca_bundle_path,
+                                                    true,
+                                                    /*perf_instrumentation=*/true,
+                                                    bench_single_column_projection());
 
   for (auto const& r :
        {std::cref(http), std::cref(https), std::cref(compat_http), std::cref(compat_https)}) {
@@ -1889,8 +1857,8 @@ TEST_CASE("gpu_execution rewrites S3 read_parquet and scans through Sirius",
   if (should_skip_s3_env(env)) { return; }
 
   s3_sql_fixture fixture(*env);
-  auto const s3_query = "SELECT n_nationkey, n_name, n_regionkey FROM " +
-                        s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
+  auto const s3_query    = "SELECT n_nationkey, n_name, n_regionkey FROM " +
+                           s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
   auto const local_query = "SELECT n_nationkey, n_name, n_regionkey FROM " +
                            local_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
   compare_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
@@ -1997,7 +1965,7 @@ TEST_CASE("gpu_execution S3 window query reports unsupported S3 CPU fallback",
   s3_sql_fixture fixture(*env);
   auto const s3_query = "SELECT n_nationkey, ROW_NUMBER() OVER (ORDER BY n_nationkey) AS rn FROM " +
                         s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
-  auto result = fixture.con.Query(gpu_execution_sql(s3_query));
+  auto result         = fixture.con.Query(gpu_execution_sql(s3_query));
   REQUIRE(result);
   REQUIRE(result->HasError());
   auto const error = result->GetError();
@@ -2081,9 +2049,9 @@ TEST_CASE("internal sirius_read_parquet exposes distinct S3 table cardinalities 
   s3_sql_fixture fixture(*env);
   auto const expected_orders_rows = local_parquet_row_count(*env, "orders");
   auto const expected_nation_rows = local_parquet_row_count(*env, "nation");
-  auto const sql = "SELECT count(*) FROM " + s3_sirius_parquet_scan(*env, "orders") + " o JOIN " +
-                   s3_sirius_parquet_scan(*env, "nation") +
-                   " n ON (o.o_custkey % 25) = n.n_nationkey";
+  auto const sql  = "SELECT count(*) FROM " + s3_sirius_parquet_scan(*env, "orders") + " o JOIN " +
+                    s3_sirius_parquet_scan(*env, "nation") +
+                    " n ON (o.o_custkey % 25) = n.n_nationkey";
   auto const plan = explain_text(fixture.con, sql);
   INFO(plan);
   CHECK(plan_mentions_cardinality(plan, expected_orders_rows));
@@ -2117,8 +2085,8 @@ TEST_CASE("gpu_execution S3 SQL supports both configured SigV4 signing modes",
   auto env = load_s3_test_env();
   if (should_skip_s3_env(env)) { return; }
 
-  auto const s3_query = "SELECT n_nationkey, n_name, n_regionkey FROM " +
-                        s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
+  auto const s3_query    = "SELECT n_nationkey, n_name, n_regionkey FROM " +
+                           s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
   auto const local_query = "SELECT n_nationkey, n_name, n_regionkey FROM " +
                            local_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
 

@@ -123,9 +123,7 @@ class GPUBufferManager {
   gpu_pool_memory_resource* mr;
 
   [[nodiscard]] rmm::device_async_resource_ref get_mr_ref() const
-  {
-    return rmm::device_async_resource_ref{*mr};
-  }
+  { return rmm::device_async_resource_ref{*mr}; }
 
   template <typename T>
   T* customCudaMalloc(size_t size, int gpu, bool caching);

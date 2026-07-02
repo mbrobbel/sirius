@@ -76,9 +76,7 @@ using sirius::type_id;
 
 std::optional<sirius::gpu_expression_translator::translated_expression> translate(
   sirius::gpu_expression_translator& translator, ast_node const& node)
-{
-  return translator.translate_expression(node);
-}
+{ return translator.translate_expression(node); }
 
 //===----------------------------------------------------------------------===//
 // Table-building helpers
@@ -241,9 +239,7 @@ std::unique_ptr<cudf::table> make_string_table(std::vector<std::string> const& v
 //===----------------------------------------------------------------------===//
 
 ::sirius::gpu_expression_translator make_translator()
-{
-  return ::sirius::gpu_expression_translator(stream, mr);
-}
+{ return ::sirius::gpu_expression_translator(stream, mr); }
 
 sirius::join_condition make_reference_join_condition(duckdb::ExpressionType comparison)
 {

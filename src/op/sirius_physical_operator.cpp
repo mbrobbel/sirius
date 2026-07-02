@@ -121,9 +121,7 @@ void pipelineable_operator_data::prepare_for_processing(
 }
 
 std::string sirius_physical_operator::get_name() const
-{
-  return SiriusPhysicalOperatorToString(type);
-}
+{ return SiriusPhysicalOperatorToString(type); }
 
 std::string sirius_physical_operator::to_string() const { return get_name() + params_to_string(); }
 
@@ -268,9 +266,7 @@ void sirius_physical_operator::add_next_port_after_sink(next_port_info port_info
 
 const std::vector<sirius_physical_operator::next_port_info>&
 sirius_physical_operator::get_next_ports_after_sink() const
-{
-  return next_port_after_sink;
-}
+{ return next_port_after_sink; }
 
 std::optional<task_creation_hint> sirius_physical_operator::get_next_task_hint()
 {
@@ -356,9 +352,7 @@ bool sirius_physical_operator::has_full_barrier_from(const pipeline::sirius_pipe
 
 duckdb::shared_ptr<pipeline::sirius_pipeline> sirius_physical_operator::get_pipeline()
   const noexcept
-{
-  return _pipeline;
-}
+{ return _pipeline; }
 
 void sirius_physical_operator::set_pipeline(duckdb::shared_ptr<pipeline::sirius_pipeline> pipeline)
 {

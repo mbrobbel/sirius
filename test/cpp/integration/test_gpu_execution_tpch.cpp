@@ -57,9 +57,7 @@ static fs::path get_tpch_db_path()
 
 struct sirius_config_env_guard {
   sirius_config_env_guard(const std::string& config_path)
-  {
-    setenv("SIRIUS_CONFIG_FILE", config_path.c_str(), 1);
-  }
+  { setenv("SIRIUS_CONFIG_FILE", config_path.c_str(), 1); }
 
   ~sirius_config_env_guard() { unsetenv("SIRIUS_CONFIG_FILE"); }
 };
@@ -193,9 +191,7 @@ class GPUExecutionFixtureBase {
    * as sorted sets of string tuples.
    */
   static bool is_floating_point(duckdb::LogicalTypeId id)
-  {
-    return id == duckdb::LogicalTypeId::FLOAT || id == duckdb::LogicalTypeId::DOUBLE;
-  }
+  { return id == duckdb::LogicalTypeId::FLOAT || id == duckdb::LogicalTypeId::DOUBLE; }
 
   /// Collect all rows from a MaterializedQueryResult as sorted vectors of stringified values.
   static std::vector<std::vector<std::string>> collect_rows(duckdb::MaterializedQueryResult& result)
@@ -395,44 +391,32 @@ class GPUExecutionParquetFixture : public GPUExecutionFixtureBase {
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan single column",
                  "[integration][gpu_execution][scan]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan single column parquet",
                  "[integration][gpu_execution][parquet][scan]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan multiple columns",
                  "[integration][gpu_execution][scan]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan multiple columns parquet",
                  "[integration][gpu_execution][parquet][scan]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan region table",
                  "[integration][gpu_execution][scan]")
-{
-  compare_gpu_vs_cpu("select r_regionkey from region;");
-}
+{ compare_gpu_vs_cpu("select r_regionkey from region;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan region table parquet",
                  "[integration][gpu_execution][parquet][scan]")
-{
-  compare_gpu_vs_cpu("select r_regionkey from region;");
-}
+{ compare_gpu_vs_cpu("select r_regionkey from region;"); }
 
 //===----------------------------------------------------------------------===//
 // Projection tests
@@ -441,30 +425,22 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - projection add",
                  "[integration][gpu_execution][projection]")
-{
-  compare_gpu_vs_cpu("select n_nationkey + n_regionkey as total from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey + n_regionkey as total from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - projection add parquet",
                  "[integration][gpu_execution][parquet][projection]")
-{
-  compare_gpu_vs_cpu("select n_nationkey + n_regionkey as total from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey + n_regionkey as total from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - projection multiply",
                  "[integration][gpu_execution][projection]")
-{
-  compare_gpu_vs_cpu("select n_nationkey * 2 as doubled, n_regionkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey * 2 as doubled, n_regionkey from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - projection multiply parquet",
                  "[integration][gpu_execution][parquet][projection]")
-{
-  compare_gpu_vs_cpu("select n_nationkey * 2 as doubled, n_regionkey from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey * 2 as doubled, n_regionkey from nation;"); }
 
 //===----------------------------------------------------------------------===//
 // Filter tests
@@ -473,58 +449,42 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - filter equality",
                  "[integration][gpu_execution][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 1;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 1;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - filter equality parquet",
                  "[integration][gpu_execution][parquet][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 1;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 1;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - filter greater than",
                  "[integration][gpu_execution][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey > 2;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey > 2;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - filter greater than parquet",
                  "[integration][gpu_execution][parquet][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey > 2;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey > 2;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - filter not equal",
                  "[integration][gpu_execution][filter]")
-{
-  compare_gpu_vs_cpu("select r_regionkey from region where r_regionkey != 3;");
-}
+{ compare_gpu_vs_cpu("select r_regionkey from region where r_regionkey != 3;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - filter not equal parquet",
                  "[integration][gpu_execution][parquet][filter]")
-{
-  compare_gpu_vs_cpu("select r_regionkey from region where r_regionkey != 3;");
-}
+{ compare_gpu_vs_cpu("select r_regionkey from region where r_regionkey != 3;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - filter with projection",
                  "[integration][gpu_execution][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation where n_regionkey = 0;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation where n_regionkey = 0;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - filter with projection parquet",
                  "[integration][gpu_execution][parquet][filter]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation where n_regionkey = 0;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation where n_regionkey = 0;"); }
 
 //===----------------------------------------------------------------------===//
 // Ungrouped aggregate tests
@@ -533,44 +493,32 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped min max",
                  "[integration][gpu_execution][aggregate]")
-{
-  compare_gpu_vs_cpu("select min(n_regionkey), max(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select min(n_regionkey), max(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped min max parquet",
                  "[integration][gpu_execution][parquet][aggregate]")
-{
-  compare_gpu_vs_cpu("select min(n_regionkey), max(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select min(n_regionkey), max(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped min with filter",
                  "[integration][gpu_execution][aggregate]")
-{
-  compare_gpu_vs_cpu("select min(n_nationkey) from nation where n_regionkey = 1;");
-}
+{ compare_gpu_vs_cpu("select min(n_nationkey) from nation where n_regionkey = 1;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped min with filter parquet",
                  "[integration][gpu_execution][parquet][aggregate]")
-{
-  compare_gpu_vs_cpu("select min(n_nationkey) from nation where n_regionkey = 1;");
-}
+{ compare_gpu_vs_cpu("select min(n_nationkey) from nation where n_regionkey = 1;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped sum count",
                  "[integration][gpu_execution][aggregate]")
-{
-  compare_gpu_vs_cpu("select sum(n_regionkey), count(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select sum(n_regionkey), count(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped sum count parquet",
                  "[integration][gpu_execution][parquet][aggregate]")
-{
-  compare_gpu_vs_cpu("select sum(n_regionkey), count(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select sum(n_regionkey), count(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped all agg functions",
@@ -591,30 +539,22 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped avg integer",
                  "[integration][gpu_execution][aggregate][avg]")
-{
-  compare_gpu_vs_cpu("select avg(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select avg(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped avg integer parquet",
                  "[integration][gpu_execution][parquet][aggregate][avg]")
-{
-  compare_gpu_vs_cpu("select avg(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select avg(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped avg decimal",
                  "[integration][gpu_execution][aggregate][avg]")
-{
-  compare_gpu_vs_cpu("select avg(l_quantity), avg(l_discount) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select avg(l_quantity), avg(l_discount) from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped avg decimal parquet",
                  "[integration][gpu_execution][parquet][aggregate][avg]")
-{
-  compare_gpu_vs_cpu("select avg(l_quantity), avg(l_discount) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select avg(l_quantity), avg(l_discount) from lineitem;"); }
 
 //===----------------------------------------------------------------------===//
 // Grouped aggregate tests
@@ -696,16 +636,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - limit",
                  "[integration][gpu_execution][limit]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation limit 10;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation limit 10;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - limit parquet",
                  "[integration][gpu_execution][parquet][limit]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation limit 10;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation limit 10;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - limit with filter",
@@ -742,16 +678,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - limit with offset on large table",
                  "[integration][gpu_execution][limit][limit_multi_batch]")
-{
-  compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem limit 50 offset 200;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem limit 50 offset 200;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - limit with offset on large table parquet",
                  "[.][integration_disabled][gpu_execution][parquet][limit][limit_multi_batch]")
-{
-  compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem limit 50 offset 200;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey, l_partkey from lineitem limit 50 offset 200;"); }
 
 //===----------------------------------------------------------------------===//
 // Join tests
@@ -2036,9 +1968,7 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 struct partition_size_guard {
   duckdb::Connection& con;
   explicit partition_size_guard(duckdb::Connection& con, duckdb::idx_t size) : con(con)
-  {
-    con.Query("SET hash_partition_bytes = " + std::to_string(size));
-  }
+  { con.Query("SET hash_partition_bytes = " + std::to_string(size)); }
   ~partition_size_guard() { con.Query("RESET hash_partition_bytes"); }
 };
 
@@ -2665,16 +2595,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - filter returns empty result",
                  "[.][integration_disabled][gpu_execution]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 99;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 99;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - filter returns empty result parquet",
                  "[.][integration_disabled][gpu_execution][parquet]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 99;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation where n_regionkey = 99;"); }
 
 //===----------------------------------------------------------------------===//
 // Grouped aggregate tests
@@ -2683,16 +2609,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - group by count",
                  "[integration][gpu_execution][group_by]")
-{
-  compare_gpu_vs_cpu("select n_regionkey, count(*) from nation group by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_regionkey, count(*) from nation group by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - group by count parquet",
                  "[integration][gpu_execution][parquet][group_by]")
-{
-  compare_gpu_vs_cpu("select n_regionkey, count(*) from nation group by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_regionkey, count(*) from nation group by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - group by min max count",
@@ -2715,16 +2637,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - group by avg integer",
                  "[integration][gpu_execution][group_by][avg]")
-{
-  compare_gpu_vs_cpu("select n_regionkey, avg(n_nationkey) from nation group by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_regionkey, avg(n_nationkey) from nation group by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - group by avg integer parquet",
                  "[integration][gpu_execution][parquet][group_by][avg]")
-{
-  compare_gpu_vs_cpu("select n_regionkey, avg(n_nationkey) from nation group by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_regionkey, avg(n_nationkey) from nation group by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - group by avg with other aggregates",
@@ -2829,44 +2747,32 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by",
                  "[integration][gpu_execution][order_by]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation order by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation order by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by parquet",
                  "[integration][gpu_execution][parquet][order_by]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation order by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_regionkey from nation order by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by column not in select",
                  "[integration][gpu_execution][order_by][order_by_proj]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation order by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation order by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by column not in select parquet",
                  "[integration][gpu_execution][parquet][order_by][order_by_proj]")
-{
-  compare_gpu_vs_cpu("select n_nationkey from nation order by n_regionkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey from nation order by n_regionkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by column not in select lineitem",
                  "[integration][gpu_execution][order_by][order_by_proj]")
-{
-  compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by column not in select lineitem parquet",
                  "[integration][gpu_execution][parquet][order_by][order_by_proj]")
-{
-  compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey from lineitem order by l_linenumber;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by multipartition",
@@ -2947,30 +2853,22 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by with decimal column",
                  "[integration][gpu_execution][order_by][order_by_types]")
-{
-  compare_gpu_vs_cpu("select o_orderkey, o_totalprice from orders order by o_orderkey;");
-}
+{ compare_gpu_vs_cpu("select o_orderkey, o_totalprice from orders order by o_orderkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by with decimal column parquet",
                  "[integration][gpu_execution][parquet][order_by][order_by_types]")
-{
-  compare_gpu_vs_cpu("select o_orderkey, o_totalprice from orders order by o_orderkey;");
-}
+{ compare_gpu_vs_cpu("select o_orderkey, o_totalprice from orders order by o_orderkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan lineitem with varchar column",
                  "[integration][gpu_execution][varchar_scan_lineitem]")
-{
-  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan lineitem with varchar column parquet",
                  "[integration][gpu_execution][parquet][varchar_scan_lineitem]")
-{
-  compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;");
-}
+{ compare_gpu_vs_cpu("select l_orderkey, l_shipinstruct from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by lineitem with short varchar column",
@@ -3007,30 +2905,22 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - scan with varchar column",
                  "[integration][gpu_execution][order_by_types][varchar]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_name from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_name from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - scan with varchar column parquet",
                  "[integration][gpu_execution][parquet][order_by_types][varchar]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_name from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_name from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - order by with varchar column",
                  "[integration][gpu_execution][order_by][order_by_types]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_name from nation order by n_nationkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_name from nation order by n_nationkey;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - order by with varchar column parquet",
                  "[integration][gpu_execution][parquet][order_by][order_by_types]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, n_name from nation order by n_nationkey;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, n_name from nation order by n_nationkey;"); }
 
 //===----------------------------------------------------------------------===//
 // String concat tests
@@ -3097,16 +2987,12 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - cast integer to decimal preserves scale",
                  "[integration][gpu_execution][cast][decimal]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, cast(n_nationkey as Decimal(18,2)) as d from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, cast(n_nationkey as Decimal(18,2)) as d from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - cast integer to decimal preserves scale parquet",
                  "[integration][gpu_execution][parquet][cast][decimal]")
-{
-  compare_gpu_vs_cpu("select n_nationkey, cast(n_nationkey as Decimal(18,2)) as d from nation;");
-}
+{ compare_gpu_vs_cpu("select n_nationkey, cast(n_nationkey as Decimal(18,2)) as d from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - cast integer to decimal with aggregation",
@@ -4607,72 +4493,52 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped count(*)",
                  "[integration][gpu_execution][cpu_source]")
-{
-  compare_gpu_vs_cpu("select count(*) from nation;");
-}
+{ compare_gpu_vs_cpu("select count(*) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped count(*) parquet",
                  "[integration][gpu_execution][parquet][cpu_source]")
-{
-  compare_gpu_vs_cpu("select count(*) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select count(*) from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped min",
                  "[integration][gpu_execution][cpu_source]")
-{
-  compare_gpu_vs_cpu("select min(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select min(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped min parquet",
                  "[integration][gpu_execution][parquet][cpu_source]")
-{
-  compare_gpu_vs_cpu("select min(l_orderkey) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select min(l_orderkey) from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped max",
                  "[integration][gpu_execution][cpu_source]")
-{
-  compare_gpu_vs_cpu("select max(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select max(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped max parquet",
                  "[integration][gpu_execution][parquet][cpu_source]")
-{
-  compare_gpu_vs_cpu("select max(l_orderkey) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select max(l_orderkey) from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped min and max",
                  "[integration][gpu_execution][cpu_source]")
-{
-  compare_gpu_vs_cpu("select min(n_nationkey), max(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select min(n_nationkey), max(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped min and max parquet",
                  "[integration][gpu_execution][parquet][cpu_source]")
-{
-  compare_gpu_vs_cpu("select min(l_orderkey), max(l_orderkey) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select min(l_orderkey), max(l_orderkey) from lineitem;"); }
 
 TEST_CASE_METHOD(GPUExecutionDuckDBFixture,
                  "gpu_execution - ungrouped count(*) with min and max",
                  "[integration][gpu_execution][cpu_source]")
-{
-  compare_gpu_vs_cpu("select count(*), min(n_nationkey), max(n_nationkey) from nation;");
-}
+{ compare_gpu_vs_cpu("select count(*), min(n_nationkey), max(n_nationkey) from nation;"); }
 
 TEST_CASE_METHOD(GPUExecutionParquetFixture,
                  "gpu_execution - ungrouped count(*) with min and max parquet",
                  "[integration][gpu_execution][parquet][cpu_source]")
-{
-  compare_gpu_vs_cpu("select count(*), min(l_orderkey), max(l_orderkey) from lineitem;");
-}
+{ compare_gpu_vs_cpu("select count(*), min(l_orderkey), max(l_orderkey) from lineitem;"); }
 
 //===----------------------------------------------------------------------===//
 // pin_table tests
@@ -4727,8 +4593,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 {
   auto parquet_dir = fs::path(__FILE__).parent_path() / "data/parquet";
   auto pin_query   = "CALL pin_table('" + parquet_dir.string() +
-                   "/lineitem.parquet', tier='host', name='lineitem');";
-  auto pin_result = con->Query(pin_query);
+                     "/lineitem.parquet', tier='host', name='lineitem');";
+  auto pin_result  = con->Query(pin_query);
   REQUIRE(pin_result);
   if (pin_result->HasError()) { UNSCOPED_INFO("pin_table error: " << pin_result->GetError()); }
   REQUIRE_FALSE(pin_result->HasError());
@@ -4748,8 +4614,8 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 {
   auto parquet_dir = fs::path(__FILE__).parent_path() / "data/parquet";
   auto pin_query   = "CALL pin_table('" + parquet_dir.string() +
-                   "/lineitem.parquet', tier='host', name='lineitem');";
-  auto pin_result = con->Query(pin_query);
+                     "/lineitem.parquet', tier='host', name='lineitem');";
+  auto pin_result  = con->Query(pin_query);
   REQUIRE(pin_result);
   if (pin_result->HasError()) { UNSCOPED_INFO("pin_table error: " << pin_result->GetError()); }
   REQUIRE_FALSE(pin_result->HasError());
@@ -4817,9 +4683,9 @@ TEST_CASE_METHOD(GPUExecutionParquetFixture,
 {
   auto parquet_dir = fs::path(__FILE__).parent_path() / "data/parquet";
   auto pin_query   = "CALL pin_table('" + parquet_dir.string() +
-                   "/lineitem.parquet', tier='gpu', name='lineitem_subset', "
-                   "cols=['l_orderkey', 'l_returnflag', 'l_linestatus', 'l_quantity']);";
-  auto pin_result = con->Query(pin_query);
+                     "/lineitem.parquet', tier='gpu', name='lineitem_subset', "
+                     "cols=['l_orderkey', 'l_returnflag', 'l_linestatus', 'l_quantity']);";
+  auto pin_result  = con->Query(pin_query);
   REQUIRE(pin_result);
   if (pin_result->HasError()) { UNSCOPED_INFO("pin_table error: " << pin_result->GetError()); }
   REQUIRE_FALSE(pin_result->HasError());

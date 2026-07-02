@@ -463,16 +463,12 @@ gpu_pipeline_task* gpu_pipeline_executor::cast_to_gpu_pipeline_task(sirius::para
 }
 
 void gpu_pipeline_executor::set_task_creator(sirius::creator::task_creator* task_creator)
-{
-  _task_creator = task_creator;
-}
+{ _task_creator = task_creator; }
 
 bool gpu_pipeline_executor::is_task_queue_empty() const noexcept { return _task_queue.is_empty(); }
 
 void gpu_pipeline_executor::set_completion_handler(completion_handler* handler) noexcept
-{
-  _completion_handler = handler;
-}
+{ _completion_handler = handler; }
 
 }  // namespace pipeline
 }  // namespace sirius

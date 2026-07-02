@@ -401,7 +401,7 @@ void task_creator::manager_loop()
           }
 
           auto task_id = get_next_task_id();
-          auto task    = std::make_unique<pipeline::gpu_pipeline_task>(task_id,
+          auto task = std::make_unique<pipeline::gpu_pipeline_task>(task_id,
                                                                     destination_data_repositories,
                                                                     std::move(local_state),
                                                                     gpu_pipeline_task_global_state);

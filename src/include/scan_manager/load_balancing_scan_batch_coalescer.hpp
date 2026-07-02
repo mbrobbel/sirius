@@ -90,9 +90,7 @@ class load_balancing_scan_batch_coalescer {
     }
 
     void attach_batch_provider(std::unique_ptr<databatch_provider> provider)
-    {
-      batch_provider = std::move(provider);
-    }
+    { batch_provider = std::move(provider); }
 
     std::size_t op_id{0};
     std::size_t pipeline_id{0};

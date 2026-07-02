@@ -89,9 +89,7 @@ memory_space* get_default_gpu_space()
 }
 
 rmm::device_async_resource_ref get_resource_ref(memory_space& space)
-{
-  return space.get_default_allocator();
-}
+{ return space.get_default_allocator(); }
 
 std::shared_ptr<data_batch> make_input_batch(
   memory_space& space,

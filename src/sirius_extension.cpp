@@ -448,7 +448,7 @@ unique_ptr<FunctionData> SiriusExtension::GPUProcessingBind(ClientContext& conte
     try {
       auto gpu_physical_plan =
         GPUGeneratePhysicalPlan(context, *result->gpu_context, query_plan, *result->conn);
-      auto gpu_prepared    = make_shared_ptr<GPUPreparedStatementData>(std::move(prepared),
+      auto gpu_prepared = make_shared_ptr<GPUPreparedStatementData>(std::move(prepared),
                                                                     std::move(gpu_physical_plan));
       result->gpu_prepared = gpu_prepared;
     } catch (std::exception& e) {
@@ -1216,9 +1216,7 @@ struct ProfilerFunctionData : public GlobalTableFunctionState {
 
 static unique_ptr<GlobalTableFunctionState> ProfilerInit(ClientContext& context,
                                                          TableFunctionInitInput& input)
-{
-  return make_uniq<ProfilerFunctionData>();
-}
+{ return make_uniq<ProfilerFunctionData>(); }
 
 static void ProfilerStartFunction(ClientContext& context,
                                   TableFunctionInput& data_p,
@@ -1396,9 +1394,7 @@ static void ApplyExpressionEvaluatorStrategy(const std::string& value)
 }
 
 static void SetExpressionEvaluatorStrategy(ClientContext& context, SetScope scope, Value& parameter)
-{
-  ApplyExpressionEvaluatorStrategy(StringValue::Get(parameter));
-}
+{ ApplyExpressionEvaluatorStrategy(StringValue::Get(parameter)); }
 
 // Deprecated alias for `expression_evaluator_strategy`. Kept so existing
 // `SET expression_executor_strategy=...` statements keep working; remove in a future release.
@@ -1594,9 +1590,7 @@ static void SetMarkJoinBuildSwitchRatio(ClientContext& context, SetScope scope, 
 }
 
 static void SetEnableGpuExecution(ClientContext& context, SetScope scope, Value& parameter)
-{
-  SIRIUS_LOG_DEBUG("Updated gpu_execution to {}", BooleanValue::Get(parameter));
-}
+{ SIRIUS_LOG_DEBUG("Updated gpu_execution to {}", BooleanValue::Get(parameter)); }
 
 void SiriusExtension::InitialGPUConfigs(DBConfig& config)
 {

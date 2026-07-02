@@ -78,9 +78,7 @@ struct IcebergDeleteData {
 
   /// True if there are no deletes to apply (V1 table or empty manifests).
   [[nodiscard]] bool empty() const
-  {
-    return positional_deletes.empty() && equality_delete_groups.empty();
-  }
+  { return positional_deletes.empty() && equality_delete_groups.empty(); }
 };
 
 /**

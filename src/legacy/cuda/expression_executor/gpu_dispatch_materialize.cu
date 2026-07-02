@@ -96,9 +96,7 @@ struct MaterializeString {
 
     // Operator
     __device__ __forceinline__ int64_t operator()(uint64_t row_id) const
-    {
-      return static_cast<int64_t>(input_offsets[row_id + 1] - input_offsets[row_id]);
-    }
+    { return static_cast<int64_t>(input_offsets[row_id + 1] - input_offsets[row_id]); }
   };
 
   // Functor for copying string data

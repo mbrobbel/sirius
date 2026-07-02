@@ -39,9 +39,7 @@ namespace sirius::test::decode {
 
 template <typename T>
 inline rmm::device_buffer upload(std::vector<T> const& host, rmm::cuda_stream_view stream)
-{
-  return rmm::device_buffer(host.data(), host.size() * sizeof(T), stream);
-}
+{ return rmm::device_buffer(host.data(), host.size() * sizeof(T), stream); }
 
 template <typename T>
 inline std::vector<T> download(void const* d_ptr, size_t count, cudaStream_t stream)
@@ -96,9 +94,7 @@ struct decode_env {
 
   std::unique_ptr<cudf::table> decode(
     std::vector<::sirius::cuda::scan::gpu_column_decode_input> const& cols)
-  {
-    return ::sirius::cuda::scan::gpu_decode_table(cols, stream.view(), mr);
-  }
+  { return ::sirius::cuda::scan::gpu_decode_table(cols, stream.view(), mr); }
 };
 
 /// Round-trip a single UNCOMPRESSED column: upload `values` as one segment,

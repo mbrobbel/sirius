@@ -377,8 +377,6 @@ void cpu_source_task::publish_output(op::operator_data& output_data, rmm::cuda_s
 }
 
 std::vector<op::sirius_physical_operator*> cpu_source_task::get_output_consumers()
-{
-  return _global_state->cast<cpu_source_task_global_state>().get_output_consumers();
-}
+{ return _global_state->cast<cpu_source_task_global_state>().get_output_consumers(); }
 
 }  // namespace sirius::op::scan

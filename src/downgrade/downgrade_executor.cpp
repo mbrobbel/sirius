@@ -376,9 +376,7 @@ void downgrade_executor::processing_loop()
 }
 
 bool downgrade_executor::has_disk_tier() const
-{
-  return !_reservation_manager.get_memory_spaces_for_tier(cucascade::memory::Tier::DISK).empty();
-}
+{ return !_reservation_manager.get_memory_spaces_for_tier(cucascade::memory::Tier::DISK).empty(); }
 
 bool downgrade_executor::has_viable_downgrade_target() const
 {
@@ -485,9 +483,7 @@ void downgrade_executor::cancel_pending_requests()
 
 void downgrade_executor::set_pipeline_task_queue(
   sirius::exec::inspectable_mpsc<sirius::parallel::itask>* pipeline_task_queue)
-{
-  _pipeline_task_queue = pipeline_task_queue;
-}
+{ _pipeline_task_queue = pipeline_task_queue; }
 
 // --- Public request API ---
 
@@ -506,9 +502,7 @@ std::future<size_t> downgrade_executor::request_free_memory(size_t bytes)
 }
 
 size_t downgrade_executor::request_free_memory_and_wait(size_t bytes)
-{
-  return request_free_memory(bytes).get();
-}
+{ return request_free_memory(bytes).get(); }
 
 std::future<size_t> downgrade_executor::request_downgrade(std::function<bool()> predicate)
 {

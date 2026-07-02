@@ -82,9 +82,7 @@ void curl_share::lock_cb(CURL* /*handle*/,
 }
 
 void curl_share::unlock_cb(CURL* /*handle*/, curl_lock_data data, void* userp)
-{
-  static_cast<curl_share*>(userp)->_mtx[static_cast<std::size_t>(data)].unlock();
-}
+{ static_cast<curl_share*>(userp)->_mtx[static_cast<std::size_t>(data)].unlock(); }
 
 global_curl_context::global_init_guard::global_init_guard() { global_init_once(); }
 

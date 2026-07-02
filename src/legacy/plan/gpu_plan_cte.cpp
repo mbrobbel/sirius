@@ -42,11 +42,11 @@ unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::CreatePlan(LogicalMate
 
   unique_ptr<GPUPhysicalCTE> cte;
   cte                    = make_uniq<GPUPhysicalCTE>(op.ctename,
-                                  op.table_index,
-                                  right->types,
-                                  std::move(left),
-                                  std::move(right),
-                                  op.estimated_cardinality);
+                                                     op.table_index,
+                                                     right->types,
+                                                     std::move(left),
+                                                     std::move(right),
+                                                     op.estimated_cardinality);
   cte->working_table     = working_table;
   cte->working_table_gpu = working_table_gpu;
   cte->cte_scans         = materialized_ctes[op.table_index];

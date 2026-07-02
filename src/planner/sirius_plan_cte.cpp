@@ -52,11 +52,11 @@ sirius_physical_plan_generator::create_plan(duckdb::LogicalMaterializedCTE& op)
   auto producer_types = left->types;
   duckdb::unique_ptr<sirius::op::sirius_physical_cte> cte;
   cte                = duckdb::make_uniq<sirius::op::sirius_physical_cte>(op.ctename,
-                                                           op.table_index,
-                                                           std::move(producer_types),
-                                                           std::move(left),
-                                                           std::move(right),
-                                                           op.estimated_cardinality);
+                                                                          op.table_index,
+                                                                          std::move(producer_types),
+                                                                          std::move(left),
+                                                                          std::move(right),
+                                                                          op.estimated_cardinality);
   cte->working_table = working_table;
   // cte->working_table_gpu = working_table_gpu;
   cte->cte_scans = materialized_ctes[op.table_index];

@@ -21,9 +21,7 @@
 namespace sirius::op::scan {
 
 void iceberg_delete_pipeline::add_filter(std::shared_ptr<iceberg_delete_filter> filter)
-{
-  _filters.push_back(std::move(filter));
-}
+{ _filters.push_back(std::move(filter)); }
 
 post_convert_fn_t iceberg_delete_pipeline::build_hook() const
 {

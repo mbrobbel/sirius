@@ -75,19 +75,13 @@ class sirius_pipeline_task_global_state : public sirius::parallel::itask_global_
   [[nodiscard]] sirius_pipeline* get_pipeline() { return _pipeline.get(); }
 
   [[nodiscard]] size_t get_pipeline_id() const
-  {
-    return _pipeline ? _pipeline->get_pipeline_id() : 0;
-  }
+  { return _pipeline ? _pipeline->get_pipeline_id() : 0; }
 
   void set_pipeline(duckdb::shared_ptr<sirius_pipeline> pipeline)
-  {
-    _pipeline = std::move(pipeline);
-  }
+  { _pipeline = std::move(pipeline); }
 
   [[nodiscard]] const telemetry::telemetry_context& get_telemetry_context() const noexcept
-  {
-    return *_telemetry_context;
-  }
+  { return *_telemetry_context; }
 
   /**
    * @brief Get the memory history for this pipeline's tasks.
@@ -148,9 +142,7 @@ class sirius_pipeline_task_local_state : public parallel::itask_local_state {
    *         or nullptr if no reservation was held.
    */
   std::unique_ptr<cucascade::memory::reservation> release_reservation()
-  {
-    return std::move(_reservation);
-  }
+  { return std::move(_reservation); }
 
   /**
    * @brief Set a memory reservation for this task.
@@ -191,9 +183,7 @@ class sirius_pipeline_task_local_state : public parallel::itask_local_state {
 
   [[nodiscard]] const std::optional<reservation_size_info>& get_reservation_size_info()
     const noexcept
-  {
-    return _reservation_size_info;
-  }
+  { return _reservation_size_info; }
 
   /**
    * @brief Non-owning accessor for the held reservation.

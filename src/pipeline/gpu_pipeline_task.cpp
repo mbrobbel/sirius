@@ -232,9 +232,7 @@ gpu_pipeline_task::~gpu_pipeline_task()
 }
 
 const sirius_pipeline* gpu_pipeline_task::get_pipeline() const
-{
-  return _global_state->cast<gpu_pipeline_task_global_state>().get_pipeline();
-}
+{ return _global_state->cast<gpu_pipeline_task_global_state>().get_pipeline(); }
 
 std::unique_ptr<op::operator_data> gpu_pipeline_task::compute_task(rmm::cuda_stream_view stream)
 {
@@ -321,7 +319,7 @@ std::unique_ptr<op::operator_data> gpu_pipeline_task::compute_task(rmm::cuda_str
       auto input_basis = _local_state->cast<gpu_pipeline_task_local_state>()
                            .get_reservation_size_info()
                            ->input_basis;
-      auto& global = _global_state->cast<gpu_pipeline_task_global_state>();
+      auto& global     = _global_state->cast<gpu_pipeline_task_global_state>();
       global.get_memory_history().record_on_failure(input_basis, peak_bytes);
 
       throw oom_reschedule_exception(

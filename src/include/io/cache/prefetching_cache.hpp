@@ -176,9 +176,7 @@ class prefetching_cache {
   void prepare_for_query(const sirius::planner::query& query) noexcept;
 
   [[nodiscard]] uint32_t query_epoch() const noexcept
-  {
-    return _ticker.load(std::memory_order_relaxed);
-  }
+  { return _ticker.load(std::memory_order_relaxed); }
 
  private:
   [[nodiscard]] prefetching_handle insert(const sirius_io_object& obj,

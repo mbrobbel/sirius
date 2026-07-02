@@ -63,14 +63,10 @@ class scan_operator_input : public op::operator_data {
   }
 
   [[nodiscard]] op::operator_data_type get_type() const override
-  {
-    return op::operator_data_type::GPU_SCAN;
-  }
+  { return op::operator_data_type::GPU_SCAN; }
 
   [[nodiscard]] bool is_resident() const noexcept override
-  {
-    return std::holds_alternative<std::shared_ptr<::cucascade::data_batch>>(materialization_info);
-  }
+  { return std::holds_alternative<std::shared_ptr<::cucascade::data_batch>>(materialization_info); }
 
   [[nodiscard]] bool has_scan_metadata() const noexcept
   {

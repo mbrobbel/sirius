@@ -47,9 +47,7 @@ class sirius_physical_sort_partition : public sirius_physical_operator {
   bool is_source() const override { return true; }
 
   sirius::OrderPreservationType source_order() const override
-  {
-    return sirius::OrderPreservationType::FIXED_ORDER;
-  }
+  { return sirius::OrderPreservationType::FIXED_ORDER; }
 
  public:
   // Sink interface

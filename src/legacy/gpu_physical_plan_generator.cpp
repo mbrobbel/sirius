@@ -92,9 +92,7 @@ bool GPUPhysicalPlanGenerator::PreserveInsertionOrder(ClientContext& context,
 }
 
 bool GPUPhysicalPlanGenerator::PreserveInsertionOrder(GPUPhysicalOperator& plan)
-{
-  return PreserveInsertionOrder(context, plan);
-}
+{ return PreserveInsertionOrder(context, plan); }
 
 unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::CreatePlan(unique_ptr<LogicalOperator> op)
 {

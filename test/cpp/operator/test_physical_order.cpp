@@ -41,9 +41,7 @@ duckdb::BoundOrderByNode make_order(
 }
 
 std::shared_ptr<data_batch> make_1col_batch(memory_space& space, const std::vector<int64_t>& vals)
-{
-  return make_numeric_batch<int64_t>(space, vals, cudf::type_id::INT64);
-}
+{ return make_numeric_batch<int64_t>(space, vals, cudf::type_id::INT64); }
 
 std::shared_ptr<data_batch> make_2col_batch(memory_space& space,
                                             const std::vector<int64_t>& col0,

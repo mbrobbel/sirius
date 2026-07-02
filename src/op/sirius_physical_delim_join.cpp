@@ -170,9 +170,7 @@ void sirius_physical_right_delim_join::sink(const operator_data& input_data,
 }
 
 std::unique_ptr<operator_data> sirius_physical_right_delim_join::get_next_task_input_data()
-{
-  return partition_join->get_next_task_input_data();
-}
+{ return partition_join->get_next_task_input_data(); }
 
 std::unique_ptr<operator_data> sirius_physical_left_delim_join::execute(
   const operator_data& input_data, rmm::cuda_stream_view stream)

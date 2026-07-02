@@ -87,8 +87,6 @@ idx_t GPUQueryResult::RowCount() const
 unique_ptr<DataChunk> GPUQueryResult::FetchInternal() { return result_collection->GetNext(); }
 
 Value GPUQueryResult::GetValue(idx_t column, idx_t index)
-{
-  throw InternalException("GetValue not implemented for GPUQueryResult");
-}
+{ throw InternalException("GetValue not implemented for GPUQueryResult"); }
 
 }  // namespace duckdb

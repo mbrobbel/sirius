@@ -52,9 +52,7 @@ namespace sirius {
  * `duckdb::Config::EXPRESSION_EVALUATOR_STRATEGY`.
  */
 inline expression_evaluator_strategy strategy_from_config()
-{
-  return duckdb::Config::EXPRESSION_EVALUATOR_STRATEGY;
-}
+{ return duckdb::Config::EXPRESSION_EVALUATOR_STRATEGY; }
 
 /**
  * @brief The expression_evaluator is responsible for evaluating DuckDB expressions on the GPU
@@ -178,21 +176,15 @@ class expression_evaluator {
 
     /// @brief Returns true if the payload holds a cudf::scalar.
     [[nodiscard]] bool is_scalar() const
-    {
-      return std::holds_alternative<std::unique_ptr<cudf::scalar>>(payload);
-    }
+    { return std::holds_alternative<std::unique_ptr<cudf::scalar>>(payload); }
 
     /// @brief Returns true if the payload holds a cudf::column_view.
     [[nodiscard]] bool is_column_view() const
-    {
-      return std::holds_alternative<cudf::column_view>(payload);
-    }
+    { return std::holds_alternative<cudf::column_view>(payload); }
 
     /// @brief Returns true if the payload holds an owned cudf::column.
     [[nodiscard]] bool is_owned_column() const
-    {
-      return std::holds_alternative<std::unique_ptr<cudf::column>>(payload);
-    }
+    { return std::holds_alternative<std::unique_ptr<cudf::column>>(payload); }
 
     /**
      * @brief Returns the AST expression reference from the payload.

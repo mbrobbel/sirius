@@ -164,9 +164,7 @@ class sirius_ioctx : public std::enable_shared_from_this<sirius_ioctx> {
   /// before falling through to the backend.  Computed live so it tracks
   /// @ref initialize_cache / @ref shutdown_cache transitions.
   [[nodiscard]] inline bool uses_prefetching_cache() const noexcept
-  {
-    return can_use_prefetching_cache() && _cache;
-  }
+  { return can_use_prefetching_cache() && _cache; }
 
   /// Per-file metadata cache that lives independently of the prefetching
   /// cache.  Always available — callers that have parsed file metadata
@@ -175,9 +173,7 @@ class sirius_ioctx : public std::enable_shared_from_this<sirius_ioctx> {
   /// prefetching machinery has been wired up.
   [[nodiscard]] cache::metadata_store& metadata_store() noexcept { return _metadata_store; }
   [[nodiscard]] cache::metadata_store const& metadata_store() const noexcept
-  {
-    return _metadata_store;
-  }
+  { return _metadata_store; }
 
   // -- Physical range alignment ------------------------------------------------
 
@@ -218,9 +214,7 @@ class sirius_ioctx : public std::enable_shared_from_this<sirius_ioctx> {
     const sirius_io_object& obj, std::span<io_object_segment> segments) noexcept = 0;
 
   bool can_use_prefetching_cache() const noexcept
-  {
-    return supports_vector_host_read() || supports_host_to_device_read();
-  }
+  { return supports_vector_host_read() || supports_host_to_device_read(); }
 
  protected:
   /// Backend hook: open native handles / resolve metadata for @p path and

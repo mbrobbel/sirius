@@ -386,9 +386,7 @@ class range_s3_server {
   }
 
   static void send_all(int fd, std::string_view bytes)
-  {
-    send_all(fd, reinterpret_cast<std::uint8_t const*>(bytes.data()), bytes.size());
-  }
+  { send_all(fd, reinterpret_cast<std::uint8_t const*>(bytes.data()), bytes.size()); }
 
   static void send_all(int fd, std::uint8_t const* bytes, std::size_t size)
   {

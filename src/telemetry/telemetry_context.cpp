@@ -35,9 +35,7 @@ namespace sirius::telemetry {
 
 std::shared_ptr<const telemetry_context> telemetry_context::create(
   const sirius::telemetry_config& config)
-{
-  return std::shared_ptr<telemetry_context>(new telemetry_context(config));
-}
+{ return std::shared_ptr<telemetry_context>(new telemetry_context(config)); }
 
 telemetry_context::telemetry_context(const sirius::telemetry_config& config)
   : engine_uuid_(uuid::now_v7()),

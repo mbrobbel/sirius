@@ -26,9 +26,7 @@ namespace sirius {
 
 std::unique_ptr<GpuExpressionState> GpuExpressionExecutor::InitializeState(
   const BoundReferenceExpression& expr, GpuExpressionExecutorState& root)
-{
-  return std::make_unique<GpuExpressionState>(expr, root);
-}
+{ return std::make_unique<GpuExpressionState>(expr, root); }
 
 std::unique_ptr<cudf::column> GpuExpressionExecutor::Execute(const BoundReferenceExpression& expr,
                                                              GpuExpressionState* state)

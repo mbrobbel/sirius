@@ -92,9 +92,7 @@ inline std::unique_ptr<sirius::memory::sirius_memory_reservation_manager> initia
 namespace sirius::scan_test_utils {
 
 inline std::filesystem::path get_test_config_path()
-{
-  return std::filesystem::path(__FILE__).parent_path() / "memory.yaml";
-}
+{ return std::filesystem::path(__FILE__).parent_path() / "memory.yaml"; }
 
 inline cucascade::memory::memory_space* get_space(
   cucascade::memory::memory_reservation_manager& mem_mgr, cucascade::memory::Tier tier)

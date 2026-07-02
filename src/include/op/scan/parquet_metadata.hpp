@@ -47,9 +47,7 @@ class parquet_metadata final : public sirius::io::sirius_io_object_metadata {
 
   [[nodiscard]] std::shared_ptr<cudf::io::parquet::FileMetaData const> const& file_metadata()
     const noexcept
-  {
-    return _file_metadata;
-  }
+  { return _file_metadata; }
 
   [[nodiscard]] std::size_t footer_byte_len() const noexcept { return _footer_byte_len; }
 

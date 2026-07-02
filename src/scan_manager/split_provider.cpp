@@ -35,9 +35,7 @@ split_provider::split_provider(op::scan::gpu_ingestible& ingestible, io::ioctx_r
 bool split_provider::has_more_splits() const { return !_ingestible->has_processed_all_metadata(); }
 
 std::function<std::unique_ptr<op::scan::scan_info>()> split_provider::next_split_provider()
-{
-  return _ingestible->next_split_provider(_resolve);
-}
+{ return _ingestible->next_split_provider(_resolve); }
 
 template <typename Scheduler>
 void split_provider::run(Scheduler& scheduler, const push_callback_t& on_split)

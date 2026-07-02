@@ -96,9 +96,7 @@ struct ExecutorThreadHandleWrapper {
                                               .instance_name   = thread_name,
                                               .parent_group_id = context.engine_id(),
                                             }))
-  {
-    handle->operating();
-  }
+  { handle->operating(); }
 
   ExecutorThreadHandleWrapper(const ExecutorThreadHandleWrapper&)            = delete;
   ExecutorThreadHandleWrapper& operator=(const ExecutorThreadHandleWrapper&) = delete;
@@ -122,9 +120,7 @@ struct TaskManagerLoopThreadHandleWrapper {
                                                        .instance_name   = thread_name,
                                                        .parent_group_id = context.engine_id(),
                                                      }))
-  {
-    handle->operating();
-  }
+  { handle->operating(); }
 
   TaskManagerLoopThreadHandleWrapper(const TaskManagerLoopThreadHandleWrapper&)            = delete;
   TaskManagerLoopThreadHandleWrapper& operator=(const TaskManagerLoopThreadHandleWrapper&) = delete;

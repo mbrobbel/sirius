@@ -47,8 +47,6 @@ Context::~Context() = default;
 std::unique_ptr<Context> make_context() { return std::make_unique<Context>(); }
 
 std::unique_ptr<Context> make_context_from_config(const std::string& config_path)
-{
-  return std::make_unique<Context>(config_path);
-}
+{ return std::make_unique<Context>(config_path); }
 
 }  // namespace sirius::ffi

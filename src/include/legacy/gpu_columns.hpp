@@ -75,9 +75,7 @@ enum class GPUColumnTypeId {
 
 struct GPUDecimalTypeInfo {
   GPUDecimalTypeInfo(uint8_t width, uint8_t scale) : width_(width), scale_(scale)
-  {
-    D_ASSERT(width >= scale);
-  }
+  { D_ASSERT(width >= scale); }
 
   size_t GetDecimalTypeSize() const;
 
@@ -96,9 +94,7 @@ struct GPUColumnType {
   inline GPUDecimalTypeInfo* GetDecimalTypeInfo() const { return decimal_type_info_.get(); }
 
   void SetDecimalTypeInfo(uint8_t width, uint8_t scale)
-  {
-    decimal_type_info_ = make_shared_ptr<GPUDecimalTypeInfo>(width, scale);
-  }
+  { decimal_type_info_ = make_shared_ptr<GPUDecimalTypeInfo>(width, scale); }
 
  private:
   GPUColumnTypeId id_;

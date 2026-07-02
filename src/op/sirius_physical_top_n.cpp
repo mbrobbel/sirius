@@ -205,9 +205,7 @@ sirius_physical_top_n_merge::sirius_physical_top_n_merge(sirius_physical_top_n* 
       top_n->offset,               // primitive
       top_n->dynamic_filter,       // shared_ptr - shares ownership (reference count increases)
       top_n->estimated_cardinality)
-{
-  child_op = top_n;
-}
+{ child_op = top_n; }
 
 sirius_physical_top_n_merge::sirius_physical_top_n_merge(
   duckdb::vector<sirius::logical_type> types_p,

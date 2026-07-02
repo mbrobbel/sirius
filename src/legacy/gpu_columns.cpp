@@ -69,9 +69,7 @@ DataWrapper::DataWrapper(GPUColumnType _type,
     num_bytes(_num_bytes),
     is_string_data(_is_string_data),
     validity_mask(_validity_mask)
-{
-  mask_bytes = getMaskBytesSize(size);
-};
+{ mask_bytes = getMaskBytesSize(size); };
 
 size_t DataWrapper::getColumnTypeSize() const
 {
@@ -502,24 +500,16 @@ void GPUColumn::setFromCudfScalar(cudf::scalar& cudf_scalar, GPUBufferManager* g
 }
 
 int32_t* GPUColumn::convertSiriusOffsetToCudfOffset()
-{
-  return convertUInt64ToInt32(data_wrapper.offset, column_length + 1);
-}
+{ return convertUInt64ToInt32(data_wrapper.offset, column_length + 1); }
 
 int32_t* GPUColumn::convertSiriusRowIdsToCudfRowIds()
-{
-  return convertUInt64ToInt32(row_ids, row_id_count);
-}
+{ return convertUInt64ToInt32(row_ids, row_id_count); }
 
 void GPUColumn::convertCudfRowIdsToSiriusRowIds(int32_t* cudf_row_ids)
-{
-  row_ids = convertInt32ToUInt64(cudf_row_ids, row_id_count);
-}
+{ row_ids = convertInt32ToUInt64(cudf_row_ids, row_id_count); }
 
 void GPUColumn::convertCudfOffsetToSiriusOffset(int32_t* cudf_offset)
-{
-  data_wrapper.offset = convertInt32ToUInt64(cudf_offset, column_length + 1);
-}
+{ data_wrapper.offset = convertInt32ToUInt64(cudf_offset, column_length + 1); }
 
 size_t GPUColumn::getTotalColumnSize()
 {

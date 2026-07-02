@@ -254,7 +254,7 @@ TEST_CASE("pin_table - PIN-MGPU-01 routing via [mgpu-audit]",
     // and duckdb_scan_executor.cpp records.
     auto select_sql = "CALL gpu_execution(\"SELECT k, count(*) FROM read_parquet('" + glob +
                       "') WHERE k % 2 = 0 GROUP BY k LIMIT 10\");";
-    auto select = con.Query(select_sql);
+    auto select     = con.Query(select_sql);
     REQUIRE(select);
     if (select->HasError()) { UNSCOPED_INFO("gpu_execution error: " << select->GetError()); }
     REQUIRE_FALSE(select->HasError());

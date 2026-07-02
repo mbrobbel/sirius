@@ -323,10 +323,10 @@ TEST_CASE("ast_from_duckdb - BOUND_BETWEEN translates to between node with inclu
           "[ast_from_duckdb]")
 {
   auto bt  = duckdb::make_uniq<BoundBetweenExpression>(make_bound_ref(0),
-                                                      make_bound_int_const(1),
-                                                      make_bound_int_const(10),
-                                                      /*lower_inclusive=*/true,
-                                                      /*upper_inclusive=*/true);
+                                                       make_bound_int_const(1),
+                                                       make_bound_int_const(10),
+                                                       /*lower_inclusive=*/true,
+                                                       /*upper_inclusive=*/true);
   auto out = sirius::ast::from_duckdb(*bt);
   REQUIRE(out);
   REQUIRE(out->holds<between>());
@@ -631,7 +631,7 @@ TEST_CASE("ast_from_duckdb - BOUND_OPERATOR NOT with unsupported child propagate
   // Wrapping it in NOT must propagate the nullptr up.
   auto bad_child = duckdb::make_uniq<BoundParameterExpression>(std::string{"p_not"});
   auto not_expr  = duckdb::make_uniq<BoundOperatorExpression>(ExpressionType::OPERATOR_NOT,
-                                                             LogicalType{LogicalTypeId::BOOLEAN});
+                                                              LogicalType{LogicalTypeId::BOOLEAN});
   not_expr->children.push_back(std::move(bad_child));
 
   REQUIRE(sirius::ast::from_duckdb(*not_expr) == nullptr);
@@ -642,7 +642,7 @@ TEST_CASE("ast_from_duckdb - BOUND_OPERATOR COMPARE_IN with unsupported probe pr
 {
   auto bad_probe = duckdb::make_uniq<BoundParameterExpression>(std::string{"p_in"});
   auto in_expr   = duckdb::make_uniq<BoundOperatorExpression>(ExpressionType::COMPARE_IN,
-                                                            LogicalType{LogicalTypeId::BOOLEAN});
+                                                              LogicalType{LogicalTypeId::BOOLEAN});
   in_expr->children.push_back(std::move(bad_probe));
   in_expr->children.push_back(make_bound_int_const(2));
   in_expr->children.push_back(make_bound_int_const(3));

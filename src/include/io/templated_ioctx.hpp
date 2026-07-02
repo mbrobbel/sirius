@@ -260,31 +260,21 @@ class templated_ioctx : public sirius_ioctx {
   }
 
   [[nodiscard]] bool supports(std::string_view path) const noexcept final
-  {
-    return Reactor::supports(path);
-  }
+  { return Reactor::supports(path); }
 
   // -- Capabilities (delegate to the reactor) -------------------------------
 
   [[nodiscard]] bool supports_device_read() const noexcept final
-  {
-    return reactor_traits_t::supports_device_read;
-  }
+  { return reactor_traits_t::supports_device_read; }
 
   [[nodiscard]] bool supports_host_to_device_read() const noexcept final
-  {
-    return reactor_traits_t::supports_host_to_device_read;
-  }
+  { return reactor_traits_t::supports_host_to_device_read; }
 
   [[nodiscard]] bool supports_vector_host_read() const noexcept final
-  {
-    return reactor_traits_t::supports_vector_host_read;
-  }
+  { return reactor_traits_t::supports_vector_host_read; }
 
   [[nodiscard]] cache::prefetching_stage preferred_prefetching_stage() const noexcept override
-  {
-    return Reactor::preferred_prefetching_stage();
-  }
+  { return Reactor::preferred_prefetching_stage(); }
 
   [[nodiscard]] std::vector<cudf::io::text::byte_range_info> align_and_coalesce(
     std::span<const cudf::io::text::byte_range_info> ranges,
@@ -458,9 +448,7 @@ class templated_ioctx : public sirius_ioctx {
 
  protected:
   std::shared_ptr<sirius_io_object> create_io_object(std::string path) override
-  {
-    return std::shared_ptr<sirius_io_object>(Reactor::create_io_object(std::move(path)));
-  }
+  { return std::shared_ptr<sirius_io_object>(Reactor::create_io_object(std::move(path))); }
 
   reactor_config_type _config{};
   std::vector<std::unique_ptr<Reactor>> _reactors;
@@ -469,9 +457,7 @@ class templated_ioctx : public sirius_ioctx {
 
  private:
   static const io_object_type& as_typed(const sirius_io_object& obj) noexcept
-  {
-    return static_cast<const io_object_type&>(obj);
-  }
+  { return static_cast<const io_object_type&>(obj); }
 };
 
 }  // namespace sirius::io

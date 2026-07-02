@@ -105,9 +105,7 @@ class kvikio_context final : public sirius_ioctx {
   [[nodiscard]] bool supports_vector_host_read() const noexcept override { return false; }
   [[nodiscard]] bool supports_host_to_device_read() const noexcept override { return false; }
   [[nodiscard]] cache::prefetching_stage preferred_prefetching_stage() const noexcept override
-  {
-    return cache::prefetching_stage::none;
-  }
+  { return cache::prefetching_stage::none; }
 
   std::vector<cudf::io::text::byte_range_info> align_and_coalesce(
     std::span<const cudf::io::text::byte_range_info> ranges,

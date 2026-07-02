@@ -149,9 +149,7 @@ scan_manager_config make_fake_rest_config(std::string endpoint)
 }
 
 std::filesystem::path local_fixture_path(std::string const& key)
-{
-  return std::filesystem::path{require_env("SIRIUS_TEST_S3_LOCAL_DIR")} / key;
-}
+{ return std::filesystem::path{require_env("SIRIUS_TEST_S3_LOCAL_DIR")} / key; }
 
 std::vector<std::uint8_t> read_binary_file(std::filesystem::path const& path)
 {
@@ -348,9 +346,7 @@ class range_http_server {
   }
 
   static void send_all(int fd, std::string_view bytes)
-  {
-    send_all(fd, reinterpret_cast<std::uint8_t const*>(bytes.data()), bytes.size());
-  }
+  { send_all(fd, reinterpret_cast<std::uint8_t const*>(bytes.data()), bytes.size()); }
 
   static void send_all(int fd, std::uint8_t const* bytes, std::size_t size)
   {

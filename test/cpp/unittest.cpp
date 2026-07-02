@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
   // around each call to compare_gpu_vs_cpu.
   auto integration_config_2gpu_path = std::filesystem::path(SIRIUS_PROJECT_ROOT) / "test" / "cpp" /
                                       "integration" / "integration-2gpu.yaml";
-  int _dev_count = 0;
+  int _dev_count                    = 0;
   cudaGetDeviceCount(&_dev_count);
   std::optional<sirius::test::shared_test_env> integration_env_2gpu_holder;
   if (_dev_count >= 2) {

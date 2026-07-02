@@ -163,9 +163,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A unique pointer to the hybrid scan Parquet reader.
    */
   [[nodiscard]] std::shared_ptr<hybrid_scan_reader> get_parquet_reader()
-  {
-    return _parquet_reader;
-  };
+  { return _parquet_reader; };
 
   /**
    * @brief Gets the Parquet reader options used to configure the hybrid scan reader.
@@ -173,9 +171,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A const reference to the Parquet reader options.
    */
   [[nodiscard]] cudf::io::parquet_reader_options const& get_reader_options() const
-  {
-    return _reader_options;
-  };
+  { return _reader_options; };
 
   /**
    * @brief Gets the row group indices of the row groups represented in the multiple blocks
@@ -184,9 +180,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A const reference to the vector of row group indices.
    */
   [[nodiscard]] std::vector<cudf::size_type> const& get_row_group_indices() const
-  {
-    return _row_group_indices;
-  };
+  { return _row_group_indices; };
 
   /**
    * @brief Gets the row group indices of the row groups represented in the multiple blocks
@@ -195,9 +189,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A reference to the vector of row group indices.
    */
   [[nodiscard]] std::vector<cudf::size_type>& get_row_group_indices()
-  {
-    return _row_group_indices;
-  };
+  { return _row_group_indices; };
 
   /**
    * @brief Gets a host span of the row group indices of the row groups represented in the multiple
@@ -219,9 +211,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    */
   [[nodiscard]] std::vector<cudf::io::text::byte_range_info> const& get_column_chunk_byte_ranges()
     const
-  {
-    return _column_chunk_byte_ranges;
-  };
+  { return _column_chunk_byte_ranges; };
 
   /**
    * @brief Gets the byte ranges in the multiple blocks allocation representing the column chunks to
@@ -230,9 +220,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A reference to the vector of byte ranges.
    */
   [[nodiscard]] std::vector<cudf::io::text::byte_range_info>& get_column_chunk_byte_ranges()
-  {
-    return _column_chunk_byte_ranges;
-  };
+  { return _column_chunk_byte_ranges; };
 
   /**
    * @brief Gets the size of the representation in bytes (compressed in the multiple blocks
@@ -248,9 +236,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return The uncompressed size of the data.
    */
   [[nodiscard]] std::size_t get_uncompressed_data_size_in_bytes() const override
-  {
-    return _uncompressed_size_in_bytes;
-  }
+  { return _uncompressed_size_in_bytes; }
 
   /**
    * @brief Gets the optional fallback datasource for uncached byte ranges.
@@ -258,9 +244,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A shared_ptr to the fallback datasource, or nullptr if not set.
    */
   [[nodiscard]] std::shared_ptr<cudf::io::datasource> const& get_fallback_datasource() const
-  {
-    return _fallback_datasource;
-  }
+  { return _fallback_datasource; }
 
   /**
    * @brief Gets the original parquet file size in bytes.
@@ -273,9 +257,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @param ds A shared_ptr to the fallback datasource.
    */
   void set_fallback_datasource(std::shared_ptr<cudf::io::datasource> ds)
-  {
-    _fallback_datasource = std::move(ds);
-  }
+  { _fallback_datasource = std::move(ds); }
 
   /**
    * @brief Gets the per-GPU map of translated filter expressions for filter pushdown.
@@ -288,9 +270,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    */
   [[nodiscard]] std::shared_ptr<std::unordered_map<int, translated_expression>> const&
   get_filter_expression_by_device() const
-  {
-    return _filter_expression_by_device;
-  }
+  { return _filter_expression_by_device; }
 
   /**
    * @brief Gets the vector of projection IDs of columns that remain after filter pushdown.
@@ -298,9 +278,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    * @return A const reference to the vector of post-filter projection IDs.
    */
   [[nodiscard]] std::vector<std::size_t> const& get_post_filter_projection_ids() const
-  {
-    return _post_filter_projection_ids;
-  }
+  { return _post_filter_projection_ids; }
 
   // -------------------------------------------------------------------------
   // Post-convert hook (used by the iceberg scan path for delete application)
@@ -326,9 +304,7 @@ class host_parquet_representation : public cucascade::idata_representation {
    */
   [[nodiscard]] std::unique_ptr<cudf::table> apply_post_convert(std::unique_ptr<cudf::table> tbl,
                                                                 rmm::cuda_stream_view stream)
-  {
-    return _post_convert_fn(std::move(tbl), _data_file_path, compute_first_row_offset(), stream);
-  }
+  { return _post_convert_fn(std::move(tbl), _data_file_path, compute_first_row_offset(), stream); }
 
   [[nodiscard]] post_convert_fn_t const& get_post_convert_fn() const { return _post_convert_fn; }
 
@@ -353,14 +329,10 @@ class host_parquet_representation : public cucascade::idata_representation {
   /// Hive partition values for this representation's file, in hive_partition_columns order.
   /// Set once per task by the caller that installs the inject fn.
   void set_partition_values(std::vector<std::string> values)
-  {
-    _partition_values = std::move(values);
-  }
+  { _partition_values = std::move(values); }
 
   [[nodiscard]] std::vector<std::string> const& get_partition_values() const
-  {
-    return _partition_values;
-  }
+  { return _partition_values; }
 
   /// Only call after checking has_partition_inject_fn().
   [[nodiscard]] std::unique_ptr<cudf::table> apply_partition_inject(
@@ -371,9 +343,7 @@ class host_parquet_representation : public cucascade::idata_representation {
   }
 
   [[nodiscard]] partition_inject_fn_t const& get_partition_inject_fn() const
-  {
-    return _partition_inject_fn;
-  }
+  { return _partition_inject_fn; }
 
   /**
    * @brief Compute the 0-based absolute row offset of the first row in this batch.

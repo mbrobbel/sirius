@@ -209,7 +209,7 @@ TEST_CASE_METHOD(TransparentExecutionFixture,
   auto before_stats = sirius::test::get_transparent_execution_stats(*con);
   auto result       = con->Query(
     "SELECT id, grp, ROW_NUMBER() OVER (PARTITION BY grp ORDER BY id) AS rn "
-          "FROM test_win ORDER BY id;");
+    "FROM test_win ORDER BY id;");
   REQUIRE(result);
   REQUIRE_FALSE(result->HasError());
   REQUIRE(result->RowCount() == 100);

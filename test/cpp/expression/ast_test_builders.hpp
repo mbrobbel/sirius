@@ -48,9 +48,7 @@ namespace sirius::ast::test {
 // Build a reference node. `type` defaults to the SQLNULL placeholder, matching
 // a default-constructed reference (column_index is all most tests assert on).
 inline std::unique_ptr<node> make_ref(uint32_t idx, sirius::logical_type type = {})
-{
-  return std::make_unique<node>(reference{idx, std::move(type)});
-}
+{ return std::make_unique<node>(reference{idx, std::move(type)}); }
 
 inline std::unique_ptr<node> make_int_const(int32_t v)
 {
@@ -74,13 +72,9 @@ inline std::unique_ptr<node> make_str_const(std::string s)
 
 inline duckdb::unique_ptr<duckdb::BoundReferenceExpression> make_bound_ref(
   uint32_t idx, duckdb::LogicalTypeId type = duckdb::LogicalTypeId::INTEGER)
-{
-  return duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType{type}, idx);
-}
+{ return duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType{type}, idx); }
 
 inline duckdb::unique_ptr<duckdb::BoundConstantExpression> make_bound_int_const(int32_t v)
-{
-  return duckdb::make_uniq<duckdb::BoundConstantExpression>(duckdb::Value::INTEGER(v));
-}
+{ return duckdb::make_uniq<duckdb::BoundConstantExpression>(duckdb::Value::INTEGER(v)); }
 
 }  // namespace sirius::ast::test

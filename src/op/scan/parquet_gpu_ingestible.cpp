@@ -116,8 +116,8 @@ class parquet_batch_coalescer : public batch_coalescer {
       // each slice gets its own datasource (sharing the io_object) — otherwise
       // a later split's fadvise would stomp an earlier one's handle.
       auto slice_ds = file->datasource
-                              ? std::shared_ptr<io::sirius_datasource>(file->datasource->duplicate())
-                              : std::shared_ptr<io::sirius_datasource>{};
+                        ? std::shared_ptr<io::sirius_datasource>(file->datasource->duplicate())
+                        : std::shared_ptr<io::sirius_datasource>{};
       _slices.emplace_back(file->file_metadata,
                            file->file_path,
                            std::move(cur_rgs),
@@ -138,8 +138,8 @@ class parquet_batch_coalescer : public batch_coalescer {
     for (auto const& rg : file->row_groups) {
       bool const byte_cap_hit = (!_slices.empty() || !cur_rgs.empty()) && _cap > 0 &&
                                 _acc_bytes + cur_unc + rg.uncompressed_bytes > _cap;
-      bool const row_cap_hit = (!_slices.empty() || !cur_rgs.empty()) &&
-                               _acc_rows + cur_rows + rg.num_rows > cudf_max_rows;
+      bool const row_cap_hit  = (!_slices.empty() || !cur_rgs.empty()) &&
+                                _acc_rows + cur_rows + rg.num_rows > cudf_max_rows;
       if (byte_cap_hit || row_cap_hit) {
         seal_file();
         emitted.push_back(emit_current());
@@ -256,9 +256,7 @@ std::vector<scan_info::fadvise_entry> parquet_split_info::fadvise_entries() cons
 //===----------------------------------------------------------------------===//
 std::shared_ptr<parquet_gpu_ingestible> make_ingestible(
   std::unique_ptr<parquet_ingestible_table_info> info)
-{
-  return std::make_shared<parquet_gpu_ingestible>(std::move(info));
-}
+{ return std::make_shared<parquet_gpu_ingestible>(std::move(info)); }
 
 //===----------------------------------------------------------------------===//
 // parquet_gpu_ingestible — construction
@@ -328,9 +326,7 @@ std::unique_ptr<batch_coalescer> parquet_gpu_ingestible::create_batch_coalescer(
 // split-provider interface
 //===----------------------------------------------------------------------===//
 bool parquet_gpu_ingestible::has_processed_all_metadata() const
-{
-  return _next_file_idx.load(std::memory_order_relaxed) >= _file_paths.size();
-}
+{ return _next_file_idx.load(std::memory_order_relaxed) >= _file_paths.size(); }
 
 std::function<std::unique_ptr<op::scan::scan_info>()> parquet_gpu_ingestible::next_split_provider(
   io::ioctx_resolver resolve)
@@ -502,8 +498,8 @@ std::unique_ptr<scan_info> parquet_gpu_ingestible::build_file_scan_info(
     std::size_t rg_compressed = 0;
     auto const row_count      = static_cast<std::size_t>(row_group.num_rows);
     auto add_chunk            = [&](cudf::io::parquet::ColumnChunk const& chunk,
-                         bool is_pure_filter,
-                         std::size_t decoded_width) {
+                                    bool is_pure_filter,
+                                    std::size_t decoded_width) {
       auto const& column_metadata = chunk.meta_data;
       if (!is_pure_filter) {
         if (decoded_width > 0) {
@@ -518,9 +514,9 @@ std::unique_ptr<scan_info> parquet_gpu_ingestible::build_file_scan_info(
           std::size_t const char_bytes =
             (column_metadata.size_statistics &&
              column_metadata.size_statistics->unencoded_byte_array_data_bytes)
-                         ? static_cast<std::size_t>(
+              ? static_cast<std::size_t>(
                   *column_metadata.size_statistics->unencoded_byte_array_data_bytes)
-                         : static_cast<std::size_t>(column_metadata.total_uncompressed_size);
+              : static_cast<std::size_t>(column_metadata.total_uncompressed_size);
           // Plus the cuDF string column's offsets (one int32 per row) and validity.
           rg_decoded += char_bytes + row_count * sizeof(std::uint32_t) + row_count / 8;
         }
@@ -684,8 +680,8 @@ std::unique_ptr<cudf::table> parquet_gpu_ingestible::post_filter_and_project(
     auto sirius_filter_ast = sirius::ast::from_duckdb(*_duckdb_filter_expression);
     sirius::expression_evaluator exec(sirius_filter_ast.get(), mr_ref, stream);
     auto const data_positions = output_data_positions(*_plan);
-    auto filtered             = data_positions.empty() ? exec.select(input.table.view())
-                                                       : exec.select(input.table.view(), data_positions);
+    auto filtered = data_positions.empty() ? exec.select(input.table.view())
+                                           : exec.select(input.table.view(), data_positions);
     input = filtered_table{owning_table_view{std::move(filtered)}, filter_state::ROW_FILTERED};
     SIRIUS_LOG_DEBUG(
       "[parquet_gpu_ingestible::post_filter_and_project] Applied duckdb filter expression "

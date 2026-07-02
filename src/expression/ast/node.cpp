@@ -38,9 +38,7 @@ namespace {
 // caught by OnFinalizePrepare's `catch (std::exception&)` and triggers graceful CPU fallback
 // rather than signalling an internal Sirius invariant violation.
 [[noreturn]] void throw_wrong_node_type(std::string_view context, std::string_view expected)
-{
-  throw not_implemented_exception("{}: expected {}", context, expected);
-}
+{ throw not_implemented_exception("{}: expected {}", context, expected); }
 
 }  // namespace
 

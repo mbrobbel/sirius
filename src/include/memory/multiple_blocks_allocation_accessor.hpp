@@ -92,9 +92,7 @@ struct multiple_blocks_allocation_accessor {
    * @return The current global byte offset.
    */
   [[nodiscard]] size_t get_current_global_byte_offset() const
-  {
-    return initial_byte_offset + block_index * block_size + offset_in_block;
-  }
+  { return initial_byte_offset + block_index * block_size + offset_in_block; }
 
   /**
    * @brief Set the cursor to a specific byte offset within the allocation.
@@ -162,9 +160,7 @@ struct multiple_blocks_allocation_accessor {
    */
   template <typename Ptr>
   [[nodiscard]] T get_current(Ptr const& allocation) const
-  {
-    return get_current_as<underlying_type>(allocation);
-  }
+  { return get_current_as<underlying_type>(allocation); }
 
   /**
    * @brief Get the value at a specific offset position from the initial offset.

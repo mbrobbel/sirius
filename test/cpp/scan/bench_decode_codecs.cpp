@@ -230,8 +230,8 @@ TEST_CASE("bench CONSTANT int64 32MiB", "[!benchmark][scan][decode]")
   std::vector<int64_t> v = {12345};
   auto d                 = upload(v, stream.view());
   auto col               = one_codec_column(cudf::data_type{cudf::type_id::INT64},
-                              ROWS,
-                              CompressionType::COMPRESSION_CONSTANT,
+                                            ROWS,
+                                            CompressionType::COMPRESSION_CONSTANT,
                                             {segment(d, 0, ROWS)});
 
   double sec     = bench_seconds(stream, {col}, mr);

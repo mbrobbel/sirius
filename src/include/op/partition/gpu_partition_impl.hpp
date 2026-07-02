@@ -66,9 +66,7 @@ class gpu_partition_impl {
     int num_partitions,
     rmm::cuda_stream_view stream,
     cucascade::memory::memory_space& memory_space)
-  {
-    return hash_partition(input, partition_key_idx, {}, num_partitions, stream, memory_space);
-  }
+  { return hash_partition(input, partition_key_idx, {}, num_partitions, stream, memory_space); }
 
   /**
    * @brief Perform evenly partitioning on the input data batch.

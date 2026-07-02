@@ -35,9 +35,7 @@ namespace duckdb {
 namespace {
 
 inline void set_current_gpu_resource(gpu_pool_memory_resource& mr)
-{
-  cudf::set_current_device_resource_ref(rmm::device_async_resource_ref{mr});
-}
+{ cudf::set_current_device_resource_ref(rmm::device_async_resource_ref{mr}); }
 
 inline gpu_pool_memory_resource* make_gpu_pool_memory_resource(
   rmm::mr::cuda_memory_resource* upstream,

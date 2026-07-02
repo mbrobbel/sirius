@@ -57,9 +57,7 @@ bool select_list_is_fully_supported(
 // constant literal carries no GPU work. Folding may clone these into multiple
 // outer reference sites without increasing execution cost.
 bool is_trivial_node(sirius::ast::node const& n)
-{
-  return n.holds<sirius::ast::reference>() || n.holds<sirius::ast::constant>();
-}
+{ return n.holds<sirius::ast::reference>() || n.holds<sirius::ast::constant>(); }
 
 // Returns true when outer (parent) and inner (child) projections may be folded into one.
 // Outer references index inner's output columns; inner must be a single-child link so

@@ -76,7 +76,7 @@ inline std::vector<uint32_t> pack_uint32(std::vector<uint32_t> const& values, ui
     uint32_t word_idx = static_cast<uint32_t>(pos / 32);
     uint32_t bit_off  = static_cast<uint32_t>(pos & 31);
     uint64_t v        = static_cast<uint64_t>(values[i]) &
-                 ((width == 64) ? ~uint64_t{0} : (uint64_t{1} << width) - 1);
+                        ((width == 64) ? ~uint64_t{0} : (uint64_t{1} << width) - 1);
     out[word_idx] |= static_cast<uint32_t>(v << bit_off);
     if (bit_off + width > 32) { out[word_idx + 1] |= static_cast<uint32_t>(v >> (32 - bit_off)); }
   }

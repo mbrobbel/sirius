@@ -90,9 +90,7 @@ using ::sirius::cuda::scan::gpu_string_segment_desc;
 constexpr char const* kTag = "[sirius_gpu_duckdb_native_scan]";
 
 void throw_unsupported(std::string what)
-{
-  throw std::runtime_error(std::string(kTag) + " unsupported: " + std::move(what));
-}
+{ throw std::runtime_error(std::string(kTag) + " unsupported: " + std::move(what)); }
 
 bool is_constant_or_empty_validity(duckdb::CompressionType c)
 {
@@ -135,9 +133,7 @@ bool column_has_real_nulls(duckdb_column_metadata const& col)
 }
 
 cudf::data_type sirius_to_cudf_type(sirius::logical_type const& t)
-{
-  return duckdb::GetCudfType(sirius::to_duckdb(t));
-}
+{ return duckdb::GetCudfType(sirius::to_duckdb(t)); }
 
 /// @brief Pinned host bytes for a segment (only for CONSTANT and ROARING validity segments for now)
 struct pinned_segment_bytes {

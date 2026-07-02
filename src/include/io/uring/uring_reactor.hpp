@@ -146,9 +146,7 @@ class uring_reactor {
     [[nodiscard]] const config& cfg() const noexcept { return _config; }
     [[nodiscard]] cucascade::memory::fixed_size_host_memory_resource* host_memory_resource()
       const noexcept
-    {
-      return _mr;
-    }
+    { return _mr; }
 
    private:
     config _config;
@@ -254,9 +252,7 @@ class uring_reactor {
   // reactor provides).
 
   static constexpr cache::prefetching_stage preferred_prefetching_stage() noexcept
-  {
-    return cache::prefetching_stage::none;
-  }
+  { return cache::prefetching_stage::none; }
 
  private:
   /// Enqueue a whole batch of device read chunks with a single wake

@@ -99,9 +99,7 @@ class buffer_pool {
   [[nodiscard]] size_t chunk_size() const noexcept { return _chunk_bytes; }
 
   [[nodiscard]] size_t total_allocated_bytes() const noexcept
-  {
-    return _n_allocated_chunks * _chunk_bytes;
-  }
+  { return _n_allocated_chunks * _chunk_bytes; }
 
   [[nodiscard]] size_t total_allocated_chunks() const noexcept { return _n_allocated_chunks; }
 
@@ -176,14 +174,10 @@ class entry_state {
   entry_state() noexcept = default;
 
   [[nodiscard]] value get_state() const noexcept
-  {
-    return unpack_state(_packed.load(std::memory_order_acquire));
-  }
+  { return unpack_state(_packed.load(std::memory_order_acquire)); }
 
   [[nodiscard]] uint32_t get_pin_count() const noexcept
-  {
-    return unpack_pins(_packed.load(std::memory_order_acquire));
-  }
+  { return unpack_pins(_packed.load(std::memory_order_acquire)); }
 
   /// empty → queued.  Returns false on precondition mismatch.
   [[nodiscard]] bool mark_queued() noexcept
@@ -329,13 +323,9 @@ class entry_state {
   static constexpr uint32_t PIN_SHIFT  = STATE_BITS;
 
   static constexpr uint32_t pack(value s, uint32_t pins) noexcept
-  {
-    return static_cast<uint32_t>(s) | (pins << PIN_SHIFT);
-  }
+  { return static_cast<uint32_t>(s) | (pins << PIN_SHIFT); }
   static constexpr value unpack_state(uint32_t v) noexcept
-  {
-    return static_cast<value>(v & STATE_MASK);
-  }
+  { return static_cast<value>(v & STATE_MASK); }
   static constexpr uint32_t unpack_pins(uint32_t v) noexcept { return v >> PIN_SHIFT; }
 
   std::atomic<uint32_t> _packed{pack(empty, 0)};
@@ -352,9 +342,7 @@ struct alignas(64) chunk_lifecycle {
   static constexpr uint64_t FRESH_SCORE = 4;
 
   static constexpr uint64_t pack(uint32_t tick, uint16_t reads, uint16_t inserts) noexcept
-  {
-    return (uint64_t(tick) << TICK_SHIFT) | (uint64_t(reads) << READ_SHIFT) | uint64_t(inserts);
-  }
+  { return (uint64_t(tick) << TICK_SHIFT) | (uint64_t(reads) << READ_SHIFT) | uint64_t(inserts); }
 
   void on_request(uint32_t query_tick) noexcept
   {

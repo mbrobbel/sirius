@@ -55,9 +55,7 @@ sirius_physical_result_collector::sirius_physical_result_collector(
     properties(data.prepared->properties),
     plan(*data.sirius_physical_plan),
     names(data.prepared->names)
-{
-  this->types = sirius::from_duckdb_vec(data.prepared->types);
-}
+{ this->types = sirius::from_duckdb_vec(data.prepared->types); }
 
 std::unique_ptr<operator_data> sirius_physical_result_collector::execute(
   const operator_data& input_data, rmm::cuda_stream_view stream)
@@ -69,9 +67,7 @@ std::unique_ptr<operator_data> sirius_physical_result_collector::execute(
 
 duckdb::vector<duckdb::const_reference<sirius_physical_operator>>
 sirius_physical_result_collector::get_children() const
-{
-  return {plan};
-}
+{ return {plan}; }
 
 void sirius_physical_result_collector::build_pipelines(
   pipeline::sirius_pipeline& current, pipeline::sirius_meta_pipeline& meta_pipeline)

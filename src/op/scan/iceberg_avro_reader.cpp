@@ -103,9 +103,7 @@ static int64_t read_vlong(const uint8_t*& p, const uint8_t* end)
 }
 
 static int32_t read_vint(const uint8_t*& p, const uint8_t* end)
-{
-  return int32_t(read_vlong(p, end));
-}
+{ return int32_t(read_vlong(p, end)); }
 
 // ---------------------------------------------------------------------------
 // Bytes / string  (length-prefixed)

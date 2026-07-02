@@ -79,9 +79,7 @@ bool sirius_physical_plan_generator::preserve_insertion_order(
 
 bool sirius_physical_plan_generator::preserve_insertion_order(
   sirius::op::sirius_physical_operator& plan)
-{
-  return preserve_insertion_order(context, plan);
-}
+{ return preserve_insertion_order(context, plan); }
 
 duckdb::unique_ptr<sirius::op::sirius_physical_operator>
 sirius_physical_plan_generator::create_plan(duckdb::unique_ptr<duckdb::LogicalOperator> op)

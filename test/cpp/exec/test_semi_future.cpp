@@ -41,9 +41,7 @@ std::uint64_t counter_value(counter_t const& counter)
 }
 
 std::uint64_t raw_futex_wake_count()
-{
-  return counter_value(sirius::exec::detail::raw_futex_wake_count());
-}
+{ return counter_value(sirius::exec::detail::raw_futex_wake_count()); }
 
 void wait_until_count(std::atomic<int>& counter, int expected)
 {

@@ -73,9 +73,7 @@ class parquet_ingestible_table_info : public ingestible_table_info {
   [[nodiscard]] std::span<std::string const> column_names() const override { return names; }
 
   [[nodiscard]] std::span<std::string const> file_paths() const override
-  {
-    return std::span<std::string const>(resolved_file_paths.data(), resolved_file_paths.size());
-  }
+  { return std::span<std::string const>(resolved_file_paths.data(), resolved_file_paths.size()); }
 };
 
 //===----------------------------------------------------------------------===//

@@ -54,8 +54,6 @@ sirius_pipeline_itask::~sirius_pipeline_itask()
 }
 
 quent::task::TaskHandle& sirius_pipeline_itask::telemetry_handle() noexcept
-{
-  return *_telemetry_task_handle;
-}
+{ return *_telemetry_task_handle; }
 
 }  // namespace sirius::pipeline

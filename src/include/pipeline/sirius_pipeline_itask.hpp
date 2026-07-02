@@ -99,9 +99,7 @@ class sirius_pipeline_itask : public parallel::itask {
 
   // Tasks that can exist without an attached pipeline should override this.
   [[nodiscard]] size_t get_pipeline_id() const
-  {
-    return _global_state->cast<sirius_pipeline_task_global_state>().get_pipeline_id();
-  }
+  { return _global_state->cast<sirius_pipeline_task_global_state>().get_pipeline_id(); }
 
   [[nodiscard]] quent::task::TaskHandle& telemetry_handle() noexcept;
   void set_telemetry_finalized() noexcept { _telemetry_finalized = true; }

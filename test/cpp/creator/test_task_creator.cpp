@@ -249,9 +249,7 @@ class test_fixture {
    * @brief Create a mock GPU pipeline with controllable finished state.
    */
   duckdb::shared_ptr<mock_gpu_pipeline> create_mock_pipeline()
-  {
-    return duckdb::make_shared_ptr<mock_gpu_pipeline>(build_ctx);
-  }
+  { return duckdb::make_shared_ptr<mock_gpu_pipeline>(build_ctx); }
 
   duckdb::DuckDB db;
   duckdb::Connection con;

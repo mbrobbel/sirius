@@ -322,9 +322,7 @@ shared_ptr<GPUPipeline> GPUExecutor::CreateChildPipeline(GPUPipeline& current,
 }
 
 bool GPUExecutor::HasResultCollector()
-{
-  return gpu_physical_plan->type == PhysicalOperatorType::RESULT_COLLECTOR;
-}
+{ return gpu_physical_plan->type == PhysicalOperatorType::RESULT_COLLECTOR; }
 
 unique_ptr<QueryResult> GPUExecutor::GetResult()
 {

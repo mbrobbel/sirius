@@ -74,14 +74,10 @@ std::string query_value(std::string_view url, std::string_view key)
 }
 
 bool contains(std::string_view haystack, std::string_view needle)
-{
-  return haystack.find(needle) != std::string_view::npos;
-}
+{ return haystack.find(needle) != std::string_view::npos; }
 
 bool starts_with(std::string_view s, std::string_view prefix)
-{
-  return s.size() >= prefix.size() && s.substr(0, prefix.size()) == prefix;
-}
+{ return s.size() >= prefix.size() && s.substr(0, prefix.size()) == prefix; }
 
 bool ascii_iequals(std::string_view lhs, std::string_view rhs)
 {

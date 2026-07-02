@@ -180,22 +180,22 @@ fs::path generate_self_signed_cert(fs::path const& dir)
   fs::create_directories(dir);
   fs::path cert = dir / "public.crt";
   fs::path key  = dir / "private.key";
-  int rc        = run_process({"openssl",
-                               "req",
-                               "-x509",
-                               "-newkey",
-                               "rsa:2048",
-                               "-nodes",
-                               "-days",
-                               "365",
-                               "-keyout",
-                               key.string(),
-                               "-out",
-                               cert.string(),
-                               "-subj",
-                               "/CN=localhost",
-                               "-addext",
-                               "subjectAltName=IP:127.0.0.1,DNS:localhost,DNS:host.docker.internal"});
+  int rc = run_process({"openssl",
+                        "req",
+                        "-x509",
+                        "-newkey",
+                        "rsa:2048",
+                        "-nodes",
+                        "-days",
+                        "365",
+                        "-keyout",
+                        key.string(),
+                        "-out",
+                        cert.string(),
+                        "-subj",
+                        "/CN=localhost",
+                        "-addext",
+                        "subjectAltName=IP:127.0.0.1,DNS:localhost,DNS:host.docker.internal"});
   if (rc != 0) throw std::runtime_error("openssl failed to generate self-signed cert");
   return cert;
 }

@@ -29,9 +29,7 @@ class GPUPhysicalEmptyResult : public GPUPhysicalOperator {
   explicit GPUPhysicalEmptyResult(vector<LogicalType> types, idx_t estimated_cardinality)
     : GPUPhysicalOperator(
         PhysicalOperatorType::EMPTY_RESULT, std::move(types), estimated_cardinality)
-  {
-    printf("GPUPhysicalEmptyResult constructor\n");
-  }
+  { printf("GPUPhysicalEmptyResult constructor\n"); }
 
  public:
   SourceResultType GetData(GPUIntermediateRelation& output_relation) const override;

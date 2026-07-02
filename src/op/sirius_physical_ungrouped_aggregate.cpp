@@ -72,15 +72,11 @@ cudf::data_type ToCudfType(const duckdb::LogicalType& t) { return duckdb::GetCud
 
 template <typename ScalarType>
 ScalarType const& scalar_cast(const cudf::scalar& s)
-{
-  return static_cast<ScalarType const&>(s);
-}
+{ return static_cast<ScalarType const&>(s); }
 
 template <typename ScalarType>
 ScalarType& scalar_cast(cudf::scalar& s)
-{
-  return static_cast<ScalarType&>(s);
-}
+{ return static_cast<ScalarType&>(s); }
 
 template <typename T>
 std::unique_ptr<cudf::scalar> make_numeric_scalar_with_value(cudf::data_type type,
@@ -414,9 +410,7 @@ sirius_physical_ungrouped_aggregate_merge::sirius_physical_ungrouped_aggregate_m
       copy_expressions(ungrouped_aggregate->aggregates),  // deep copy
       ungrouped_aggregate->estimated_cardinality,
       duckdb::TupleDataValidityType::CAN_HAVE_NULL_VALUES)  // default - not stored in source
-{
-  child_op = ungrouped_aggregate;
-}
+{ child_op = ungrouped_aggregate; }
 
 sirius_physical_ungrouped_aggregate_merge::sirius_physical_ungrouped_aggregate_merge(
   duckdb::vector<sirius::logical_type> types,

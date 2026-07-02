@@ -116,9 +116,7 @@ class topology_index {
 
   /// @brief The topology this index was built from.
   [[nodiscard]] const cucascade::memory::system_topology_info& get_topology() const noexcept
-  {
-    return _topology;
-  }
+  { return _topology; }
 
   /// @brief NUMA node hosting @p gpu.
   /// @param gpu  CUDA device id.

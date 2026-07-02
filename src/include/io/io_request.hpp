@@ -92,14 +92,10 @@ class request_manager {
   }
 
   [[nodiscard]] bool has_error() const noexcept
-  {
-    return error_reported.load(std::memory_order_acquire);
-  }
+  { return error_reported.load(std::memory_order_acquire); }
 
   [[nodiscard]] exec::semi_future<size_t> get_future() noexcept
-  {
-    return promise.get_semi_future();
-  }
+  { return promise.get_semi_future(); }
 
   const std::size_t bytes_requested;
   const std::size_t total_chunks;
@@ -192,9 +188,7 @@ struct device_cpy_request {
 template <class Chunk>
 struct rx_request_t {
   static std::unique_ptr<rx_request_t> create(std::vector<std::unique_ptr<Chunk>> reqs) noexcept
-  {
-    return std::unique_ptr<rx_request_t>(new rx_request_t(std::move(reqs)));
-  }
+  { return std::unique_ptr<rx_request_t>(new rx_request_t(std::move(reqs))); }
 
   [[nodiscard]] std::size_t size() const noexcept { return requests.size(); }
 

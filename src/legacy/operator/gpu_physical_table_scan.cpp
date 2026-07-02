@@ -583,9 +583,7 @@ class GPUTableScanGlobalSourceState : public GlobalSourceState {
   unique_ptr<TableFilterSet> table_filters;
 
   optional_ptr<TableFilterSet> GetTableFilters(const GPUPhysicalTableScan& op) const
-  {
-    return table_filters ? table_filters.get() : op.fake_table_filters.get();
-  }
+  { return table_filters ? table_filters.get() : op.fake_table_filters.get(); }
   idx_t MaxThreads() override { return max_threads; }
 
   // The following are used in `TableScanCoalesceTask`
@@ -719,9 +717,7 @@ unique_ptr<LocalSourceState> GPUPhysicalTableScan::GetLocalSourceState(
 
 unique_ptr<GlobalSourceState> GPUPhysicalTableScan::GetGlobalSourceState(
   ClientContext& context) const
-{
-  return make_uniq<GPUTableScanGlobalSourceState>(context, *this);
-}
+{ return make_uniq<GPUTableScanGlobalSourceState>(context, *this); }
 
 class TableScanGetSizeTask : public BaseExecutorTask {
  public:
@@ -1198,16 +1194,16 @@ void GPUPhysicalTableScan::ScanDataDuckDBOpt(ExecutionContext& exec_context,
     for (int i = 0; i < num_threads; ++i) {
       l_states[i] = GetLocalSourceState(exec_context, *g_state);
       auto task   = make_uniq<TableScanCoalesceTask>(executor,
-                                                   i,
-                                                   function,
-                                                   exec_context,
-                                                   *this,
-                                                   g_state.get(),
-                                                   l_states[i].get(),
-                                                   data_ptr,
-                                                   mask_ptr,
-                                                   offset_ptr,
-                                                   duckdb_storage_row_ids_ptr);
+                                                     i,
+                                                     function,
+                                                     exec_context,
+                                                     *this,
+                                                     g_state.get(),
+                                                     l_states[i].get(),
+                                                     data_ptr,
+                                                     mask_ptr,
+                                                     offset_ptr,
+                                                     duckdb_storage_row_ids_ptr);
       executor.ScheduleTask(std::move(task));
     }
     executor.WorkOnTasks();

@@ -58,9 +58,7 @@ static fs::path get_project_root()
 
 struct sirius_config_env_guard {
   sirius_config_env_guard(const std::string& config_path)
-  {
-    setenv("SIRIUS_CONFIG_FILE", config_path.c_str(), 1);
-  }
+  { setenv("SIRIUS_CONFIG_FILE", config_path.c_str(), 1); }
   ~sirius_config_env_guard() { unsetenv("SIRIUS_CONFIG_FILE"); }
 };
 
@@ -84,9 +82,7 @@ class MultiFormatFixtureBase {
   }
 
   static bool is_floating_point(duckdb::LogicalTypeId id)
-  {
-    return id == duckdb::LogicalTypeId::FLOAT || id == duckdb::LogicalTypeId::DOUBLE;
-  }
+  { return id == duckdb::LogicalTypeId::FLOAT || id == duckdb::LogicalTypeId::DOUBLE; }
 
   /// Collect all rows from a MaterializedQueryResult as sorted vectors of stringified values.
   static std::vector<std::vector<std::string>> collect_rows(duckdb::MaterializedQueryResult& result)

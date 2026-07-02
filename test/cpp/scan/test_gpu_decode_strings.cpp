@@ -194,9 +194,9 @@ TEST_CASE("gpu_decode_strings UNCOMPRESSED - all empty strings",
   std::vector<std::string> rows(8, "");
   auto bytes = make_uncompressed_segment(rows);
   auto out   = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_UNCOMPRESSED,
-                                static_cast<uint32_t>(rows.size()),
-                                /*max_len=*/4u);
+                                  CompressionType::COMPRESSION_UNCOMPRESSED,
+                                  static_cast<uint32_t>(rows.size()),
+                                  /*max_len=*/4u);
   REQUIRE(out.size() == rows.size());
   for (auto const& s : out)
     REQUIRE(s.empty());
@@ -208,9 +208,9 @@ TEST_CASE("gpu_decode_strings UNCOMPRESSED - varied lengths including empty",
   std::vector<std::string> rows = {"", "x", "", "abcd", "longer-string-here", "", "z"};
   auto bytes                    = make_uncompressed_segment(rows);
   auto out                      = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_UNCOMPRESSED,
-                                static_cast<uint32_t>(rows.size()),
-                                /*max_len=*/32u);
+                                                     CompressionType::COMPRESSION_UNCOMPRESSED,
+                                                     static_cast<uint32_t>(rows.size()),
+                                                     /*max_len=*/32u);
   REQUIRE(out.size() == rows.size());
   for (size_t i = 0; i < rows.size(); ++i) {
     REQUIRE(out[i] == rows[i]);
@@ -228,9 +228,9 @@ TEST_CASE("gpu_decode_strings UNCOMPRESSED - many rows across multiple CTAs",
   }
   auto bytes = make_uncompressed_segment(rows);
   auto out   = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_UNCOMPRESSED,
-                                static_cast<uint32_t>(rows.size()),
-                                /*max_len=*/16u);
+                                  CompressionType::COMPRESSION_UNCOMPRESSED,
+                                  static_cast<uint32_t>(rows.size()),
+                                  /*max_len=*/16u);
   REQUIRE(out.size() == rows.size());
   for (size_t i = 0; i < rows.size(); ++i) {
     REQUIRE(out[i] == rows[i]);
@@ -445,9 +445,9 @@ TEST_CASE("gpu_decode_strings FSST - many distinct strings", "[scan][decode][str
   }
   auto bytes = make_fsst_segment(rows);
   auto out   = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_FSST,
-                                ROWS,
-                                /*max_len=*/64u);
+                                  CompressionType::COMPRESSION_FSST,
+                                  ROWS,
+                                  /*max_len=*/64u);
   REQUIRE(out.size() == ROWS);
   for (uint32_t i = 0; i < ROWS; ++i) {
     if (out[i] != rows[i]) {
@@ -466,9 +466,9 @@ TEST_CASE("gpu_decode_strings DICT_FSST mode 0 (DICTIONARY) - basic round-trip",
   std::vector<uint32_t> sel     = {1, 2, 3, 0, 1, 2};
   auto bytes                    = make_dict_fsst_segment(dict, sel, /*mode=*/0);
   auto out                      = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_DICT_FSST,
-                                static_cast<uint32_t>(sel.size()),
-                                /*max_len=*/8u);
+                                                     CompressionType::COMPRESSION_DICT_FSST,
+                                                     static_cast<uint32_t>(sel.size()),
+                                                     /*max_len=*/8u);
   REQUIRE(out.size() == sel.size());
   REQUIRE(out[0] == "alpha");
   REQUIRE(out[1] == "beta");
@@ -486,9 +486,9 @@ TEST_CASE("gpu_decode_strings DICT_FSST mode 1 (DICT_FSST) - basic round-trip",
   std::vector<uint32_t> sel = {1, 2, 3, 1, 0, 2};
   auto bytes                = make_dict_fsst_segment(dict, sel, /*mode=*/1);
   auto out                  = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_DICT_FSST,
-                                static_cast<uint32_t>(sel.size()),
-                                /*max_len=*/64u);
+                                                 CompressionType::COMPRESSION_DICT_FSST,
+                                                 static_cast<uint32_t>(sel.size()),
+                                                 /*max_len=*/64u);
   REQUIRE(out.size() == sel.size());
   REQUIRE(out[0] == dict[1]);
   REQUIRE(out[1] == dict[2]);
@@ -513,9 +513,9 @@ TEST_CASE("gpu_decode_strings DICT_FSST mode 2 (FSST_ONLY) - basic round-trip",
     entries[i + 1] = rows[i];
   auto bytes = make_dict_fsst_segment(entries, /*selections=*/{}, /*mode=*/2);
   auto out   = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_DICT_FSST,
-                                static_cast<uint32_t>(rows.size()),
-                                /*max_len=*/32u);
+                                  CompressionType::COMPRESSION_DICT_FSST,
+                                  static_cast<uint32_t>(rows.size()),
+                                  /*max_len=*/32u);
   REQUIRE(out.size() == rows.size());
   for (size_t i = 0; i < rows.size(); ++i)
     REQUIRE(out[i] == rows[i]);
@@ -536,9 +536,9 @@ TEST_CASE("gpu_decode_strings DICT_FSST mode 1 - bench-scale verify",
     sel[i] = (i % (DICT - 1u)) + 1u;
   auto bytes = make_dict_fsst_segment(dict, sel, /*mode=*/1);
   auto out   = decode_one_segment(bytes,
-                                CompressionType::COMPRESSION_DICT_FSST,
-                                ROWS,
-                                /*max_len=*/64u);
+                                  CompressionType::COMPRESSION_DICT_FSST,
+                                  ROWS,
+                                  /*max_len=*/64u);
   REQUIRE(out.size() == ROWS);
   for (uint32_t i = 0; i < ROWS; ++i) {
     if (out[i] != dict[sel[i]]) {

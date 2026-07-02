@@ -50,9 +50,7 @@ class wiring_test_env {
   wiring_test_env() = default;
 
   duckdb::shared_ptr<sirius_pipeline> make_pipeline()
-  {
-    return duckdb::make_shared_ptr<sirius_pipeline>(build_ctx);
-  }
+  { return duckdb::make_shared_ptr<sirius_pipeline>(build_ctx); }
 
   sirius::pipeline::pipeline_build_context build_ctx;
 };

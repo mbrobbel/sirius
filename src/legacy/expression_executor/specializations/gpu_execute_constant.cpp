@@ -41,9 +41,7 @@ namespace sirius {
 
 std::unique_ptr<GpuExpressionState> GpuExpressionExecutor::InitializeState(
   const BoundConstantExpression& expr, GpuExpressionExecutorState& root)
-{
-  return std::make_unique<GpuExpressionState>(expr, root);
-}
+{ return std::make_unique<GpuExpressionState>(expr, root); }
 
 // Helper template functor to reduce bloat
 template <typename T>

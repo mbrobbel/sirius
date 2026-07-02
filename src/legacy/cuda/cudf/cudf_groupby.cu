@@ -264,8 +264,8 @@ void cudf_groupby(vector<shared_ptr<GPUColumn>>& keys,
         if (value_view.nullable() && value_view.null_count() > 0) {
           null_filtered_owner   = cudf::drop_nulls(dedup_table,
                                                    {static_cast<cudf::size_type>(num_keys)},
-                                                 rmm::cuda_stream_default,
-                                                 gpuBufferManager->get_mr_ref());
+                                                   rmm::cuda_stream_default,
+                                                   gpuBufferManager->get_mr_ref());
           effective_dedup_table = null_filtered_owner->view();
         }
 
@@ -312,7 +312,7 @@ void cudf_groupby(vector<shared_ptr<GPUColumn>>& keys,
         auto agg_val      = std::move(phase2_result.second[0].results[0]);
         auto agg_val_view = agg_val->view();
         auto temp_data    = convertInt32ToUInt64(const_cast<int32_t*>(agg_val_view.data<int32_t>()),
-                                              agg_val_view.size());
+                                                 agg_val_view.size());
         auto validity_mask = createNullMask(agg_val_view.size());
 
         aggregate_keys[agg] = make_shared_ptr<GPUColumn>(agg_val_view.size(),
@@ -390,9 +390,9 @@ void cudf_groupby(vector<shared_ptr<GPUColumn>>& keys,
         auto from_cudf_column_view = aggregate_keys[agg]->convertToCudfColumn();
         auto to_cudf_type          = cudf::data_type(cudf::type_id::FLOAT64);
         auto to_cudf_column        = cudf::cast(from_cudf_column_view,
-                                         to_cudf_type,
-                                         rmm::cuda_stream_default,
-                                         GPUBufferManager::GetInstance().get_mr_ref());
+                                                to_cudf_type,
+                                                rmm::cuda_stream_default,
+                                                GPUBufferManager::GetInstance().get_mr_ref());
         aggregate_keys[agg]->setFromCudfColumn(
           *to_cudf_column, false, nullptr, 0, gpuBufferManager);
       }
@@ -434,7 +434,7 @@ void cudf_groupby(vector<shared_ptr<GPUColumn>>& keys,
         agg_mode[agg] == AggregationType::COUNT_DISTINCT) {
       auto agg_val_view   = agg_val->view();
       auto temp_data      = convertInt32ToUInt64(const_cast<int32_t*>(agg_val_view.data<int32_t>()),
-                                            agg_val_view.size());
+                                                 agg_val_view.size());
       auto validity_mask  = createNullMask(agg_val_view.size());
       aggregate_keys[agg] = make_shared_ptr<GPUColumn>(agg_val_view.size(),
                                                        GPUColumnType(GPUColumnTypeId::INT64),

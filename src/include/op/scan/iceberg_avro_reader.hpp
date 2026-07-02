@@ -41,9 +41,7 @@ struct IcebergDeleteFileEntry {
   /// True if this entry is a V3 deletion vector (Puffin format with offset info).
   /// file_format is normalized to lowercase at Avro parse time.
   [[nodiscard]] bool is_deletion_vector() const
-  {
-    return file_format == "puffin" && content_offset >= 0 && content_size_in_bytes > 0;
-  }
+  { return file_format == "puffin" && content_offset >= 0 && content_size_in_bytes > 0; }
 };
 
 /**

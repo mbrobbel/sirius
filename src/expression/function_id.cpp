@@ -115,8 +115,6 @@ std::optional<function_id> from_duckdb_function_name(std::string_view name)
 }
 
 std::string_view to_duckdb_function_name(function_id id)
-{
-  return kReverseTable[static_cast<std::size_t>(id)];
-}
+{ return kReverseTable[static_cast<std::size_t>(id)]; }
 
 }  // namespace sirius

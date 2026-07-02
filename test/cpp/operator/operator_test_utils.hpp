@@ -83,9 +83,7 @@ inline cucascade::memory::memory_space* get_default_gpu_space()
     manager->get_memory_space(cucascade::memory::Tier::GPU, 0));
 }
 inline rmm::device_async_resource_ref get_resource_ref(cucascade::memory::memory_space& space)
-{
-  return space.get_default_allocator();
-}
+{ return space.get_default_allocator(); }
 
 inline rmm::cuda_stream_view default_stream() { return cudf::get_default_stream(); }
 
@@ -404,10 +402,10 @@ inline std::shared_ptr<cucascade::data_batch> make_two_column_batch(
              col1_type_id == cudf::type_id::DECIMAL128) {
     auto data_type = cudf::data_type{col1_type_id, decimal_scale.value_or(0)};
     col1           = cudf::make_fixed_point_column(data_type,
-                                         static_cast<cudf::size_type>(col1_values.size()),
-                                         cudf::mask_state::UNALLOCATED,
-                                         stream,
-                                         mr);
+                                                   static_cast<cudf::size_type>(col1_values.size()),
+                                                   cudf::mask_state::UNALLOCATED,
+                                                   stream,
+                                                   mr);
     cudaMemcpy(col1->mutable_view().data<int64_t>(),
                col1_values.data(),
                sizeof(int64_t) * col1_values.size(),

@@ -47,9 +47,7 @@ std::unique_ptr<cudf::scalar> make_int32_scalar(int32_t v)
 }
 
 zone_map_entry make_zone(int32_t lo, int32_t hi)
-{
-  return zone_map_entry{make_int32_scalar(lo), make_int32_scalar(hi)};
-}
+{ return zone_map_entry{make_int32_scalar(lo), make_int32_scalar(hi)}; }
 
 std::unique_ptr<sirius_dynamic_zone_map_filter> make_single_zone_filter(int32_t lo, int32_t hi)
 {
@@ -63,9 +61,7 @@ std::unique_ptr<sirius_dynamic_zone_map_filter> make_single_zone_filter(int32_t 
 class stub_runtime_only_filter final : public sirius_dynamic_filter {
  public:
   [[nodiscard]] sirius_dynamic_filter_kind kind() const override
-  {
-    return sirius_dynamic_filter_kind::ZONE_MAP;
-  }
+  { return sirius_dynamic_filter_kind::ZONE_MAP; }
 };
 
 }  // namespace

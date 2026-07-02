@@ -62,9 +62,7 @@ sirius_physical_grouped_aggregate_merge::sirius_physical_grouped_aggregate_merge
                                             grouped_aggregate->has_avg,
                                             grouped_aggregate->has_count_distinct,
                                             grouped_aggregate->estimated_cardinality)
-{
-  child_op = grouped_aggregate;
-}
+{ child_op = grouped_aggregate; }
 
 sirius_physical_grouped_aggregate_merge::sirius_physical_grouped_aggregate_merge(
   duckdb::vector<sirius::logical_type> types,

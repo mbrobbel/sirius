@@ -38,9 +38,7 @@ namespace sirius {
 namespace op {
 
 uint64_t get_chunk_data_byte_size(sirius::logical_type type, std::size_t cardinality)
-{
-  return cardinality * type.fixed_width_byte_size();
-}
+{ return cardinality * type.fixed_width_byte_size(); }
 
 sirius_physical_table_scan::sirius_physical_table_scan(
   duckdb::vector<sirius::logical_type> types,

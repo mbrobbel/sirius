@@ -515,17 +515,17 @@ evaluate_result expression_evaluator::evaluate(sirius::ast::in_list const& alt,
   for (std::size_t value_idx = 1; value_idx < alt.values.size(); ++value_idx) {
     auto next_comparator = evaluate(*alt.values[value_idx], evaluation_mode::MATERIALIZE);
     auto next_eq_column  = cudf::binary_operation(test.get_column_view(),
-                                                 next_comparator.get_column_view(),
-                                                 cudf::binary_operator::EQUAL,
-                                                 output_type,
-                                                 _stream,
-                                                 _mr);
+                                                  next_comparator.get_column_view(),
+                                                  cudf::binary_operator::EQUAL,
+                                                  output_type,
+                                                  _stream,
+                                                  _mr);
     auto combined        = cudf::binary_operation(output.get_column_view(),
-                                           next_eq_column->view(),
-                                           cudf::binary_operator::LOGICAL_OR,
-                                           output_type,
-                                           _stream,
-                                           _mr);
+                                                  next_eq_column->view(),
+                                                  cudf::binary_operator::LOGICAL_OR,
+                                                  output_type,
+                                                  _stream,
+                                                  _mr);
     output               = evaluate_result(std::move(combined));
   }
 

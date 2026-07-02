@@ -92,9 +92,7 @@ size_t write_to_sink(char* ptr, size_t size, size_t nmemb, void* userdata)
 
 /// Discard callback for HEAD requests (no body expected, but be defensive).
 size_t write_discard(char* /*ptr*/, size_t size, size_t nmemb, void* /*userdata*/)
-{
-  return size * nmemb;
-}
+{ return size * nmemb; }
 
 /// Lowercase a byte.
 char ascii_lower(char c) { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
@@ -205,9 +203,7 @@ curl_slist_ptr build_header_list(std::vector<std::pair<std::string, std::string>
 
 /// "Range: bytes=<lo>-<hi>" (inclusive end) for [offset, offset+size).
 std::string range_header(size_t offset, size_t size)
-{
-  return fmt::format("Range: bytes={}-{}", offset, offset + size - 1);
-}
+{ return fmt::format("Range: bytes={}-{}", offset, offset + size - 1); }
 
 /// Parse the first-byte position out of a Content-Range value of the form
 /// "bytes <first>-<last>/<total>" (the trimmed value captured by the header
@@ -1317,7 +1313,7 @@ void rest_reactor::worker_loop(const std::stop_token& stop_token)
       // the heap, so the slot/connection is freed for other work during backoff.
       bool const short_read = rc == CURLE_OK && ok_range && s.sink.written < req.chunk.size;
       bool const retriable  = short_read || (rc != CURLE_OK && is_retriable_curl(rc)) ||
-                             (rc == CURLE_OK && is_retriable_status(status));
+                              (rc == CURLE_OK && is_retriable_status(status));
       // A 403 is most often a presigned URL that expired while queued; re-issue
       // with a fresh signature a bounded number of times before giving up.
       bool const auth_retriable = rc == CURLE_OK && status == 403;

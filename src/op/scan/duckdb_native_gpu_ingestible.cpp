@@ -241,9 +241,7 @@ duckdb_native_gpu_ingestible::~duckdb_native_gpu_ingestible() = default;
 // split-provider interface
 //===----------------------------------------------------------------------===//
 bool duckdb_native_gpu_ingestible::has_processed_all_metadata() const
-{
-  return _next_range_idx.load(std::memory_order_relaxed) >= _num_ranges;
-}
+{ return _next_range_idx.load(std::memory_order_relaxed) >= _num_ranges; }
 
 duckdb_native_gpu_ingestible::metadata_scan_task_t
 duckdb_native_gpu_ingestible::next_split_provider(io::ioctx_resolver resolve)
@@ -390,8 +388,6 @@ std::vector<std::size_t> duckdb_native_gpu_ingestible::materialized_column_order
 
 std::shared_ptr<duckdb_native_gpu_ingestible> make_ingestible(
   std::unique_ptr<duckdb_native_ingestible_table_info> info)
-{
-  return std::make_shared<duckdb_native_gpu_ingestible>(std::move(info));
-}
+{ return std::make_shared<duckdb_native_gpu_ingestible>(std::move(info)); }
 
 }  // namespace sirius::op::scan

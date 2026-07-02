@@ -181,9 +181,7 @@ expression_evaluator::expression_evaluator(sirius::ast::node const* expression,
                                            expression_evaluator_strategy strategy,
                                            std::size_t min_ast_size)
   : _strategy(strategy), _mr(resource_ref), _stream(stream), _min_ast_size(min_ast_size)
-{
-  _ast_expressions.push_back(expression);
-}
+{ _ast_expressions.push_back(expression); }
 
 expression_evaluator::expression_evaluator(std::vector<sirius::ast::node const*> expressions,
                                            rmm::device_async_resource_ref resource_ref,

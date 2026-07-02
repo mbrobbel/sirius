@@ -131,9 +131,7 @@ class io_object_segment {
   }
 
   [[nodiscard]] uint8_t* data() const noexcept
-  {
-    return buffers.empty() ? nullptr : static_cast<uint8_t*>(buffers.front().iov_base);
-  }
+  { return buffers.empty() ? nullptr : static_cast<uint8_t*>(buffers.front().iov_base); }
 
   [[nodiscard]] bool is_buffer_allocated() const noexcept { return data() != nullptr; }
 
@@ -196,8 +194,6 @@ class io_object_segment {
 /// fused into a single vectored (readv) submission over one contiguous range.
 [[nodiscard]] inline bool contiguous(const io_object_segment& a,
                                      const io_object_segment& b) noexcept
-{
-  return a.offset + a.size == b.offset;
-}
+{ return a.offset + a.size == b.offset; }
 
 }  // namespace sirius::io

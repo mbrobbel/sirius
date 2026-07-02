@@ -316,7 +316,7 @@ sirius_physical_plan_generator::plan_comparison_join(duckdb::LogicalComparisonJo
     const auto& op_params = context.registered_state->Get<duckdb::SiriusContext>("sirius_state")
                               ->get_config()
                               .get_operator_params();
-    auto join = duckdb::make_uniq<sirius::op::sirius_physical_hash_join>(
+    auto join             = duckdb::make_uniq<sirius::op::sirius_physical_hash_join>(
       op,
       std::move(left),
       std::move(right),

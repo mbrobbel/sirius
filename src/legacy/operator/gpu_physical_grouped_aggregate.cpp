@@ -224,9 +224,7 @@ void HandleDistinctGroupByCuDF(vector<shared_ptr<GPUColumn>>& group_by_keys,
 void HandleDuplicateEliminationCuDF(vector<shared_ptr<GPUColumn>>& group_by_keys,
                                     GPUBufferManager* gpuBufferManager,
                                     int num_group_keys)
-{
-  cudf_duplicate_elimination(group_by_keys, num_group_keys);
-}
+{ cudf_duplicate_elimination(group_by_keys, num_group_keys); }
 
 static vector<LogicalType> CreateGroupChunkTypes(vector<unique_ptr<Expression>>& groups)
 {

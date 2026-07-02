@@ -45,9 +45,7 @@ class sirius_physical_streaming_limit : public sirius_physical_operator {
                                          rmm::cuda_stream_view stream) override;
 
   bool is_limit_exhausted() const override
-  {
-    return _limit_exhausted.load(std::memory_order_acquire);
-  }
+  { return _limit_exhausted.load(std::memory_order_acquire); }
 
  private:
   // Shared atomic state for coordinating limit/offset across concurrent tasks.

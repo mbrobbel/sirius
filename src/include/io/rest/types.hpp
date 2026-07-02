@@ -121,9 +121,7 @@ struct rest_chunked_rx_request {
   /// would report "already buffered" and wrongly skip the event/park path,
   /// letting the slot (and its bounce) be recycled while the copy still drains.
   [[nodiscard]] bool needs_event_for_synchronization() const noexcept
-  {
-    return staged_through_bounce && cpy_req != nullptr;
-  }
+  { return staged_through_bounce && cpy_req != nullptr; }
 };
 
 /// The per-reactor request container for the REST backend: the shared

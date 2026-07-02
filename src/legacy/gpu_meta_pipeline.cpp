@@ -24,9 +24,7 @@ GPUMetaPipeline::GPUMetaPipeline(GPUExecutor& executor_p,
                                  GPUPipelineBuildState& state_p,
                                  optional_ptr<GPUPhysicalOperator> sink_p)
   : executor(executor_p), state(state_p), sink(sink_p), recursive_cte(false), next_batch_index(0)
-{
-  CreatePipeline();
-}
+{ CreatePipeline(); }
 
 GPUExecutor& GPUMetaPipeline::GetExecutor() const { return executor; }
 
@@ -74,9 +72,7 @@ bool GPUMetaPipeline::HasRecursiveCTE() const { return recursive_cte; }
 void GPUMetaPipeline::SetRecursiveCTE() { recursive_cte = true; }
 
 void GPUMetaPipeline::AssignNextBatchIndex(GPUPipeline& pipeline)
-{
-  pipeline.base_batch_index = next_batch_index++ * GPUPipelineBuildState::BATCH_INCREMENT;
-}
+{ pipeline.base_batch_index = next_batch_index++ * GPUPipelineBuildState::BATCH_INCREMENT; }
 
 void GPUMetaPipeline::Build(GPUPhysicalOperator& op)
 {
@@ -156,9 +152,7 @@ void GPUMetaPipeline::AddFinishEvent(GPUPipeline& pipeline)
 }
 
 bool GPUMetaPipeline::HasFinishEvent(GPUPipeline& pipeline) const
-{
-  return finish_pipelines.find(pipeline) != finish_pipelines.end();
-}
+{ return finish_pipelines.find(pipeline) != finish_pipelines.end(); }
 
 optional_ptr<GPUPipeline> GPUMetaPipeline::GetFinishGroup(GPUPipeline& pipeline) const
 {

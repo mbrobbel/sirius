@@ -108,9 +108,7 @@ class GPUPhysicalOperator {
 
   //! The influence the operator has on order (insertion order means no influence)
   virtual OrderPreservationType OperatorOrder() const
-  {
-    return OrderPreservationType::INSERTION_ORDER;
-  }
+  { return OrderPreservationType::INSERTION_ORDER; }
 
  public:
   // Source Interface
@@ -127,9 +125,7 @@ class GPUPhysicalOperator {
 
   //! The type of order emitted by the operator (as a source)
   virtual OrderPreservationType SourceOrder() const
-  {
-    return OrderPreservationType::INSERTION_ORDER;
-  }
+  { return OrderPreservationType::INSERTION_ORDER; }
 
  public:
   // Sink interface

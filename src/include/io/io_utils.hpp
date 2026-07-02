@@ -117,9 +117,7 @@ inline std::vector<range> coalesce_sorted_ranges(std::span<range const> sorted_r
 inline std::vector<range> align_and_coalesce(std::span<range const> ranges,
                                              size_t alignment,
                                              size_t max_gap = 0)
-{
-  return coalesce_ranges(align_ranges(ranges, alignment), max_gap);
-}
+{ return coalesce_ranges(align_ranges(ranges, alignment), max_gap); }
 
 /**
  * @brief Aligns then coalesces ranges in one step.
@@ -136,9 +134,7 @@ inline std::vector<range> align_and_coalesce(std::span<range const> ranges,
 inline std::vector<range> align_and_coalesce_sorted(std::span<range const> ranges,
                                                     size_t alignment,
                                                     size_t max_gap = 0)
-{
-  return coalesce_sorted_ranges(align_ranges(ranges, alignment), max_gap);
-}
+{ return coalesce_sorted_ranges(align_ranges(ranges, alignment), max_gap); }
 
 /**
  * @brief Merges two sorted range groups into a single sorted, coalesced group.

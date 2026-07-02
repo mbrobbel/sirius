@@ -59,9 +59,9 @@ void cudf_aggregate(vector<shared_ptr<GPUColumn>>& column,
         // COUNT on empty set should return 0 (valid), not NULL (SQL standard)
         auto validity_mask = createNullMask(1, cudf::mask_state::ALL_VALID);
         column[agg_idx]    = make_shared_ptr<GPUColumn>(1,
-                                                     GPUColumnType(GPUColumnTypeId::INT64),
-                                                     reinterpret_cast<uint8_t*>(temp),
-                                                     validity_mask);
+                                                        GPUColumnType(GPUColumnTypeId::INT64),
+                                                        reinterpret_cast<uint8_t*>(temp),
+                                                        validity_mask);
       } else {
         column[agg_idx] = make_shared_ptr<GPUColumn>(
           0, column[agg_idx]->data_wrapper.type, column[agg_idx]->data_wrapper.data, nullptr);
@@ -108,9 +108,9 @@ void cudf_aggregate(vector<shared_ptr<GPUColumn>>& column,
       cudaMemcpy(result_temp, res, sizeof(uint64_t), cudaMemcpyHostToDevice);
       auto validity_mask = createNullMask(1);
       column[agg]        = make_shared_ptr<GPUColumn>(1,
-                                               GPUColumnType(GPUColumnTypeId::INT64),
-                                               reinterpret_cast<uint8_t*>(result_temp),
-                                               validity_mask);
+                                                      GPUColumnType(GPUColumnTypeId::INT64),
+                                                      reinterpret_cast<uint8_t*>(result_temp),
+                                                      validity_mask);
     } else if (agg_mode[agg] == AggregationType::SUM) {
       // Sum may cause overflow, need to adjust return type based on input, so far use a
       // conservative estimation purely based on the number of rows
@@ -164,9 +164,9 @@ void cudf_aggregate(vector<shared_ptr<GPUColumn>>& column,
         auto from_cudf_column_view = column[agg]->convertToCudfColumn();
         auto to_cudf_type          = cudf::data_type(cudf::type_id::FLOAT64);
         auto to_cudf_column        = cudf::cast(from_cudf_column_view,
-                                         to_cudf_type,
-                                         rmm::cuda_stream_default,
-                                         GPUBufferManager::GetInstance().get_mr_ref());
+                                                to_cudf_type,
+                                                rmm::cuda_stream_default,
+                                                GPUBufferManager::GetInstance().get_mr_ref());
         column[agg]->setFromCudfColumn(*to_cudf_column, false, nullptr, 0, gpuBufferManager);
       }
       auto cudf_column = column[agg]->convertToCudfColumn();
@@ -200,7 +200,7 @@ void cudf_aggregate(vector<shared_ptr<GPUColumn>>& column,
 // cudf higher than 25.04 will trigger `NUNIQUE is not supported for boolean or non-numeric types`
 #if CUDF_VERSION_NUM > 2504
       auto nunique_agg = static_cast<cudf::detail::nunique_aggregation const&>(*aggregate);
-      result           = cudf::make_fixed_width_scalar(cudf::distinct_count(cudf_column,
+      result = cudf::make_fixed_width_scalar(cudf::distinct_count(cudf_column,
                                                                   nunique_agg._null_handling,
                                                                   cudf::nan_policy::NAN_IS_VALID,
                                                                   cudf::get_default_stream()));
@@ -215,9 +215,9 @@ void cudf_aggregate(vector<shared_ptr<GPUColumn>>& column,
         cudaMemset(temp, 0, sizeof(uint64_t));
         auto validity_mask = createNullMask(1, cudf::mask_state::ALL_VALID);
         column[agg]        = make_shared_ptr<GPUColumn>(1,
-                                                 GPUColumnType(GPUColumnTypeId::INT64),
-                                                 reinterpret_cast<uint8_t*>(temp),
-                                                 validity_mask);
+                                                        GPUColumnType(GPUColumnTypeId::INT64),
+                                                        reinterpret_cast<uint8_t*>(temp),
+                                                        validity_mask);
       } else {
         column[agg]->setFromCudfScalar(*result, gpuBufferManager);
       }

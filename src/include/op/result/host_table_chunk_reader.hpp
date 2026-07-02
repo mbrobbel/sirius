@@ -159,9 +159,7 @@ class host_table_chunk_reader {
    * @return size_t The total number of chunks
    */
   size_t calculate_num_chunks()
-  {
-    return utils::ceil_div(_total_rows, static_cast<size_t>(STANDARD_VECTOR_SIZE));
-  }
+  { return utils::ceil_div(_total_rows, static_cast<size_t>(STANDARD_VECTOR_SIZE)); }
 
  private:
   using allocation_ptr = cucascade::memory::host_table_allocation::buffers_ptr;

@@ -121,9 +121,7 @@ class SiriusContext : public ClientContextState {
    */
   struct InternalQueryGuard {
     explicit InternalQueryGuard(SiriusContext& ctx) noexcept : ctx_(ctx)
-    {
-      ctx_.enter_internal_query();
-    }
+    { ctx_.enter_internal_query(); }
     ~InternalQueryGuard() noexcept { ctx_.exit_internal_query(); }
     InternalQueryGuard(const InternalQueryGuard&)            = delete;
     InternalQueryGuard& operator=(const InternalQueryGuard&) = delete;
@@ -133,17 +131,11 @@ class SiriusContext : public ClientContextState {
   };
 
   void enter_internal_query() noexcept
-  {
-    _internal_query_depth.fetch_add(1, std::memory_order_relaxed);
-  }
+  { _internal_query_depth.fetch_add(1, std::memory_order_relaxed); }
   void exit_internal_query() noexcept
-  {
-    _internal_query_depth.fetch_sub(1, std::memory_order_relaxed);
-  }
+  { _internal_query_depth.fetch_sub(1, std::memory_order_relaxed); }
   [[nodiscard]] bool is_internal_query_active() const noexcept
-  {
-    return _internal_query_depth.load(std::memory_order_relaxed) > 0;
-  }
+  { return _internal_query_depth.load(std::memory_order_relaxed) > 0; }
 
   /// \brief Terminate the Sirius context, releasing all resources.
   void terminate();
@@ -154,9 +146,7 @@ class SiriusContext : public ClientContextState {
   void log_pool_stats(std::string_view tag) const;
 
   [[nodiscard]] const cucascade::memory::system_topology_info& get_hw_topology() const noexcept
-  {
-    return config_.get_hw_topology();
-  }
+  { return config_.get_hw_topology(); }
 
   /// \brief Get the memory reservation manager.
   [[nodiscard]] sirius::memory::sirius_memory_reservation_manager& get_memory_manager();
@@ -192,9 +182,7 @@ class SiriusContext : public ClientContextState {
   /// @param dst Destination GPU device id
   /// @return true iff peer access was successfully enabled at init time.
   [[nodiscard]] bool is_peer_access_enabled(int src, int dst) const noexcept
-  {
-    return peer_access_enabled_pairs_.count({src, dst}) > 0;
-  }
+  { return peer_access_enabled_pairs_.count({src, dst}) > 0; }
 
   [[nodiscard]] sirius::creator::task_creator& get_task_creator();
   [[nodiscard]] const sirius::creator::task_creator& get_task_creator() const;
@@ -286,9 +274,7 @@ class SiriusContext : public ClientContextState {
   // placed adjacent to gpu_ioctxs_ for multi-GPU state locality.
   struct peer_pair_hash {
     size_t operator()(std::pair<int, int> const& p) const noexcept
-    {
-      return (static_cast<size_t>(p.first) << 32) ^ static_cast<size_t>(p.second);
-    }
+    { return (static_cast<size_t>(p.first) << 32) ^ static_cast<size_t>(p.second); }
   };
   std::unordered_set<std::pair<int, int>, peer_pair_hash> peer_access_enabled_pairs_;
   // NUMA-aware cuDF small-pinned MR. Owns one

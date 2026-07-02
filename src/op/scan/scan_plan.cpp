@@ -58,9 +58,7 @@ std::vector<std::string> scan_plan::data_column_names() const
 }
 
 std::string scan_plan::batch_column_name(duckdb::idx_t batch_position) const
-{
-  return data_columns.at(batch_position).name;
-}
+{ return data_columns.at(batch_position).name; }
 
 std::unordered_set<std::size_t> scan_plan::pure_filter_batch_positions() const
 {
@@ -174,9 +172,7 @@ owning_table_view assemble_scan_output(scan_plan const& plan,
 namespace {
 
 bool is_output_position(std::size_t i, std::size_t output_types_size)
-{
-  return i < output_types_size;
-}
+{ return i < output_types_size; }
 
 }  // namespace
 

@@ -54,9 +54,7 @@ constexpr comparison_type k_all_comparisons[] = {
 };
 
 duckdb::unique_ptr<duckdb::Expression> make_const(int32_t v)
-{
-  return duckdb::make_uniq<duckdb::BoundConstantExpression>(duckdb::Value::INTEGER(v));
-}
+{ return duckdb::make_uniq<duckdb::BoundConstantExpression>(duckdb::Value::INTEGER(v)); }
 
 duckdb::JoinCondition make_cond(duckdb::unique_ptr<duckdb::Expression> left,
                                 duckdb::unique_ptr<duckdb::Expression> right,
@@ -95,9 +93,7 @@ TEST_CASE("comparison_type - to_duckdb then from_duckdb round-trips every compar
 
 TEST_CASE("comparison_type - from_duckdb throws on an unsupported ExpressionType",
           "[join_condition]")
-{
-  REQUIRE_THROWS_AS(sirius::from_duckdb(duckdb::ExpressionType::COMPARE_IN), std::runtime_error);
-}
+{ REQUIRE_THROWS_AS(sirius::from_duckdb(duckdb::ExpressionType::COMPARE_IN), std::runtime_error); }
 
 // ============================================================================
 // wrap_join_conditions

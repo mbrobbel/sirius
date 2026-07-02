@@ -133,9 +133,7 @@ iceberg_scan_task_global_state::iceberg_scan_task_global_state(
                                    std::move(init.selected_column_indices),
                                    approximate_batch_size,
                                    std::move(ioctx))
-{
-  build_delete_pipeline(scan_op, init.extra_eq_delete_columns);
-}
+{ build_delete_pipeline(scan_op, init.extra_eq_delete_columns); }
 
 //===----------------------------------------------------------------------===//
 // iceberg_scan_task_global_state — delete pipeline construction (no I/O)

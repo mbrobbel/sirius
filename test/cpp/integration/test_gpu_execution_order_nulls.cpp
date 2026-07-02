@@ -70,9 +70,7 @@ class runtime_setting_guard {
       setting(std::move(setting)),
       old_value(query_single_value(
         con, "SELECT value FROM duckdb_settings() WHERE name = '" + this->setting + "'"))
-  {
-    require_ok(con, "SET " + this->setting + " = " + std::to_string(value));
-  }
+  { require_ok(con, "SET " + this->setting + " = " + std::to_string(value)); }
 
   ~runtime_setting_guard() { restore(); }
 
@@ -104,9 +102,7 @@ const null_order_case kNullOrderCases[] = {
 };
 
 std::string case_name(const null_order_case& order_case)
-{
-  return order_case.sort_direction + " NULLS " + order_case.null_position;
-}
+{ return order_case.sort_direction + " NULLS " + order_case.null_position; }
 
 class OrderNullsGPUExecutionFixture {
  public:

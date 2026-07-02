@@ -207,14 +207,10 @@ template <typename T>
 __device__ __forceinline__ T const* alp_frac_ptr();
 template <>
 __device__ __forceinline__ float const* alp_frac_ptr<float>()
-{
-  return d_alp_frac_f32;
-}
+{ return d_alp_frac_f32; }
 template <>
 __device__ __forceinline__ double const* alp_frac_ptr<double>()
-{
-  return d_alp_frac_f64;
-}
+{ return d_alp_frac_f64; }
 
 //! @brief Perform an unaligned load of type @p T from buffer @p p.
 //!
@@ -299,7 +295,7 @@ __device__ alp_vector_meta parse_alp_metadata(uint8_t const* seg_base,
 
   auto const packed_bytes = bp_required_bytes(fill_rows, bw);
   auto const payload_end  = data_off + VECTOR_HEADER_SIZE + packed_bytes +
-                           exceptions_count * (sizeof(T) + sizeof(uint16_t));
+                            exceptions_count * (sizeof(T) + sizeof(uint16_t));
   if (payload_end > metadata_end) return meta;
 
   meta.status             = alp_parse_status::compressed;
@@ -447,7 +443,7 @@ __device__ alprd_vector_meta parse_alprd_metadata(uint8_t const* seg_base,
   // Segment-level widths sit immediately after the metadata_end pointer.
   auto const right_bw  = seg_base[duckdb::AlpRDConstants::METADATA_POINTER_SIZE];
   auto const left_bw   = seg_base[duckdb::AlpRDConstants::METADATA_POINTER_SIZE +
-                                duckdb::AlpRDConstants::RIGHT_BIT_WIDTH_SIZE];
+                                  duckdb::AlpRDConstants::RIGHT_BIT_WIDTH_SIZE];
   auto const dict_size = seg_base[duckdb::AlpRDConstants::METADATA_POINTER_SIZE +
                                   duckdb::AlpRDConstants::RIGHT_BIT_WIDTH_SIZE +
                                   duckdb::AlpRDConstants::LEFT_BIT_WIDTH_SIZE];
@@ -488,7 +484,7 @@ __device__ alprd_vector_meta parse_alprd_metadata(uint8_t const* seg_base,
 
   auto const left_packed_bytes  = bp_required_bytes(fill_rows, left_bw);
   auto const right_packed_bytes = bp_required_bytes(fill_rows, right_bw);
-  auto const payload_end        = data_off + duckdb::AlpRDConstants::EXCEPTIONS_COUNT_SIZE +
+  auto const payload_end = data_off + duckdb::AlpRDConstants::EXCEPTIONS_COUNT_SIZE +
                            left_packed_bytes + right_packed_bytes +
                            exceptions_count * (duckdb::AlpRDConstants::EXCEPTION_SIZE +
                                                duckdb::AlpRDConstants::EXCEPTION_POSITION_SIZE);

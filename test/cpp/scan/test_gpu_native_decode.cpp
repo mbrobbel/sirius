@@ -66,14 +66,10 @@ TEST_CASE_METHOD(decode_env,
 }
 
 TEST_CASE_METHOD(decode_env, "gpu_decode_table - UNCOMPRESSED float", "[scan][decode]")
-{
-  require_uncompressed_roundtrip<float>(*this, F32, {1.5f, -2.25f, 3.75f, 0.0f, -1.0f});
-}
+{ require_uncompressed_roundtrip<float>(*this, F32, {1.5f, -2.25f, 3.75f, 0.0f, -1.0f}); }
 
 TEST_CASE_METHOD(decode_env, "gpu_decode_table - UNCOMPRESSED double", "[scan][decode]")
-{
-  require_uncompressed_roundtrip<double>(*this, F64, {1.5, -2.25, 3.75, 0.0, -1.0});
-}
+{ require_uncompressed_roundtrip<double>(*this, F64, {1.5, -2.25, 3.75, 0.0, -1.0}); }
 
 TEST_CASE_METHOD(decode_env,
                  "gpu_decode_table - UNCOMPRESSED multi-segment int64",
@@ -159,14 +155,10 @@ TEST_CASE_METHOD(decode_env,
 }
 
 TEST_CASE_METHOD(decode_env, "gpu_decode_table - CONSTANT int32 single segment", "[scan][decode]")
-{
-  require_constant_broadcast<int32_t>(*this, I32, /*value=*/42, /*rows=*/2048);
-}
+{ require_constant_broadcast<int32_t>(*this, I32, /*value=*/42, /*rows=*/2048); }
 
 TEST_CASE_METHOD(decode_env, "gpu_decode_table - CONSTANT double", "[scan][decode]")
-{
-  require_constant_broadcast<double>(*this, F64, /*value=*/3.14159, /*rows=*/100);
-}
+{ require_constant_broadcast<double>(*this, F64, /*value=*/3.14159, /*rows=*/100); }
 
 TEST_CASE_METHOD(decode_env,
                  "gpu_decode_table - CONSTANT multi-segment different values",

@@ -56,8 +56,8 @@ namespace {
 constexpr std::int64_t kRows          = 40'000'000;
 constexpr std::size_t kFullTableBytes = static_cast<std::size_t>(kRows) * 2 * sizeof(std::int64_t);
 constexpr std::size_t kGpuBudgetBytes = 256ull
-                                        << 20;   // 256 MiB: < full table, comfortably > 1 batch
-constexpr std::size_t kBatchBytes = 8ull << 20;  // 8 MiB scan batches -> ~80 batches
+                                        << 20;       // 256 MiB: < full table, comfortably > 1 batch
+constexpr std::size_t kBatchBytes     = 8ull << 20;  // 8 MiB scan batches -> ~80 batches
 
 // A throwaway, Sirius-disabled DuckDB writes the parquet so the extension callback does not
 // build a SiriusContext on it — the real (tiny-budget) instance is created later from the yaml.

@@ -175,14 +175,10 @@ class slot_pool {
   // try_acquire_token() returns an invalid token when the pool is exhausted;
   // acquire_token() blocks and always returns a valid token.
   [[nodiscard]] token try_acquire_token(unsigned hint = 0) noexcept
-  {
-    return token{this, try_acquire(hint)};
-  }
+  { return token{this, try_acquire(hint)}; }
 
   [[nodiscard]] token acquire_token(unsigned hint = 0) noexcept
-  {
-    return token{this, acquire(hint)};
-  }
+  { return token{this, acquire(hint)}; }
 
   // Returns the slot to the pool.  The caller must have previously acquired
   // this slot via try_acquire() or acquire().

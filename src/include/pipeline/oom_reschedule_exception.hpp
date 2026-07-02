@@ -47,9 +47,7 @@ class oom_reschedule_exception : public std::exception {
    * @brief Release ownership of the intermediate data.
    */
   std::unique_ptr<op::operator_data> release_intermediate_data()
-  {
-    return std::move(_intermediate_data);
-  }
+  { return std::move(_intermediate_data); }
 
   /**
    * @brief Get the operator index to resume from.

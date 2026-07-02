@@ -92,9 +92,7 @@ duckdb::DataTable& get_storage(duckdb::Connection& con, const std::string& table
 
 TEST_CASE("duckdb_block_payload_offset uses FILE_HEADER_SIZE * 3 as BLOCK_START",
           "[scan][duckdb_block_layout]")
-{
-  REQUIRE(duckdb::Storage::FILE_HEADER_SIZE == 4096);
-}
+{ REQUIRE(duckdb::Storage::FILE_HEADER_SIZE == 4096); }
 
 TEST_CASE("duckdb_block_payload_offset matches BufferManager::Pin pointer",
           "[scan][duckdb_block_layout]")

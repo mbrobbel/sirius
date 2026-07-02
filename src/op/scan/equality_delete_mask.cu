@@ -33,9 +33,7 @@ namespace {
 /// Any other value means "matched a delete row" → discard (0).
 struct anti_join_to_bool {
   __host__ __device__ uint8_t operator()(cudf::size_type idx) const
-  {
-    return idx == cudf::JoinNoMatch ? uint8_t{1} : uint8_t{0};
-  }
+  { return idx == cudf::JoinNoMatch ? uint8_t{1} : uint8_t{0}; }
 };
 
 }  // anonymous namespace

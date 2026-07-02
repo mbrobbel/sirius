@@ -203,9 +203,7 @@ class convertible_gpu_pipeline_task : public convertible_data {
  private:
   /// @brief Convenience overload for the owned task.
   sirius::op::pipelineable_operator_data* get_pipelineable_data() const
-  {
-    return _task ? get_pipelineable_data(*_task) : nullptr;
-  }
+  { return _task ? get_pipelineable_data(*_task) : nullptr; }
 
   std::unique_ptr<sirius::parallel::itask> _task;
   sirius::exec::inspectable_mpsc<sirius::parallel::itask>& _queue;

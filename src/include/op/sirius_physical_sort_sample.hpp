@@ -56,9 +56,7 @@ class sirius_physical_sort_sample : public sirius_physical_operator {
   bool sink_order_dependent() const override { return false; }
 
   sirius::OrderPreservationType source_order() const override
-  {
-    return sirius::OrderPreservationType::FIXED_ORDER;
-  }
+  { return sirius::OrderPreservationType::FIXED_ORDER; }
 
   std::unique_ptr<operator_data> execute(const operator_data& input_data,
                                          rmm::cuda_stream_view stream) override;
@@ -77,9 +75,7 @@ class sirius_physical_sort_sample : public sirius_physical_operator {
 
   //! Whether boundaries have been computed
   bool boundaries_computed() const
-  {
-    return _boundary_state.load(std::memory_order_acquire) == BoundaryState::DONE;
-  }
+  { return _boundary_state.load(std::memory_order_acquire) == BoundaryState::DONE; }
 
   //! Release the partition boundaries table to free GPU memory
   void clear_partition_boundaries() { _partition_boundaries.reset(); }

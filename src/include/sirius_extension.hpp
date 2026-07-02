@@ -43,9 +43,7 @@ struct SiriusReadParquetBindData : public FunctionData {
   std::size_t total_num_rows{0};
 
   unique_ptr<FunctionData> Copy() const override
-  {
-    return make_uniq<SiriusReadParquetBindData>(uri, total_num_rows);
-  }
+  { return make_uniq<SiriusReadParquetBindData>(uri, total_num_rows); }
 
   bool Equals(FunctionData const& other_p) const override
   {

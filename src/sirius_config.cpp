@@ -490,33 +490,21 @@ void sirius_config::enforce_sirius_datasource_for_multi_gpu()
 
 const std::vector<cucascade::memory::memory_space_config>& sirius_config::get_memory_space_configs()
   const noexcept
-{
-  return _memory_space_configs;
-}
+{ return _memory_space_configs; }
 
 const exec::thread_pool_config& sirius_config::get_gpu_pipeline_executor_config() const noexcept
-{
-  return _gpu_pipeline_executor_config;
-}
+{ return _gpu_pipeline_executor_config; }
 
 const exec::downgrade_executor_config& sirius_config::get_downgrade_executor_config() const noexcept
-{
-  return _downgrade_executor_config;
-}
+{ return _downgrade_executor_config; }
 
 const exec::thread_pool_config& sirius_config::get_task_creator_config() const noexcept
-{
-  return _task_creator_config;
-}
+{ return _task_creator_config; }
 
 const scan_manager::scan_manager_config& sirius_config::get_scan_manager_config() const noexcept
-{
-  return _scan_manager_config;
-}
+{ return _scan_manager_config; }
 
 void sirius_config::set_scan_manager_config(scan_manager::scan_manager_config config) noexcept
-{
-  _scan_manager_config = std::move(config);
-}
+{ _scan_manager_config = std::move(config); }
 
 }  // namespace sirius

@@ -397,17 +397,17 @@ unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::CreatePlan(LogicalGet&
   }
 
   auto node             = make_uniq<GPUPhysicalTableScan>(op.types,
-                                              op.function,
-                                              std::move(op.bind_data),
-                                              op.returned_types,
-                                              column_ids,
-                                              op.projection_ids,
-                                              op.names,
-                                              std::move(table_filters),
-                                              op.estimated_cardinality,
-                                              std::move(op.extra_info),
-                                              std::move(op.parameters),
-                                              std::move(op.virtual_columns));
+                                                          op.function,
+                                                          std::move(op.bind_data),
+                                                          op.returned_types,
+                                                          column_ids,
+                                                          op.projection_ids,
+                                                          op.names,
+                                                          std::move(table_filters),
+                                                          op.estimated_cardinality,
+                                                          std::move(op.extra_info),
+                                                          std::move(op.parameters),
+                                                          std::move(op.virtual_columns));
   node->dynamic_filters = op.dynamic_filters;
   if (filter) {
     filter->children.push_back(std::move(node));

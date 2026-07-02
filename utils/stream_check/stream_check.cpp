@@ -52,9 +52,7 @@ void enable_log_on_default_stream()
 }
 
 void disable_log_on_default_stream()
-{
-  g_log_on_default_stream.store(false, std::memory_order_relaxed);
-}
+{ g_log_on_default_stream.store(false, std::memory_order_relaxed); }
 
 void set_stream_check_log_file(const char* path)
 {

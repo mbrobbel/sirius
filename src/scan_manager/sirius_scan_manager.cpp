@@ -137,9 +137,7 @@ struct cached_databatch_provider : public databatch_provider {
 
 std::unique_ptr<databatch_provider> make_provider_for_pinned_entry(
   pinned_entry const& entry, std::span<size_t> selected_columns)
-{
-  return std::make_unique<cached_databatch_provider>(entry, selected_columns);
-}
+{ return std::make_unique<cached_databatch_provider>(entry, selected_columns); }
 
 /// Strip a leading "file://" scheme (case-insensitive) so the path can be
 /// resolved by a local-file backend.
@@ -683,9 +681,7 @@ void sirius_scan_manager::insert_pinned_entry_host(
 }
 
 void sirius_scan_manager::remove_pinned_entry(const std::string& name)
-{
-  _pinned_entries.erase(name);
-}
+{ _pinned_entries.erase(name); }
 
 void sirius_scan_manager::visit_pinned_entries(
   const std::function<bool(std::string_view, const pinned_entry&)>& visitor) const

@@ -27,18 +27,14 @@ namespace sirius {
 template <class T>
 struct ReferenceHashFunction {
   uint64_t operator()(const std::reference_wrapper<T>& ref) const
-  {
-    return std::hash<void*>()((void*)&ref.get());
-  }
+  { return std::hash<void*>()((void*)&ref.get()); }
 };
 
 //! Equality by object identity.
 template <class T>
 struct ReferenceEquality {
   bool operator()(const std::reference_wrapper<T>& a, const std::reference_wrapper<T>& b) const
-  {
-    return &a.get() == &b.get();
-  }
+  { return &a.get() == &b.get(); }
 };
 
 //! Unordered map keyed by reference identity. Drop-in replacement for duckdb::reference_map_t.

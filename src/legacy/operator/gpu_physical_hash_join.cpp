@@ -977,8 +977,6 @@ void GPUPhysicalHashJoin::BuildJoinPipelines(GPUPipeline& current,
 }
 
 void GPUPhysicalHashJoin::BuildPipelines(GPUPipeline& current, GPUMetaPipeline& meta_pipeline)
-{
-  GPUPhysicalHashJoin::BuildJoinPipelines(current, meta_pipeline, *this);
-}
+{ GPUPhysicalHashJoin::BuildJoinPipelines(current, meta_pipeline, *this); }
 
 }  // namespace duckdb
