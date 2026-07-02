@@ -74,6 +74,8 @@ jobs:
           fi
 
       - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: "v0.16.0" # Keep in lockstep with the sccache pin in pixi.toml
 
       - name: Build
         env:
