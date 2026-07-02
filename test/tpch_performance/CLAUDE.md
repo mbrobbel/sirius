@@ -88,13 +88,6 @@ pixi run python rewrite_parquet.py ../../test_datasets/tpch_parquet_sf100 ../../
 pixi run python rewrite_parquet.py ../../test_datasets/tpch_parquet_sf100 ../../test_datasets/tpch_parquet_sf100_rg2m 2000000 20
 ```
 
-### From tpchgen-rs Python wrapper (alternative, supports partitioned output)
-
-```bash
-cd test/tpch_performance
-pixi run python generate_test_data_tpchgen-rs.py <SF> <partitions> <format>
-```
-
 ## Running Benchmarks
 
 All commands run from the **project root** directory.
@@ -336,8 +329,6 @@ Output: `reports/<label>_<YYYYMMDD_HHMMSS>/` containing `report.md`, `summary.js
 | `performance_test.py` | Python-based benchmark with result verification |
 | `queries.py` | TPC-H query definitions (base SQL) |
 | `tpch_pin_columns.py` | Per-query and union column → table mapping for `--pinning-mode per-query` / `pinned-hot` (union helpers also used by `performance_test.py --mode sequential`); emits `CALL pin_table(...)` / `CALL unpin_table(...)` SQL |
-| `generate_test_data.py` | Generate test data via dbgen |
-| `generate_test_data_tpchgen-rs.py` | Generate test data via tpchgen-rs Python wrapper + query files |
 | `pixi.toml` | Python environment with cudf, pyarrow, rust for tooling |
 
 ## Sirius Configuration
