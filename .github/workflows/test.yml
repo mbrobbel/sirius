@@ -146,7 +146,7 @@ jobs:
 
       - name: Prepare SQL test datasets
         run: |
-          ./setup_test_datasets.sh
+          pixi run -e testdata gen-tpch
           chmod -R a+r test_datasets/
           mkdir -p test_datasets/tpch_parquet_sf1
           ./build/release/duckdb -f scripts/tpch_to_parquet.sql

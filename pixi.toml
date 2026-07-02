@@ -114,6 +114,19 @@ setuptools-scm = "*"
 [feature.duckdb-python.tasks]
 build-duckdb-python = "CMAKE_ARGS=\"-DDUCKDB_SOURCE_PATH=$PIXI_PROJECT_ROOT/duckdb\" pip install --no-build-isolation ./duckdb-python"
 
+# TPC-H test data generation. Kept in its own environment (no build deps) so the
+# pure-Python `tpchgen-cli` tool stays out of the default/cuda* build environments.
+[feature.testdata.dependencies]
+python = "3.*"
+
+[feature.testdata.pypi-dependencies]
+tpchgen-cli = "*"
+
+[feature.testdata.tasks.gen-tpch]
+description = "Generate TPC-H `.tbl` test data with tpchgen-cli (default scale factor 1)."
+cmd = "tpchgen-cli --scale-factor {{ scale_factor }} --output-dir test_datasets/tpch-dbgen/s{{ scale_factor }}"
+args = [{ arg = "scale_factor", default = "1" }]
+
 [feature.nightly-runner]
 platforms = ["linux-64-cuda13", "linux-aarch64-cuda13"]
 
@@ -128,6 +141,7 @@ nightly-run = "scripts/generate_nightly_env.sh && env -u PIXI_ENVIRONMENT_NAME p
 default = ["dev-libs", "cuda13"]
 cuda12 = ["dev-libs", "cuda12"]
 duckdb-python = ["duckdb-python"]
+testdata = { features = ["testdata"], no-default-feature = true }
 vcpkg = ["vcpkg", "cuda13"]
 vcpkg-cuda12 = ["vcpkg", "cuda12"]
 nightly-runner = { features = ["nightly-runner"], no-default-feature = true }
