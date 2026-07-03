@@ -7,6 +7,7 @@ Crates for driving [Sirius](https://github.com/sirius-db/sirius) from Rust
 |-------|------|
 | [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C-ABI (`src/include/sirius_ffi.h`). |
 | [`sirius`](crates/sirius) | Safe, idiomatic wrapper over `sirius-sys`. |
+| [`sirius-runner`](crates/sirius-runner) | Benchmark runner CLI (`pixi run runner`). Pure Rust — does not link Sirius. |
 
 (The `telemetry/*` crates are unrelated — Rust linked *into* the C++ extension via
 CMake/Corrosion, the opposite direction.)
