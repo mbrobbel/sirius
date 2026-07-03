@@ -85,10 +85,14 @@ jobs:
       - name: Build
         run: pixi run -e rust cargo build --manifest-path rust/Cargo.toml -p sirius-runner --release --locked
 
+      # Tar to preserve the executable bit (upload-artifact normalizes file modes).
+      - name: Package
+        run: tar -cf sirius-runner.tar -C rust/target/release sirius-runner
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sirius-runner-${{ matrix.arch }}
-          path: rust/target/release/sirius-runner
+          path: sirius-runner.tar
           retention-days: 14
           if-no-files-found: error
 
