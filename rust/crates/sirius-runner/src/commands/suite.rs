@@ -42,8 +42,13 @@ impl Suite {
         let suites = Suites::resolve(globals.suites.as_deref());
         match self {
             Self::List => {
-                for name in suites.names()? {
-                    println!("{name}");
+                let names = suites.names()?;
+                if globals.json {
+                    println!("{}", serde_json::to_string_pretty(&names)?);
+                } else {
+                    for name in names {
+                        println!("{name}");
+                    }
                 }
                 Ok(())
             }
