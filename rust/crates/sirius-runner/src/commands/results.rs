@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 
-use crate::{cli::GlobalArgs, stub::Unimplemented};
+use crate::{cli::GlobalArgs, store::Store, stub::Unimplemented};
 
 /// Inspect, export, and publish stored benchmark results.
 #[derive(Subcommand)]
@@ -32,7 +32,10 @@ pub enum Results {
 impl Results {
     pub fn run(&self, _globals: &GlobalArgs) -> anyhow::Result<()> {
         Err(match self {
-            Self::Schema => Unimplemented("results schema"),
+            Self::Schema => {
+                print!("{}", Store::SCHEMA);
+                return Ok(());
+            }
             Self::List => Unimplemented("results list"),
             Self::Show { .. } => Unimplemented("results show"),
             Self::Export { .. } => Unimplemented("results export"),

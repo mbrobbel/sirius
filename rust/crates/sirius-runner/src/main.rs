@@ -4,6 +4,7 @@ use clap::Parser;
 
 mod cli;
 mod commands;
+mod store;
 mod stub;
 mod suite;
 
