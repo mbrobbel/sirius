@@ -11,10 +11,10 @@ build on; commands marked *stub* print `not implemented yet` and exit non-zero.
 ## Usage
 
 ```bash
-pixi run runner                      # --help
-pixi run runner "suite list"
-pixi run runner "suite show tpch"
-pixi run runner "results schema"
+pixi run runner --help
+pixi run runner suite list
+pixi run runner suite show tpch
+pixi run runner results schema
 ```
 
 Or run the binary directly (`cargo build -p sirius-runner`, or download the

@@ -2,7 +2,11 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 
-use crate::{cli::GlobalArgs, stub::Unimplemented, suite::RunMode};
+use crate::{
+    cli::GlobalArgs,
+    stub::Unimplemented,
+    suite::{Engine, RunMode},
+};
 
 /// Run ad-hoc benchmarks outside a suite.
 #[derive(Subcommand)]
@@ -23,6 +27,9 @@ pub enum Bench {
         iterations: u32,
         #[arg(long, value_enum, default_value_t = RunMode::Warm)]
         mode: RunMode,
+        /// Engine(s) to run.
+        #[arg(long, value_enum, default_value_t = Engine::Sirius)]
+        engine: Engine,
         /// Sirius engine config (YAML).
         #[arg(long, value_name = "FILE")]
         config: Option<PathBuf>,

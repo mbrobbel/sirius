@@ -27,7 +27,7 @@ CREATE TABLE runs (
   branch TEXT,
   build_preset TEXT,
   engine TEXT NOT NULL, -- sirius | duckdb (baseline)
-  engine_config_json TEXT, -- resolved engine config snapshot
+  engine_config_json TEXT, -- resolved engine config snapshot; secrets (object-store credentials etc.) must be redacted before storing
   suite TEXT, -- NULL for ad-hoc bench runs
   dataset_benchmark TEXT,
   scale_factor DOUBLE,

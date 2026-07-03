@@ -39,8 +39,8 @@ pub struct SuiteMeta {
     pub description: Option<String>,
 }
 
-/// Logical dataset spec; keys into the data root as
-/// `<data-root>/<benchmark>/sf<N>/<format>[-<compression>]/`.
+/// Logical dataset spec; keys into the data root by every data-affecting
+/// property: `<data-root>/<benchmark>/sf<N>/<format>[-<compression>][-<encoding>]/`.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DatasetSpec {
@@ -64,6 +64,8 @@ pub struct EngineSpec {
 pub struct RunSpec {
     pub iterations: u32,
     pub mode: RunMode,
+    #[serde(default)]
+    pub engine: Engine,
     pub timeout_s: Option<u64>,
 }
 
@@ -95,6 +97,17 @@ pub enum DataFormat {
 pub enum RunMode {
     Cold,
     Warm,
+}
+
+/// Which engine(s) to run: Sirius on GPU, plain DuckDB as the CPU baseline,
+/// or both.
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum Engine {
+    #[default]
+    Sirius,
+    Duckdb,
+    Both,
 }
 
 /// Suite source: the set embedded at compile time, or a directory override

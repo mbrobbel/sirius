@@ -5,7 +5,7 @@ use clap::Subcommand;
 use crate::{
     cli::GlobalArgs,
     stub::Unimplemented,
-    suite::{RunMode, Suites},
+    suite::{Engine, RunMode, Suites},
 };
 
 /// List, inspect, and run benchmark suites.
@@ -34,6 +34,9 @@ pub enum Suite {
         iterations: Option<u32>,
         #[arg(long, value_enum)]
         mode: Option<RunMode>,
+        /// Engine(s) to run; overrides the manifest.
+        #[arg(long, value_enum)]
+        engine: Option<Engine>,
     },
 }
 

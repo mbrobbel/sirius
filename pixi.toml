@@ -62,10 +62,11 @@ description = "Run the Quent telemetry UI server."
 cmd = "echo 'Quent UI will be served at: http://localhost:8080' && cargo run --manifest-path rust/Cargo.toml -p sirius-telemetry-server --features ui -- --output-dir {{ output_dir }}"
 args = [{ arg = "output_dir", default = "telemetry_data" }]
 
+# No args template: pixi appends trailing args verbatim, so
+# `pixi run runner suite list` passes argv through unmangled.
 [tasks.runner]
 description = "Run the Sirius benchmark runner CLI."
-cmd = "cargo run --manifest-path rust/Cargo.toml -p sirius-runner -- {{ args }}"
-args = [{ arg = "args", default = "--help" }]
+cmd = "cargo run --manifest-path rust/Cargo.toml -p sirius-runner --"
 
 # CUDA version features: use `pixi run -e cuda12` for CUDA 12.x systems.
 [feature.cuda13]
