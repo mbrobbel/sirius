@@ -1,0 +1,10 @@
+[package]
+name = "sirius-runner"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
