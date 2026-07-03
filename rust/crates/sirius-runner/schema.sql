@@ -3,11 +3,11 @@
 
 -- One row per distinct system-spec snapshot.
 CREATE TABLE environments (
-  id INTEGER PRIMARY KEY,
+  id BIGINT PRIMARY KEY,
   hostname TEXT NOT NULL,
   os TEXT,
   cpu_model TEXT,
-  cpu_cores INTEGER,
+  cpu_cores BIGINT,
   ram_bytes BIGINT,
   gpu_name TEXT,
   gpu_memory_bytes BIGINT,
@@ -19,10 +19,10 @@ CREATE TABLE environments (
 
 -- One row per suite or bench invocation.
 CREATE TABLE runs (
-  id INTEGER PRIMARY KEY,
+  id BIGINT PRIMARY KEY,
   started_at TEXT NOT NULL,
   finished_at TEXT,
-  environment_id INTEGER REFERENCES environments (id),
+  environment_id BIGINT REFERENCES environments (id),
   commit_sha TEXT,
   branch TEXT,
   build_preset TEXT,
@@ -30,22 +30,22 @@ CREATE TABLE runs (
   engine_config_json TEXT, -- resolved engine config snapshot
   suite TEXT, -- NULL for ad-hoc bench runs
   dataset_benchmark TEXT,
-  scale_factor REAL,
+  scale_factor DOUBLE,
   data_format TEXT,
   data_compression TEXT,
   data_encoding TEXT,
   mode TEXT, -- cold | warm
-  iterations INTEGER,
+  iterations BIGINT,
   notes TEXT
 );
 
 -- One row per (query, iteration).
 CREATE TABLE results (
-  id INTEGER PRIMARY KEY,
-  run_id INTEGER NOT NULL REFERENCES runs (id),
+  id BIGINT PRIMARY KEY,
+  run_id BIGINT NOT NULL REFERENCES runs (id),
   query TEXT NOT NULL,
-  iteration INTEGER NOT NULL,
-  runtime_ms REAL,
+  iteration BIGINT NOT NULL,
+  runtime_ms DOUBLE,
   status TEXT NOT NULL, -- ok | error | timeout
   error TEXT,
   telemetry_path TEXT,
@@ -54,8 +54,8 @@ CREATE TABLE results (
 
 -- Correctness of a run's results against expected results.
 CREATE TABLE validations (
-  id INTEGER PRIMARY KEY,
-  run_id INTEGER NOT NULL REFERENCES runs (id),
+  id BIGINT PRIMARY KEY,
+  run_id BIGINT NOT NULL REFERENCES runs (id),
   query TEXT NOT NULL,
   status TEXT NOT NULL, -- match | mismatch | error
   detail TEXT,
