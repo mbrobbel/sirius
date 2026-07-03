@@ -129,6 +129,11 @@ pixi = "0.71.*"
 nightly-shell = "scripts/generate_nightly_env.sh && env -u PIXI_ENVIRONMENT_NAME pixi shell --manifest-path envs/nightly/pixi.toml"
 nightly-run = "scripts/generate_nightly_env.sh && env -u PIXI_ENVIRONMENT_NAME pixi run --manifest-path envs/nightly/pixi.toml"
 
+# Minimal Rust-only env (CI for pure-Rust crates): skips the CUDA/RAPIDS stack.
+[feature.rust-toolchain.dependencies]
+rust = "*"
+c-compiler = "*"
+
 [environments]
 default = ["dev-libs", "cuda13"]
 cuda12 = ["dev-libs", "cuda12"]
@@ -136,3 +141,4 @@ duckdb-python = ["duckdb-python"]
 vcpkg = ["vcpkg", "cuda13"]
 vcpkg-cuda12 = ["vcpkg", "cuda12"]
 nightly-runner = { features = ["nightly-runner"], no-default-feature = true }
+rust = { features = ["rust-toolchain"], no-default-feature = true }
