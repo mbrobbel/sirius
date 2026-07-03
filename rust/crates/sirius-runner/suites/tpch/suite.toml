@@ -1,0 +1,101 @@
+[suite]
+name = "tpch"
+description = "TPC-H power run (original queries)"
+
+[dataset]
+benchmark = "tpch"
+scale_factor = 1
+format = "parquet"
+
+[run]
+iterations = 3
+mode = "warm"
+timeout_s = 600
+
+[[queries]]
+name = "q1"
+sql = "queries/q1.sql"
+
+[[queries]]
+name = "q2"
+sql = "queries/q2.sql"
+
+[[queries]]
+name = "q3"
+sql = "queries/q3.sql"
+
+[[queries]]
+name = "q4"
+sql = "queries/q4.sql"
+
+[[queries]]
+name = "q5"
+sql = "queries/q5.sql"
+
+[[queries]]
+name = "q6"
+sql = "queries/q6.sql"
+
+[[queries]]
+name = "q7"
+sql = "queries/q7.sql"
+
+[[queries]]
+name = "q8"
+sql = "queries/q8.sql"
+
+[[queries]]
+name = "q9"
+sql = "queries/q9.sql"
+
+[[queries]]
+name = "q10"
+sql = "queries/q10.sql"
+
+[[queries]]
+name = "q11"
+sql = "queries/q11.sql"
+
+[[queries]]
+name = "q12"
+sql = "queries/q12.sql"
+
+[[queries]]
+name = "q13"
+sql = "queries/q13.sql"
+
+[[queries]]
+name = "q14"
+sql = "queries/q14.sql"
+
+[[queries]]
+name = "q15"
+sql = "queries/q15.sql"
+
+[[queries]]
+name = "q16"
+sql = "queries/q16.sql"
+
+[[queries]]
+name = "q17"
+sql = "queries/q17.sql"
+
+[[queries]]
+name = "q18"
+sql = "queries/q18.sql"
+
+[[queries]]
+name = "q19"
+sql = "queries/q19.sql"
+
+[[queries]]
+name = "q20"
+sql = "queries/q20.sql"
+
+[[queries]]
+name = "q21"
+sql = "queries/q21.sql"
+
+[[queries]]
+name = "q22"
+sql = "queries/q22.sql"

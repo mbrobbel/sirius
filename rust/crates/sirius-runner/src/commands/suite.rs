@@ -2,7 +2,11 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 
-use crate::{cli::GlobalArgs, stub::Unimplemented, suite::RunMode};
+use crate::{
+    cli::GlobalArgs,
+    stub::Unimplemented,
+    suite::{RunMode, Suites},
+};
 
 /// List, inspect, and run benchmark suites.
 #[derive(Subcommand)]
@@ -34,12 +38,25 @@ pub enum Suite {
 }
 
 impl Suite {
-    pub fn run(&self, _globals: &GlobalArgs) -> anyhow::Result<()> {
-        Err(match self {
-            Self::List => Unimplemented("suite list"),
-            Self::Show { .. } => Unimplemented("suite show"),
-            Self::Run { .. } => Unimplemented("suite run"),
+    pub fn run(&self, globals: &GlobalArgs) -> anyhow::Result<()> {
+        let suites = Suites::resolve(globals.suites.as_deref());
+        match self {
+            Self::List => {
+                for name in suites.names()? {
+                    println!("{name}");
+                }
+                Ok(())
+            }
+            Self::Show { name } => {
+                let manifest = suites.load(name)?;
+                if globals.json {
+                    println!("{}", serde_json::to_string_pretty(&manifest)?);
+                } else {
+                    print!("{}", toml::to_string_pretty(&manifest)?);
+                }
+                Ok(())
+            }
+            Self::Run { .. } => Err(Unimplemented("suite run").into()),
         }
-        .into())
     }
 }
