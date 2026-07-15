@@ -36,6 +36,7 @@ impl Cli {
 }
 
 #[derive(Args)]
+#[command(next_help_heading = "Global options")]
 pub struct GlobalArgs {
     /// Sirius checkout root; defaults to walking up from the current directory
     /// to the first directory containing pixi.toml.
