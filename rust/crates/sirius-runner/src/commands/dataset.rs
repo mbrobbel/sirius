@@ -14,17 +14,24 @@ pub enum Dataset {
     /// List dataset families (embedded, or --assets directory).
     List,
     /// Show a dataset family's manifest.
-    Show { name: String },
+    Show {
+        /// Dataset family name, e.g. tpch.
+        name: String,
+    },
     /// Generate a dataset instance (disk-aware: checks free space first).
     Generate {
         /// Dataset family, e.g. tpch.
         name: String,
+        /// Scale factor of the instance, e.g. 1, 100.
         #[arg(long)]
         scale_factor: f64,
+        /// Storage format.
         #[arg(long, value_enum)]
         format: DataFormat,
+        /// Parquet compression codec, e.g. snappy, zstd, uncompressed.
         #[arg(long)]
         compression: Option<String>,
+        /// Parquet column encoding, e.g. plain, dictionary.
         #[arg(long)]
         encoding: Option<String>,
         /// Write here instead of the keyed location under the data root.

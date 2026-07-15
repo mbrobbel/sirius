@@ -9,11 +9,13 @@ use crate::{cli::GlobalArgs, stub::Unimplemented};
 pub enum Telemetry {
     /// Serve the telemetry UI over an output directory.
     Serve {
+        /// Quent telemetry output directory to serve.
         #[arg(long, value_name = "DIR", default_value = "telemetry_data")]
         output_dir: PathBuf,
     },
     /// Summarize telemetry for a run.
     View {
+        /// Stored run whose telemetry to view.
         #[arg(long)]
         run: String,
     },

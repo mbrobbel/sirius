@@ -9,6 +9,7 @@ use crate::{cli::GlobalArgs, stub::Unimplemented};
 pub enum Sweep {
     /// Run a benchmark across the dimensions in a sweep file.
     Run {
+        /// Benchmark (run configuration) to sweep.
         #[arg(long)]
         bench: String,
         /// Sweep dimensions file (engine config and dataset encoding axes).

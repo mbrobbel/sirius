@@ -10,18 +10,25 @@ use crate::{cli::GlobalArgs, stub::Unimplemented};
 pub enum Remote {
     /// Register a named remote.
     Add {
+        /// Name to register the remote under.
         name: String,
+        /// SSH destination (user@host).
         #[arg(long)]
         host: String,
     },
     /// List registered remotes.
     List,
     /// Report a remote's bootstrap status (env pack, runner binary, build).
-    Status { name: String },
+    Status {
+        /// Registered remote name.
+        name: String,
+    },
     /// Pre-build the pixi-pack environment archive for a target platform.
     Pack {
+        /// Pixi environment to pack (default: the runtime environment).
         #[arg(long, value_name = "PIXI_ENV")]
         env: Option<String>,
+        /// Target platform, e.g. linux-64, linux-aarch64.
         #[arg(long)]
         platform: Option<String>,
     },

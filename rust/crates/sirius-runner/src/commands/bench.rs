@@ -14,7 +14,10 @@ pub enum Bench {
     /// List available benchmarks (embedded, or --assets directory).
     List,
     /// Show a benchmark's manifest.
-    Show { name: String },
+    Show {
+        /// Benchmark name, e.g. tpch-sf1.
+        name: String,
+    },
     /// Run a benchmark: resolve its dataset instance and expected results
     /// (generating what's missing), check the Sirius build and engine
     /// config, run the suite, validate and store results.
@@ -42,10 +45,11 @@ pub enum Bench {
         /// Fail if the dataset instance is missing instead of generating it.
         #[arg(long)]
         no_generate: bool,
-        /// Overrides the manifest.
+        /// Iterations per query; overrides the manifest.
         #[arg(long)]
         iterations: Option<u32>,
-        /// Overrides the manifest.
+        /// Cold (fresh process, dropped caches) or warm execution; overrides
+        /// the manifest.
         #[arg(long, value_enum)]
         mode: Option<RunMode>,
         /// Engine(s) to run; overrides the manifest.

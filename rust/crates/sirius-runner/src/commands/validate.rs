@@ -13,7 +13,9 @@ pub enum Validate {
     /// Generate expected results for a suite at a scale factor using the
     /// suite's reference engine, and cache them.
     Generate {
+        /// Query suite name, e.g. tpch.
         suite: String,
+        /// Scale factor to generate expected results for.
         #[arg(long)]
         scale_factor: f64,
         /// Overrides the suite's reference engine.
@@ -25,12 +27,15 @@ pub enum Validate {
     },
     /// Report which expected results are present for a suite.
     Status {
+        /// Query suite name, e.g. tpch.
         suite: String,
+        /// Only report this scale factor.
         #[arg(long)]
         scale_factor: Option<f64>,
     },
     /// Compare a stored run's results against expected results.
     Compare {
+        /// Stored run to check.
         #[arg(long)]
         run: String,
     },

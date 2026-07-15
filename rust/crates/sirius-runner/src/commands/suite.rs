@@ -8,7 +8,10 @@ pub enum Suite {
     /// List available suites (embedded, or --assets directory).
     List,
     /// Show a suite's manifest.
-    Show { name: String },
+    Show {
+        /// Query suite name, e.g. tpch.
+        name: String,
+    },
 }
 
 impl Suite {

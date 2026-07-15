@@ -12,18 +12,26 @@ pub enum Results {
     /// List stored runs.
     List,
     /// Show one run.
-    Show { run_id: String },
+    Show {
+        /// Stored run to show.
+        run_id: String,
+    },
     /// Export a run to files (e.g. for nightly benchmark output).
     Export {
+        /// Stored run to export.
         run_id: String,
+        /// Output format: csv or json.
         #[arg(long, default_value = "csv")]
         format: String,
+        /// Write files here instead of the current directory.
         #[arg(long, value_name = "DIR")]
         out: Option<PathBuf>,
     },
     /// Post a run to the remote results database.
     Push {
+        /// Stored run to publish.
         run_id: String,
+        /// Results database endpoint (default: accel-etl.nvidia.com).
         #[arg(long)]
         endpoint: Option<String>,
     },

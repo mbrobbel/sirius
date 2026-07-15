@@ -10,13 +10,19 @@ pub enum Build {
     List,
     /// Build from source via `pixi run make <preset>`.
     Source {
+        /// CMake preset to build, e.g. release, debug, relwithdebinfo.
         #[arg(long, default_value = "release")]
         preset: String,
     },
-    /// Download a recent build artifact from GitHub.
+    /// Download a recent CI build artifact from GitHub.
     Download {
+        /// Latest successful build from this branch (default: dev).
         #[arg(long)]
         branch: Option<String>,
+        /// Commit whose CI build to download (resolved to a workflow run).
+        #[arg(long, conflicts_with_all = ["branch", "run_id"])]
+        commit: Option<String>,
+        /// Exact GitHub Actions workflow run to download artifacts from.
         #[arg(long)]
         run_id: Option<u64>,
     },
