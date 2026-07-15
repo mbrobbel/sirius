@@ -67,7 +67,21 @@ impl Bench {
         match self {
             Self::List => globals.print_names(assets.bench_names()?),
             Self::Show { name } => globals.print_manifest(&assets.load_bench(name)?),
-            Self::Run { .. } => Err(Unimplemented("bench run").into()),
+            Self::Run { .. } => Err(Unimplemented::new(
+                "bench run",
+                "Orchestrate what everything else serves: load the benchmark manifest (or build
+an ad-hoc one from --sql/--query/--dataset), then resolve what the run needs:
+the dataset instance under the data root (generated when missing, unless
+--no-generate), expected results (the validate machinery), a Sirius build
+(discovered, or built/downloaded), and the engine config. Then execute: load
+the extension into DuckDB in a worker process (cold = fresh process per query,
+warm = reused session), time every query and iteration for the selected
+engine(s), validate results against expected data when enabled, snapshot the
+environment, and record everything in the local results store — also when
+running via --remote, in which case results sync back here. Prints a summary
+table; --json for CI.",
+            )
+            .into()),
         }
     }
 }

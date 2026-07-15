@@ -48,8 +48,26 @@ impl Dataset {
         match self {
             Self::List => globals.print_names(assets.dataset_names()?),
             Self::Show { name } => globals.print_manifest(&assets.load_dataset(name)?),
-            Self::Generate { .. } => Err(Unimplemented("dataset generate").into()),
-            Self::Instances => Err(Unimplemented("dataset instances").into()),
+            Self::Generate { .. } => Err(Unimplemented::new(
+                "dataset generate",
+                "Generate a dataset instance at its keyed location
+<data-root>/<family>/sf<N>/<format>[-<compression>][-<encoding>]/: estimate the
+size from family and scale factor, check free space on the data root's
+filesystem (refusing with a clear message if it won't fit), generate — parquet
+via the tpchgen-rs crates in-process with writer-level compression/encoding
+control (the sweep dimensions), .duckdb via DuckDB's dbgen so the file format
+matches what Sirius reads — and move the result into place atomically.
+`bench run` calls this automatically for missing instances.",
+            )
+            .into()),
+            Self::Instances => Err(Unimplemented::new(
+                "dataset instances",
+                "Scan the data root and list the dataset instances present, with their keyed
+parameters (family, scale factor, format, compression, encoding), on-disk size,
+and completeness — the inventory `bench run` resolves against and
+`dataset generate` fills.",
+            )
+            .into()),
         }
     }
 }

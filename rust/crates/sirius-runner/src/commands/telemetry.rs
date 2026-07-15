@@ -24,8 +24,20 @@ pub enum Telemetry {
 impl Telemetry {
     pub fn run(&self, _globals: &GlobalArgs) -> anyhow::Result<()> {
         Err(match self {
-            Self::Serve { .. } => Unimplemented("telemetry serve"),
-            Self::View { .. } => Unimplemented("telemetry view"),
+            Self::Serve { .. } => Unimplemented::new(
+                "telemetry serve",
+                "Launch the Quent telemetry UI (the sirius-telemetry-server crate — collector
+plus browser analyzer, what `pixi run quent` does today) over the given output
+directory, so runs executed with telemetry enabled in the engine config can be
+explored interactively.",
+            ),
+            Self::View { .. } => Unimplemented::new(
+                "telemetry view",
+                "Summarize a stored run's Quent telemetry in the terminal: per-operator and
+per-pipeline time, memory pressure and downgrade events — the quick look
+before reaching for the full UI. The run's telemetry_path column points at
+the data, also for runs pulled back from a remote.",
+            ),
         }
         .into())
     }

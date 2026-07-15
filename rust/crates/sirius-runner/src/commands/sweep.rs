@@ -21,7 +21,15 @@ pub enum Sweep {
 impl Sweep {
     pub fn run(&self, _globals: &GlobalArgs) -> anyhow::Result<()> {
         Err(match self {
-            Self::Run { .. } => Unimplemented("sweep run"),
+            Self::Run { .. } => Unimplemented::new(
+                "sweep run",
+                "Expand a dimensions file (engine-config knobs like thread counts and memory
+fractions, dataset compression/encodings, run modes) into a matrix of derived
+benchmarks, run each through the bench-run machinery — generating dataset
+variants as needed — and store all runs under one sweep id with a summary of
+the best-performing configurations. Built for agent-driven config exploration:
+an agent proposes dimensions, reads the stored outcomes, and iterates.",
+            ),
         }
         .into())
     }

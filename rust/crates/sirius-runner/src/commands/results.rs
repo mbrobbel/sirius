@@ -44,10 +44,32 @@ impl Results {
                 print!("{}", Store::SCHEMA);
                 return Ok(());
             }
-            Self::List => Unimplemented("results list"),
-            Self::Show { .. } => Unimplemented("results show"),
-            Self::Export { .. } => Unimplemented("results export"),
-            Self::Push { .. } => Unimplemented("results push"),
+            Self::List => Unimplemented::new(
+                "results list",
+                "List the runs in the local results store (a DuckDB file): id, benchmark,
+dataset instance, engine(s), environment, when it ran, a timing summary, and
+validation status. The store is the single source of truth — runs executed
+with --remote land here too.",
+            ),
+            Self::Show { .. } => Unimplemented::new(
+                "results show",
+                "Show one stored run in full: its manifest and config snapshot, the environment
+it ran on, per-query and per-iteration runtimes, errors/timeouts, and
+validation outcomes.",
+            ),
+            Self::Export { .. } => Unimplemented::new(
+                "results export",
+                "Write a stored run to files (CSV or JSON): runtimes, validations, and
+metadata. The output-file path for nightly benchmark artifacts and any
+external tooling that doesn't read the store directly.",
+            ),
+            Self::Push { .. } => Unimplemented::new(
+                "results push",
+                "Publish a stored run — with its environment and per-query results, and the
+engine-config snapshot redacted of secrets — to the remote results database at
+accel-etl.nvidia.com, for fleet-wide dashboards and long-term regression
+tracking across machines and versions.",
+            ),
         }
         .into())
     }
