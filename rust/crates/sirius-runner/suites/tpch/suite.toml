@@ -1,16 +1,10 @@
 [suite]
 name = "tpch"
-description = "TPC-H power run (original queries)"
+description = "TPC-H queries (original)"
+dataset = "tpch"
 
-[dataset]
-benchmark = "tpch"
-scale_factor = 1
-format = "parquet"
-
-[run]
-iterations = 3
-mode = "warm"
-timeout_s = 600
+[validation]
+reference = "duckdb"
 
 [[queries]]
 name = "q1"
@@ -75,6 +69,9 @@ sql = "queries/q15.sql"
 [[queries]]
 name = "q16"
 sql = "queries/q16.sql"
+# Result size scales with the scale factor; results are exact, so compare a
+# digest instead of shipping full expected rows.
+validation = { compare = "digest" }
 
 [[queries]]
 name = "q17"

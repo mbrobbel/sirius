@@ -42,7 +42,9 @@ pub struct Run {
     pub engine: String,
     /// Resolved engine config snapshot.
     pub engine_config_json: Option<String>,
-    /// None for ad-hoc bench runs.
+    /// Run configuration name; None for ad-hoc runs.
+    pub bench: Option<String>,
+    /// None for ad-hoc single-query runs.
     pub suite: Option<String>,
     pub dataset_benchmark: Option<String>,
     pub scale_factor: Option<f64>,

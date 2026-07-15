@@ -1,0 +1,17 @@
+[bench]
+name = "tpch-sf1"
+description = "TPC-H power run at SF1"
+suite = "tpch"
+
+[dataset]
+scale_factor = 1
+format = "parquet"
+
+[engine]
+engine = "both"
+
+[execution]
+iterations = 3
+mode = "warm"
+timeout_s = 600
+validate = true

@@ -1,7 +1,7 @@
 pub mod bench;
 pub mod build;
 pub mod compare;
-pub mod data;
+pub mod dataset;
 pub mod remote;
 pub mod results;
 pub mod specs;

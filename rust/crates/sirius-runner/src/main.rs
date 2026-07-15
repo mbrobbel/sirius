@@ -2,11 +2,11 @@ use std::process::ExitCode;
 
 use clap::Parser;
 
+mod assets;
 mod cli;
 mod commands;
 mod store;
 mod stub;
-mod suite;
 
 fn main() -> ExitCode {
     match cli::Cli::parse().run() {

@@ -7,10 +7,10 @@ use crate::{cli::GlobalArgs, stub::Unimplemented};
 /// Sweep benchmark runs across configs and dataset encodings.
 #[derive(Subcommand)]
 pub enum Sweep {
-    /// Run a suite across the dimensions in a sweep file.
+    /// Run a benchmark across the dimensions in a sweep file.
     Run {
         #[arg(long)]
-        suite: String,
+        bench: String,
         /// Sweep dimensions file (engine config and dataset encoding axes).
         #[arg(long, value_name = "FILE")]
         dimensions: PathBuf,

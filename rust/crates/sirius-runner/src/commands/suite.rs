@@ -1,70 +1,22 @@
-use std::path::PathBuf;
-
 use clap::Subcommand;
 
-use crate::{
-    cli::GlobalArgs,
-    stub::Unimplemented,
-    suite::{Engine, RunMode, Suites},
-};
+use crate::{assets::Assets, cli::GlobalArgs};
 
-/// List, inspect, and run benchmark suites.
+/// List and inspect query suites.
 #[derive(Subcommand)]
 pub enum Suite {
-    /// List available suites (embedded, or --suites directory).
+    /// List available suites (embedded, or --assets directory).
     List,
     /// Show a suite's manifest.
     Show { name: String },
-    /// Run a suite: resolve (or generate) its dataset, run its queries.
-    Run {
-        name: String,
-        /// Subset of queries to run, e.g. q1,q6.
-        #[arg(long, value_delimiter = ',')]
-        queries: Vec<String>,
-        /// Build preset to run against.
-        #[arg(long)]
-        preset: Option<String>,
-        /// Use this dataset directory instead of resolving the suite's spec.
-        #[arg(long, value_name = "DIR")]
-        data_dir: Option<PathBuf>,
-        /// Fail if the dataset is missing instead of generating it.
-        #[arg(long)]
-        no_generate: bool,
-        #[arg(long)]
-        iterations: Option<u32>,
-        #[arg(long, value_enum)]
-        mode: Option<RunMode>,
-        /// Engine(s) to run; overrides the manifest.
-        #[arg(long, value_enum)]
-        engine: Option<Engine>,
-    },
 }
 
 impl Suite {
     pub fn run(&self, globals: &GlobalArgs) -> anyhow::Result<()> {
-        let suites = Suites::resolve(globals.suites.as_deref());
+        let assets = Assets::resolve(globals.assets.as_deref());
         match self {
-            Self::List => {
-                let names = suites.names()?;
-                if globals.json {
-                    println!("{}", serde_json::to_string_pretty(&names)?);
-                } else {
-                    for name in names {
-                        println!("{name}");
-                    }
-                }
-                Ok(())
-            }
-            Self::Show { name } => {
-                let manifest = suites.load(name)?;
-                if globals.json {
-                    println!("{}", serde_json::to_string_pretty(&manifest)?);
-                } else {
-                    print!("{}", toml::to_string_pretty(&manifest)?);
-                }
-                Ok(())
-            }
-            Self::Run { .. } => Err(Unimplemented("suite run").into()),
+            Self::List => globals.print_names(assets.suite_names()?),
+            Self::Show { name } => globals.print_manifest(&assets.load_suite(name)?),
         }
     }
 }

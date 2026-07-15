@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
+use serde::Serialize;
 
 use crate::commands;
 
-/// Benchmark runner for Sirius: builds, datasets, suites, results.
+/// Benchmark runner for Sirius: builds, datasets, suites, benchmarks, results.
 #[derive(Parser)]
 #[command(version, propagate_version = true)]
 pub struct Cli {
@@ -21,7 +22,7 @@ impl Cli {
         match self.command {
             Command::Specs(cmd) => cmd.run(globals),
             Command::Build(cmd) => cmd.run(globals),
-            Command::Data(cmd) => cmd.run(globals),
+            Command::Dataset(cmd) => cmd.run(globals),
             Command::Suite(cmd) => cmd.run(globals),
             Command::Bench(cmd) => cmd.run(globals),
             Command::Validate(cmd) => cmd.run(globals),
@@ -41,11 +42,12 @@ pub struct GlobalArgs {
     #[arg(long, global = true, env = "SIRIUS_REPO_ROOT", value_name = "DIR")]
     pub repo_root: Option<PathBuf>,
 
-    /// Load benchmark suites from this directory instead of the embedded set.
-    #[arg(long, global = true, env = "SIRIUS_RUNNER_SUITES", value_name = "DIR")]
-    pub suites: Option<PathBuf>,
+    /// Load benchmark definitions from this directory instead of the embedded
+    /// set (same layout: datasets/, suites/, benches/, expected/).
+    #[arg(long, global = true, env = "SIRIUS_RUNNER_ASSETS", value_name = "DIR")]
+    pub assets: Option<PathBuf>,
 
-    /// Root directory for generated and discovered datasets.
+    /// Root directory for generated and discovered dataset instances.
     #[arg(
         long,
         global = true,
@@ -68,13 +70,35 @@ pub struct GlobalArgs {
     pub verbose: u8,
 }
 
+impl GlobalArgs {
+    pub fn print_names(&self, names: Vec<String>) -> anyhow::Result<()> {
+        if self.json {
+            println!("{}", serde_json::to_string_pretty(&names)?);
+        } else {
+            for name in names {
+                println!("{name}");
+            }
+        }
+        Ok(())
+    }
+
+    pub fn print_manifest<T: Serialize>(&self, manifest: &T) -> anyhow::Result<()> {
+        if self.json {
+            println!("{}", serde_json::to_string_pretty(manifest)?);
+        } else {
+            print!("{}", toml::to_string_pretty(manifest)?);
+        }
+        Ok(())
+    }
+}
+
 #[derive(Subcommand)]
 pub enum Command {
     Specs(commands::specs::Specs),
     #[command(subcommand)]
     Build(commands::build::Build),
     #[command(subcommand)]
-    Data(commands::data::Data),
+    Dataset(commands::dataset::Dataset),
     #[command(subcommand)]
     Suite(commands::suite::Suite),
     #[command(subcommand)]

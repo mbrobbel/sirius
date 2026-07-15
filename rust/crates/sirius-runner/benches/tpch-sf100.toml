@@ -1,0 +1,17 @@
+[bench]
+name = "tpch-sf100"
+description = "TPC-H power run at SF100"
+suite = "tpch"
+
+[dataset]
+scale_factor = 100
+format = "parquet"
+
+[engine]
+engine = "sirius"
+
+[execution]
+iterations = 3
+mode = "warm"
+timeout_s = 1200
+validate = true
