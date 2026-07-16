@@ -69,10 +69,37 @@ and the engine config — then runs, validates, and stores results.
 
 Global flags: `--repo-root` (`SIRIUS_REPO_ROOT`), `--assets`
 (`SIRIUS_RUNNER_ASSETS`), `--data-root` (`SIRIUS_RUNNER_DATA_ROOT`), `--remote`
-(`SIRIUS_RUNNER_REMOTE`), `--json`, `-v`.
+(`SIRIUS_RUNNER_REMOTE`), `--json`, `-q/--quiet`, `--no-input`, `--no-color`,
+`-v`.
 
 Manifests are TOML (the crate's native config format); Sirius *engine* configs
 stay YAML and are referenced by path from benchmark manifests.
+
+## CLI conventions
+
+The CLI follows [clig.dev](https://clig.dev/). The contracts implementations
+must keep:
+
+- **stdout is for results, stderr is for everything else** (progress, logs,
+  hints, errors). `--json` makes stdout machine-readable; human tables are for
+  TTYs. `-q/--quiet` suppresses the non-essential stderr chatter.
+- **Exit codes are meaningful**: 0 success, 1 runtime error, 2 usage error
+  (clap). Reserved for CI gating: 3 = validation mismatch, 4 = comparison
+  regression beyond threshold.
+- **Prompts are optional**: only when stdin is a TTY, always bypassable —
+  `--no-input` fails instead of asking. Expensive/destructive actions (large
+  dataset generation, overwrites) confirm first; `-n/--dry-run` on
+  `bench run`, `dataset generate`, and `sweep run` shows the plan without
+  acting.
+- **Color** only when stdout is a TTY, and never when `NO_COLOR` is set,
+  `TERM=dumb`, or `--no-color` is passed.
+- **Secrets never travel via flags or env vars**: `results push` credentials
+  come from a token file or the system keychain.
+- **Runner config** (named remotes etc.) lives in the XDG base directory
+  (`~/.config/sirius-runner/`).
+- **Operations are recoverable**: dataset generation lands atomically,
+  downloads resume, re-running a failed bench continues rather than redoing
+  finished work.
 
 ## Validation
 

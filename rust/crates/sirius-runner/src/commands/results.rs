@@ -24,8 +24,8 @@ pub enum Results {
         #[arg(long, default_value = "csv")]
         format: String,
         /// Write files here instead of the current directory.
-        #[arg(long, value_name = "DIR")]
-        out: Option<PathBuf>,
+        #[arg(short, long, value_name = "DIR")]
+        output: Option<PathBuf>,
     },
     /// Post a run to the remote results database.
     Push {

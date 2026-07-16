@@ -8,6 +8,14 @@ use crate::commands;
 /// Benchmark runner for Sirius: builds, datasets, suites, benchmarks, results.
 #[derive(Parser)]
 #[command(version, propagate_version = true)]
+#[command(after_help = "\
+Examples:
+  sirius-runner bench run tpch-sf1        run a benchmark end to end
+  sirius-runner bench list                see what can be run
+  sirius-runner suite show tpch           inspect a query suite
+  sirius-runner specs                     report this machine's hardware
+
+Docs & issues: https://github.com/sirius-db/sirius (rust/crates/sirius-runner)")]
 pub struct Cli {
     #[command(flatten)]
     pub globals: GlobalArgs,
@@ -65,6 +73,18 @@ pub struct GlobalArgs {
     /// Machine-readable JSON output where a command supports it.
     #[arg(long, global = true)]
     pub json: bool,
+
+    /// Suppress non-essential output (progress, hints).
+    #[arg(short, long, global = true, conflicts_with = "verbose")]
+    pub quiet: bool,
+
+    /// Never prompt; fail instead of asking for confirmation (for scripts/CI).
+    #[arg(long, global = true)]
+    pub no_input: bool,
+
+    /// Disable colored output (also honored: NO_COLOR, TERM=dumb, non-TTY).
+    #[arg(long, global = true)]
+    pub no_color: bool,
 
     /// Increase output verbosity.
     #[arg(short, long, global = true, action = clap::ArgAction::Count)]

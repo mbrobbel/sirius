@@ -58,6 +58,11 @@ pub enum Bench {
         /// Sirius engine config (YAML); overrides the manifest.
         #[arg(long, value_name = "FILE")]
         config: Option<PathBuf>,
+        /// Show the resolution plan (dataset, expected results, build,
+        /// config — what exists, what would be generated or fetched)
+        /// without running.
+        #[arg(short = 'n', long)]
+        dry_run: bool,
     },
 }
 

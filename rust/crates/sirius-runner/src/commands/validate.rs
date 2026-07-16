@@ -22,8 +22,8 @@ pub enum Validate {
         #[arg(long)]
         engine: Option<String>,
         /// Write here instead of the keyed location.
-        #[arg(long, value_name = "DIR")]
-        out: Option<PathBuf>,
+        #[arg(short, long, value_name = "DIR")]
+        output: Option<PathBuf>,
     },
     /// Report which expected results are present for a suite.
     Status {

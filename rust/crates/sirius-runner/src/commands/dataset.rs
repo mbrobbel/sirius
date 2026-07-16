@@ -35,8 +35,12 @@ pub enum Dataset {
         #[arg(long)]
         encoding: Option<String>,
         /// Write here instead of the keyed location under the data root.
-        #[arg(long, value_name = "DIR")]
-        out: Option<PathBuf>,
+        #[arg(short, long, value_name = "DIR")]
+        output: Option<PathBuf>,
+        /// Show what would be generated (location, estimated size, free
+        /// space) without generating.
+        #[arg(short = 'n', long)]
+        dry_run: bool,
     },
     /// List instances present under the data root.
     Instances,

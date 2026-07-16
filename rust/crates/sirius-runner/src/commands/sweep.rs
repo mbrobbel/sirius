@@ -15,6 +15,9 @@ pub enum Sweep {
         /// Sweep dimensions file (engine config and dataset encoding axes).
         #[arg(long, value_name = "FILE")]
         dimensions: PathBuf,
+        /// Show the expanded benchmark matrix without running it.
+        #[arg(short = 'n', long)]
+        dry_run: bool,
     },
 }
 
