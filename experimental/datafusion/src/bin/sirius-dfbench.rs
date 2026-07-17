@@ -92,7 +92,15 @@ async fn main() -> Result<()> {
         bail!("no SQL queries found in {}", args.query_dir.display());
     }
 
-    let sirius = SiriusDataFusion::new()?;
+    let sirius_config_file = std::env::var_os("SIRIUS_CONFIG_FILE").map(PathBuf::from);
+    let sirius = match &sirius_config_file {
+        Some(path) => SiriusDataFusion::from_config_file(path.clone())?,
+        None => SiriusDataFusion::new()?,
+    };
+    match sirius_config_file {
+        Some(path) => println!("Using Sirius configuration from {}", path.display()),
+        None => println!("Using Sirius built-in configuration"),
+    }
     println!("Running Sirius benchmarks with the following options: {args:?}");
 
     for query_id in query_ids {

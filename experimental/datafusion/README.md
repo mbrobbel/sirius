@@ -76,7 +76,8 @@ target/release/dfbench harness --dataset tpch_sf10 --query q1,q6 --iterations 5 
 The harness runs DataFusion CPU, libcudf-datafusion, and Sirius in separate subprocesses and writes
 compatible JSON results and a combined report under
 `libcudf-datafusion-benchmarks/benchmark-results`. Use `--sirius-executable` to override the default
-`experimental/datafusion/target/release/sirius-dfbench` path.
+`experimental/datafusion/target/release/sirius-dfbench` path. Set `SIRIUS_CONFIG_FILE` to select a
+Sirius YAML configuration; the harness records its absolute path in the report command.
 
 ## Fresh checkout
 
