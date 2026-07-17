@@ -27,3 +27,7 @@
 [submodule "starrocks/brpc"]
 	path = experimental/starrocks/brpc
 	url = https://github.com/apache/brpc
+[submodule "libcudf-rs"]
+	path = experimental/datafusion/libcudf-rs
+	url = https://github.com/mbrobbel/libcudf-rs.git
+	branch = sirius-datafusion
