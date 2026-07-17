@@ -26,7 +26,12 @@ anyhow = "1"
 arrow-array = "=58.2.0"
 arrow-schema = "=58.2.0"
 clap = { version = "4", features = ["derive"] }
-datafusion = { version = "=53.1.0", default-features = false, features = ["parquet", "sql"] }
+datafusion = { version = "=53.1.0", default-features = false, features = [
+    "datetime_expressions",
+    "parquet",
+    "sql",
+    "unicode_expressions",
+] }
 datafusion-substrait = { version = "=53.1.0", default-features = false }
 prost = "0.14"
 serde = { version = "1", features = ["derive"] }

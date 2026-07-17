@@ -442,4 +442,15 @@ mod tests {
             .unwrap_err();
         assert!(error.to_string().contains("ListingTable"));
     }
+
+    #[tokio::test]
+    async fn plans_tpch_datetime_and_unicode_expressions() {
+        let ctx = SessionContext::new();
+        ctx.sql(
+            "SELECT EXTRACT(YEAR FROM DATE '1995-01-01'), \
+             SUBSTRING('abcdef' FROM 1 FOR 2)",
+        )
+        .await
+        .unwrap();
+    }
 }
