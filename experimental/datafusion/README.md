@@ -67,7 +67,9 @@ Build both runners, then launch the comparison harness:
 ```bash
 pixi run cargo build --manifest-path experimental/datafusion/Cargo.toml --release --bin sirius-dfbench
 cd experimental/datafusion/libcudf-rs
-pixi run cargo build -p benchmarks --release
+pixi run cargo build \
+  --manifest-path libcudf-datafusion-benchmarks/Cargo.toml \
+  --release
 target/release/dfbench harness --dataset tpch_sf10 --query q1,q6 --iterations 5 --warmup
 ```
 
@@ -91,7 +93,9 @@ pixi run cargo build \
   --bin sirius-dfbench
 
 cd experimental/datafusion/libcudf-rs
-pixi run cargo build -p benchmarks --release
+pixi run cargo build \
+  --manifest-path libcudf-datafusion-benchmarks/Cargo.toml \
+  --release
 target/release/dfbench prepare-tpch \
   --sf 10 \
   --output libcudf-datafusion-benchmarks/data/tpch_sf10
