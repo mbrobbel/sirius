@@ -8,6 +8,11 @@ license = "Apache-2.0"
 publish = false
 
 [features]
+default = ["arrow-59"]
+# Select the Arrow version used by the public result type. Database integrations should choose
+# the version used by their host process and disable default features when selecting Arrow 58.
+arrow-58 = ["dep:arrow-array-58", "dep:arrow-schema-58"]
+arrow-59 = ["dep:arrow-array-59", "dep:arrow-schema-59"]
 # Forwarded to sirius-sys: link the self-contained libsirius.a (no runtime deps)
 # instead of the default libsirius.so. See sirius-sys for details.
 static = ["sirius-sys/static"]
@@ -15,11 +20,12 @@ static = ["sirius-sys/static"]
 [dependencies]
 cxx.workspace = true
 sirius-sys.workspace = true
-# Results are returned over the Arrow C Data Interface; pin to the same major as
-# the StarRocks CN consumer so the `ArrowArrayStreamReader` type unifies. The
-# `ffi` feature provides `ffi_stream` (FFI_ArrowArrayStream / reader).
-arrow-array = { version = "59", features = ["ffi"] }
-arrow-schema = "59"
+# Results are returned over the Arrow C Data Interface. The selected version must match the host
+# consumer so the public `RecordBatch` type unifies. `ffi` provides the Arrow stream reader.
+arrow-array-58 = { package = "arrow-array", version = "=58.2.0", features = ["ffi"], optional = true }
+arrow-schema-58 = { package = "arrow-schema", version = "=58.2.0", optional = true }
+arrow-array-59 = { package = "arrow-array", version = "59", features = ["ffi"], optional = true }
+arrow-schema-59 = { package = "arrow-schema", version = "59", optional = true }
 
 [dev-dependencies]
 # Building a `local_files` Substrait plan + a parquet fixture for the execute test.

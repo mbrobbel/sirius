@@ -8,6 +8,20 @@
 //! Sirius library: constructing a [`SiriusContext`] from defaults or a YAML
 //! config file. More of the API surface is added in later PRs.
 
+#[cfg(all(feature = "arrow-58", feature = "arrow-59"))]
+compile_error!("features `arrow-58` and `arrow-59` are mutually exclusive");
+#[cfg(not(any(feature = "arrow-58", feature = "arrow-59")))]
+compile_error!("enable one of `arrow-58` or `arrow-59`");
+
+#[cfg(feature = "arrow-58")]
+extern crate arrow_array_58 as arrow_array;
+#[cfg(feature = "arrow-59")]
+extern crate arrow_array_59 as arrow_array;
+#[cfg(feature = "arrow-58")]
+extern crate arrow_schema_58 as arrow_schema;
+#[cfg(feature = "arrow-59")]
+extern crate arrow_schema_59 as arrow_schema;
+
 use std::path::Path;
 
 use arrow_array::RecordBatch;
@@ -111,7 +125,7 @@ impl std::error::Error for SiriusError {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "arrow-59"))]
 mod tests {
     use std::path::Path;
     use std::sync::{Arc, Mutex};
