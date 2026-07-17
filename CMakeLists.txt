@@ -465,7 +465,8 @@ foreach(_target sirius_extension sirius_loadable_extension)
   # protobuf.
   target_include_directories(
     ${_target}
-    PRIVATE ${SIRIUS_SUBSTRAIT_DIR}/src/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/duckdb/extension/core_functions/include
+            ${SIRIUS_SUBSTRAIT_DIR}/src/include
             ${SIRIUS_SUBSTRAIT_DIR}/third_party
             ${SIRIUS_SUBSTRAIT_DIR}/third_party/substrait)
 
@@ -487,7 +488,8 @@ foreach(_target sirius_extension sirius_loadable_extension)
     cuCascade::cucascade
     cuCascade::cucascade_cudf
     yaml-cpp::yaml-cpp
-    telemetry_bridge)
+    telemetry_bridge
+    core_functions_extension)
 
   add_dependencies(${_target} duckdb_static)
 endforeach()
