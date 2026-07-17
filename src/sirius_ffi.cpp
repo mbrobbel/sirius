@@ -66,29 +66,31 @@ struct Context::Impl {
     // path needs. Idempotent; the transparent path does this at extension load.
     sirius::converter_registry::initialize();
 
-    // Lowering a Substrait `local_files` read produces a `parquet_scan`, so the
-    // embedded DuckDB must have the parquet extension to bind it. Dev stopgap until
-    // parquet is linked into the engine: ONLY when SIRIUS_DUCKDB_PARQUET_EXTENSION
-    // points at a (locally-built, unsigned) parquet extension do we opt into
-    // unsigned loading and load it. Absent the env var, no unsigned loading is
-    // enabled — the default trust boundary is unchanged.
+    // Lowering Substrait plans requires DuckDB's core functions and produces a
+    // `parquet_scan` for `local_files` reads. Load their local extensions only
+    // when the corresponding paths are provided.
     duckdb::DBConfig db_config;
-    const char* parquet_ext = std::getenv("SIRIUS_DUCKDB_PARQUET_EXTENSION");
-    if (parquet_ext != nullptr) {
+    const char* core_functions_ext = std::getenv("SIRIUS_DUCKDB_CORE_FUNCTIONS_EXTENSION");
+    const char* parquet_ext        = std::getenv("SIRIUS_DUCKDB_PARQUET_EXTENSION");
+    if (core_functions_ext != nullptr || parquet_ext != nullptr) {
       db_config.SetOptionByName("allow_unsigned_extensions", duckdb::Value::BOOLEAN(true));
     }
     db   = duckdb::make_uniq<duckdb::DuckDB>(nullptr, &db_config);
     conn = duckdb::make_uniq<duckdb::Connection>(*db);
-    if (parquet_ext != nullptr) {
+
+    const auto load_extension = [this](const char* extension_path) {
+      if (extension_path == nullptr) { return; }
       // Escape single quotes so the path can't break out of the SQL string literal.
-      std::string escaped(parquet_ext);
+      std::string escaped(extension_path);
       for (std::size_t pos = escaped.find('\''); pos != std::string::npos;
            pos             = escaped.find('\'', pos + 2)) {
         escaped.replace(pos, 1, "''");
       }
       auto load = conn->Query("LOAD '" + escaped + "'");
       if (load->HasError()) { load->ThrowError(); }
-    }
+    };
+    load_extension(core_functions_ext);
+    load_extension(parquet_ext);
     // Register the engine on the connection and disable DuckDB optimizer rewrites this
     // no-fallback FFI path cannot safely execute. The transparent path only disables
     // IN_CLAUSE and COMPRESSED_MATERIALIZATION here; this path remains more conservative.
