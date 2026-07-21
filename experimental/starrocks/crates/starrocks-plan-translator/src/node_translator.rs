@@ -7,9 +7,9 @@ use substrait::proto::read_rel::local_files::file_or_files::{
 };
 use substrait::proto::read_rel::{LocalFiles, NamedTable, ReadType};
 use substrait::proto::{
-    AggregateFunction, AggregateRel, CrossRel, Expression, FetchRel, FilterRel, JoinRel,
-    ProjectRel, ReadRel, Rel, RelCommon, SortField, SortRel, aggregate_rel, fetch_rel,
-    function_argument, join_rel, rel, rel_common, sort_field,
+    AggregateFunction, AggregateRel, Expression, FetchRel, FilterRel, JoinRel, ProjectRel, ReadRel,
+    Rel, RelCommon, SortField, SortRel, aggregate_rel, fetch_rel, function_argument, join_rel, rel,
+    rel_common, sort_field,
 };
 
 use crate::descriptor_table::DescriptorTable;
@@ -74,6 +74,15 @@ impl<'a> PlanContext<'a> {
     /// Creates an expression context for an expression over `row_tuples`.
     fn expr_context<'b>(&'b mut self, row_tuples: &'b [i32]) -> ExprContext<'b> {
         ExprContext::new(self.desc, self.registry, row_tuples)
+    }
+
+    /// Creates an expression context with synthetic slot-to-column mappings.
+    fn expr_context_with_slots<'b>(
+        &'b mut self,
+        row_tuples: &'b [i32],
+        slot_overrides: &'b std::collections::HashMap<(i32, i32), usize>,
+    ) -> ExprContext<'b> {
+        ExprContext::with_slot_overrides(self.desc, self.registry, row_tuples, slot_overrides)
     }
 }
 
@@ -327,13 +336,6 @@ fn translate_exchange(
             context: "EXCHANGE_NODE",
             field: "exchange_node",
         })?;
-    if exchange.sort_info.is_some() {
-        return Err(TranslateError::UnsupportedPlanNode {
-            node_id: node.node_id,
-            node_type: node.node_type,
-            reason: "merging exchanges are not supported by sequential execution",
-        });
-    }
     if exchange.input_row_tuples.is_empty() {
         return Err(TranslateError::MissingField {
             context: "TExchangeNode",
@@ -362,11 +364,26 @@ fn translate_exchange(
         .as_ref()
         .map(|structure| structure.types.len())
         .unwrap_or(0);
-    let translated = TranslatedRel {
+    let mut translated = TranslatedRel {
         rel: local_files_rel(schema, &input.paths),
         row_tuples: exchange.input_row_tuples.clone(),
         output_width,
     };
+    if let Some(sort_info) = &exchange.sort_info {
+        let sorts = sort_fields(sort_info, &translated, ctx)?;
+        let row_tuples = translated.row_tuples.clone();
+        translated = TranslatedRel {
+            rel: Rel {
+                rel_type: Some(rel::RelType::Sort(Box::new(SortRel {
+                    input: Some(Box::new(translated.rel)),
+                    sorts,
+                    ..Default::default()
+                }))),
+            },
+            row_tuples,
+            output_width,
+        };
+    }
     apply_conjuncts(translated, node, ctx)
 }
 
@@ -649,6 +666,7 @@ fn translate_hash_join(
 
     let combined_tuples = [left.row_tuples.as_slice(), right.row_tuples.as_slice()].concat();
     let mut conditions = Vec::new();
+    let mut first_equality = None;
     for eq in &join.eq_join_conjuncts {
         if let Some(opcode) = eq.opcode
             && opcode != TExprOpcode::EQ
@@ -663,6 +681,9 @@ fn translate_hash_join(
         let left_expr = eq.left.translate(&mut expr_ctx)?;
         let mut expr_ctx = ctx.expr_context(&combined_tuples);
         let right_expr = eq.right.translate(&mut expr_ctx)?;
+        if first_equality.is_none() {
+            first_equality = Some((left_expr.clone(), right_expr.clone()));
+        }
         let anchor = ctx.registry.register_function(URN_COMPARISON, "equal");
         conditions.push(expr_translator::scalar_function(
             anchor,
@@ -683,14 +704,17 @@ fn translate_hash_join(
     }
     let condition = and_conditions(conditions, ctx);
 
-    // Anti joins (from NOT IN / NOT EXISTS rewrites) are not translated: DuckDB's Substrait
-    // consumer has no left-anti conversion, so an emitted plan would fail downstream anyway.
-    let (join_type, semi) = match join.join_op {
-        TJoinOp::INNER_JOIN => (join_rel::JoinType::Inner, false),
-        TJoinOp::LEFT_OUTER_JOIN => (join_rel::JoinType::Left, false),
-        TJoinOp::RIGHT_OUTER_JOIN => (join_rel::JoinType::Right, false),
-        TJoinOp::FULL_OUTER_JOIN => (join_rel::JoinType::Outer, false),
-        TJoinOp::LEFT_SEMI_JOIN => (join_rel::JoinType::LeftSemi, true),
+    let (join_type, output) = match join.join_op {
+        TJoinOp::INNER_JOIN => (join_rel::JoinType::Inner, JoinOutput::Both),
+        TJoinOp::LEFT_OUTER_JOIN => (join_rel::JoinType::Left, JoinOutput::Both),
+        TJoinOp::RIGHT_OUTER_JOIN => (join_rel::JoinType::Right, JoinOutput::Both),
+        TJoinOp::FULL_OUTER_JOIN => (join_rel::JoinType::Outer, JoinOutput::Both),
+        TJoinOp::LEFT_SEMI_JOIN => (join_rel::JoinType::LeftSemi, JoinOutput::Left),
+        TJoinOp::LEFT_ANTI_JOIN => (join_rel::JoinType::Left, JoinOutput::LeftAnti),
+        TJoinOp::RIGHT_ANTI_JOIN => (join_rel::JoinType::Right, JoinOutput::RightAnti),
+        TJoinOp::NULL_AWARE_LEFT_ANTI_JOIN => {
+            (join_rel::JoinType::LeftMark, JoinOutput::NullAwareLeftAnti)
+        }
         _ => {
             return Err(TranslateError::UnsupportedPlanNode {
                 node_id: node.node_id,
@@ -700,11 +724,13 @@ fn translate_hash_join(
         }
     };
 
-    // Semi joins emit only the probe-side row; other joins emit probe then build columns.
-    let (row_tuples, output_width) = if semi {
-        (left.row_tuples.clone(), left.output_width)
-    } else {
-        (combined_tuples, left.output_width + right.output_width)
+    let (row_tuples, output_width) = match output {
+        JoinOutput::Left => (left.row_tuples.clone(), left.output_width),
+        JoinOutput::NullAwareLeftAnti => (left.row_tuples.clone(), left.output_width + 1),
+        _ => (
+            combined_tuples.clone(),
+            left.output_width + right.output_width,
+        ),
     };
 
     let joined = TranslatedRel {
@@ -720,12 +746,57 @@ fn translate_hash_join(
         row_tuples,
         output_width,
     };
+    let joined = match output {
+        JoinOutput::LeftAnti => {
+            let (_, right_key) = first_equality
+                .ok_or_else(|| TranslateError::malformed("left anti join has no equality key"))?;
+            let filtered = filter_is_null(joined, right_key, ctx);
+            emit_columns(
+                filtered,
+                (0..left.output_width as i32).collect(),
+                left.row_tuples,
+            )
+        }
+        JoinOutput::RightAnti => {
+            let (left_key, _) = first_equality
+                .ok_or_else(|| TranslateError::malformed("right anti join has no equality key"))?;
+            let filtered = filter_is_null(joined, left_key, ctx);
+            let start = left.output_width as i32;
+            let end = start + right.output_width as i32;
+            emit_columns(filtered, (start..end).collect(), right.row_tuples)
+        }
+        JoinOutput::NullAwareLeftAnti => {
+            let marker = field_selection(left.output_width as i32);
+            let not_anchor = ctx.registry.register_function(URN_BOOLEAN, "not");
+            let condition = expr_translator::scalar_function(
+                not_anchor,
+                vec![marker],
+                crate::type_mapper::bool_type(),
+            );
+            let filtered = filter_rel(joined, condition);
+            emit_columns(
+                filtered,
+                (0..left.output_width as i32).collect(),
+                left.row_tuples,
+            )
+        }
+        _ => joined,
+    };
     // Node conjuncts are post-join predicates over the join's output row.
     apply_conjuncts(joined, node, ctx)
 }
 
-/// Translates a `NESTLOOP_JOIN_NODE` into a Substrait cross product (plus a filter when the
-/// join carries conjuncts). Only inner/cross nested-loop joins are supported.
+#[derive(Clone, Copy)]
+enum JoinOutput {
+    Both,
+    Left,
+    LeftAnti,
+    RightAnti,
+    NullAwareLeftAnti,
+}
+
+/// Translates an inner/cross `NESTLOOP_JOIN_NODE` into an equality join on synthetic constants.
+/// This preserves Cartesian-product semantics without requiring a GPU cross-product operator.
 fn translate_nestloop_join(
     node: &TPlanNode,
     children: Vec<TranslatedRel>,
@@ -752,34 +823,36 @@ fn translate_nestloop_join(
     let mut children = children.into_iter();
     let left = children.next().unwrap();
     let right = children.next().unwrap();
+    let left_width = left.output_width;
+    let right_width = right.output_width;
     let row_tuples = [left.row_tuples.as_slice(), right.row_tuples.as_slice()].concat();
-    let output_width = left.output_width + right.output_width;
-
-    let cross = TranslatedRel {
+    let left = append_project(left, i32_literal(1));
+    let right = append_project(right, i32_literal(1));
+    let equal_anchor = ctx.registry.register_function(URN_COMPARISON, "equal");
+    let condition = expr_translator::scalar_function(
+        equal_anchor,
+        vec![
+            field_selection(left_width as i32),
+            field_selection((left.output_width + right_width) as i32),
+        ],
+        crate::type_mapper::bool_type(),
+    );
+    let joined = TranslatedRel {
         rel: Rel {
-            rel_type: Some(rel::RelType::Cross(Box::new(CrossRel {
+            rel_type: Some(rel::RelType::Join(Box::new(JoinRel {
                 left: Some(Box::new(left.rel)),
                 right: Some(Box::new(right.rel)),
+                expression: Some(Box::new(condition)),
+                r#type: join_rel::JoinType::Inner as i32,
                 ..Default::default()
             }))),
         },
-        row_tuples,
-        output_width,
+        row_tuples: row_tuples.clone(),
+        output_width: left.output_width + right.output_width,
     };
-
-    // A conjunct-free cross product is rejected: the GPU physical planner has no cross-product
-    // operator, so the plan would translate and then fail at execution.
-    if join
-        .join_conjuncts
-        .as_ref()
-        .is_none_or(|conjuncts| conjuncts.is_empty())
-    {
-        return Err(TranslateError::UnsupportedPlanNode {
-            node_id: node.node_id,
-            node_type: node.node_type,
-            reason: "cross joins without join conjuncts are not supported",
-        });
-    }
+    let mut mapping = (0..left_width as i32).collect::<Vec<_>>();
+    mapping.extend(left.output_width as i32..left.output_width as i32 + right_width as i32);
+    let cross = emit_columns(joined, mapping, row_tuples);
     let filtered = if let Some(conjuncts) = join
         .join_conjuncts
         .as_ref()
@@ -899,6 +972,19 @@ fn translate_project_node(
         node.row_tuples.clone()
     };
 
+    let output_tuple = output_tuples[0];
+    let mut input = child;
+    let mut common_slots = std::collections::HashMap::new();
+    for (&slot_id, expr) in project_node.common_slot_map.as_ref().into_iter().flatten() {
+        let expression = {
+            let mut expr_ctx = ctx.expr_context_with_slots(&input.row_tuples, &common_slots);
+            expr.translate(&mut expr_ctx)?
+        };
+        let field = input.output_width;
+        input = append_project(input, expression);
+        common_slots.insert((output_tuple, slot_id), field);
+    }
+
     let mut expressions = Vec::new();
     for &tuple_id in &output_tuples {
         for slot_id in ctx.desc.materialized_slot_ids(tuple_id)? {
@@ -908,12 +994,12 @@ fn translate_project_node(
                     node.node_id, slot_id
                 ))
             })?;
-            let mut expr_ctx = ctx.expr_context(&child.row_tuples);
+            let mut expr_ctx = ctx.expr_context_with_slots(&input.row_tuples, &common_slots);
             expressions.push(expr.translate(&mut expr_ctx)?);
         }
     }
 
-    Ok(project_rel(child, expressions, output_tuples))
+    Ok(project_rel(input, expressions, output_tuples))
 }
 
 /// Adds a root projection over explicit fragment output expressions.
@@ -978,6 +1064,119 @@ fn project_rel(
         row_tuples,
         output_width,
     }
+}
+
+/// Appends one expression to a relation while retaining all existing columns.
+fn append_project(input: TranslatedRel, expression: Expression) -> TranslatedRel {
+    let output_width = input.output_width + 1;
+    TranslatedRel {
+        rel: Rel {
+            rel_type: Some(rel::RelType::Project(Box::new(ProjectRel {
+                common: Some(RelCommon {
+                    emit_kind: Some(rel_common::EmitKind::Emit(rel_common::Emit {
+                        output_mapping: (0..output_width as i32).collect(),
+                    })),
+                    ..Default::default()
+                }),
+                input: Some(Box::new(input.rel)),
+                expressions: vec![expression],
+                ..Default::default()
+            }))),
+        },
+        row_tuples: input.row_tuples,
+        output_width,
+    }
+}
+
+/// Emits selected input columns without evaluating new expressions.
+fn emit_columns(
+    input: TranslatedRel,
+    output_mapping: Vec<i32>,
+    row_tuples: Vec<i32>,
+) -> TranslatedRel {
+    let output_width = output_mapping.len();
+    TranslatedRel {
+        rel: Rel {
+            rel_type: Some(rel::RelType::Project(Box::new(ProjectRel {
+                common: Some(RelCommon {
+                    emit_kind: Some(rel_common::EmitKind::Emit(rel_common::Emit {
+                        output_mapping,
+                    })),
+                    ..Default::default()
+                }),
+                input: Some(Box::new(input.rel)),
+                ..Default::default()
+            }))),
+        },
+        row_tuples,
+        output_width,
+    }
+}
+
+/// Builds a direct field selection against the current relation output.
+fn field_selection(field: i32) -> Expression {
+    use substrait::proto::expression::field_reference;
+    use substrait::proto::expression::reference_segment;
+    use substrait::proto::expression::{FieldReference, ReferenceSegment};
+
+    Expression {
+        rex_type: Some(substrait::proto::expression::RexType::Selection(Box::new(
+            FieldReference {
+                reference_type: Some(field_reference::ReferenceType::DirectReference(
+                    ReferenceSegment {
+                        reference_type: Some(reference_segment::ReferenceType::StructField(
+                            Box::new(reference_segment::StructField { field, child: None }),
+                        )),
+                    },
+                )),
+                root_type: Some(field_reference::RootType::RootReference(
+                    field_reference::RootReference {},
+                )),
+            },
+        ))),
+    }
+}
+
+/// Builds an i32 literal used as a synthetic Cartesian-product key.
+fn i32_literal(value: i32) -> Expression {
+    Expression {
+        rex_type: Some(substrait::proto::expression::RexType::Literal(
+            substrait::proto::expression::Literal {
+                literal_type: Some(substrait::proto::expression::literal::LiteralType::I32(
+                    value,
+                )),
+                ..Default::default()
+            },
+        )),
+    }
+}
+
+/// Wraps a relation in a filter without changing its row layout.
+fn filter_rel(input: TranslatedRel, condition: Expression) -> TranslatedRel {
+    let output_width = input.output_width;
+    TranslatedRel {
+        rel: Rel {
+            rel_type: Some(rel::RelType::Filter(Box::new(FilterRel {
+                input: Some(Box::new(input.rel)),
+                condition: Some(Box::new(condition)),
+                ..Default::default()
+            }))),
+        },
+        row_tuples: input.row_tuples,
+        output_width,
+    }
+}
+
+/// Filters to rows where an equality-key expression is null.
+fn filter_is_null(
+    input: TranslatedRel,
+    key: Expression,
+    ctx: &mut PlanContext<'_>,
+) -> TranslatedRel {
+    let anchor = ctx.registry.register_function(URN_COMPARISON, "is_null");
+    let condition =
+        expr_translator::scalar_function(anchor, vec![key], crate::type_mapper::bool_type());
+    filter_rel(input, condition)
 }
 
 /// Wraps a relation in a Substrait filter when the StarRocks node has conjuncts.
