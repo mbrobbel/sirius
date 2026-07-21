@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use crate::fragment_executor::FragmentExecutor;
 #[cfg(test)]
 use crate::fragment_executor::StubExecutor;
 use crate::local_exchange::{
-    ExchangeFile, ExchangeKey, ExchangeOutput, LocalExchange, ReadyExchange,
+    ExchangeFile, ExchangeKey, ExchangeOutput, LocalExchange, ReadyFragment,
 };
 use crate::proto::starrocks::{
     PExecBatchPlanFragmentsRequest, PExecBatchPlanFragmentsResult, PExecPlanFragmentRequest,
@@ -16,6 +17,7 @@ use crate::result_store::{FragmentInstanceId, ResultStore};
 use starrocks_plan_translator::{ExchangeInput, PlanTranslator, TranslatedPlan};
 use starrocks_thrift::{
     data_sinks::{TDataSinkType, TResultSinkType},
+    descriptors::TDescriptorTable,
     internal_service::{
         TExecBatchPlanFragmentsParams, TExecPlanFragmentParams, TGetFileSchemaRequest,
     },
@@ -44,6 +46,8 @@ pub(crate) struct SiriusComputeNodeService {
     results: Arc<ResultStore>,
     /// Sequential same-node fragment exchange state, shared across BRPC connections.
     exchanges: Arc<LocalExchange>,
+    /// StarRocks may send a descriptor table once per query and mark later fragments as cached.
+    descriptor_tables: Arc<Mutex<HashMap<FragmentInstanceId, TDescriptorTable>>>,
 }
 
 impl SiriusComputeNodeService {
@@ -62,6 +66,7 @@ impl SiriusComputeNodeService {
             executor,
             results: Arc::new(ResultStore::default()),
             exchanges: Arc::new(LocalExchange::default()),
+            descriptor_tables: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -204,38 +209,71 @@ impl SiriusComputeNodeService {
         &self,
         params: &TExecPlanFragmentParams,
     ) -> std::result::Result<(), String> {
-        Self::dump_fragment(params);
+        let params = self.resolve_descriptor_table(params)?;
+        Self::dump_fragment(&params);
         // Survey mode: accept every fragment so the FE dispatches (and we dump) the whole
         // plan even when translation fails. Queries still fail at fetch_data.
         if std::env::var_os("SIRIUS_CN_TRANSLATE_ONLY").is_some() {
-            if let Err(err) = self.translate_fragment_logged(params) {
+            if let Err(err) = self.translate_fragment_logged(&params) {
                 tracing::warn!(error = %err, "translate-only mode: accepting untranslatable fragment");
             }
             return Ok(());
         }
-        if let Some((node_id, expected_senders)) = Self::receiver_exchange(params)? {
-            if !Self::is_mysql_result_sink(params)? {
-                return Err("an exchange receiver must be the RESULT_SINK fragment".to_string());
-            }
-            let fragment_instance_id = Self::fragment_instance_id(params)
+        let expected_senders = Self::receiver_exchanges(&params)?;
+        if !expected_senders.is_empty() {
+            let fragment_instance_id = Self::fragment_instance_id(&params)
                 .ok_or_else(|| "exchange receiver is missing a fragment_instance_id".to_string())?;
-            self.results.reserve(fragment_instance_id);
-            let ready = self.exchanges.register_receiver(
-                ExchangeKey {
-                    fragment_instance_id,
-                    node_id,
-                },
-                expected_senders,
-                params.clone(),
-            )?;
+            if Self::is_mysql_result_sink(&params)? {
+                self.results.reserve(fragment_instance_id);
+            }
+            let ready =
+                self.exchanges
+                    .register_receiver(fragment_instance_id, expected_senders, params)?;
             if let Some(ready) = ready {
-                self.execute_ready_exchange(ready)?;
+                self.execute_ready_fragment(ready)?;
             }
             return Ok(());
         }
 
-        let translated = self.translate_fragment_logged(params)?;
-        self.execute_fragment(params, translated)
+        let translated = self.translate_fragment_logged(&params)?;
+        self.execute_fragment(&params, translated)
+    }
+
+    /// Restores descriptor tables omitted by StarRocks's per-query descriptor cache protocol.
+    fn resolve_descriptor_table(
+        &self,
+        params: &TExecPlanFragmentParams,
+    ) -> std::result::Result<TExecPlanFragmentParams, String> {
+        let mut resolved = params.clone();
+        let Some(query_id) = params
+            .params
+            .as_ref()
+            .map(|exec| FragmentInstanceId::from(&exec.query_id))
+        else {
+            return Ok(resolved);
+        };
+        let Some(desc) = params.desc_tbl.as_ref() else {
+            return Ok(resolved);
+        };
+        let is_cached_reference = desc.is_cached == Some(true)
+            && desc.slot_descriptors.as_ref().is_none_or(Vec::is_empty)
+            && desc.tuple_descriptors.is_empty()
+            && desc.table_descriptors.as_ref().is_none_or(Vec::is_empty);
+        let mut cache = self
+            .descriptor_tables
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if is_cached_reference {
+            resolved.desc_tbl = Some(
+                cache
+                    .get(&query_id)
+                    .cloned()
+                    .ok_or_else(|| format!("descriptor table cache miss for query {query_id}"))?,
+            );
+        } else {
+            cache.insert(query_id, desc.clone());
+        }
+        Ok(resolved)
     }
 
     /// Writes the received fragment params to `$SIRIUS_CN_DUMP_FRAGMENTS/fragment-<seq>.txt`
@@ -278,9 +316,6 @@ impl SiriusComputeNodeService {
         else {
             return Ok(());
         };
-        if stream_sink.is_merge == Some(true) {
-            return Err("merging data stream sinks are not supported".to_string());
-        }
         if stream_sink.limit.is_some_and(|limit| limit >= 0) {
             return Err("data stream sink limits are not supported".to_string());
         }
@@ -306,19 +341,13 @@ impl SiriusComputeNodeService {
             .as_ref()
             .filter(|destinations| !destinations.is_empty())
             .ok_or_else(|| "DATA_STREAM_SINK fragment has no destinations".to_string())?;
-        if destinations.len() != 1 {
-            return Err(format!(
-                "sequential same-node exchange requires one destination, got {}",
-                destinations.len()
-            ));
-        }
         let sender_id = exec.sender_id.unwrap_or(0);
         let result = self.executor.execute(&translated)?;
         let output = ExchangeOutput {
             names: translated.output_names,
             result,
         };
-        let mut ready_receivers = Vec::new();
+        let mut ready_fragments = Vec::new();
         for destination in destinations {
             let ready = self.exchanges.push_sender(
                 ExchangeKey {
@@ -331,39 +360,48 @@ impl SiriusComputeNodeService {
                 output.clone(),
             )?;
             if let Some(ready) = ready {
-                ready_receivers.push(ready);
+                ready_fragments.push(ready);
             }
         }
-        for ready in ready_receivers {
-            self.execute_ready_exchange(ready)?;
+        for ready in ready_fragments {
+            self.execute_ready_fragment(ready)?;
         }
         Ok(())
     }
 
-    /// Materializes a complete sender set, translates the receiver exchange as `local_files`, and
-    /// executes the receiver as a second single-shot plan.
-    fn execute_ready_exchange(&self, ready: ReadyExchange) -> std::result::Result<(), String> {
-        let file = ExchangeFile::materialize(&ready.outputs)?;
-        let path = file
-            .path()
-            .to_str()
-            .ok_or_else(|| "exchange file path is not valid UTF-8".to_string())?
-            .to_string();
-        let translated = self.translate_fragment_logged_with_inputs(
-            &ready.params,
-            &[ExchangeInput {
-                node_id: ready.key.node_id,
-                paths: vec![path],
-                names: file.names.clone(),
-            }],
-        )?;
+    /// Materializes all complete sender sets and executes the receiver as one single-shot plan.
+    fn execute_ready_fragment(&self, ready: ReadyFragment) -> std::result::Result<(), String> {
+        let files = ready
+            .inputs
+            .iter()
+            .map(|input| ExchangeFile::materialize(&input.outputs))
+            .collect::<Result<Vec<_>, _>>()?;
+        let exchange_inputs = ready
+            .inputs
+            .iter()
+            .zip(&files)
+            .map(|(input, file)| {
+                let path = file
+                    .path()
+                    .to_str()
+                    .ok_or_else(|| "exchange file path is not valid UTF-8".to_string())?
+                    .to_string();
+                Ok(ExchangeInput {
+                    node_id: input.node_id,
+                    paths: vec![path],
+                    names: file.names.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        let translated =
+            self.translate_fragment_logged_with_inputs(&ready.params, &exchange_inputs)?;
         self.execute_fragment(&ready.params, translated)
     }
 
-    /// Finds the sole exchange receiver in a sequential fragment and its expected sender count.
-    fn receiver_exchange(
+    /// Finds every exchange receiver in a fragment and each expected sender count.
+    fn receiver_exchanges(
         params: &TExecPlanFragmentParams,
-    ) -> std::result::Result<Option<(i32, usize)>, String> {
+    ) -> std::result::Result<Vec<(i32, usize)>, String> {
         let exchange_nodes = params
             .fragment
             .as_ref()
@@ -378,13 +416,13 @@ impl SiriusComputeNodeService {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
-        match exchange_nodes.as_slice() {
-            [] => Ok(None),
-            [node_id] => {
+        exchange_nodes
+            .into_iter()
+            .map(|node_id| {
                 let expected = params
                     .params
                     .as_ref()
-                    .and_then(|exec| exec.per_exch_num_senders.get(node_id))
+                    .and_then(|exec| exec.per_exch_num_senders.get(&node_id))
                     .copied()
                     .ok_or_else(|| {
                         format!("EXCHANGE_NODE {node_id} is missing per_exch_num_senders")
@@ -392,12 +430,9 @@ impl SiriusComputeNodeService {
                 let expected = usize::try_from(expected).map_err(|_| {
                     format!("EXCHANGE_NODE {node_id} has negative sender count {expected}")
                 })?;
-                Ok(Some((*node_id, expected)))
-            }
-            _ => Err(
-                "only one exchange node per sequential receiver fragment is supported".to_string(),
-            ),
-        }
+                Ok((node_id, expected))
+            })
+            .collect()
     }
 
     /// Deserializes a FE batch attachment and merges common params into each instance.
@@ -943,6 +978,59 @@ mod tests {
     }
 
     #[test]
+    fn self_exchange_executes_an_intermediate_receiver_and_reuses_cached_descriptors() {
+        let executor = Arc::new(CountingExecutor::default());
+        let service = SiriusComputeNodeService::with_executor(executor.clone());
+        let query_id = TUniqueId::new(20, 1);
+        let root_id = TUniqueId::new(20, 2);
+        let middle_id = TUniqueId::new(20, 3);
+
+        let mut root = fragment_params(Some(exchange_plan(9, 0)), Some(desc_table()));
+        root.fragment.as_mut().unwrap().output_sink = Some(result_sink());
+        let mut root_exec = exec_params(query_id.clone(), root_id.clone());
+        root_exec.per_exch_num_senders.insert(9, 1);
+        root.params = Some(root_exec);
+        assert_exec_ok(&service, &root);
+
+        let cached_desc = TDescriptorTable::new(None, Vec::new(), None, Some(true));
+        let mut middle = fragment_params(Some(exchange_plan(7, 0)), Some(cached_desc.clone()));
+        middle.fragment.as_mut().unwrap().output_sink = Some(data_stream_sink(9));
+        let mut middle_exec = exec_params(query_id.clone(), middle_id.clone());
+        middle_exec.per_exch_num_senders.insert(7, 1);
+        middle_exec.sender_id = Some(0);
+        middle_exec.destinations = Some(vec![TPlanFragmentDestination::new(
+            root_id.clone(),
+            None,
+            None,
+            None,
+        )]);
+        middle.params = Some(middle_exec);
+        assert_exec_ok(&service, &middle);
+
+        let mut leaf = fragment_params(Some(scan_plan(0, 0)), Some(cached_desc));
+        leaf.fragment.as_mut().unwrap().output_sink = Some(data_stream_sink(7));
+        let mut leaf_exec = exec_params(query_id, TUniqueId::new(20, 4));
+        leaf_exec.sender_id = Some(0);
+        leaf_exec.destinations = Some(vec![TPlanFragmentDestination::new(
+            middle_id, None, None, None,
+        )]);
+        leaf.params = Some(leaf_exec);
+        assert_exec_ok(&service, &leaf);
+
+        assert_eq!(executor.calls.load(Ordering::Relaxed), 3);
+        let fetched = route(
+            &service,
+            methods::FETCH_DATA,
+            fetch_request(root_id.hi, root_id.lo),
+            Vec::new(),
+        );
+        let fetched_result = PFetchDataResult::decode(fetched.body.as_slice()).unwrap();
+        assert_eq!(fetched_result.status.status_code, TStatusCode::OK.0);
+        assert_eq!(fetched_result.eos, Some(false));
+        assert!(!fetched.attachment.is_empty());
+    }
+
+    #[test]
     fn exec_plan_fragment_rejects_unsupported_result_sink_format() {
         // The encoder only emits MySQL text rows; a non-MySQL result sink must be rejected rather
         // than returned in the wrong wire format.
@@ -1019,6 +1107,25 @@ mod tests {
                     .await
             })
             .unwrap()
+    }
+
+    fn assert_exec_ok(service: &SiriusComputeNodeService, params: &TExecPlanFragmentParams) {
+        let response = route(
+            service,
+            methods::EXEC_PLAN_FRAGMENT,
+            PExecPlanFragmentRequest {
+                attachment_protocol: Some("binary".to_string()),
+            }
+            .encode_to_vec(),
+            serialize_binary(params),
+        );
+        let result = PExecPlanFragmentResult::decode(response.body.as_slice()).unwrap();
+        assert_eq!(
+            result.status.status_code,
+            TStatusCode::OK.0,
+            "{:?}",
+            result.status.error_msgs
+        );
     }
 
     fn result_sink() -> TDataSink {

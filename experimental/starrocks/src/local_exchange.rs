@@ -27,23 +27,29 @@ pub(crate) struct ExchangeOutput {
     pub(crate) result: FragmentResult,
 }
 
-/// A receiver whose complete sender set is ready for sequential execution.
+/// One complete materialized input of a receiver fragment.
 #[derive(Debug)]
-pub(crate) struct ReadyExchange {
-    pub(crate) params: TExecPlanFragmentParams,
-    pub(crate) key: ExchangeKey,
+pub(crate) struct ReadyExchangeInput {
+    pub(crate) node_id: i32,
     pub(crate) outputs: Vec<ExchangeOutput>,
+}
+
+/// A receiver fragment whose exchange inputs are all ready for sequential execution.
+#[derive(Debug)]
+pub(crate) struct ReadyFragment {
+    pub(crate) params: TExecPlanFragmentParams,
+    pub(crate) inputs: Vec<ReadyExchangeInput>,
 }
 
 #[derive(Debug)]
 struct PendingReceiver {
     params: TExecPlanFragmentParams,
-    expected_senders: usize,
+    expected_senders: HashMap<i32, usize>,
 }
 
 #[derive(Debug, Default)]
 struct ExchangeState {
-    receivers: HashMap<ExchangeKey, PendingReceiver>,
+    receivers: HashMap<FragmentInstanceId, PendingReceiver>,
     outputs: HashMap<ExchangeKey, HashMap<i32, ExchangeOutput>>,
 }
 
@@ -54,28 +60,41 @@ pub(crate) struct LocalExchange {
 }
 
 impl LocalExchange {
-    /// Registers a receiver, returning it immediately when all senders arrived first.
+    /// Registers a receiver fragment, returning it when every exchange input is complete.
     pub(crate) fn register_receiver(
         &self,
-        key: ExchangeKey,
-        expected_senders: usize,
+        fragment_instance_id: FragmentInstanceId,
+        expected_senders: Vec<(i32, usize)>,
         params: TExecPlanFragmentParams,
-    ) -> Result<Option<ReadyExchange>, String> {
-        if expected_senders == 0 {
-            return Err(format!("exchange node {} expects no senders", key.node_id));
+    ) -> Result<Option<ReadyFragment>, String> {
+        if expected_senders.is_empty() {
+            return Err("receiver fragment has no exchange inputs".to_string());
+        }
+        let mut expected_by_node = HashMap::with_capacity(expected_senders.len());
+        for (node_id, expected) in expected_senders {
+            if expected == 0 {
+                return Err(format!("exchange node {node_id} expects no senders"));
+            }
+            if expected_by_node.insert(node_id, expected).is_some() {
+                return Err(format!(
+                    "duplicate exchange node {node_id} in receiver fragment"
+                ));
+            }
         }
         let mut state = self.lock();
-        if state.receivers.contains_key(&key) {
-            return Err(format!("duplicate receiver registration for {key:?}"));
+        if state.receivers.contains_key(&fragment_instance_id) {
+            return Err(format!(
+                "duplicate receiver registration for fragment {fragment_instance_id}"
+            ));
         }
         state.receivers.insert(
-            key,
+            fragment_instance_id,
             PendingReceiver {
                 params,
-                expected_senders,
+                expected_senders: expected_by_node,
             },
         );
-        Self::take_ready(&mut state, key)
+        Self::take_ready(&mut state, fragment_instance_id)
     }
 
     /// Buffers one sender output, returning the receiver when this completes its sender set.
@@ -84,48 +103,65 @@ impl LocalExchange {
         key: ExchangeKey,
         sender_id: i32,
         output: ExchangeOutput,
-    ) -> Result<Option<ReadyExchange>, String> {
+    ) -> Result<Option<ReadyFragment>, String> {
         let mut state = self.lock();
         let senders = state.outputs.entry(key).or_default();
         if senders.contains_key(&sender_id) {
             return Err(format!("duplicate sender {sender_id} for exchange {key:?}"));
         }
         senders.insert(sender_id, output);
-        Self::take_ready(&mut state, key)
+        Self::take_ready(&mut state, key.fragment_instance_id)
     }
 
     fn take_ready(
         state: &mut ExchangeState,
-        key: ExchangeKey,
-    ) -> Result<Option<ReadyExchange>, String> {
-        let Some(receiver) = state.receivers.get(&key) else {
+        fragment_instance_id: FragmentInstanceId,
+    ) -> Result<Option<ReadyFragment>, String> {
+        let Some(receiver) = state.receivers.get(&fragment_instance_id) else {
             return Ok(None);
         };
-        let actual = state.outputs.get(&key).map(HashMap::len).unwrap_or(0);
-        if actual > receiver.expected_senders {
-            return Err(format!(
-                "exchange {key:?} received {actual} senders but expected {}",
-                receiver.expected_senders
-            ));
+        for (&node_id, &expected) in &receiver.expected_senders {
+            let key = ExchangeKey {
+                fragment_instance_id,
+                node_id,
+            };
+            let actual = state.outputs.get(&key).map(HashMap::len).unwrap_or(0);
+            if actual > expected {
+                return Err(format!(
+                    "exchange {key:?} received {actual} senders but expected {expected}"
+                ));
+            }
+            if actual != expected {
+                return Ok(None);
+            }
         }
-        if actual != receiver.expected_senders {
-            return Ok(None);
-        }
+
         let receiver = state
             .receivers
-            .remove(&key)
+            .remove(&fragment_instance_id)
             .expect("receiver checked above");
-        let mut senders = state.outputs.remove(&key).unwrap_or_default();
-        let mut sender_ids = senders.keys().copied().collect::<Vec<_>>();
-        sender_ids.sort_unstable();
-        let outputs = sender_ids
+        let mut node_ids = receiver.expected_senders.into_keys().collect::<Vec<_>>();
+        node_ids.sort_unstable();
+        let inputs = node_ids
             .into_iter()
-            .map(|sender_id| senders.remove(&sender_id).expect("sender id came from map"))
+            .map(|node_id| {
+                let key = ExchangeKey {
+                    fragment_instance_id,
+                    node_id,
+                };
+                let mut senders = state.outputs.remove(&key).unwrap_or_default();
+                let mut sender_ids = senders.keys().copied().collect::<Vec<_>>();
+                sender_ids.sort_unstable();
+                let outputs = sender_ids
+                    .into_iter()
+                    .map(|sender_id| senders.remove(&sender_id).expect("sender id came from map"))
+                    .collect();
+                ReadyExchangeInput { node_id, outputs }
+            })
             .collect();
-        Ok(Some(ReadyExchange {
+        Ok(Some(ReadyFragment {
             params: receiver.params,
-            key,
-            outputs,
+            inputs,
         }))
     }
 
