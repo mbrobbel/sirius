@@ -1031,6 +1031,41 @@ mod tests {
     }
 
     #[test]
+    fn cached_descriptor_reference_reuses_query_descriptor_table() {
+        let service = SiriusComputeNodeService::new();
+        let query_id = TUniqueId::new(4, 2);
+
+        let mut initial = fragment_params(None, Some(desc_table()));
+        initial.params = Some(exec_params(query_id.clone(), TUniqueId::new(4, 3)));
+        service
+            .resolve_descriptor_table(&initial)
+            .expect("cache initial descriptor table");
+
+        let cached = TDescriptorTable::new(None, Vec::new(), None, Some(true));
+        let mut reference = fragment_params(None, Some(cached));
+        reference.params = Some(exec_params(query_id, TUniqueId::new(4, 4)));
+        let resolved = service
+            .resolve_descriptor_table(&reference)
+            .expect("resolve cached descriptor table");
+
+        let desc = resolved.desc_tbl.expect("resolved descriptor table");
+        assert_eq!(desc.slot_descriptors.unwrap().len(), 2);
+        assert_eq!(desc.tuple_descriptors.len(), 1);
+        assert_eq!(desc.table_descriptors.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn cached_descriptor_reference_requires_prior_query_table() {
+        let service = SiriusComputeNodeService::new();
+        let cached = TDescriptorTable::new(None, Vec::new(), None, Some(true));
+        let mut reference = fragment_params(None, Some(cached));
+        reference.params = Some(exec_params(TUniqueId::new(7, 1), TUniqueId::new(7, 2)));
+
+        let err = service.resolve_descriptor_table(&reference).unwrap_err();
+        assert!(err.contains("descriptor table cache miss"), "{err}");
+    }
+
+    #[test]
     fn exec_plan_fragment_rejects_unsupported_result_sink_format() {
         // The encoder only emits MySQL text rows; a non-MySQL result sink must be rejected rather
         // than returned in the wrong wire format.
