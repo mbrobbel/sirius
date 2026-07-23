@@ -41,17 +41,7 @@ These operators produce data for pipelines. See [Scan](scan.md) for in-depth cov
 ### `sirius_physical_table_scan` — `TABLE_SCAN`
 **File:** `src/include/op/sirius_physical_table_scan.hpp`
 
-Base scan operator wrapping a DuckDB table function. Stores column IDs, projection IDs, and optional table filters for predicate pushdown. During pipeline construction it is converted into a format-specific wrapper (`DUCKDB_SCAN` or `PARQUET_SCAN`) for the CPU / DuckDB-source path; the GPU read path for parquet and DuckDB-native tables is instead rewritten into a `GPU_SCAN` source (see below).
-
-### `sirius_physical_duckdb_scan` — `DUCKDB_SCAN`
-**File:** `src/include/op/sirius_physical_duckdb_scan.hpp`
-
-Sequential scan using DuckDB's execution engine. Accumulates chunks into fixed-size batches via column builders. Tracks an atomic `exhausted` flag for pipeline completion.
-
-### `sirius_physical_parquet_scan` — `PARQUET_SCAN`
-**File:** `src/include/op/sirius_physical_parquet_scan.hpp`
-
-Wrapper for the DuckDB-source parquet path. Reads column-chunk byte ranges and optionally materializes (decompresses) to table format. Tracks `has_more_partitions` atomic flag. Row groups are partitioned by `approximate_batch_size`.
+Base scan operator wrapping a DuckDB table function. Stores column IDs, projection IDs, and optional table filters for predicate pushdown. It exists only as the plan-time carrier: during plan generation it is rewritten into a `GPU_SCAN` source (see below).
 
 ### `sirius_gpu_scan_operator` — `GPU_SCAN`
 **File:** `src/include/op/scan/sirius_gpu_scan_operator.hpp`
@@ -61,6 +51,50 @@ Unified GPU scan source operator for reading table data from storage. It carries
 The pipeline converter rewrites a DuckDB parquet or DuckDB-native table scan into a `GPU_SCAN` source: it lowers the bind data into the appropriate `ingestible_table_info`, builds the `gpu_ingestible`, and inserts the operator at `operators[0]` of the pipeline. Before a query runs, `sirius_scan_manager` prepares scan-side state — matching pinned-cache entries or building a `split_provider` over each operator's ingestible — and drives metadata production, split coalescing, and per-GPU balancing, pushing splits onto each operator's `split_connector`. `execute()` calls `gpu_ingestible::materialize_table` and, when a split carries filter/projection info, `gpu_ingestible::post_filter_and_project`.
 
 See [Scan](scan.md) for the full scan subsystem (scan manager, `gpu_ingestible`, pinned-table caching, and the IO layer).
+
+### `sirius_physical_streaming_source` — `STREAMING_SOURCE`
+**File:** `src/include/op/sirius_physical_streaming_source.hpp`
+
+Source operator that marks the bottom boundary of an intermediate pipeline fragment. It pulls
+`exchange_batch_handle` records (batch-id + size) from a bounded `exec::exchange_channel`, resolves
+each handle via a `cucascade::shared_data_repository`, and publishes the batch into the pipeline
+as a `pipelineable_operator_data`. Used only when a fragment's input arrives from another node
+over exchange; a leaf fragment keeps its normal `GPU_SCAN` source.
+
+Key design invariants:
+- The channel carries **handles**, not `shared_ptr`s — the repository owns the batch so queued
+  items remain spill-visible to the downgrade executor.
+- Engine workers use `try_pop` only (non-blocking); `push`/`pop` are provided for the wrapper/test side.
+- EOS is **close-then-drain**: `close()` forbids new pushes; queued handles stay poppable;
+  `drained()` (= `closed() && empty()`) is the terminal predicate.
+- `execute()` is a pure pass-through (COLUMN_DATA_SCAN shape — no GPU work).
+- `no_history_peak_memory_estimate()` returns `stats.bytes` (no extra allocation).
+
+Hint table:
+
+| Channel state | `get_next_task_hint()` |
+|---|---|
+| non-empty (open or closed) | `READY{this}` |
+| open, empty | `WAITING{nullptr}` — re-armable by the session on push (#839) |
+| closed && drained | `std::nullopt` — EOS |
+
+`all_ports_empty()` is overridden to `_input_channel->drained()`, driving both the task-creation
+loop guard and the port-less source pipeline-finish predicate.
+
+Channel close notifies the pipeline (`update_pipeline_status(false)`, via a weak pipeline
+reference wired in `set_pipeline`), so an empty or late-closed stream still finishes its
+pipeline — and re-arms downstream consumers — even when no task is left in flight.
+
+**Producer contract**: register the incoming batch in the input repository (`add_data_batch`) *first*,
+then push the handle. The session (#839) owns edge-triggered re-scheduling; the plan generator (#838)
+owns channel wiring.
+
+**Backpressure (open integration requirement for #839)**: `try_pop()` frees channel item/byte
+capacity at task-creation time, but the popped batches move into the unbounded task-scheduler
+queue — the channel bound therefore does not bound total outstanding data. When #839 wires the
+session, task creation must be gated on in-flight work (e.g. counting via the channel's `on_pop`
+hook and the task-completion path) so a fast producer cannot accumulate an arbitrarily large GPU
+backlog behind a nominally bounded channel.
 
 ### `sirius_physical_dummy_scan` — `DUMMY_SCAN`
 **File:** `src/include/op/sirius_physical_dummy_scan.hpp`
@@ -81,7 +115,7 @@ These operators process data in a single pass without buffering.
 
 Applies a predicate expression to filter rows.
 
-- **GPU execution:** `gpu_expression_executor::select(batch)` — evaluates the boolean expression and compacts rows using cuDF filtering
+- **GPU execution:** `expression_evaluator::select(batch)` — evaluates the boolean expression and compacts rows using cuDF filtering
 - **Key members:** `expression` (filter predicate)
 
 ### `sirius_physical_projection` — `PROJECTION`
@@ -90,11 +124,11 @@ Applies a predicate expression to filter rows.
 Evaluates a list of expressions to produce output columns.
 
 - **GPU execution:** the operator classifies each `select_list` entry as either a pure column passthrough (a `sirius::ast::reference` / BOUND_REF) or an expression that must be evaluated, then takes one of three paths per input batch:
-  - **All evaluated:** `gpu_expression_executor::execute()` produces an owned `cudf::table` of new columns.
+  - **All evaluated:** `expression_evaluator::evaluate()` produces an owned `cudf::table` of new columns.
   - **All passthrough:** the output is a zero-copy `cudf::table_view` over the input columns. The output batch is a view-backed `gpu_table_representation` (see [data management](data-management.md)) whose owner is the input's `read_only_data_batch` lock, which keeps the source columns alive and read-only-pinned for the output's lifetime — no device copies.
   - **Mixed:** only the non-passthrough entries are evaluated; the output view mixes the freshly-evaluated columns with the input's passthrough columns, owned jointly by the evaluated table and the input lock.
 
-  Only the entries that need evaluation are passed to the expression executor (via its `std::vector<sirius::ast::node const*>` constructor). See [expression executor](expression-executor.md).
+  Only the entries that need evaluation are passed to the expression evaluator (via its `std::vector<sirius::ast::node const*>` constructor). See [expression evaluator](expression-executor.md).
 - **Key members:** `select_list` (output expressions)
 
 ### `sirius_physical_streaming_limit` — `STREAMING_LIMIT`
@@ -117,10 +151,12 @@ Three execution modes:
 | Mode | When Used | cuDF API |
 |------|-----------|----------|
 | `STANDARD` | Default, multi-partition Cartesian product | `cudf::inner_join()`, `cudf::left_join()`, etc. |
-| `BUILD_PROBE` | Single partition, small build side (< `max_build_hash_table_bytes`) foldable to one batch | `cudf::hash_join`, `cudf::distinct_hash_join`, or `cudf::filtered_join` — built once, probed many times |
+| `BUILD_PROBE` | Up to one partition per GPU, per-partition build side (< `max_build_hash_table_bytes`) foldable to one batch | `cudf::hash_join`, `cudf::distinct_hash_join`, or `cudf::filtered_join` — built once per partition, probed many times |
 | `MIXED_JOIN` | Equality + inequality conditions on disjoint columns | `cudf::mixed_join()` with cuDF AST |
 
-`update_join_exec_mode()` selects BUILD_PROBE when there is one partition, the build side fits and folds to a single batch, and the join type is not SEMI, ANTI, or RIGHT (these stay in STANDARD mode). INNER, LEFT, OUTER, and MARK joins are all eligible.
+`update_join_exec_mode()` selects BUILD_PROBE when `num_partitions <= num_gpus` (one hash table per partition, at most one partition per GPU — this reduces to the historical single-partition rule when `num_gpus == 1`), the per-GPU build side fits `max_build_hash_table_bytes` and folds to a single batch, and the join is not RIGHT-family (`RIGHT`, `RIGHT_SEMI`, `RIGHT_ANTI`), `MIXED_JOIN`, or full `OUTER`. INNER, LEFT, MARK, SEMI, and ANTI joins are eligible (SEMI/ANTI/MARK build a persistent `cudf::filtered_join` on the right and stream left probe batches). Full outer is excluded because BUILD_PROBE streams probe batches and calls `full_join` per batch, which would re-emit unmatched build rows on every batch (and, under broadcast/partitioning, on every GPU) with no global accumulation — full outer joins use the STANDARD path. The pure eligibility gate is `build_probe_mode_eligible()`. For a broadcast join the **full** replicated build size is charged against `max_build_hash_table_bytes` (each GPU builds the entire table); a hash-partitioned build charges the per-partition average.
+
+**Broadcast small build tables.** On multi-GPU, when the build side is small (`< small_table_bytes`), instead of routing the whole build to one GPU the PARTITION operator proposes `num_gpus` partitions and *replicates* the small build table to every GPU (the `_broadcast` flag), so each GPU builds its own hash table and joins its local probe rows. The build sink deposits the build batch into every slot; the probe sink routes each batch to the slot for its current GPU (`slot_for_device`). Once the probe side finishes, any slot that received replicated build data but no probe rows is discarded (`discard_build_only_slots_if_probe_complete`). The pure candidate decision is `make_broadcast_partition_decision()`; right-family / mixed joins reject BUILD_PROBE and fall back to the normal partition count.
 
 #### MARK joins
 A MARK join emits every left row plus a `BOOL8` mark column indicating whether each left row had a match. Both build strategies funnel through `resolve_mark_join_result`, which scatters left-row match indices into the mark column.
@@ -217,8 +253,8 @@ Repartitions data into N buckets based on partition keys.
 
 - **Modes:** `HASH` (most common), `RANGE`, `EVENLY`, `CUSTOM`, `NONE`
 - **Adaptive count:** `determine_num_partitions()` computes N from actual input data size and `hash_partition_bytes` config
-- **Sibling coordination:** Build-side partition determines count; probe-side waits for the result
-- **Key members:** `_partition_keys`, `_partition_type`, `_num_partitions`, `_is_build`, `_sibling_partition_op`
+- **Sibling coordination:** Build-side partition normally determines the shared count. For RIGHT-family hash joins other than `RIGHT_DELIM_JOIN`, the retained probe side determines it instead.
+- **Key members:** `_partition_keys`, `_partition_type`, `_num_partitions`, `_is_build`, `_drives_partition_count`, `_sibling_partition_op`
 
 ### `sirius_physical_concat` — `CONCAT`
 **File:** `src/include/op/sirius_physical_concat.hpp`
@@ -309,13 +345,12 @@ After pipeline finalization, `source` and `sink` are just aliases for the first 
 
 | Operator | Category | GPU Method |
 |----------|----------|-----------|
-| DUCKDB_SCAN | Scan | DuckDB table function (CPU / DuckDB-source path) |
-| PARQUET_SCAN | Scan | Parquet reading (CPU / DuckDB-source path) |
 | GPU_SCAN | Scan | Unified GPU scan source served by `sirius_scan_manager` via a per-format `gpu_ingestible` |
+| STREAMING_SOURCE | Scan | Exchange-input source; pulls batch handles from `exchange_channel`, resolves via `shared_data_repository` |
 | DUMMY_SCAN | Scan | Generates 1 row |
 | COLUMN_DATA_SCAN | Scan | Reads ColumnDataCollection |
-| FILTER | Relational | `gpu_expression_executor::select()` |
-| PROJECTION | Relational | `gpu_expression_executor::execute()` |
+| FILTER | Relational | `expression_evaluator::select()` |
+| PROJECTION | Relational | `expression_evaluator::evaluate()` |
 | STREAMING_LIMIT | Relational | Atomic claim-based |
 | ORDER_BY | Sort | `gpu_order_impl::local_order_by()` |
 | TOP_N | Sort | Order + limit |

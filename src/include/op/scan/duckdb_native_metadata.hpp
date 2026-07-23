@@ -28,6 +28,7 @@
 #include <duckdb/main/client_context.hpp>
 #include <duckdb/planner/table_filter.hpp>
 #include <duckdb/storage/data_table.hpp>
+#include <duckdb/storage/statistics/base_statistics.hpp>
 #include <duckdb/storage/storage_index.hpp>
 
 #include <cstddef>
@@ -60,8 +61,23 @@ struct duckdb_segment_descriptor {
   /// Some; Some(0) is the legal all-empty-row-group case.
   std::optional<std::uint32_t> max_string_length;
   /// Byte size of this segment's main-block payload. Excludes
-  /// `additional_blocks`; 0 when `block_id < 0`.
+  /// `additional_blocks`; 0 when `block_id < 0` and `host_ptr` is null.
   std::size_t bytes_size = 0;
+  /// Host-backed source: when set, the decoder copies [host_ptr, host_ptr +
+  /// bytes_size) to the device instead of reading `block_id` from the file.
+  /// Used by the insert-delta job for in-memory (transient) segments; the
+  /// bytes' owner is the enclosing scan_info's staging keep-alive, never this
+  /// descriptor.
+  std::uint8_t const* host_ptr = nullptr;
+  /// Validity segments only: a CONSTANT run whose stats mark it all-NULL.
+  /// Blockless — no bytes exist anywhere; the decoder synthesizes zero
+  /// validity bits for the covered rows.
+  bool all_null = false;
+  /// CONSTANT data segments: snapshot of the segment's own statistics, taken
+  /// while the segment is in hand. The decoder must take the constant value
+  /// from here — row-group-level stats merge later appends into the same row
+  /// group and can drift away from this segment's value.
+  std::shared_ptr<duckdb::BaseStatistics> segment_stats;
 };
 
 /// Side note of metadata for ARRAY type
@@ -197,5 +213,10 @@ struct duckdb_native_row_group_range {
 };
 duckdb_native_row_group_range walk_duckdb_native_row_group_range(
   const duckdb_native_walk_plan& plan, std::size_t rg_begin, std::size_t rg_end);
+
+/// @brief Row groups per parallel-walk task unit (env `SIRIUS_METADATA_PARSE_CHUNK`,
+/// default 8). Shared by the metadata parse fan-out and the MVCC mask job so both
+/// slice row-group work into the same task granularity.
+std::size_t metadata_parse_chunk();
 
 }  // namespace sirius::op::scan

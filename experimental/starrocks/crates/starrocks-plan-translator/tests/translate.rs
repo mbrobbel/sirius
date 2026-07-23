@@ -8,18 +8,22 @@ use starrocks_thrift::descriptors::{
     TDescriptorTable, TSlotDescriptor, TTableDescriptor, TTupleDescriptor,
 };
 use starrocks_thrift::exprs::{
-    TBoolLiteral, TDecimalLiteral, TExpr, TExprNode, TExprNodeType, TFloatLiteral, TIntLiteral,
-    TIsNullPredicate, TSlotRef, TStringLiteral,
+    TBoolLiteral, TCaseExpr, TDateLiteral, TDecimalLiteral, TExpr, TExprNode, TExprNodeType,
+    TFloatLiteral, TInPredicate, TIntLiteral, TIsNullPredicate, TSlotRef, TStringLiteral,
 };
-use starrocks_thrift::internal_service::{InternalServiceVersion, TExecPlanFragmentParams};
+use starrocks_thrift::internal_service::{
+    InternalServiceVersion, TExecPlanFragmentParams, TPlanFragmentExecParams, TScanRangeParams,
+};
 use starrocks_thrift::opcodes::TExprOpcode;
 use starrocks_thrift::partitions::{TDataPartition, TPartitionType};
 use starrocks_thrift::plan_nodes::{
-    TFileScanNode, TPlan, TPlanNode, TPlanNodeType, TProjectNode, TSelectNode,
+    TBrokerRangeDesc, TBrokerScanRange, TBrokerScanRangeParams, TFileFormatType, TFileScanNode,
+    TFileScanType, TPlan, TPlanNode, TPlanNodeType, TProjectNode, TScanRange, TSelectNode,
 };
 use starrocks_thrift::planner::TPlanFragment;
 use starrocks_thrift::types::{
-    TPrimitiveType, TScalarType, TTableType, TTypeDesc, TTypeNode, TTypeNodeType,
+    TFileType, TFunction, TFunctionBinaryType, TFunctionName, TPrimitiveType, TScalarType,
+    TTableType, TTypeDesc, TTypeNode, TTypeNodeType, TUniqueId,
 };
 use substrait::proto::{expression, plan_rel, read_rel, rel};
 
@@ -425,6 +429,512 @@ fn scan_only_produces_named_table() {
     }
 }
 
+/// Builds a single local broker scan range for `path` with the given format,
+/// start offset, size, and optional total file size.
+fn broker_scan_range(
+    path: &str,
+    format: TFileFormatType,
+    start_offset: i64,
+    size: i64,
+    file_size: Option<i64>,
+) -> TScanRange {
+    let range = TBrokerRangeDesc::new(
+        TFileType::FILE_BROKER,
+        format,
+        false,
+        path.to_string(),
+        start_offset,
+        size,
+        None,
+        file_size,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    let mut params = TBrokerScanRangeParams::new(
+        0,
+        0,
+        0,
+        Vec::new(),
+        0,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    // Production-shaped supported slice: a FILES() query read with direct (non-broker)
+    // access; collection rejects anything else.
+    params.file_scan_type = Some(TFileScanType::FILES_QUERY);
+    params.use_broker = Some(false);
+    let broker = TBrokerScanRange::new(vec![range], params, Vec::new(), None, None, None, None);
+    TScanRange::new(None, None, Some(broker), None, None, None)
+}
+
+/// Builds fragment params whose `node_id` scan carries `scan_range`.
+fn params_with_scan_range(
+    plan: TPlan,
+    desc_tbl: TDescriptorTable,
+    node_id: i32,
+    scan_range: TScanRange,
+) -> TExecPlanFragmentParams {
+    let mut fragment_params = params(Some(plan), Some(desc_tbl), None);
+    let mut per_node_scan_ranges = BTreeMap::new();
+    per_node_scan_ranges.insert(
+        node_id,
+        vec![TScanRangeParams::new(scan_range, None, None, None)],
+    );
+    fragment_params.params = Some(TPlanFragmentExecParams::new(
+        TUniqueId::new(0, 0),
+        TUniqueId::new(0, 0),
+        per_node_scan_ranges,
+        BTreeMap::new(),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ));
+    fragment_params
+}
+
+/// Builds fragment params whose `node_id` scan carries `scan_range` via the
+/// pipeline per-driver-sequence map instead of `per_node_scan_ranges`.
+fn params_with_per_driver_scan_range(
+    plan: TPlan,
+    desc_tbl: TDescriptorTable,
+    node_id: i32,
+    scan_range: TScanRange,
+) -> TExecPlanFragmentParams {
+    let mut fragment_params = params(Some(plan), Some(desc_tbl), None);
+    let mut per_seq = BTreeMap::new();
+    per_seq.insert(0, vec![TScanRangeParams::new(scan_range, None, None, None)]);
+    let mut per_driver = BTreeMap::new();
+    per_driver.insert(node_id, per_seq);
+    fragment_params.params = Some(TPlanFragmentExecParams::new(
+        TUniqueId::new(0, 0),
+        TUniqueId::new(0, 0),
+        BTreeMap::new(),
+        BTreeMap::new(),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        per_driver,
+        None,
+        None,
+        None,
+        None,
+    ));
+    fragment_params
+}
+
+/// Verifies a scan with broker ranges becomes a Substrait `local_files` parquet read.
+#[test]
+fn scan_with_broker_ranges_produces_local_files() {
+    let path = "file:///data/users.parquet";
+    let translated = PlanTranslator::new()
+        .translate_fragment(&params_with_scan_range(
+            TPlan::new(vec![scan_node(0, 0)]),
+            base_desc(),
+            0,
+            broker_scan_range(path, TFileFormatType::FORMAT_PARQUET, 0, -1, Some(1024)),
+        ))
+        .unwrap();
+
+    assert_eq!(translated.output_names, vec!["id", "name"]);
+    let input = root(&translated.plan).input.as_ref().unwrap();
+    match input.rel_type.as_ref().unwrap() {
+        rel::RelType::Read(read) => {
+            assert_eq!(read.base_schema.as_ref().unwrap().names, vec!["id", "name"]);
+            match read.read_type.as_ref().unwrap() {
+                read_rel::ReadType::LocalFiles(local) => {
+                    assert_eq!(local.items.len(), 1);
+                    let item = &local.items[0];
+                    assert!(matches!(
+                        item.file_format.as_ref(),
+                        Some(read_rel::local_files::file_or_files::FileFormat::Parquet(_))
+                    ));
+                    match item.path_type.as_ref().unwrap() {
+                        read_rel::local_files::file_or_files::PathType::UriFile(uri) => {
+                            assert_eq!(uri, path);
+                        }
+                        other => panic!("expected uri_file, got {other:?}"),
+                    }
+                }
+                other => panic!("expected local files, got {other:?}"),
+            }
+        }
+        other => panic!("expected read rel, got {other:?}"),
+    }
+}
+
+/// Verifies a non-parquet broker scan range is rejected as unsupported.
+#[test]
+fn non_parquet_broker_range_is_unsupported() {
+    let err = PlanTranslator::new()
+        .translate_fragment(&params_with_scan_range(
+            TPlan::new(vec![scan_node(0, 0)]),
+            base_desc(),
+            0,
+            broker_scan_range(
+                "file:///data/users.orc",
+                TFileFormatType::FORMAT_ORC,
+                0,
+                -1,
+                None,
+            ),
+        ))
+        .unwrap_err();
+    assert!(matches!(
+        err,
+        TranslateError::UnsupportedScanRange { node_id: 0, .. }
+    ));
+}
+
+/// Verifies a byte-range split broker scan range is rejected as unsupported,
+/// both for a non-zero start offset and for a first split (offset 0, partial size).
+#[test]
+fn split_broker_range_is_unsupported() {
+    for range in [
+        broker_scan_range(
+            "file:///data/users.parquet",
+            TFileFormatType::FORMAT_PARQUET,
+            1024,
+            -1,
+            None,
+        ),
+        broker_scan_range(
+            "file:///data/users.parquet",
+            TFileFormatType::FORMAT_PARQUET,
+            0,
+            512,
+            Some(1024),
+        ),
+    ] {
+        let err = PlanTranslator::new()
+            .translate_fragment(&params_with_scan_range(
+                TPlan::new(vec![scan_node(0, 0)]),
+                base_desc(),
+                0,
+                range,
+            ))
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            TranslateError::UnsupportedScanRange { node_id: 0, .. }
+        ));
+    }
+}
+
+/// Verifies a scan range delivered via the pipeline per-driver-sequence map is
+/// collected too (not just `per_node_scan_ranges`).
+#[test]
+fn per_driver_scan_range_produces_local_files() {
+    let path = "file:///data/users.parquet";
+    let translated = PlanTranslator::new()
+        .translate_fragment(&params_with_per_driver_scan_range(
+            TPlan::new(vec![scan_node(0, 0)]),
+            base_desc(),
+            0,
+            broker_scan_range(path, TFileFormatType::FORMAT_PARQUET, 0, -1, Some(1024)),
+        ))
+        .unwrap();
+
+    let input = root(&translated.plan).input.as_ref().unwrap();
+    match input.rel_type.as_ref().unwrap() {
+        rel::RelType::Read(read) => match read.read_type.as_ref().unwrap() {
+            read_rel::ReadType::LocalFiles(local) => {
+                assert_eq!(local.items.len(), 1);
+                match local.items[0].path_type.as_ref().unwrap() {
+                    read_rel::local_files::file_or_files::PathType::UriFile(uri) => {
+                        assert_eq!(uri, path);
+                    }
+                    other => panic!("expected uri_file, got {other:?}"),
+                }
+            }
+            other => panic!("expected local files, got {other:?}"),
+        },
+        other => panic!("expected read rel, got {other:?}"),
+    }
+}
+
+/// Asserts a single-node scan over `scan_range` is rejected as an unsupported range.
+fn assert_scan_range_unsupported(scan_range: TScanRange) {
+    let err = PlanTranslator::new()
+        .translate_fragment(&params_with_scan_range(
+            TPlan::new(vec![scan_node(0, 0)]),
+            base_desc(),
+            0,
+            scan_range,
+        ))
+        .unwrap_err();
+    assert!(
+        matches!(err, TranslateError::UnsupportedScanRange { node_id: 0, .. }),
+        "expected UnsupportedScanRange, got {err:?}"
+    );
+}
+
+/// A whole-file local parquet `FILES()` range used as the base for negative cases.
+fn parquet_query_range(path: &str) -> TScanRange {
+    broker_scan_range(path, TFileFormatType::FORMAT_PARQUET, 0, -1, Some(1024))
+}
+
+/// Verifies a broker range with path-derived columns is rejected as unsupported.
+#[test]
+fn path_derived_columns_are_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range.broker_scan_range.as_mut().unwrap().ranges[0].columns_from_path =
+        Some(vec!["dt".to_string()]);
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies a load scan (not a FILES() query) is rejected: only query reads map to
+/// a plain `parquet_scan`.
+#[test]
+fn load_scan_range_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .file_scan_type = Some(TFileScanType::LOAD);
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies broker-mediated access is rejected: Sirius's reader does not use a broker.
+#[test]
+fn broker_mediated_scan_range_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .use_broker = Some(true);
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies flexible (name-based, null-filling) column mapping is rejected.
+#[test]
+fn flexible_column_mapping_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .flexible_column_mapping = Some(true);
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies a destination column produced by a transform (here a literal default,
+/// not a bare slot reference) is rejected rather than silently dropped.
+#[test]
+fn dest_column_transform_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .expr_of_dest_slot = Some(BTreeMap::from([(1, int_literal(7))]));
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies an explicit identity column mapping (bare slot references) is accepted.
+#[test]
+fn identity_dest_column_mapping_is_supported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .expr_of_dest_slot = Some(BTreeMap::from([
+        (1, slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT))),
+        (2, slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR))),
+    ]));
+    let translated = PlanTranslator::new()
+        .translate_fragment(&params_with_scan_range(
+            TPlan::new(vec![scan_node(0, 0)]),
+            base_desc(),
+            0,
+            scan_range,
+        ))
+        .unwrap();
+    let input = root(&translated.plan).input.as_ref().unwrap();
+    assert!(matches!(
+        input.rel_type.as_ref().unwrap(),
+        rel::RelType::Read(read)
+            if matches!(read.read_type.as_ref().unwrap(), read_rel::ReadType::LocalFiles(_))
+    ));
+}
+
+/// Verifies a remote URI scheme is rejected: credentials/endpoints are not propagated.
+#[test]
+fn remote_scheme_scan_range_is_unsupported() {
+    assert_scan_range_unsupported(parquet_query_range("s3://bucket/users.parquet"));
+}
+
+/// Verifies a path with glob metacharacters is rejected: `parquet_scan` would re-expand it.
+#[test]
+fn glob_path_scan_range_is_unsupported() {
+    assert_scan_range_unsupported(parquet_query_range("file:///data/*.parquet"));
+}
+
+/// Verifies a bounded-size range with unknown file size is rejected: it cannot be
+/// proven to cover the whole file, and the size is dropped by `local_files`.
+#[test]
+fn bounded_split_with_unknown_file_size_is_unsupported() {
+    assert_scan_range_unsupported(broker_scan_range(
+        "file:///data/users.parquet",
+        TFileFormatType::FORMAT_PARQUET,
+        0,
+        512,
+        None,
+    ));
+}
+
+/// Verifies an empty (zero-byte) file range is rejected: it is not a readable
+/// parquet file, so it must not be passed to `parquet_scan`.
+#[test]
+fn empty_file_scan_range_is_unsupported() {
+    assert_scan_range_unsupported(broker_scan_range(
+        "file:///data/users.parquet",
+        TFileFormatType::FORMAT_PARQUET,
+        0,
+        0,
+        Some(0),
+    ));
+}
+
+/// Verifies a renamed column mapping is rejected: destination slot 1 ("id") fed
+/// from source slot 2 ("name") would have the reader read the wrong column by name.
+#[test]
+fn renamed_column_mapping_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .expr_of_dest_slot = Some(BTreeMap::from([(
+        1,
+        slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)),
+    )]));
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies an absent `use_broker` is rejected: it selects the broker filesystem,
+/// not the direct access Sirius's reader performs.
+#[test]
+fn unset_use_broker_scan_range_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range
+        .broker_scan_range
+        .as_mut()
+        .unwrap()
+        .params
+        .use_broker = None;
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies a non-broker file descriptor (e.g. a stream) is rejected: it is a load
+/// shape, not a readable file scan.
+#[test]
+fn stream_file_type_scan_range_is_unsupported() {
+    let mut scan_range = parquet_query_range("file:///data/users.parquet");
+    scan_range.broker_scan_range.as_mut().unwrap().ranges[0].file_type = TFileType::FILE_STREAM;
+    assert_scan_range_unsupported(scan_range);
+}
+
+/// Verifies a `file://` URI with a non-local authority is rejected.
+#[test]
+fn remote_authority_file_uri_is_unsupported() {
+    assert_scan_range_unsupported(parquet_query_range("file://remote-host/data/users.parquet"));
+}
+
+/// Verifies a single-slash remote scheme (no `://`) is still rejected.
+#[test]
+fn single_slash_remote_scheme_is_unsupported() {
+    assert_scan_range_unsupported(parquet_query_range("hdfs:/data/users.parquet"));
+}
+
+/// Verifies a scan node appearing in BOTH scan-range maps is rejected: collecting
+/// (and reading) its whole-file paths twice would silently duplicate rows.
+#[test]
+fn node_in_both_scan_range_maps_is_unsupported() {
+    let mut fragment_params = params_with_scan_range(
+        TPlan::new(vec![scan_node(0, 0)]),
+        base_desc(),
+        0,
+        parquet_query_range("file:///data/users.parquet"),
+    );
+    let mut per_seq = BTreeMap::new();
+    per_seq.insert(
+        0,
+        vec![TScanRangeParams::new(
+            parquet_query_range("file:///data/users.parquet"),
+            None,
+            None,
+            None,
+        )],
+    );
+    let mut per_driver = BTreeMap::new();
+    per_driver.insert(0, per_seq);
+    fragment_params
+        .params
+        .as_mut()
+        .unwrap()
+        .node_to_per_driver_seq_scan_ranges = Some(per_driver);
+
+    let err = PlanTranslator::new()
+        .translate_fragment(&fragment_params)
+        .unwrap_err();
+    assert!(
+        matches!(err, TranslateError::UnsupportedScanRange { node_id: 0, .. }),
+        "expected UnsupportedScanRange, got {err:?}"
+    );
+}
+
 /// Verifies duplicate descriptor names are disambiguated deterministically at the root.
 #[test]
 fn duplicate_output_names_are_unique_and_match_root() {
@@ -650,7 +1160,7 @@ fn unsupported_expression_is_structured_error() {
     let mut select = base_plan_node(1, TPlanNodeType::SELECT_NODE, 1, vec![0]);
     select.select_node = Some(TSelectNode::new(None));
     select.conjuncts = Some(vec![TExpr::new(vec![base_expr_node(
-        TExprNodeType::FUNCTION_CALL,
+        TExprNodeType::LAMBDA_FUNCTION_EXPR,
         scalar_type(TPrimitiveType::BOOLEAN),
         0,
     )])]);
@@ -666,7 +1176,7 @@ fn unsupported_expression_is_structured_error() {
         TranslateError::UnsupportedExpression {
             node_type,
             ..
-        } if node_type == TExprNodeType::FUNCTION_CALL
+        } if node_type == TExprNodeType::LAMBDA_FUNCTION_EXPR
     ));
 }
 
@@ -1456,4 +1966,321 @@ fn expression_missing_child_node_is_error() {
     ))
     .unwrap_err();
     assert!(matches!(err, TranslateError::MalformedPlan(_)));
+}
+
+// ---------------------------------------------------------------------------
+// Aggregation, sort, join, and expression coverage for the TPC-H slice.
+// ---------------------------------------------------------------------------
+
+/// Builds a builtin StarRocks function payload with the given name and return type.
+fn builtin_function(name: &str, ret_type: TTypeDesc) -> TFunction {
+    TFunction::new(
+        TFunctionName::new(None, name.to_string()),
+        TFunctionBinaryType::BUILTIN,
+        Vec::new(),
+        ret_type,
+        false,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+}
+
+/// Verifies an exchange node is still rejected: fragments are translated in isolation and
+/// multi-fragment plans are a later milestone.
+#[test]
+fn exchange_node_is_rejected() {
+    let exchange = base_plan_node(1, TPlanNodeType::EXCHANGE_NODE, 0, vec![0]);
+    let err = translate_fragment(&params(
+        Some(TPlan::new(vec![exchange])),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        TranslateError::UnsupportedPlanNode {
+            node_type: TPlanNodeType::EXCHANGE_NODE,
+            ..
+        }
+    ));
+}
+
+/// Returns every extension function name declared by the plan.
+fn extension_function_names(plan: &substrait::proto::Plan) -> Vec<String> {
+    use substrait::proto::extensions::simple_extension_declaration::MappingType;
+    plan.extensions
+        .iter()
+        .filter_map(|declaration| match declaration.mapping_type.as_ref() {
+            Some(MappingType::ExtensionFunction(function)) => Some(function.name.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Builds a select node filtering the scan with `conjunct`.
+fn filtered_scan(conjunct: TExpr) -> TPlan {
+    let mut select = base_plan_node(1, TPlanNodeType::SELECT_NODE, 1, vec![0]);
+    select.select_node = Some(TSelectNode::new(None));
+    select.conjuncts = Some(vec![conjunct]);
+    TPlan::new(vec![select, scan_node(0, 0)])
+}
+
+/// Verifies arithmetic expressions become Substrait arithmetic functions.
+#[test]
+fn arithmetic_expression_translates() {
+    let mut arith = base_expr_node(
+        TExprNodeType::ARITHMETIC_EXPR,
+        scalar_type(TPrimitiveType::BIGINT),
+        2,
+    );
+    arith.opcode = Some(TExprOpcode::MULTIPLY);
+    let mut nodes = vec![arith];
+    nodes.extend(slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT)).nodes);
+    nodes.extend(int_literal(2).nodes);
+    let product = TExpr::new(nodes);
+
+    let mut pred = base_expr_node(
+        TExprNodeType::BINARY_PRED,
+        scalar_type(TPrimitiveType::BOOLEAN),
+        2,
+    );
+    pred.opcode = Some(TExprOpcode::GT);
+    let mut nodes = vec![pred];
+    nodes.extend(product.nodes);
+    nodes.extend(int_literal(10).nodes);
+
+    let translated = translate_fragment(&params(
+        Some(filtered_scan(TExpr::new(nodes))),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap();
+    let names = extension_function_names(&translated.plan);
+    assert!(names.contains(&"multiply".to_string()), "{names:?}");
+}
+
+/// Verifies a DATE literal becomes a Substrait date literal in days since the epoch.
+#[test]
+fn date_literal_translates_to_epoch_days() {
+    let mut date = base_expr_node(
+        TExprNodeType::DATE_LITERAL,
+        scalar_type(TPrimitiveType::DATE),
+        0,
+    );
+    date.date_literal = Some(TDateLiteral::new("1998-09-02".to_string()));
+
+    let mut pred = base_expr_node(
+        TExprNodeType::BINARY_PRED,
+        scalar_type(TPrimitiveType::BOOLEAN),
+        2,
+    );
+    pred.opcode = Some(TExprOpcode::LE);
+    let mut nodes = vec![pred];
+    nodes.extend(slot_ref(1, 0, scalar_type(TPrimitiveType::DATE)).nodes);
+    nodes.push(date);
+
+    let translated = translate_fragment(&params(
+        Some(filtered_scan(TExpr::new(nodes))),
+        Some(desc_table(
+            vec![(0, Some(100))],
+            vec![slot(1, 0, 0, "d", scalar_type(TPrimitiveType::DATE))],
+        )),
+        None,
+    ))
+    .unwrap();
+    let condition = filter_condition(&translated.plan);
+    let literal = literal_type(scalar_arg(condition, 1));
+    assert_eq!(literal, &expression::literal::LiteralType::Date(10471));
+}
+
+/// Verifies `IN` predicates become singular-or-list expressions.
+#[test]
+fn in_predicate_translates_to_singular_or_list() {
+    let mut in_pred = base_expr_node(
+        TExprNodeType::IN_PRED,
+        scalar_type(TPrimitiveType::BOOLEAN),
+        3,
+    );
+    in_pred.in_predicate = Some(TInPredicate::new(false));
+    let mut nodes = vec![in_pred];
+    nodes.extend(slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT)).nodes);
+    nodes.extend(int_literal(1).nodes);
+    nodes.extend(int_literal(2).nodes);
+
+    let translated = translate_fragment(&params(
+        Some(filtered_scan(TExpr::new(nodes))),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap();
+    let condition = filter_condition(&translated.plan);
+    let expression::RexType::SingularOrList(list) = condition.rex_type.as_ref().unwrap() else {
+        panic!("expected singular-or-list");
+    };
+    assert_eq!(list.options.len(), 2);
+}
+
+/// Verifies allowlisted function calls translate and unknown builtins are rejected.
+#[test]
+fn function_calls_use_allowlist() {
+    let build = |name: &str| {
+        let mut call = base_expr_node(
+            TExprNodeType::FUNCTION_CALL,
+            scalar_type(TPrimitiveType::BOOLEAN),
+            2,
+        );
+        call.fn_ = Some(builtin_function(name, scalar_type(TPrimitiveType::BOOLEAN)));
+        let mut nodes = vec![call];
+        nodes.extend(slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)).nodes);
+        nodes.extend(string_literal("%x%").nodes);
+        TExpr::new(nodes)
+    };
+
+    let translated = translate_fragment(&params(
+        Some(filtered_scan(build("like"))),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap();
+    let names = extension_function_names(&translated.plan);
+    assert!(names.contains(&"like".to_string()), "{names:?}");
+
+    let err = translate_fragment(&params(
+        Some(filtered_scan(build("hll_cardinality"))),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap_err();
+    assert!(matches!(err, TranslateError::MalformedPlan(_)));
+}
+
+/// Verifies CASE WHEN chains become Substrait if-then expressions with a null default.
+#[test]
+fn case_expression_translates_to_if_then() {
+    let mut case = base_expr_node(
+        TExprNodeType::CASE_EXPR,
+        scalar_type(TPrimitiveType::BIGINT),
+        2,
+    );
+    case.case_expr = Some(TCaseExpr::new(false, false));
+    let mut nodes = vec![case];
+    nodes.extend(bool_literal(true).nodes);
+    nodes.extend(int_literal(1).nodes);
+
+    let translated = translate_fragment(&params(
+        Some(TPlan::new(vec![scan_node(0, 0)])),
+        Some(base_desc()),
+        Some(vec![TExpr::new(nodes)]),
+    ))
+    .unwrap();
+    let root = root(&translated.plan);
+    let rel::RelType::Project(project) = root.input.as_ref().unwrap().rel_type.as_ref().unwrap()
+    else {
+        panic!("expected projection");
+    };
+    let expression::RexType::IfThen(if_then) = project.expressions[0].rex_type.as_ref().unwrap()
+    else {
+        panic!("expected if-then expression");
+    };
+    assert_eq!(if_then.ifs.len(), 1);
+    assert!(
+        if_then.r#else.is_some(),
+        "CASE without else defaults to null"
+    );
+}
+
+/// Verifies decimal-typed arithmetic is rejected (it crashes the engine's GPU projection).
+#[test]
+fn decimal_arithmetic_is_rejected() {
+    let decimal = scalar_type_with(TPrimitiveType::DECIMAL128, None, Some(31), Some(4));
+    let mut arith = base_expr_node(TExprNodeType::ARITHMETIC_EXPR, decimal.clone(), 2);
+    arith.opcode = Some(TExprOpcode::MULTIPLY);
+    let mut nodes = vec![arith];
+    nodes.extend(slot_ref(1, 0, decimal.clone()).nodes);
+    nodes.extend(slot_ref(1, 0, decimal).nodes);
+
+    let err = translate_fragment(&params(
+        Some(TPlan::new(vec![scan_node(0, 0)])),
+        Some(base_desc()),
+        Some(vec![TExpr::new(nodes)]),
+    ))
+    .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            TranslateError::UnsupportedExpression {
+                node_type: TExprNodeType::ARITHMETIC_EXPR,
+                ..
+            }
+        ),
+        "{err:?}"
+    );
+}
+
+/// Verifies GPU-executor guards: non-constant LIKE patterns and non-constant substring
+/// bounds are rejected.
+#[test]
+fn gpu_unsupported_shapes_are_rejected() {
+    // LIKE with a column pattern (not a literal).
+    let mut like = base_expr_node(
+        TExprNodeType::FUNCTION_CALL,
+        scalar_type(TPrimitiveType::BOOLEAN),
+        2,
+    );
+    like.fn_ = Some(builtin_function(
+        "like",
+        scalar_type(TPrimitiveType::BOOLEAN),
+    ));
+    let mut nodes = vec![like];
+    nodes.extend(slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)).nodes);
+    nodes.extend(slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)).nodes);
+    let err = translate_fragment(&params(
+        Some(filtered_scan(TExpr::new(nodes))),
+        Some(base_desc()),
+        None,
+    ))
+    .unwrap_err();
+    assert!(
+        matches!(err, TranslateError::UnsupportedExpression { .. }),
+        "{err:?}"
+    );
+
+    // substring with a non-constant start.
+    let mut substr = base_expr_node(
+        TExprNodeType::FUNCTION_CALL,
+        scalar_type(TPrimitiveType::VARCHAR),
+        3,
+    );
+    substr.fn_ = Some(builtin_function(
+        "substring",
+        scalar_type(TPrimitiveType::VARCHAR),
+    ));
+    let mut nodes = vec![substr];
+    nodes.extend(slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)).nodes);
+    nodes.extend(slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT)).nodes);
+    nodes.extend(int_literal(2).nodes);
+    let err = translate_fragment(&params(
+        Some(TPlan::new(vec![scan_node(0, 0)])),
+        Some(base_desc()),
+        Some(vec![TExpr::new(nodes)]),
+    ))
+    .unwrap_err();
+    assert!(
+        matches!(err, TranslateError::UnsupportedExpression { .. }),
+        "{err:?}"
+    );
 }

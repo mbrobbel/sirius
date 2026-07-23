@@ -25,8 +25,10 @@
 #include <log/logging.hpp>
 #include <op/scan/duckdb_native_decoder.hpp>
 #include <op/scan/duckdb_native_gpu_ingestible.hpp>
+#include <op/scan/scan_plan.hpp>
 #include <op/scan/scan_utils.hpp>
 #include <op/scan/sirius_gpu_scan_operator_data.hpp>
+#include <op/sirius_dynamic_filter.hpp>
 
 // duckdb
 #include <duckdb/storage/single_file_block_manager.hpp>
@@ -53,19 +55,6 @@
 namespace sirius::op::scan {
 
 namespace {
-
-/// SIRIUS_METADATA_PARSE_CHUNK: row groups per metadata parse range (the parallel-walk unit).
-std::size_t metadata_parse_chunk()
-{
-  constexpr std::size_t kDefaultParseChunk = 8;
-  if (const char* env = std::getenv("SIRIUS_METADATA_PARSE_CHUNK")) {
-    try {
-      if (const auto v = std::stoull(env); v > 0) return static_cast<std::size_t>(v);
-    } catch (...) { /* fall through to default */
-    }
-  }
-  return kDefaultParseChunk;
-}
 
 //===----------Batch Coalescer----------===//
 class duckdb_native_batch_coalescer : public batch_coalescer {
@@ -127,6 +116,17 @@ class duckdb_native_batch_coalescer : public batch_coalescer {
   {
     std::vector<std::unique_ptr<scan_info>> out;
     if (!_acc.empty()) { out.push_back(emit_current()); }
+    // Whole scan coalesced to nothing (every row group empty or stats-pruned): emit
+    // one empty split so the scan still creates a task. decode_duckdb_native_split
+    // turns an empty row-group list into a schema-correct 0-row table. Without this,
+    // zero splits mean zero tasks and the pipeline-completion signal never fires.
+    if (!_produced_any && _have_template) {
+      auto split           = std::make_unique<duckdb_native_scan_info>();
+      split->datasource    = _datasource->duplicate();
+      split->block_manager = _block_manager;
+      _produced_any        = true;
+      out.push_back(std::move(split));
+    }
     return out;
   }
 
@@ -140,6 +140,7 @@ class duckdb_native_batch_coalescer : public batch_coalescer {
     _acc.clear();
     _acc_bytes = 0;
     std::fill(_col_bytes.begin(), _col_bytes.end(), 0);
+    _produced_any = true;
     return split;
   }
 
@@ -152,6 +153,7 @@ class duckdb_native_batch_coalescer : public batch_coalescer {
   std::size_t _acc_bytes = 0;
 
   bool _have_template = false;
+  bool _produced_any  = false;
   std::shared_ptr<sirius::io::sirius_datasource> _datasource;
   duckdb::SingleFileBlockManager const* _block_manager = nullptr;
 };
@@ -192,7 +194,8 @@ duckdb_native_gpu_ingestible::duckdb_native_gpu_ingestible(
                                      bind.table_filters.get(),
                                      &bind.column_ids);
   if (!_plan.viable) {
-    SPDLOG_DEBUG("[duckdb_native_gpu_ingestible] non-viable: {}", _plan.viability_failure_reason);
+    SIRIUS_LOG_DEBUG("[duckdb_native_gpu_ingestible] non-viable: {}",
+                     _plan.viability_failure_reason);
     throw std::runtime_error("duckdb-native scan rejected query: " +
                              _plan.viability_failure_reason);
   }
@@ -206,18 +209,20 @@ duckdb_native_gpu_ingestible::duckdb_native_gpu_ingestible(
   }
   _block_manager = sf_bm;
 
+  // Emission order: the k-th decoded column is column_ids[source_ids[k]]. Computed outside the
+  // static-filter guard — the dynamic-filter remap below needs it even when the scan carries no
+  // static filters.
+  duckdb::vector<duckdb::idx_t> source_ids_fallback;
+  if (bind.projection_ids.empty()) {
+    source_ids_fallback.reserve(bind.column_ids.size());
+    for (duckdb::idx_t i = 0; i < bind.column_ids.size(); ++i) {
+      source_ids_fallback.push_back(i);
+    }
+  }
+  auto const& source_ids = bind.projection_ids.empty() ? source_ids_fallback : bind.projection_ids;
+
   // Pre-build the coalesced filter expression once.
   if (bind.table_filters && !bind.table_filters->filters.empty()) {
-    duckdb::vector<duckdb::idx_t> source_ids_fallback;
-    if (bind.projection_ids.empty()) {
-      source_ids_fallback.reserve(bind.column_ids.size());
-      for (duckdb::idx_t i = 0; i < bind.column_ids.size(); ++i) {
-        source_ids_fallback.push_back(i);
-      }
-    }
-    auto const& source_ids =
-      bind.projection_ids.empty() ? source_ids_fallback : bind.projection_ids;
-
     std::vector<std::optional<std::size_t>> emission_order_map(bind.column_ids.size());
     for (std::size_t k = 0; k < source_ids.size(); ++k) {
       emission_order_map[source_ids[k]] = k;
@@ -230,9 +235,27 @@ duckdb_native_gpu_ingestible::duckdb_native_gpu_ingestible(
     }
   }
 
+  // Producers push dynamic filters keyed in DuckDB's column_ids space; the post-decode operator
+  // applies them by output position. Install the translation now — the ctor runs at plan time,
+  // before any producing join can publish. Decode positions at or past the output arity are
+  // pure-filter columns that post_filter_and_project drops; they map to the sentinel so
+  // push_filter rejects filters nothing downstream could apply.
+  if (bind.sirius_dynamic_filters) {
+    std::vector<std::size_t> output_position_by_column_id(bind.column_ids.size(),
+                                                          scan_plan::no_output_position);
+    auto const output_arity = bind.output_types.size();
+    for (std::size_t k = 0; k < source_ids.size() && k < output_arity; ++k) {
+      output_position_by_column_id[source_ids[k]] = k;
+    }
+    bind.sirius_dynamic_filters->set_consumer_column_remap(std::move(output_position_by_column_id));
+  }
+
   // Slice [0, n_row_groups) into parse ranges; each becomes one thunk (Phase 2).
+  // Always at least one range: a zero-row-group table must still push one (empty)
+  // scan_info so the coalescer seeds its template and emits the empty split —
+  // zero splits would mean zero tasks and the query never completes.
   _chunk_row_groups = metadata_parse_chunk();
-  _num_ranges       = utils::ceil_div(_plan.n_row_groups, _chunk_row_groups);
+  _num_ranges = std::max<std::size_t>(1, utils::ceil_div(_plan.n_row_groups, _chunk_row_groups));
 }
 
 duckdb_native_gpu_ingestible::~duckdb_native_gpu_ingestible() = default;
@@ -282,12 +305,12 @@ filtered_table duckdb_native_gpu_ingestible::materialize_metadata_to_table(
   rmm::cuda_stream_view stream)
 {
   auto const& split = static_cast<duckdb_native_scan_info const&>(info);
-  if (!split.datasource) {
+  if (!split.datasource && !split.host_backed_only) {
     throw std::runtime_error("[duckdb_native_gpu_ingestible] scan_info has no datasource");
   }
   auto& mem_space_mut = const_cast<::cucascade::memory::memory_space&>(mem_space);
-  auto table =
-    decode_duckdb_native_split(split.row_groups, *_info, *split.datasource, mem_space_mut, stream);
+  auto table          = decode_duckdb_native_split(
+    split.row_groups, *_info, split.datasource.get(), mem_space_mut, stream);
   SIRIUS_LOG_DEBUG(
     "[duckdb_native_gpu_ingestible::materialize_table] decoded split: row_groups={} rows={} "
     "cols={}",

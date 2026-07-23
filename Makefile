@@ -17,12 +17,14 @@ DUCKDB_DIR ?= duckdb
 TEST_BUILD_TARGET ?= sirius_unittest
 MAIN_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo
 
+BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
+
 .PHONY: all release debug reldebug relwithdebinfo debug-release \
 	legacy-release \
 	clang-release clang-debug clang-relwithdebinfo clang-asan clang-tsan \
 	ci-release configure_ci set_duckdb_version \
 	test test_release test_debug test_reldebug test_ci-release clean list-presets \
-	s3-test s3-test-large \
+	s3-test s3-test-large s3-tpch \
 	s3-test-aws s3-test-aws-sigv4 s3-test-aws-broker s3-bench
 
 PRESETS_LINK := $(DUCKDB_DIR)/CMakePresets.json
@@ -41,73 +43,46 @@ build/%/build.ninja: $(CMAKE_INPUTS) | $(PRESETS_LINK)
 	cd $(DUCKDB_DIR) && $(CMAKE) --preset $*
 
 release: build/release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset release --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset release --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset release --target $(BUILD_TARGETS)
 
 debug: build/debug/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset debug --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset debug --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset debug --target $(BUILD_TARGETS)
 
 reldebug: relwithdebinfo
 
 debug-release: relwithdebinfo
 
 relwithdebinfo: build/relwithdebinfo/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset relwithdebinfo --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset relwithdebinfo --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset relwithdebinfo --target $(BUILD_TARGETS)
 
 legacy-release: build/legacy-release/build.ninja
 	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset legacy-release --target $(MAIN_BUILD_TARGETS)
 
 clang-release: build/clang-release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-release --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-release --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-release --target $(BUILD_TARGETS)
 
 clang-debug: build/clang-debug/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-debug --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-debug --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-debug --target $(BUILD_TARGETS)
 
 clang-relwithdebinfo: build/clang-relwithdebinfo/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-relwithdebinfo --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-relwithdebinfo --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-relwithdebinfo --target $(BUILD_TARGETS)
 
 # AddressSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   ASAN_OPTIONS="protect_shadow_gap=0:detect_leaks=0:halt_on_error=0:abort_on_error=1" \
 #     ./build/clang-asan/extension/sirius/test/cpp/sirius_unittest
 clang-asan: build/clang-asan/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-asan --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-asan --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-asan --target $(BUILD_TARGETS)
 
 # ThreadSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   TSAN_OPTIONS="suppressions=$$PWD/tsan.supp:ignore_noninstrumented_modules=1:halt_on_error=0:history_size=7:detect_deadlocks=0" \
 #     ./build/clang-tsan/extension/sirius/test/cpp/sirius_unittest
 clang-tsan: build/clang-tsan/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-tsan --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-tsan --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-tsan --target $(BUILD_TARGETS)
 
 ci-release: build/ci-release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset ci-release --target $(MAIN_BUILD_TARGETS)
-ifneq ($(TEST_BUILD_TARGET),)
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset ci-release --target $(TEST_BUILD_TARGET)
-endif
+	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset ci-release --target $(BUILD_TARGETS)
 
 configure_ci:
 	@echo "configure_ci step is skipped for this extension build..."
@@ -191,10 +166,25 @@ s3-test-large:
 	@# group. Catch2 OR-combines specs within one argument via commas (multiple
 	@# positional args are AND-concatenated instead), so each group runs in a
 	@# single process where same-config cases share one SiriusContext lifecycle.
+	@# SIRIUS_TEST_S3_TPCH gates the SF1 TPC-H fixture + [tpch][large]; SIRIUS_TEST_S3_GLOB_SCALE
+	@# gates the 1001-object fixture + [glob-scale]. Both are scoped to the first group only, so
+	@# the second group's bring-up must not see them (it would re-generate / re-upload).
 	@set -e; \
 	export SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_LARGE=1 SIRIUS_TEST_S3_STRICT=1; \
-	$(S3_TEST_BIN) "[s3][sql][large][large-count],[s3][sql][large][large-q1],[s3][sql][large][large-join]"; \
+	SIRIUS_TEST_S3_TPCH=1 SIRIUS_TEST_S3_GLOB_SCALE=1 $(S3_TEST_BIN) "[s3][sql][large][large-count],[s3][sql][large][large-q1],[s3][sql][large][large-join],[s3][integration][sql][tpch][large],[s3][large][glob-scale]"; \
 	$(S3_TEST_BIN) "[s3][sql][large][large-count-no-prewarm],[s3][sql][large][large-q1-no-prewarm],[s3][sql][large][large-join-no-prewarm]"
+
+# TPC-H-over-S3 correctness tier (Q1-Q22 == local CPU oracle, GPU-only). Uploads
+# the SF1 TPC-H fixture (SIRIUS_TEST_S3_TPCH=1) and runs both the tiny and SF1
+# correctness cases; excludes the [bench] perf arm. MinIO auto-managed.
+s3-tpch:
+	@if [ ! -x $(S3_TEST_BIN) ]; then \
+	  echo "s3-tpch: $(S3_TEST_BIN) not found - run \`make release\` first" >&2; \
+	  exit 1; \
+	fi
+	@set -e; \
+	export SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_STRICT=1 SIRIUS_TEST_S3_TPCH=1; \
+	$(S3_TEST_BIN) "[s3][integration][sql][tpch]~[bench]"
 
 # Manual real-AWS gates. These never start MinIO/Docker and are excluded from
 # CI. Export the AWS environment yourself before invoking (regional S3 endpoint,
@@ -250,12 +240,17 @@ s3-bench:
 	  echo "s3-bench: $(S3_TEST_BIN) not found - run \`make release\` first" >&2; \
 	  exit 1; \
 	fi
+	@# The TPC-H query benchmark ([s3][bench][tpch]) is excluded from the routine
+	@# run and its SF1 fixture (SIRIUS_TEST_S3_TPCH) is not uploaded, unless the
+	@# caller opts in with SIRIUS_BENCH_S3_TPCH=1.
 	@set -e; \
+	tpch_excl="~[tpch]"; \
+	if [ -n "$${SIRIUS_BENCH_S3_TPCH:-}" ]; then tpch_excl=""; fi; \
 	if [ "$${SIRIUS_BENCH_BACKEND:-minio}" = "minio" ]; then \
 	  export SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_LARGE=1 SIRIUS_TEST_S3_STRICT=1; \
-	  selector="[s3][bench]~[aws]"; \
+	  selector="[s3][bench]~[aws]$$tpch_excl"; \
 	else \
-	  selector="[s3][bench][aws]"; \
+	  selector="[s3][bench][aws]$$tpch_excl"; \
 	fi; \
 	export SIRIUS_BENCH_GIT_SHA="$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"; \
 	export HOSTNAME="$${HOSTNAME:-$$(hostname)}"; \

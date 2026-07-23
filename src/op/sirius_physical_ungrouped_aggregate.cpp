@@ -308,7 +308,10 @@ std::unique_ptr<operator_data> sirius_physical_ungrouped_aggregate::execute(
           auto col = view.column(static_cast<cudf::size_type>(spec.input_idx));
           std::unique_ptr<cudf::scalar> first_scalar;
           if (col.size() == 0) {
-            first_scalar = cudf::make_fixed_width_scalar(
+            // FIRST over an empty input is NULL. make_fixed_width_scalar throws on
+            // non-fixed-width types (e.g. STRING), so build a typed, invalid scalar
+            // that works for any column type.
+            first_scalar = cudf::make_default_constructed_scalar(
               col.type(), stream, cudf::get_current_device_resource_ref());
             first_scalar->set_valid_async(false, stream);
           } else {
@@ -367,8 +370,19 @@ std::unique_ptr<operator_data> sirius_physical_ungrouped_aggregate::execute(
           auto scalar = cudf::reduce(col, *agg_op, out_type, std::nullopt, stream);
           cols.push_back(cudf::make_column_from_scalar(*scalar, 1, stream));
           if (spec.kind == aggregate_kind::AVG) {
-            auto count_scalar = make_numeric_scalar_with_value<int64_t>(
-              cudf::data_type{cudf::type_id::INT64}, static_cast<int64_t>(view.num_rows()), stream);
+            // AVG denominator is the count of non-null values (SUM skips NULLs).
+            // No NULLs -> row count suffices, so avoid the extra COUNT reduction.
+            std::unique_ptr<cudf::scalar> count_scalar;
+            if (!col.nullable() || col.null_count() == 0) {
+              count_scalar =
+                make_numeric_scalar_with_value<int64_t>(cudf::data_type{cudf::type_id::INT64},
+                                                        static_cast<int64_t>(view.num_rows()),
+                                                        stream);
+            } else {
+              auto count_agg = cudf::make_count_aggregation<cudf::reduce_aggregation>();
+              count_scalar   = cudf::reduce(
+                col, *count_agg, cudf::data_type{cudf::type_id::INT64}, std::nullopt, stream);
+            }
             cols.push_back(cudf::make_column_from_scalar(*count_scalar, 1, stream));
           }
           break;
@@ -384,7 +398,10 @@ std::unique_ptr<operator_data> sirius_physical_ungrouped_aggregate::execute(
       std::make_unique<cucascade::gpu_table_representation>(std::move(out_table), *space, stream);
     std::unique_ptr<cucascade::idata_representation> output_data = std::move(out_repr);
     auto const batch_id                                          = ::sirius::get_next_batch_id();
-    outputs.push_back(cucascade::data_batch::make(batch_id, std::move(output_data)));
+    outputs.push_back(cucascade::data_batch::make(
+      batch_id,
+      std::move(output_data),
+      telemetry::quent_data_batch_probe::create(batch_telemetry(), batch_id)));
   }
 
   return std::make_unique<pipelineable_operator_data>(outputs);
@@ -457,7 +474,7 @@ std::unique_ptr<operator_data> sirius_physical_ungrouped_aggregate_merge::execut
     merged_batch = cucascade::data_batch::to_idle(std::move(input_batches[0]));
   } else {
     merged_batch = gpu_merge_impl::merge_ungrouped_aggregate(
-      input_batches, layout.merge_kinds, layout.merge_nth_index, stream, *space);
+      input_batches, layout.merge_kinds, layout.merge_nth_index, stream, *space, batch_telemetry());
   }
 
   if (!layout.has_avg) {
@@ -493,7 +510,10 @@ std::unique_ptr<operator_data> sirius_physical_ungrouped_aggregate_merge::execut
     std::make_unique<cucascade::gpu_table_representation>(std::move(out_table), *space, stream);
   std::unique_ptr<cucascade::idata_representation> output_data = std::move(out_repr);
   auto const batch_id                                          = ::sirius::get_next_batch_id();
-  auto output_batch = cucascade::data_batch::make(batch_id, std::move(output_data));
+  auto output_batch                                            = cucascade::data_batch::make(
+    batch_id,
+    std::move(output_data),
+    telemetry::quent_data_batch_probe::create(batch_telemetry(), batch_id));
 
   return std::make_unique<pipelineable_operator_data>(
     std::vector<std::shared_ptr<cucascade::data_batch>>{std::move(output_batch)});
