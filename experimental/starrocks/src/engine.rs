@@ -1,48 +1,94 @@
-//! GPU-backed fragment executor: owns the Sirius engine on a dedicated thread.
+//! GPU-backed fragment coordinator: owns Sirius sessions on one dedicated thread.
 //!
-//! [`sirius::SiriusContext`] is `!Send`/`!Sync` and the engine serializes queries through a single
-//! process-global context, so the context is created, used, and dropped on one dedicated thread.
-//! [`SiriusEngine`] talks to that thread over channels — which are `Send`/`Sync` and carry only
-//! owned data (`Vec<u8>` in, `Vec<RecordBatch>` out) — so it satisfies `dyn FragmentExecutor:
-//! Send + Sync` without ever moving the context across threads.
+//! [`sirius::SiriusContext`] and [`sirius::StreamSession`] stay on this thread under one mutable
+//! coordinator. Fragment RPC workers and asynchronous exchange tasks communicate with it using
+//! channels carrying owned plans and Arrow batches. Sirius fragments therefore execute
+//! back-to-back; neither the context nor a session is shared with a Tokio task.
 //!
-//! The seam is synchronous (see [`FragmentExecutor`]): `execute()` blocks the caller until the
-//! engine thread returns the result. `exec_plan_fragment` runs it on a `spawn_blocking` worker, so
-//! the BRPC current-thread runtime stays free to serve `fetch_data`, connection cleanup, and
-//! shutdown cancellation while a query runs. The single-fragment limitations are elsewhere: the
-//! whole result is materialized before dispatch returns, and the single process-global context
-//! serializes queries — both lifted by the streaming evolution.
+//! The coordinator inspects each [`sirius::SubstraitPlan`] before session creation and correlates
+//! its opaque [`sirius::StreamId`] values with StarRocks metadata owned by the compute node.
+//! Exchange tasks use [`crate::exchange::ExchangeTransport`]; today's implementation is a local
+//! in-process mailbox, and a Nixl agent can replace that boundary later.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Mutex;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{Sender, channel};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
 use arrow_array::RecordBatch;
-use sirius::SiriusContext;
-use starrocks_plan_translator::TranslatedPlan;
+use sirius::{SiriusContext, StreamId, SubstraitPlan};
+use starrocks_plan_translator::{ExchangeInput, TranslatedPlan};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::info;
 
+use crate::exchange::{
+    ExchangeData, ExchangeTransport, FragmentExchange, InputExchange, LocalExchangeTransport,
+    OutputExchange,
+};
 use crate::fragment_executor::{FragmentExecutor, FragmentResult};
 
-/// One execution request handed to the engine thread.
+/// One owned execution request handed to the coordinator.
 struct ExecuteRequest {
     /// Serialized Substrait plan bytes.
     plan: Vec<u8>,
-    /// Channel the engine thread sends the result (or a flattened error) back on.
+    /// Translation-side exchange inputs, ordered like their Substrait reads.
+    translated_inputs: Vec<ExchangeInput>,
+    /// StarRocks routing and partition semantics.
+    exchange: FragmentExchange,
+    /// Channel the coordinator sends the result (or a flattened error) back on.
     respond: Sender<Result<Vec<RecordBatch>, String>>,
 }
 
-/// GPU-backed [`FragmentExecutor`] running plans on an embedded Sirius engine.
+/// A StarRocks exchange input correlated with one opaque Sirius stream id.
+#[derive(Clone, Debug)]
+struct BoundInput {
+    stream_id: StreamId,
+    metadata: InputExchange,
+}
+
+/// A StarRocks exchange output correlated with one opaque Sirius stream id.
+#[derive(Clone, Debug)]
+struct BoundOutput {
+    stream_id: StreamId,
+    metadata: OutputExchange,
+}
+
+/// Inspected plan waiting for an exchange input or immediate execution.
+struct PreparedRequest {
+    request: ExecuteRequest,
+    plan: SubstraitPlan,
+    input: Option<BoundInput>,
+    output_stream_id: StreamId,
+    output: Option<BoundOutput>,
+}
+
+/// Completion messages sent from Tokio exchange tasks to the context-owning coordinator.
+enum CoordinatorEvent {
+    InputReady {
+        request_id: u64,
+        result: Result<ExchangeData, String>,
+    },
+    OutputSent {
+        request_id: u64,
+        result: Result<(), String>,
+    },
+}
+
+/// Output retained while an async transport task sends it.
+struct PendingOutput {
+    batches: Vec<RecordBatch>,
+    respond: Sender<Result<Vec<RecordBatch>, String>>,
+}
+
+/// GPU-backed [`FragmentExecutor`] running plans on an embedded Sirius engine coordinator.
 ///
-/// The engine context lives on a dedicated thread; this handle forwards plans to it and waits for
-/// the result. Dropping it closes the request channel, which ends the thread and tears the context
-/// down (joined for an ordered teardown).
+/// Dropping the handle closes the request channel, ends pending exchange work, and joins the
+/// coordinator thread for ordered context teardown.
 #[derive(Debug)]
 pub struct SiriusEngine {
-    /// Sender to the engine thread. `Mutex<Option<..>>` makes the `!Sync` sender shareable and
-    /// lets `Drop` close the channel before joining; sends are brief (the thread serializes work).
-    requests: Mutex<Option<Sender<ExecuteRequest>>>,
+    /// Sender to the coordinator, held in an option so `Drop` can close it before joining.
+    requests: Mutex<Option<UnboundedSender<ExecuteRequest>>>,
     /// Engine thread handle, taken and joined on drop.
     thread: Mutex<Option<JoinHandle<()>>>,
 }
@@ -54,11 +100,12 @@ impl SiriusEngine {
     /// failure surfaces here, before any RPC is served. `config` is the optional Sirius YAML path
     /// (built-in defaults when `None`).
     pub fn start(config: Option<PathBuf>) -> Result<Self, String> {
-        let (request_tx, request_rx) = channel::<ExecuteRequest>();
+        let (request_tx, request_rx) = unbounded_channel::<ExecuteRequest>();
         let (ready_tx, ready_rx) = channel::<Result<(), String>>();
+        let transport: Arc<dyn ExchangeTransport> = Arc::new(LocalExchangeTransport::default());
         let thread = std::thread::Builder::new()
             .name("sirius-engine".to_string())
-            .spawn(move || engine_thread(config, request_rx, ready_tx))
+            .spawn(move || engine_thread(config, request_rx, ready_tx, transport))
             .map_err(|err| format!("failed to spawn sirius-engine thread: {err}"))?;
         match ready_rx.recv() {
             Ok(Ok(())) => Ok(Self {
@@ -75,36 +122,317 @@ impl SiriusEngine {
 /// request channel closes. The context is dropped here, on this thread, when the loop ends.
 fn engine_thread(
     config: Option<PathBuf>,
-    requests: Receiver<ExecuteRequest>,
+    requests: UnboundedReceiver<ExecuteRequest>,
     ready: Sender<Result<(), String>>,
+    transport: Arc<dyn ExchangeTransport>,
 ) {
-    let mut context = match build_context(config) {
-        Ok(context) => {
-            // A send error means the caller is already gone; nothing to serve.
-            if ready.send(Ok(())).is_err() {
-                return;
-            }
-            context
-        }
+    let context = match build_context(config) {
+        Ok(context) => context,
         Err(err) => {
             let _ = ready.send(Err(err));
             return;
         }
     };
-    info!("sirius-engine thread ready");
-    // One query at a time until the handle (and its sender) is dropped.
-    while let Ok(request) = requests.recv() {
-        // `execute_substrait` drains the Arrow stream and drops the context-referencing wrapper
-        // here, on the engine thread, returning owned batches whose buffers are released via their
-        // own Arrow C release callbacks — independent of the context. So the batches are safe to
-        // send to, and drop on, the caller's thread.
-        let result = context
-            .execute_substrait(&request.plan)
-            .map_err(|err| err.to_string());
-        // Ignore a send error: the waiting fragment may have been dropped/cancelled.
-        let _ = request.respond.send(result);
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(err) => {
+            let _ = ready.send(Err(format!(
+                "failed to build Sirius coordinator runtime: {err}"
+            )));
+            return;
+        }
+    };
+    // A send error means the caller is already gone; nothing to serve.
+    if ready.send(Ok(())).is_err() {
+        return;
     }
+    info!("sirius-engine thread ready");
+    runtime.block_on(run_coordinator(context, requests, transport));
     info!("sirius-engine thread shutting down");
+}
+
+/// Owns the only mutable context and advances exchange-dependent fragments when inputs arrive.
+async fn run_coordinator(
+    mut context: SiriusContext,
+    mut requests: UnboundedReceiver<ExecuteRequest>,
+    transport: Arc<dyn ExchangeTransport>,
+) {
+    let (event_tx, mut event_rx) = unbounded_channel();
+    let mut next_request_id = 0_u64;
+    let mut waiting_for_input = HashMap::<u64, PreparedRequest>::new();
+    let mut waiting_for_output = HashMap::<u64, PendingOutput>::new();
+
+    loop {
+        tokio::select! {
+            request = requests.recv() => {
+                let Some(request) = request else {
+                    fail_pending(
+                        waiting_for_input,
+                        waiting_for_output,
+                        "sirius-engine is shutting down",
+                    );
+                    break;
+                };
+                let request_id = next_request_id;
+                next_request_id = next_request_id.wrapping_add(1);
+                match inspect_request(request) {
+                    Ok(prepared) => {
+                        if let Some(input) = prepared.input.clone() {
+                            waiting_for_input.insert(request_id, prepared);
+                            let transport = transport.clone();
+                            let event_tx = event_tx.clone();
+                            tokio::spawn(async move {
+                                tracing::debug!(
+                                    stream_id = input.stream_id.get(),
+                                    route = ?input.metadata.route,
+                                    "waiting for local exchange input"
+                                );
+                                let result = transport.receive(input.metadata.route).await;
+                                let _ = event_tx.send(CoordinatorEvent::InputReady {
+                                    request_id,
+                                    result,
+                                });
+                            });
+                        } else {
+                            execute_prepared(
+                                request_id,
+                                prepared,
+                                None,
+                                &mut context,
+                                transport.clone(),
+                                event_tx.clone(),
+                                &mut waiting_for_output,
+                            );
+                        }
+                    }
+                    Err((respond, err)) => {
+                        let _ = respond.send(Err(err));
+                    }
+                }
+            }
+            event = event_rx.recv() => {
+                let Some(event) = event else {
+                    continue;
+                };
+                match event {
+                    CoordinatorEvent::InputReady { request_id, result } => {
+                        let Some(prepared) = waiting_for_input.remove(&request_id) else {
+                            continue;
+                        };
+                        match result {
+                            Ok(data) => execute_prepared(
+                                request_id,
+                                prepared,
+                                Some(data),
+                                &mut context,
+                                transport.clone(),
+                                event_tx.clone(),
+                                &mut waiting_for_output,
+                            ),
+                            Err(err) => {
+                                let _ = prepared.request.respond.send(Err(err));
+                            }
+                        }
+                    }
+                    CoordinatorEvent::OutputSent { request_id, result } => {
+                        let Some(pending) = waiting_for_output.remove(&request_id) else {
+                            continue;
+                        };
+                        let response = result.map(|()| pending.batches);
+                        let _ = pending.respond.send(response);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Decodes and inspects a Sirius plan, then binds opaque stream ids to CN metadata.
+fn inspect_request(
+    request: ExecuteRequest,
+) -> Result<PreparedRequest, (Sender<Result<Vec<RecordBatch>, String>>, String)> {
+    let respond = request.respond.clone();
+    let plan = SubstraitPlan::decode(&request.plan).map_err(|err| {
+        (
+            respond.clone(),
+            format!("failed to decode Substrait plan: {err}"),
+        )
+    })?;
+    if request.translated_inputs.len() != request.exchange.inputs.len() {
+        return Err((
+            respond,
+            format!(
+                "translated plan has {} exchange inputs but execution metadata has {}",
+                request.translated_inputs.len(),
+                request.exchange.inputs.len()
+            ),
+        ));
+    }
+    for (translated, execution) in request
+        .translated_inputs
+        .iter()
+        .zip(&request.exchange.inputs)
+    {
+        if translated.node_id != execution.route.node_id {
+            return Err((
+                respond,
+                format!(
+                    "translated exchange node {} was paired with StarRocks route node {}",
+                    translated.node_id, execution.route.node_id
+                ),
+            ));
+        }
+    }
+
+    let input = if request.exchange.inputs.is_empty() {
+        None
+    } else {
+        if request.exchange.inputs.len() != 1 {
+            return Err((
+                respond,
+                format!(
+                    "temporary streaming compatibility supports one exchange input, got {}",
+                    request.exchange.inputs.len()
+                ),
+            ));
+        }
+        if plan.input_streams().len() != request.exchange.inputs.len() {
+            return Err((
+                respond,
+                format!(
+                    "exchange fragment has {} StarRocks inputs but Sirius discovered {} input streams",
+                    request.exchange.inputs.len(),
+                    plan.input_streams().len()
+                ),
+            ));
+        }
+        Some(BoundInput {
+            stream_id: plan.input_streams()[0],
+            metadata: request.exchange.inputs[0].clone(),
+        })
+    };
+    if plan.output_streams().len() != 1 {
+        return Err((
+            respond,
+            format!(
+                "temporary streaming compatibility supports one output stream, got {}",
+                plan.output_streams().len()
+            ),
+        ));
+    }
+    let output_stream_id = plan.output_streams()[0];
+    let output = request.exchange.output.clone().map(|metadata| BoundOutput {
+        stream_id: output_stream_id,
+        metadata,
+    });
+    Ok(PreparedRequest {
+        request,
+        plan,
+        input,
+        output_stream_id,
+        output,
+    })
+}
+
+/// Executes one fragment synchronously on the coordinator, then delegates exchange output.
+fn execute_prepared(
+    request_id: u64,
+    prepared: PreparedRequest,
+    input_data: Option<ExchangeData>,
+    context: &mut SiriusContext,
+    transport: Arc<dyn ExchangeTransport>,
+    event_tx: UnboundedSender<CoordinatorEvent>,
+    waiting_for_output: &mut HashMap<u64, PendingOutput>,
+) {
+    let result = if let Some(input) = prepared.input.as_ref() {
+        let input_data = input_data.expect("input-ready event supplies exchange data");
+        if input_data.sender_id < 0 {
+            Err("exchange sender id must be non-negative".to_string())
+        } else {
+            context
+                .create_stream_session(prepared.plan)
+                .map_err(|err| err.to_string())
+                .and_then(|mut session| {
+                    session
+                        .push_batches_sync(input.stream_id, input_data.batches)
+                        .and_then(|()| session.end_stream(input.stream_id))
+                        .and_then(|()| session.pull_batches_sync(prepared.output_stream_id))
+                        .map_err(|err| err.to_string())
+                })
+        }
+    } else {
+        context
+            .execute_substrait(&prepared.plan.encode_to_vec())
+            .map_err(|err| err.to_string())
+    };
+
+    let batches = match result {
+        Ok(batches) => batches,
+        Err(err) => {
+            let _ = prepared.request.respond.send(Err(err));
+            return;
+        }
+    };
+    let Some(output) = prepared.output else {
+        let _ = prepared.request.respond.send(Ok(batches));
+        return;
+    };
+
+    // Only owned batches and opaque/CN metadata cross into the async task. The mutable session
+    // ended above and the Sirius context remains exclusively with this coordinator.
+    waiting_for_output.insert(
+        request_id,
+        PendingOutput {
+            batches: batches.clone(),
+            respond: prepared.request.respond,
+        },
+    );
+    tokio::spawn(async move {
+        let result = send_output(transport, output, batches).await;
+        let _ = event_tx.send(CoordinatorEvent::OutputSent { request_id, result });
+    });
+}
+
+/// Sends an unpartitioned output to every StarRocks destination.
+async fn send_output(
+    transport: Arc<dyn ExchangeTransport>,
+    output: BoundOutput,
+    batches: Vec<RecordBatch>,
+) -> Result<(), String> {
+    for route in output.metadata.routes {
+        tracing::debug!(
+            stream_id = output.stream_id.get(),
+            ?route,
+            "sending local exchange output"
+        );
+        transport
+            .send(
+                route,
+                ExchangeData {
+                    sender_id: output.metadata.sender_id,
+                    batches: batches.clone(),
+                },
+            )
+            .await?;
+    }
+    Ok(())
+}
+
+/// Replies to all blocked callers when the coordinator request channel closes.
+fn fail_pending(
+    waiting_for_input: HashMap<u64, PreparedRequest>,
+    waiting_for_output: HashMap<u64, PendingOutput>,
+    reason: &str,
+) {
+    for (_, pending) in waiting_for_input {
+        let _ = pending.request.respond.send(Err(reason.to_string()));
+    }
+    for (_, pending) in waiting_for_output {
+        let _ = pending.respond.send(Err(reason.to_string()));
+    }
 }
 
 /// Brings up a [`SiriusContext`] from an optional config path (built-in defaults when `None`).
@@ -119,10 +447,16 @@ fn build_context(config: Option<PathBuf>) -> Result<SiriusContext, String> {
 }
 
 impl FragmentExecutor for SiriusEngine {
-    fn execute(&self, translated: &TranslatedPlan) -> Result<FragmentResult, String> {
+    fn execute(
+        &self,
+        translated: &TranslatedPlan,
+        exchange: &FragmentExchange,
+    ) -> Result<FragmentResult, String> {
         let (respond_tx, respond_rx) = channel();
         let request = ExecuteRequest {
             plan: translated.to_substrait_bytes(),
+            translated_inputs: translated.exchange_inputs.clone(),
+            exchange: exchange.clone(),
             respond: respond_tx,
         };
         self.requests
@@ -204,6 +538,7 @@ mod tests {
         TranslatedPlan {
             plan,
             output_names: names,
+            exchange_inputs: Vec::new(),
         }
     }
 
@@ -272,7 +607,44 @@ mod tests {
         TranslatedPlan {
             plan,
             output_names: names,
+            exchange_inputs: Vec::new(),
         }
+    }
+
+    #[test]
+    fn inspection_binds_opaque_stream_id_to_cn_exchange_metadata() {
+        use starrocks_thrift::partitions::TPartitionType;
+
+        let mut translated = local_files_plan("unused.parquet", vec!["id".to_string()]);
+        translated.exchange_inputs.push(ExchangeInput {
+            node_id: 7,
+            partition_type: Some(TPartitionType::UNPARTITIONED),
+        });
+        let route = crate::exchange::ExchangeRoute {
+            fragment_instance_id: crate::result_store::FragmentInstanceId::from_halves(3, 4),
+            node_id: 7,
+        };
+        let exchange = FragmentExchange {
+            inputs: vec![InputExchange {
+                route,
+                expected_senders: 1,
+            }],
+            output: None,
+        };
+        let (respond, _response) = channel();
+
+        let prepared = inspect_request(ExecuteRequest {
+            plan: translated.to_substrait_bytes(),
+            translated_inputs: translated.exchange_inputs,
+            exchange,
+            respond,
+        })
+        .unwrap();
+
+        let input = prepared.input.unwrap();
+        assert_eq!(input.stream_id, StreamId::new(0));
+        assert_eq!(input.metadata.route, route);
+        assert_eq!(prepared.output_stream_id, StreamId::new(0));
     }
 
     /// End-to-end: drive a `local_files` parquet plan through the engine actor and read the rows
@@ -315,7 +687,9 @@ mod tests {
         );
 
         let engine = SiriusEngine::start(None).expect("bring up sirius engine");
-        let result = engine.execute(&plan).expect("execute fragment on GPU");
+        let result = engine
+            .execute(&plan, &FragmentExchange::default())
+            .expect("execute fragment on GPU");
         let total_rows: usize = result.batches.iter().map(RecordBatch::num_rows).sum();
         assert_eq!(total_rows, 3, "expected 3 rows from the parquet fixture");
 
@@ -350,7 +724,7 @@ mod tests {
             &[("name", true), ("id", false)],
         );
         let result = engine
-            .execute(&pruned)
+            .execute(&pruned, &FragmentExchange::default())
             .expect("execute pruned fragment on GPU");
         let batch = result
             .batches

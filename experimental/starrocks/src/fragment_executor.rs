@@ -1,14 +1,16 @@
 //! Execution of a translated fragment into Arrow result batches.
 //!
-//! The engine→CN result interchange is the Arrow C Data Interface (see the `SiriusExecutor`
-//! TODO). Today a [`StubExecutor`] stands in for the GPU engine so the StarRocks dispatch and
-//! result-return plumbing can be exercised end to end without a build tree or a GPU.
+//! The engine→CN result interchange is the Arrow C Data Interface. A [`StubExecutor`] stands in
+//! for the GPU coordinator in no-engine tests so StarRocks dispatch and result-return plumbing can
+//! be exercised without a build tree or GPU.
 
 use std::sync::Arc;
 
 use arrow_array::{ArrayRef, RecordBatch, StringArray};
 use arrow_schema::{DataType, Field, Schema};
 use starrocks_plan_translator::TranslatedPlan;
+
+use crate::exchange::FragmentExchange;
 
 /// Output of executing one plan fragment: Arrow batches matching the fragment output schema.
 #[derive(Clone, Debug)]
@@ -31,18 +33,18 @@ impl FragmentResult {
 
 /// Runs a translated fragment and returns its result batches.
 ///
-/// This is intentionally a synchronous, fully-materializing seam for the single-fragment
-/// milestone: `exec_plan_fragment` runs it to completion before returning, and `fetch_data` then
-/// drains the buffered rows.
+/// This remains a synchronous, fully-materializing RPC seam: `exec_plan_fragment` waits for the
+/// engine coordinator, while exchange transport work inside that coordinator is asynchronous.
 ///
-/// TODO(starrocks-execute): a real GPU executor should not block dispatch on full materialization.
-/// Evolve this into a streaming contract — dispatch registers a running fragment and returns after
-/// startup, the executor pushes Arrow batches (e.g. via an Arrow C stream) into a bounded channel
-/// the `ResultStore` drains, and execution is cancellable from `cancel_plan_fragment`. Large/slow
-/// result queries then stream through `fetch_data` instead of risking dispatch-time timeout/OOM.
+/// TODO(starrocks-execute): dispatch should eventually register a cancellable running fragment and
+/// return after startup, with result batches streamed into `ResultStore` instead of materialized.
 pub trait FragmentExecutor: std::fmt::Debug + Send + Sync {
-    /// Executes `translated` and returns its Arrow result batches.
-    fn execute(&self, translated: &TranslatedPlan) -> Result<FragmentResult, String>;
+    /// Executes `translated` with StarRocks exchange semantics owned by the compute node.
+    fn execute(
+        &self,
+        translated: &TranslatedPlan,
+        exchange: &FragmentExchange,
+    ) -> Result<FragmentResult, String>;
 }
 
 /// Placeholder executor that fabricates one row so the result path works without a GPU.
@@ -50,12 +52,12 @@ pub trait FragmentExecutor: std::fmt::Debug + Send + Sync {
 pub struct StubExecutor;
 
 impl FragmentExecutor for StubExecutor {
-    fn execute(&self, translated: &TranslatedPlan) -> Result<FragmentResult, String> {
-        // TODO(starrocks-execute): replace with a SiriusExecutor that hands
-        // `translated.to_substrait_bytes()` to the embedded Sirius engine, executes it on the
-        // GPU, and imports the result via the Arrow C Data Interface. That executor will hold an
-        // `Arc<sirius::SiriusContext>` threaded in from `main` (see `BrpcServer::new`). For now
-        // we emit one placeholder string row per output column so the FE→client path is exercised.
+    fn execute(
+        &self,
+        translated: &TranslatedPlan,
+        _exchange: &FragmentExchange,
+    ) -> Result<FragmentResult, String> {
+        // Emit one placeholder string row per output column so the FE→client path is exercised.
         let names = &translated.output_names;
         if names.is_empty() {
             return Ok(FragmentResult {
@@ -86,13 +88,17 @@ mod tests {
         TranslatedPlan {
             plan: Default::default(),
             output_names: names.iter().map(|name| name.to_string()).collect(),
+            exchange_inputs: Vec::new(),
         }
     }
 
     #[test]
     fn stub_executor_emits_one_row_matching_output_names() {
         let result = StubExecutor
-            .execute(&plan_with_outputs(&["id", "name"]))
+            .execute(
+                &plan_with_outputs(&["id", "name"]),
+                &FragmentExchange::default(),
+            )
             .unwrap();
         assert_eq!(result.batches.len(), 1);
         let batch = &result.batches[0];
@@ -104,7 +110,9 @@ mod tests {
 
     #[test]
     fn stub_executor_handles_empty_output() {
-        let result = StubExecutor.execute(&plan_with_outputs(&[])).unwrap();
+        let result = StubExecutor
+            .execute(&plan_with_outputs(&[]), &FragmentExchange::default())
+            .unwrap();
         assert!(result.batches.is_empty());
     }
 }

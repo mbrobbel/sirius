@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::exchange::FragmentExchange;
 use crate::fragment_executor::FragmentExecutor;
 #[cfg(test)]
 use crate::fragment_executor::StubExecutor;
@@ -245,23 +246,29 @@ impl SiriusComputeNodeService {
         Ok(resolved)
     }
 
-    /// Executes a RESULT_SINK fragment and buffers its rows. Non-result-sink fragments (e.g. a
-    /// DATA_STREAM_SINK feeding another fragment) are translate-only. An unsupported result-sink
-    /// format or a missing fragment instance id fails loudly so integration gaps surface as an
-    /// error rather than as a silent empty result at `fetch_data`.
+    /// Executes result and exchange-producing fragments, buffering final result rows for the FE.
+    ///
+    /// StarRocks exchange routing remains in `FragmentExchange`; only the translated Substrait
+    /// plan enters Sirius. Fragments without either a result or data-stream sink remain
+    /// translate-only.
     fn execute_and_buffer(
         &self,
         params: &TExecPlanFragmentParams,
         translated: &TranslatedPlan,
     ) -> std::result::Result<(), String> {
-        if !Self::is_mysql_result_sink(params)? {
+        let is_result = Self::is_mysql_result_sink(params)?;
+        let exchange = FragmentExchange::from_fragment(params, &translated.exchange_inputs)?;
+        if !is_result && exchange.output.is_none() {
             return Ok(());
         }
-        let id = Self::fragment_instance_id(params)
-            .ok_or_else(|| "RESULT_SINK fragment is missing a fragment_instance_id".to_string())?;
-        let result = self.executor.execute(translated)?;
-        let batch = result_encoder::MysqlResultEncoder::encode(&result.batches, 0)?;
-        self.results.insert(id, batch);
+        let result = self.executor.execute(translated, &exchange)?;
+        if is_result {
+            let id = Self::fragment_instance_id(params).ok_or_else(|| {
+                "RESULT_SINK fragment is missing a fragment_instance_id".to_string()
+            })?;
+            let batch = result_encoder::MysqlResultEncoder::encode(&result.batches, 0)?;
+            self.results.insert(id, batch);
+        }
         Ok(())
     }
 
@@ -330,8 +337,8 @@ impl SiriusComputeNodeService {
     }
 
     /// Classifies the fragment output sink: `Ok(true)` for a MySQL text-protocol RESULT_SINK this
-    /// CN can encode, `Ok(false)` for a non-result sink (translate-only), and `Err` for a
-    /// RESULT_SINK whose format is not supported yet (binary rows, HTTP/FILE/Arrow Flight, etc.).
+    /// CN can encode, `Ok(false)` for another sink, and `Err` for a RESULT_SINK whose format is
+    /// not supported yet (binary rows, HTTP/FILE/Arrow Flight, etc.).
     /// The encoder only emits MySQL text rows, so other result-sink formats must be rejected
     /// rather than returned in the wrong wire format.
     fn is_mysql_result_sink(params: &TExecPlanFragmentParams) -> std::result::Result<bool, String> {
@@ -442,8 +449,7 @@ impl SiriusComputeNodeService {
         }
     }
 
-    /// StarRocks OK status. For these RPCs OK means "fragment accepted and translated", not
-    /// "fragment executed" — execution and result delivery are not implemented yet.
+    /// StarRocks OK status for a successfully processed fragment RPC.
     fn ok_status() -> StatusPb {
         StatusPb {
             status_code: TStatusCode::OK.0,
@@ -467,7 +473,7 @@ mod tests {
     use prost::Message;
     use starrocks_thrift::{
         data::TResultBatch,
-        data_sinks::{TDataSink, TResultSink},
+        data_sinks::{TDataSink, TDataStreamSink, TPlanFragmentDestination, TResultSink},
         descriptors::{TDescriptorTable, TSlotDescriptor, TTableDescriptor, TTupleDescriptor},
         internal_service::{InternalServiceVersion, TPlanFragmentExecParams},
         partitions::{TDataPartition, TPartitionType},
@@ -482,12 +488,32 @@ mod tests {
 
     use super::*;
     use crate::{
+        exchange::ExchangeRoute,
         proto::starrocks::{
             PFetchDataRequest, PUniqueId,
             p_internal_service_brpc::{PInternalServiceRouter, SERVICE_NAME, methods},
         },
         prpc,
     };
+
+    #[derive(Debug, Default)]
+    struct RecordingExecutor {
+        exchanges: Mutex<Vec<FragmentExchange>>,
+    }
+
+    impl FragmentExecutor for RecordingExecutor {
+        fn execute(
+            &self,
+            _translated: &TranslatedPlan,
+            exchange: &FragmentExchange,
+        ) -> std::result::Result<crate::FragmentResult, String> {
+            self.exchanges
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .push(exchange.clone());
+            Ok(crate::FragmentResult::new(Vec::new()))
+        }
+    }
 
     #[test]
     fn exec_plan_fragment_translates_supported_scan() {
@@ -695,6 +721,42 @@ mod tests {
     }
 
     #[test]
+    fn data_stream_sink_executes_with_cn_owned_exchange_metadata() {
+        let executor = Arc::new(RecordingExecutor::default());
+        let service = SiriusComputeNodeService::with_executor(executor.clone());
+        let destination_id = TUniqueId::new(4, 9);
+        let mut params = supported_fragment();
+        params.fragment.as_mut().unwrap().output_sink = Some(data_stream_sink(7));
+        let mut execution = exec_params(TUniqueId::new(1, 2), TUniqueId::new(3, 4));
+        execution.destinations = Some(vec![TPlanFragmentDestination::new(
+            destination_id.clone(),
+            None,
+            None,
+            None,
+        )]);
+        execution.sender_id = Some(5);
+        execution.enable_exchange_pass_through = Some(true);
+        params.params = Some(execution);
+
+        service.process_fragment(&params).unwrap();
+
+        let exchanges = executor
+            .exchanges
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        assert_eq!(exchanges.len(), 1);
+        let output = exchanges[0].output.as_ref().unwrap();
+        assert_eq!(output.sender_id, 5);
+        assert_eq!(
+            output.routes,
+            vec![ExchangeRoute {
+                fragment_instance_id: FragmentInstanceId::from(&destination_id),
+                node_id: 7,
+            }]
+        );
+    }
+
+    #[test]
     fn cached_descriptor_reference_reuses_query_descriptor_table() {
         let service = SiriusComputeNodeService::new();
         let query_id = TUniqueId::new(4, 2);
@@ -813,6 +875,35 @@ mod tests {
         TDataSink::new(
             TDataSinkType::RESULT_SINK,
             None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
+    fn data_stream_sink(dest_node_id: i32) -> TDataSink {
+        TDataSink::new(
+            TDataSinkType::DATA_STREAM_SINK,
+            Some(TDataStreamSink::new(
+                dest_node_id,
+                TDataPartition::new(TPartitionType::UNPARTITIONED, None, None, None),
+                None,
+                None,
+                None,
+                None,
+                None,
+            )),
             None,
             None,
             None,

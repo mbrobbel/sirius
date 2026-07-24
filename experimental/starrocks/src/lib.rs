@@ -48,6 +48,7 @@ mod brpc;
 mod compute_node_service;
 #[cfg(feature = "sirius-engine")]
 mod engine;
+mod exchange;
 mod file_schema;
 mod fragment_executor;
 mod proto;
@@ -58,6 +59,7 @@ mod result_store;
 pub use brpc::BrpcServer;
 #[cfg(feature = "sirius-engine")]
 pub use engine::SiriusEngine;
+pub use exchange::FragmentExchange;
 pub use fragment_executor::{FragmentExecutor, FragmentResult, StubExecutor};
 
 const COMPUTE_NODE_PROC_PATH: &str = "/compute_nodes";

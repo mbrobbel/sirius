@@ -13,7 +13,7 @@ use crate::descriptor_table::DescriptorTable;
 use crate::error::{Result, TranslateError};
 use crate::expr_translator::{self, ExprContext, TranslateExpr};
 use crate::scan_paths::ScanFilePaths;
-use crate::{ExtensionRegistry, URN_BOOLEAN};
+use crate::{ExchangeInput, ExtensionRegistry, URN_BOOLEAN};
 
 /// Partially translated relation plus the StarRocks row layout it emits.
 pub(crate) struct TranslatedRel {
@@ -44,6 +44,8 @@ struct PlanContext<'a> {
     /// scan ranges. Scans with paths emit a `local_files` read; path-less scans
     /// fall back to a named-table read.
     scan_paths: &'a ScanFilePaths,
+    /// StarRocks exchange semantics retained outside the emitted Substrait plan.
+    exchange_inputs: &'a mut Vec<ExchangeInput>,
     /// Substrait extension registry shared across the whole plan.
     registry: &'a mut ExtensionRegistry,
 }
@@ -53,11 +55,13 @@ impl<'a> PlanContext<'a> {
     fn new(
         desc: &'a DescriptorTable,
         scan_paths: &'a ScanFilePaths,
+        exchange_inputs: &'a mut Vec<ExchangeInput>,
         registry: &'a mut ExtensionRegistry,
     ) -> Self {
         Self {
             desc,
             scan_paths,
+            exchange_inputs,
             registry,
         }
     }
@@ -147,6 +151,7 @@ fn translate_plan_node(
         TPlanNodeType::HDFS_SCAN_NODE => translate_hdfs_scan(node, children, ctx),
         TPlanNodeType::SELECT_NODE => translate_select(node, children, ctx),
         TPlanNodeType::PROJECT_NODE => translate_project(node, children, ctx),
+        TPlanNodeType::EXCHANGE_NODE => translate_exchange(node, children, ctx),
         _ => Err(TranslateError::UnsupportedPlanNode {
             node_id: node.node_id,
             node_type: node.node_type,
@@ -246,10 +251,84 @@ pub(crate) fn translate_plan(
     plan: &TPlan,
     desc: &DescriptorTable,
     scan_paths: &ScanFilePaths,
+    exchange_inputs: &mut Vec<ExchangeInput>,
     registry: &mut ExtensionRegistry,
 ) -> Result<TranslatedRel> {
-    let mut ctx = PlanContext::new(desc, scan_paths, registry);
+    let mut ctx = PlanContext::new(desc, scan_paths, exchange_inputs, registry);
     plan.translate(&mut ctx)
+}
+
+/// Builds a typed stream-input read while retaining StarRocks routing outside Substrait.
+fn translate_exchange(
+    node: &TPlanNode,
+    children: Vec<TranslatedRel>,
+    ctx: &mut PlanContext<'_>,
+) -> Result<TranslatedRel> {
+    expect_children(node, &children, 0)?;
+    let exchange = node
+        .exchange_node
+        .as_ref()
+        .ok_or(TranslateError::MissingField {
+            context: "EXCHANGE_NODE",
+            field: "exchange_node",
+        })?;
+    if exchange.sort_info.is_some() {
+        return Err(TranslateError::UnsupportedPlanNode {
+            node_id: node.node_id,
+            node_type: node.node_type,
+            reason: "merging exchanges are not supported by the local streaming path",
+        });
+    }
+    if exchange.offset.unwrap_or(0) != 0 {
+        return Err(TranslateError::UnsupportedPlanNode {
+            node_id: node.node_id,
+            node_type: node.node_type,
+            reason: "exchange offsets are not supported by the local streaming path",
+        });
+    }
+    if node.limit >= 0 {
+        return Err(TranslateError::UnsupportedPlanNode {
+            node_id: node.node_id,
+            node_type: node.node_type,
+            reason: "exchange limits are not supported by the local streaming path",
+        });
+    }
+    if exchange.input_row_tuples.is_empty() {
+        return Err(TranslateError::MissingField {
+            context: "TExchangeNode",
+            field: "input_row_tuples",
+        });
+    }
+
+    let base_schema = ctx
+        .desc
+        .named_struct_for_tuples(&exchange.input_row_tuples)?;
+    let output_width = base_schema
+        .r#struct
+        .as_ref()
+        .map(|structure| structure.types.len())
+        .unwrap_or_default();
+    ctx.exchange_inputs.push(ExchangeInput {
+        node_id: node.node_id,
+        partition_type: exchange.partition_type,
+    });
+    let input = TranslatedRel {
+        rel: Rel {
+            rel_type: Some(rel::RelType::Read(Box::new(ReadRel {
+                base_schema: Some(base_schema),
+                // The compatibility StreamSession replaces this read with an in-memory
+                // VirtualTable before Sirius binds it. The name is diagnostic only.
+                read_type: Some(ReadType::NamedTable(NamedTable {
+                    names: vec!["__sirius_exchange".to_string(), node.node_id.to_string()],
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }))),
+        },
+        row_tuples: exchange.input_row_tuples.clone(),
+        output_width,
+    };
+    apply_conjuncts(input, node, ctx)
 }
 
 /// Builds a Substrait read for a StarRocks scan tuple.
@@ -344,7 +423,8 @@ pub(crate) fn project_exprs(
     // Root projections evaluate over already-translated inputs, so there are no
     // scan nodes to resolve file paths for.
     let scan_paths = ScanFilePaths::default();
-    let mut ctx = PlanContext::new(desc, &scan_paths, registry);
+    let mut exchange_inputs = Vec::new();
+    let mut ctx = PlanContext::new(desc, &scan_paths, &mut exchange_inputs, registry);
     project_exprs_with_context(input, exprs, &mut ctx)
 }
 

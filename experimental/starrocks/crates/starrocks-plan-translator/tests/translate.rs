@@ -17,8 +17,9 @@ use starrocks_thrift::internal_service::{
 use starrocks_thrift::opcodes::TExprOpcode;
 use starrocks_thrift::partitions::{TDataPartition, TPartitionType};
 use starrocks_thrift::plan_nodes::{
-    TBrokerRangeDesc, TBrokerScanRange, TBrokerScanRangeParams, TFileFormatType, TFileScanNode,
-    TFileScanType, TPlan, TPlanNode, TPlanNodeType, TProjectNode, TScanRange, TSelectNode,
+    TBrokerRangeDesc, TBrokerScanRange, TBrokerScanRangeParams, TExchangeNode, TFileFormatType,
+    TFileScanNode, TFileScanType, TPlan, TPlanNode, TPlanNodeType, TProjectNode, TScanRange,
+    TSelectNode,
 };
 use starrocks_thrift::planner::TPlanFragment;
 use starrocks_thrift::types::{
@@ -1999,24 +2000,44 @@ fn builtin_function(name: &str, ret_type: TTypeDesc) -> TFunction {
     )
 }
 
-/// Verifies an exchange node is still rejected: fragments are translated in isolation and
-/// multi-fragment plans are a later milestone.
+/// Verifies an exchange becomes a typed read plus separate StarRocks metadata.
 #[test]
-fn exchange_node_is_rejected() {
-    let exchange = base_plan_node(1, TPlanNodeType::EXCHANGE_NODE, 0, vec![0]);
-    let err = translate_fragment(&params(
+fn exchange_node_produces_stream_read_and_metadata() {
+    let mut exchange = base_plan_node(7, TPlanNodeType::EXCHANGE_NODE, 0, vec![0]);
+    exchange.exchange_node = Some(TExchangeNode::new(
+        vec![0],
+        None,
+        None,
+        Some(TPartitionType::UNPARTITIONED),
+        None,
+        None,
+    ));
+    let translated = translate_fragment(&params(
         Some(TPlan::new(vec![exchange])),
         Some(base_desc()),
         None,
     ))
-    .unwrap_err();
-    assert!(matches!(
-        err,
-        TranslateError::UnsupportedPlanNode {
-            node_type: TPlanNodeType::EXCHANGE_NODE,
-            ..
+    .unwrap();
+
+    assert_eq!(translated.exchange_inputs.len(), 1);
+    assert_eq!(translated.exchange_inputs[0].node_id, 7);
+    assert_eq!(
+        translated.exchange_inputs[0].partition_type,
+        Some(TPartitionType::UNPARTITIONED)
+    );
+    let input = root(&translated.plan).input.as_ref().unwrap();
+    match input.rel_type.as_ref().unwrap() {
+        rel::RelType::Read(read) => {
+            assert_eq!(read.base_schema.as_ref().unwrap().names, ["id", "name"]);
+            match read.read_type.as_ref().unwrap() {
+                read_rel::ReadType::NamedTable(table) => {
+                    assert_eq!(table.names, ["__sirius_exchange", "7"]);
+                }
+                other => panic!("expected stream placeholder read, got {other:?}"),
+            }
         }
-    ));
+        other => panic!("expected read rel, got {other:?}"),
+    }
 }
 
 /// Returns every extension function name declared by the plan.

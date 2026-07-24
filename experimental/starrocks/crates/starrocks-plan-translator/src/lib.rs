@@ -6,9 +6,8 @@
 //! invariants over breadth: it translates one fragment at a time, and everything
 //! outside the supported surface returns a structured [`TranslateError`] that
 //! names the offending node/type — so the next contributor knows exactly what to
-//! implement next. In particular `EXCHANGE_NODE` is rejected: a fragment is
-//! translated in isolation, and multi-fragment plans (every exchange is a
-//! fragment boundary) are a later milestone.
+//! implement next. `EXCHANGE_NODE` becomes a typed `ReadRel`; its StarRocks
+//! routing semantics stay in [`ExchangeInput`] metadata for the compute node.
 //!
 //! # Wire format: flat preorder
 //!
@@ -31,6 +30,7 @@
 //! | `HDFS_SCAN_NODE`     | `ReadRel` (named table) |
 //! | `SELECT_NODE`        | `FilterRel`        |
 //! | `PROJECT_NODE`       | `ProjectRel`       |
+//! | `EXCHANGE_NODE`      | `ReadRel` (stream input) |
 //!
 //! | Expression node   | Substrait expression |
 //! |-------------------|----------------------|
@@ -69,6 +69,7 @@ use std::fmt;
 use prost::Message;
 use starrocks_thrift::exprs::{TExpr, TExprNodeType};
 use starrocks_thrift::internal_service::TExecPlanFragmentParams;
+use starrocks_thrift::partitions::TPartitionType;
 use substrait::proto::extensions::simple_extension_declaration;
 use substrait::proto::extensions::{SimpleExtensionDeclaration, SimpleExtensionUrn};
 use substrait::proto::{Plan, PlanRel, RelRoot, plan_rel};
@@ -106,6 +107,20 @@ pub struct TranslatedPlan {
     pub plan: Plan,
     /// Root output names as emitted in the Substrait plan.
     pub output_names: Vec<String>,
+    /// StarRocks exchange inputs in the same traversal order as their Substrait reads.
+    ///
+    /// The Sirius plan is inspected after translation and its opaque stream identifiers are
+    /// correlated with these entries by the compute node. Sirius never sees this metadata.
+    pub exchange_inputs: Vec<ExchangeInput>,
+}
+
+/// StarRocks semantics retained for one exchange input outside the Sirius crate.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExchangeInput {
+    /// Receiver `EXCHANGE_NODE` id used by StarRocks's data-stream routing.
+    pub node_id: i32,
+    /// Sender partitioning declared by the receiver.
+    pub partition_type: Option<TPartitionType>,
 }
 
 impl TranslatedPlan {
@@ -201,8 +216,14 @@ impl PlanTranslator {
         let desc = DescriptorTable::try_from(desc_tbl)?;
         let scan_paths = ScanFilePaths::from_fragment(params, &desc)?;
         let mut registry = ExtensionRegistry::new();
-        let mut translated =
-            node_translator::translate_plan(plan, &desc, &scan_paths, &mut registry)?;
+        let mut exchange_inputs = Vec::new();
+        let mut translated = node_translator::translate_plan(
+            plan,
+            &desc,
+            &scan_paths,
+            &mut exchange_inputs,
+            &mut registry,
+        )?;
 
         let output_names = if let Some(output_exprs) = fragment
             .output_exprs
@@ -246,6 +267,7 @@ impl PlanTranslator {
         Ok(TranslatedPlan {
             plan: substrait_plan,
             output_names,
+            exchange_inputs,
         })
     }
 }
