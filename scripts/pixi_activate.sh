@@ -13,11 +13,13 @@ if [[ -x "$clang_cpp" ]]; then
 fi
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cmake_presets_src="$project_root/cmake/CMakePresets.json"
-cmake_presets_dst="$project_root/duckdb/CMakePresets.json"
-
-rm -f "$project_root/duckdb/CMakeUserPresets.json"
-ln -sf "$cmake_presets_src" "$cmake_presets_dst"
+rm -f "$project_root/duckdb/CMakePresets.json"
+printf '%s\n' \
+  '{' \
+  '  "version": 6,' \
+  '  "include": ["../cmake/CMakePresets.json"]' \
+  '}' \
+  > "$project_root/duckdb/CMakeUserPresets.json"
 
 mkdir -p build
 pixi shell-hook -s bash > $project_root/build/sirius_pixi_env_for_clion.sh

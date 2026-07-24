@@ -1,6 +1,6 @@
 [bench]
 name = "tpch-sf1"
-description = "TPC-H power run at SF1"
+description = "TPC-H steady-state latency at SF1"
 suite = "tpch"
 
 [dataset]
@@ -12,6 +12,6 @@ engine = "both"
 
 [execution]
 iterations = 3
-mode = "warm"
+warmups = 1
 timeout_s = 600
 validate = true

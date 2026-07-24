@@ -2,4 +2,4 @@
 name = "tpch"
 description = "TPC-H"
 generator = "tpchgen"
-formats = ["parquet", "duckdb"]
+formats = ["parquet"]

@@ -1,129 +1,278 @@
 # sirius-runner
 
-Benchmark runner CLI for Sirius — for developers, CI, and nightly benchmarks.
-It will gradually replace the shell/python benchmark infra under
-`test/tpch_performance/`; the CLI ships its own SQL queries and benchmark
-definitions.
+`sirius-runner` runs reproducible Sirius and DuckDB benchmarks for developers,
+CI, and benchmarking systems. It owns the full path from dataset preparation
+through validation and an evidence-rich result bundle.
 
-**Status: skeleton.** The command surface below is defined and stable enough to
-build on; commands marked *stub* print `not implemented yet` and exit non-zero.
+The current interface is deliberately small:
 
-## Usage
-
-```bash
-pixi run runner --help
-pixi run runner bench list
-pixi run runner bench show tpch-sf1
-pixi run runner suite show tpch
-pixi run runner results schema
+```text
+sirius-runner list
+sirius-runner show <benchmark>
+sirius-runner run <benchmark> [options]
+sirius-runner doctor [options]
 ```
 
-Or run the binary directly (`cargo build -p sirius-runner`, or download the
-`sirius-runner-{x64,arm64}` artifact from the Runner CI workflow).
+Run it from the Sirius checkout with `pixi run runner`.
 
-## Model
+## Quick start
 
-Benchmark definitions are layered so each piece is reusable:
+Inspect the built-in benchmarks and the exact work a run would perform:
 
-| Layer | Lives in | What it is |
-|---|---|---|
-| Dataset family | [`datasets/<name>.toml`](datasets) | Generator + supported formats (e.g. tpch via tpchgen). An *instance* adds logical args (scale factor) and storage args (format, compression, encoding). |
-| Query suite | [`suites/<name>/suite.toml`](suites) | Queries over a dataset family + validation spec. No instance args, no run params. |
-| Benchmark | [`benches/<name>.toml`](benches) | Run configuration: suite + dataset instance args + engine selection + execution params. What CI/nightly reference by name, e.g. `tpch-sf100`. |
-| Expected results | [`expected/<suite>/sf<N>/`](expected) | Validation data, keyed by the *logical* instance (independent of format/compression/encoding). |
+```bash
+pixi run runner list
+pixi run runner show tpch-sf1
+pixi run runner run tpch-sf1 --dry-run
+```
 
-`datasets/`, `suites/`, and `benches/` are embedded into the binary at compile
-time; `--assets <DIR>` loads a directory with the same layout instead.
-`expected/` is deliberately **not** embedded — see
-[expected/README.md](expected/README.md) for the resolution order (assets dir →
-data-root cache → generate via the suite's reference engine).
+Run a small DuckDB-only subset without requiring a Sirius build or GPU:
 
-`bench run <name>` resolves everything the run needs: the dataset instance
-under the data root (`<data-root>/<family>/sf<N>/<format>[-<compression>][-<encoding>]/`,
-generated when missing, free-disk-aware), expected results, a Sirius build,
-and the engine config — then runs, validates, and stores results.
+```bash
+pixi run runner doctor --engine duckdb
+pixi run runner run tpch-sf1 \
+  --engine duckdb \
+  --queries q1,q6 \
+  --iterations 3
+```
 
-## Commands
+Run both engines with the release build:
 
-| Command | Status | Purpose |
-|---|---|---|
-| `specs` (alias `doctor`) | stub | System specs: GPU, CPU, RAM, disks + free space |
-| `build list` | stub | Discover builds under `build/<preset>/extension/sirius` (honors `SIRIUS_BUILD_DIR`) |
-| `build source` | stub | Build from source via `pixi run make <preset>` |
-| `build download` | stub | Download recent build artifacts from GitHub |
-| `dataset list/show` | **works** | List / inspect dataset families |
-| `dataset generate` | stub | Generate an instance (disk-aware) |
-| `dataset instances` | stub | List instances under the data root |
-| `suite list/show` | **works** | List / inspect query suites |
-| `bench list/show` | **works** | List / inspect benchmarks (run configurations) |
-| `bench run <name>` | stub | Resolve dataset/validation/build/config, run, validate, store; ad-hoc via `--sql`/`--query` |
-| `validate generate` | stub | Expected results for a suite at a scale factor via the reference engine |
-| `validate status` | stub | Which expected results are present |
-| `validate compare` | stub | Check a stored run against expected results |
-| `results schema` | **works** | Print the results-store DDL |
-| `results list/show/export/push` | stub | Inspect, export, and publish stored results |
-| `compare` | stub | Compare two stored runs |
-| `sweep run` | stub | Sweep a benchmark across engine configs / dataset encodings |
-| `telemetry serve/view` | stub | Quent telemetry over a run's output |
-| `remote add/list/status/pack` | stub | Manage remote machines |
+```bash
+pixi run runner doctor --engine both
+pixi run runner run tpch-sf1 --engine both --preset release
+```
 
-Global flags: `--repo-root` (`SIRIUS_REPO_ROOT`), `--assets`
-(`SIRIUS_RUNNER_ASSETS`), `--data-root` (`SIRIUS_RUNNER_DATA_ROOT`), `--remote`
-(`SIRIUS_RUNNER_REMOTE`), `--json`, `-q/--quiet`, `--no-input`, `--no-color`,
-`-v`.
+`doctor` defaults to the Sirius/GPU workload. Use `--engine duckdb` when only
+DuckDB prerequisites should be required.
 
-Manifests are TOML (the crate's native config format); Sirius *engine* configs
-stay YAML and are referenced by path from benchmark manifests.
+Progress and logs go to stderr. The final human or JSON result goes to stdout,
+so `--json` is safe for automation:
 
-## CLI conventions
+```bash
+pixi run runner run tpch-sf1 --engine duckdb --json >summary.json
+```
 
-The CLI follows [clig.dev](https://clig.dev/). The contracts implementations
-must keep:
+## Execution contract
 
-- **stdout is for results, stderr is for everything else** (progress, logs,
-  hints, errors). `--json` makes stdout machine-readable; human tables are for
-  TTYs. `-q/--quiet` suppresses the non-essential stderr chatter.
-- **Exit codes are meaningful**: 0 success, 1 runtime error, 2 usage error
-  (clap). Reserved for CI gating: 3 = validation mismatch, 4 = comparison
-  regression beyond threshold.
-- **Prompts are optional**: only when stdin is a TTY, always bypassable —
-  `--no-input` fails instead of asking. Expensive/destructive actions (large
-  dataset generation, overwrites) confirm first; `-n/--dry-run` on
-  `bench run`, `dataset generate`, and `sweep run` shows the plan without
-  acting.
-- **Color** only when stdout is a TTY, and never when `NO_COLOR` is set,
-  `TERM=dumb`, or `--no-color` is passed.
-- **Secrets never travel via flags or env vars**: `results push` credentials
-  come from a token file or the system keychain.
-- **Runner config** (named remotes etc.) lives in the XDG base directory
-  (`~/.config/sirius-runner/`).
-- **Operations are recoverable**: dataset generation lands atomically,
-  downloads resume, re-running a failed bench continues rather than redoing
-  finished work.
+Every engine/query trial runs in a fresh Python process with a fresh DuckDB
+connection. Loading the Sirius extension, registering dataset views, applying
+the pin policy, and warm-ups happen outside measured time. A measurement covers
+query execution through complete result materialization.
 
-## Validation
+The DuckDB thread count is set explicitly from the process CPU affinity (or the
+available CPU count), `preserve_insertion_order` is enabled explicitly, and the
+timezone is UTC. These settings are applied to every connection, returned by
+the worker for verification, recorded in `run.json`, and included in expected
+result cache keys.
 
-Each suite declares a reference engine (`duckdb`) that produces expected
-results; per-query `validation` settings choose the comparison strategy:
-`rows` (tolerance-aware float comparison, the default) or `digest` (exact,
-constant-size — for queries whose result size scales with the dataset, e.g.
-tpch q16). Expected results for small/common scale factors are committed under
-`expected/` so CI and developers never run the reference engine; larger scale
-factors are generated once and cached (and may later move to a dedicated
-validation-results repository with the same layout).
+Runs are query-major. When comparing both engines, their order alternates for
+successive queries to reduce systematic drift. `timeout_s` is one deadline for
+the complete trial—setup, warm-ups, measurements, and result encoding. The
+worker first interrupts DuckDB and the parent then hard-kills an unresponsive
+worker after a short grace period.
 
-## Results store
+One benchmark preparation/execution slot is available per Unix user and host.
+Runs and Pixi Pack construction wait for that slot with progress heartbeats.
+Remote pack upload and unpack use the same host slot, so environment work cannot
+silently contend with measured trials.
 
-`results schema` prints the DDL ([schema.sql](schema.sql)): `environments`
-(system-spec snapshots), `runs`, `results` (per query/iteration), and
-`validations`. The store targets a local DuckDB file; runs sync back to the
-local store even when executed with `--remote`, and `results push` publishes
-to the remote results database.
+Sirius trials disable DuckDB fallback. A successful pin request records that
+the pin setup SQL succeeded; it does not claim direct physical-residency
+measurement.
 
-## Remote execution
+## Data and caches
 
-Planned as a global `--remote <name|user@host>` flag: the runner ships a
-[pixi-pack](https://pixi.prefix.dev/latest/deployment/pixi_pack/) of the
-runtime environment plus the matching runner binary and Sirius build to the
-target, re-invokes itself there over ssh, and pulls results back. The `remote`
-subcommand group only manages targets.
+Without `--data`, datasets are generated atomically below:
+
+```text
+<data-root>/.sirius/datasets/
+```
+
+TPC-H Parquet generation uses the repository's
+`test/tpch_performance/generate_tpch_data.sh` workflow. The default Pixi
+environment includes its Python/PyArrow dependency. Concurrent processes use a
+per-dataset lock, incomplete temporary data is never published, and immutable
+receipts contain file hashes and generator provenance. The managed recipe pins
+the `tpchgen-rs` revision in `tpchgen-revision.txt`, always runs Cargo's
+incremental release build, and records the exact generator executable hash.
+Recipe changes select a new cache entry rather than silently reusing old data.
+Incomplete staging directories for the same dataset are scavenged under its
+lock. If a runner-owned managed entry is corrupt, it is quarantined and
+regenerated atomically.
+
+Routine cache hits compare paths, sizes, and modification times. This avoids
+rehashing large datasets on every benchmark. Use `--verify-data` to rehash all
+files against a managed receipt, or to give an external dataset a content-based
+identity:
+
+```bash
+pixi run runner run tpch-sf1 --verify-data
+pixi run runner run tpch-sf1 --data /datasets/tpch-sf1 --verify-data
+```
+
+A verified external identity uses the dataset specification plus relative
+paths, sizes, and hashes. Moving or touching byte-identical data therefore
+reuses expected results, while a separate path/mtime stability identity still
+detects changes during a run.
+
+Expected query results are generated with the exact DuckDB Python runtime and
+cached below:
+
+```text
+<data-root>/.sirius/expected/
+```
+
+The key includes the dataset identity, SQL, validation protocol, DuckDB module
+hash and version, Python executable hash and version, explicit DuckDB settings,
+and embedded worker hash. Entries are immutable and published atomically. A
+per-entry lock prevents concurrent runs from doing the same reference work.
+Malformed runner-owned entries are treated as misses and repaired only after
+that lock is acquired; read-only inspection never mutates them. The dataset
+inventory is checked around reference generation and measured trials; a
+detected mutation fails the run before stale expected results or measurements
+are recorded.
+
+## Builds and configuration
+
+Sirius runs invoke the selected incremental build, normally:
+
+```bash
+pixi run make release
+```
+
+Use `--preset debug|release|relwithdebinfo`, or `--build-dir` to use existing
+artifacts without attributing them to the current checkout. DuckDB-only runs
+skip the Sirius build and reject Sirius-only options.
+
+Packed SSH builds refresh the repository CMake presets and force a fresh CMake
+configure under the selected packed toolchain before the incremental build.
+The Pixi Pack key, target platform, environment, CUDA profile, exact artifact
+hashes, and source revision are retained in bundle provenance.
+
+Configuration follows Sirius's real resolution order:
+
+1. `--config`
+2. the benchmark manifest
+3. `SIRIUS_CONFIG_FILE`
+4. `<repo>/sirius.yaml`
+5. `~/.sirius/sirius.yaml`
+6. Sirius built-in defaults
+
+When a file is selected, the runner records its SHA-256 identity and verifies
+that it does not change during build or execution. The raw YAML is deliberately
+not copied into the bundle because Sirius configs may contain object-store
+credentials.
+
+## Validation and results
+
+Expected results use a typed canonical representation rather than lossy string
+conversion. Validation supports exact digests, ordered or unordered rows, and
+per-query floating-point tolerances. Every measured iteration is validated.
+The reported status is explicitly `disabled`, `passed`, or `failed`.
+
+The exact `--output` directory must not exist. Without it, a unique directory is
+created under `<repo>/benchmark-runs/`. A bundle contains:
+
+```text
+run.json                 plan, provenance, preparation state, results, validation
+runtimes.csv             one row per measured iteration
+logs/                    worker requests, responses, and engine logs
+```
+
+`run.json` is flushed atomically after each meaningful stage and measurement.
+Failures retain a marked partial bundle. SIGINT, SIGTERM, and SIGHUP cancel the
+complete child process group and allow the bundle to be marked failed; sending
+a hard termination may still prevent cleanup.
+
+Exit codes are stable:
+
+- `0`: success, including validation disabled
+- `1`: runtime failure or blocked prerequisites
+- `2`: command-line usage error
+- `3`: completed run with a validation mismatch
+- `130`: graceful user interruption
+
+## Remote execution over SSH
+
+Remote execution is a run option, not a service:
+
+```bash
+pixi run runner run tpch-sf1 \
+  --remote developer@gpu-host \
+  --remote-repo /srv/sirius \
+  --remote-data-root /datasets \
+  --output benchmark-runs/remote-sf1
+```
+
+`--remote-repo` must be an absolute, complete Sirius checkout. The client
+checks its `pixi.toml` and `pixi.lock` hashes against the local checkout before
+uploading or building anything. By default both checkouts must also be clean
+and at the same Git commit. The remote state is checked again before and after
+plan resolution and immediately before a bundle can be marked complete, so a
+checkout change cannot silently produce a mixed-source result.
+
+Use `--allow-remote-source-difference` only when intentionally benchmarking a
+different or dirty remote checkout. The override and exact remote revision are
+recorded; the remote state must still remain unchanged throughout the run. SSH
+host trust must already be configured; all SSH calls are noninteractive and use
+connection/liveness timeouts.
+
+Path locality is explicit:
+
+- `--repo-root` and `--output` are local client paths.
+- `--remote-repo` and `--remote-data-root` are absolute remote paths.
+- `--config`, `--build-dir`, and `--data` refer to the selected execution host;
+  for SSH they are resolved against `--remote-repo` unless already absolute.
+
+The runner selects the locked CUDA 13.2 environment when supported and falls
+back to the locked CUDA 12.9 environment. DuckDB-only remote runs do not require
+an NVIDIA GPU. Sirius checks the default GPU's compute capability rather than
+accepting an unrelated secondary GPU. Remote runner upload currently requires
+Linux, `flock`, the same CPU architecture, and a compatible glibc.
+
+The runtime environment is packed with Pixi Pack 0.7.10. Its content-addressed
+cache key covers `pixi.toml`, `pixi.lock`, environment, platform, CUDA profile,
+pack format, and Pixi Pack version. Local packs live under
+`$XDG_CACHE_HOME/sirius-runner/v1/pixi-packs` (or `~/.cache`); remote packs and
+isolated jobs live under `~/.cache/sirius-runner/v1/`. Pack receipts and
+checksums are validated before reuse; corrupt local or remote pack state is
+rebuilt under the relevant lock. Content-addressed packs are retained for reuse.
+
+After a successful checksum-verified download and atomic local extraction, the
+remote job is removed. Failed jobs are retained privately (directories mode
+`0700`, files created under `umask 077`) at
+`~/.cache/sirius-runner/v1/jobs/<run-id>` and the CLI reports the target and run
+ID needed to inspect them. Failed bundles are downloaded when available.
+
+Use `--dry-run` to perform read-only compatibility, repository, and cache
+checks and print the planned actions:
+
+```bash
+pixi run runner run tpch-sf1 \
+  --remote developer@gpu-host \
+  --remote-repo /srv/sirius \
+  --dry-run
+
+pixi run runner doctor \
+  --remote developer@gpu-host \
+  --remote-repo /srv/sirius \
+  --engine both
+```
+
+For a CPU-only host, use `doctor --engine duckdb`. Remote dry-run and doctor
+disable Git optional locks and do not create jobs, packs, datasets, or builds.
+
+The runner does not provision hosts, configure SSH trust, cross CPU
+architectures, or integrate with a scheduler.
+
+## Embedded benchmark definitions
+
+The binary embeds:
+
+- `datasets/<name>.toml`: supported dataset generator and format
+- `suites/<name>/suite.toml`: SQL inventory and validation policy
+- `benches/<name>.toml`: dataset scale, engines, and execution defaults
+
+Only implemented fields are accepted. Unsupported generators, reference
+engines, compression overrides, and encoding overrides fail during resolution
+instead of being silently ignored.

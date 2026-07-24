@@ -42,6 +42,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DUCKDB="$PROJECT_DIR/build/release/duckdb"
+TPCHGEN_REPOSITORY="https://github.com/sirius-db/tpchgen-rs.git"
+TPCHGEN_REVISION_FILE="$SCRIPT_DIR/tpchgen-revision.txt"
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <scale_factor> [--format duckdb|parquet] [--output <path>] [--jobs N] [--cluster] [--cluster-keys <spec>]"
@@ -138,23 +140,49 @@ if [ "$FORMAT" = "parquet" ]; then
     fi
 
     TPCHGEN_DIR="$PROJECT_DIR/test_datasets/tpchgen-rs"
+    if [ ! -f "$TPCHGEN_REVISION_FILE" ]; then
+        echo "ERROR: pinned tpchgen revision file is missing: $TPCHGEN_REVISION_FILE"
+        exit 1
+    fi
+    TPCHGEN_REVISION="$(tr -d '[:space:]' < "$TPCHGEN_REVISION_FILE")"
+    if [[ ! "$TPCHGEN_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "ERROR: invalid pinned tpchgen revision: $TPCHGEN_REVISION"
+        exit 1
+    fi
 
-    # Step 1: Clone tpchgen-rs if not present
-    if [ ! -d "$TPCHGEN_DIR" ]; then
+    # Step 1: Materialize the exact pinned tpchgen-rs source.
+    if [ ! -d "$TPCHGEN_DIR/.git" ]; then
+        if [ -e "$TPCHGEN_DIR" ]; then
+            echo "ERROR: $TPCHGEN_DIR exists but is not a git checkout"
+            exit 1
+        fi
         echo "Cloning sirius-db/tpchgen-rs..."
-        git clone https://github.com/sirius-db/tpchgen-rs.git "$TPCHGEN_DIR"
+        git clone "$TPCHGEN_REPOSITORY" "$TPCHGEN_DIR"
     else
         echo "tpchgen-rs already cloned at $TPCHGEN_DIR"
     fi
 
-    # Step 2: Build tpchgen-cli from source (skip if already built)
-    TPCHGEN_CLI="$TPCHGEN_DIR/target/release/tpchgen-cli"
-    if [ ! -f "$TPCHGEN_CLI" ]; then
-        echo "Building tpchgen-cli with native CPU optimizations..."
-        (cd "$TPCHGEN_DIR" && RUSTFLAGS="-C target-cpu=native" cargo build --release -p tpchgen-cli)
-    else
-        echo "tpchgen-cli already built at $TPCHGEN_CLI"
+    if [ -n "$(git -C "$TPCHGEN_DIR" status --porcelain --untracked-files=all)" ]; then
+        echo "ERROR: tpchgen-rs checkout has local changes: $TPCHGEN_DIR"
+        echo "Move or discard them before generating a managed dataset."
+        exit 1
     fi
+    if ! git -C "$TPCHGEN_DIR" cat-file -e "${TPCHGEN_REVISION}^{commit}" 2>/dev/null; then
+        echo "Fetching pinned tpchgen-rs revision $TPCHGEN_REVISION..."
+        git -C "$TPCHGEN_DIR" fetch origin "$TPCHGEN_REVISION"
+    fi
+    git -C "$TPCHGEN_DIR" checkout --detach "$TPCHGEN_REVISION"
+    ACTUAL_TPCHGEN_REVISION="$(git -C "$TPCHGEN_DIR" rev-parse HEAD)"
+    if [ "$ACTUAL_TPCHGEN_REVISION" != "$TPCHGEN_REVISION" ]; then
+        echo "ERROR: tpchgen-rs checkout is at $ACTUAL_TPCHGEN_REVISION, expected $TPCHGEN_REVISION"
+        exit 1
+    fi
+
+    # Step 2: Always run Cargo's incremental build for the pinned source.
+    TPCHGEN_CLI="$TPCHGEN_DIR/target/release/tpchgen-cli"
+    echo "Building pinned tpchgen-cli with native CPU optimizations..."
+    (cd "$TPCHGEN_DIR" && RUSTFLAGS="-C target-cpu=native" cargo build --locked --release -p tpchgen-cli)
+    TPCHGEN_SHA256_BEFORE="$(sha256sum "$TPCHGEN_CLI" | cut -d' ' -f1)"
 
     # Step 3: Generate parquet data
     echo "Generating TPC-H SF${SF} parquet data with ${JOBS} parallel jobs..."
@@ -164,6 +192,11 @@ if [ "$FORMAT" = "parquet" ]; then
         -f parquet \
         -j "$JOBS" \
         -o "$OUTPUT"
+    TPCHGEN_SHA256_AFTER="$(sha256sum "$TPCHGEN_CLI" | cut -d' ' -f1)"
+    if [ "$TPCHGEN_SHA256_BEFORE" != "$TPCHGEN_SHA256_AFTER" ]; then
+        echo "ERROR: tpchgen executable changed during dataset generation"
+        exit 1
+    fi
 
 elif [ "$FORMAT" = "duckdb" ]; then
     # Use DuckDB's built-in dbgen() for DuckDB format

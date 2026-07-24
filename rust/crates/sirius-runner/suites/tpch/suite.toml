@@ -5,6 +5,7 @@ dataset = "tpch"
 
 [validation]
 reference = "duckdb"
+ordered_results = true
 
 [[queries]]
 name = "q1"
@@ -29,6 +30,7 @@ sql = "queries/q5.sql"
 [[queries]]
 name = "q6"
 sql = "queries/q6.sql"
+validation = { ordered_results = false }
 
 [[queries]]
 name = "q7"
@@ -61,6 +63,7 @@ sql = "queries/q13.sql"
 [[queries]]
 name = "q14"
 sql = "queries/q14.sql"
+validation = { ordered_results = false }
 
 [[queries]]
 name = "q15"
@@ -69,13 +72,13 @@ sql = "queries/q15.sql"
 [[queries]]
 name = "q16"
 sql = "queries/q16.sql"
-# Result size scales with the scale factor; results are exact, so compare a
-# digest instead of shipping full expected rows.
+# Result size scales with the scale factor and is exact.
 validation = { compare = "digest" }
 
 [[queries]]
 name = "q17"
 sql = "queries/q17.sql"
+validation = { ordered_results = false }
 
 [[queries]]
 name = "q18"
@@ -84,6 +87,7 @@ sql = "queries/q18.sql"
 [[queries]]
 name = "q19"
 sql = "queries/q19.sql"
+validation = { ordered_results = false }
 
 [[queries]]
 name = "q20"
