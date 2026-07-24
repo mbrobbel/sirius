@@ -2,7 +2,7 @@
 //!
 //! Two jobs:
 //!  1. Compile the cxx bridge glue against Sirius's lightweight public FFI header
-//!     (`src/include/sirius_ffi.h`) — no internal Sirius headers are needed, so
+//!     (`src/include/sirius_ffi.hpp`) — no internal Sirius headers are needed, so
 //!     this is the only include directory.
 //!  2. Link the single Sirius artifact that exports the FFI symbols (no
 //!     hand-maintained transitive dependency list). `cargo:rustc-link-{lib,search}`

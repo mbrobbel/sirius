@@ -5,12 +5,14 @@
 //! wrappers live in the [`sirius`](https://docs.rs/sirius) crate.
 //!
 //! The bridge binds Sirius's **public C++ surface** (`src/include/sirius_ffi.hpp`):
-//! an RAII [`Context`] held via [`cxx::UniquePtr`]. Constructing it brings up an
-//! initialized engine; dropping the `UniquePtr` tears it down. The header is
-//! lightweight, so the bridge compiles without any of Sirius's internal headers
-//! (cudf/rmm/duckdb). It is the seed of the public API `libsirius` will expose;
-//! the bindings link whichever Sirius artifact provides these symbols (the DuckDB
-//! extension today, a dedicated `libsirius` later — see `build.rs`).
+//! RAII [`Context`], [`DataRepository`], and [`DataBatch`] handles held via
+//! [`cxx::UniquePtr`]. The repository/batch handles are Sirius-owned adapters;
+//! the third-party cuCascade types remain private to their C++ implementation.
+//! The header is lightweight, so the bridge compiles without Sirius's internal
+//! headers (cudf/rmm/duckdb/cuCascade). It is the seed of the public API
+//! `libsirius` will expose; the bindings link whichever Sirius artifact provides
+//! these symbols (the DuckDB extension today, a dedicated `libsirius` later —
+//! see `build.rs`).
 //!
 //! The `make_context*` functions are bound as fallible (`Result`): bringing up
 //! the engine (or parsing a config file) can throw, and cxx turns a C++ exception
@@ -27,6 +29,47 @@ mod ffi {
 
         /// RAII handle to an initialized Sirius engine context.
         type Context;
+
+        /// Opaque Sirius-owned handle to a native cuCascade data batch.
+        type DataBatch;
+
+        /// Opaque Sirius-owned handle to a native cuCascade shared data repository.
+        type DataRepository;
+
+        /// Create an empty data repository, owned by the returned `UniquePtr`.
+        fn make_data_repository() -> UniquePtr<DataRepository>;
+
+        /// Return the immutable native batch identifier.
+        fn id(self: &DataBatch) -> u64;
+
+        /// Transfer `batch` into `partition_idx`.
+        fn push(
+            self: Pin<&mut DataRepository>,
+            batch: UniquePtr<DataBatch>,
+            partition_idx: usize,
+        ) -> Result<()>;
+
+        /// Remove the next batch from `partition_idx`, returning a null
+        /// `UniquePtr` when the partition is empty.
+        fn pop_next(
+            self: Pin<&mut DataRepository>,
+            partition_idx: usize,
+        ) -> Result<UniquePtr<DataBatch>>;
+
+        /// Return the number of batches in `partition_idx`.
+        fn size(self: &DataRepository, partition_idx: usize) -> Result<usize>;
+
+        /// Return the number of batches across all partitions.
+        fn total_size(self: &DataRepository) -> Result<usize>;
+
+        /// Return the current number of partitions.
+        fn num_partitions(self: &DataRepository) -> Result<usize>;
+
+        /// Grow the repository to `new_num_partitions`.
+        fn set_num_partitions(
+            self: Pin<&mut DataRepository>,
+            new_num_partitions: usize,
+        ) -> Result<()>;
 
         /// Construct an initialized [`Context`] from built-in defaults, owned by
         /// the returned `UniquePtr`.
@@ -58,4 +101,26 @@ mod ffi {
     }
 }
 
-pub use ffi::{Context, make_context, make_context_from_config};
+pub use ffi::{
+    Context, DataBatch, DataRepository, make_context, make_context_from_config,
+    make_data_repository,
+};
+
+#[cfg(test)]
+mod tests {
+    use super::make_data_repository;
+
+    /// Exercises the adapter and cuCascade linkage without constructing a GPU context.
+    #[test]
+    fn empty_repository_round_trip() {
+        let mut repository = make_data_repository();
+        assert_eq!(repository.num_partitions().unwrap(), 1);
+        assert_eq!(repository.total_size().unwrap(), 0);
+        assert_eq!(repository.size(0).unwrap(), 0);
+        assert!(repository.pin_mut().pop_next(0).unwrap().is_null());
+
+        repository.pin_mut().set_num_partitions(2).unwrap();
+        assert_eq!(repository.num_partitions().unwrap(), 2);
+        assert!(repository.size(2).is_err());
+    }
+}

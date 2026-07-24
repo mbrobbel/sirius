@@ -4,9 +4,9 @@
 //! This crate wraps the low-level [`sirius-sys`] cxx bindings in safe Rust types
 //! — the entry point for driving Sirius from Rust.
 //!
-//! Today it binds just enough to prove the toolchain links against the real
-//! Sirius library: constructing a [`SiriusContext`] from defaults or a YAML
-//! config file. More of the API surface is added in later PRs.
+//! In addition to context construction and Substrait execution, it provides
+//! ownership-safe [`DataRepository`] and [`DataBatch`] wrappers for the native
+//! cuCascade data boundary. The third-party C++ types never cross the public FFI.
 
 use std::path::Path;
 
@@ -30,6 +30,31 @@ use cxx::{Exception, UniquePtr, let_cxx_string};
 pub struct SiriusContext {
     // RAII handle owning the C++ engine context for its lifetime.
     inner: UniquePtr<sirius_sys::Context>,
+}
+
+/// A shared native data repository associated with a [`SiriusContext`].
+///
+/// The C++ handle owns a shared reference to the underlying repository, allowing
+/// a future native streaming source or sink to use the same repository. The
+/// Rust lifetime prevents the repository—and any batch extracted from it—from
+/// outliving the context that owns the batch memory spaces.
+///
+/// Batches transfer into the repository by value and transfer back out through
+/// [`pop_next`](Self::pop_next). This keeps ownership explicit at the Rust API
+/// even though the native implementation uses shared pointers internally.
+pub struct DataRepository<'context> {
+    inner: UniquePtr<sirius_sys::DataRepository>,
+    context: &'context SiriusContext,
+}
+
+/// An owned handle to a native cuCascade data batch.
+///
+/// Sirius's C++ adapter holds the native batch by shared ownership while Rust
+/// sees only this opaque Sirius-defined type. A batch can be inspected for its
+/// immutable ID or transferred into a [`DataRepository`].
+pub struct DataBatch<'context> {
+    inner: UniquePtr<sirius_sys::DataBatch>,
+    context: &'context SiriusContext,
 }
 
 /// Fully materialized output of one Substrait execution.
@@ -58,6 +83,18 @@ impl SiriusContext {
         Ok(Self {
             inner: sirius_sys::make_context_from_config(&config_path)?,
         })
+    }
+
+    /// Create an empty shared data repository associated with this context.
+    ///
+    /// The repository starts with partition `0`. Use
+    /// [`DataRepository::set_num_partitions`] to grow it before addressing
+    /// additional partitions.
+    pub fn create_data_repository(&self) -> DataRepository<'_> {
+        DataRepository {
+            inner: sirius_sys::make_data_repository(),
+            context: self,
+        }
     }
 
     /// Execute a serialized Substrait plan on the GPU and return the result rows.
@@ -100,6 +137,78 @@ impl SiriusContext {
             .collect::<Result<Vec<_>, _>>()
             .map_err(SiriusError::Arrow)?;
         Ok(SubstraitResult { schema, batches })
+    }
+}
+
+impl<'context> DataRepository<'context> {
+    /// Transfer `batch` into `partition_idx`.
+    ///
+    /// The batch is consumed even if the native operation reports an error.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the batch belongs to a different [`SiriusContext`].
+    pub fn push(
+        &mut self,
+        batch: DataBatch<'context>,
+        partition_idx: usize,
+    ) -> Result<(), Exception> {
+        assert!(
+            std::ptr::eq(self.context, batch.context),
+            "cannot push a data batch into a repository from another Sirius context"
+        );
+        self.inner.pin_mut().push(batch.inner, partition_idx)
+    }
+
+    /// Remove the next batch from `partition_idx`, or return `None` when empty.
+    pub fn pop_next(
+        &mut self,
+        partition_idx: usize,
+    ) -> Result<Option<DataBatch<'context>>, Exception> {
+        let batch = self.inner.pin_mut().pop_next(partition_idx)?;
+        if batch.is_null() {
+            Ok(None)
+        } else {
+            Ok(Some(DataBatch {
+                inner: batch,
+                context: self.context,
+            }))
+        }
+    }
+
+    /// Return the number of batches in `partition_idx`.
+    pub fn len(&self, partition_idx: usize) -> Result<usize, Exception> {
+        self.inner.size(partition_idx)
+    }
+
+    /// Return whether `partition_idx` contains no batches.
+    pub fn is_empty(&self, partition_idx: usize) -> Result<bool, Exception> {
+        Ok(self.len(partition_idx)? == 0)
+    }
+
+    /// Return the number of batches across all partitions.
+    pub fn total_len(&self) -> Result<usize, Exception> {
+        self.inner.total_size()
+    }
+
+    /// Return the current number of partitions.
+    pub fn num_partitions(&self) -> Result<usize, Exception> {
+        self.inner.num_partitions()
+    }
+
+    /// Grow the repository to `new_num_partitions`.
+    ///
+    /// cuCascade repositories cannot shrink because doing so could discard
+    /// batches already in flight.
+    pub fn set_num_partitions(&mut self, new_num_partitions: usize) -> Result<(), Exception> {
+        self.inner.pin_mut().set_num_partitions(new_num_partitions)
+    }
+}
+
+impl DataBatch<'_> {
+    /// Return the immutable native batch identifier.
+    pub fn id(&self) -> u64 {
+        self.inner.id()
     }
 }
 
@@ -154,7 +263,12 @@ mod tests {
         let _guard = GPU_CONTEXT_LOCK
             .lock()
             .unwrap_or_else(|err| err.into_inner());
-        let _ctx = SiriusContext::new().expect("bring up default Sirius context");
+        let ctx = SiriusContext::new().expect("bring up default Sirius context");
+        let mut repository = ctx.create_data_repository();
+        assert_eq!(repository.num_partitions().unwrap(), 1);
+        assert!(repository.is_empty(0).unwrap());
+        repository.set_num_partitions(2).unwrap();
+        assert_eq!(repository.num_partitions().unwrap(), 2);
     }
 
     /// Encodes a single-file `local_files` parquet read plan with `names` as the

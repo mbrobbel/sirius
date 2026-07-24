@@ -232,6 +232,7 @@ set(EXTENSION_SOURCES
     src/expression_evaluator/specializations/function.cpp
     src/expression_evaluator/specializations/operator.cpp
     src/expression_evaluator/specializations/reference.cpp
+    src/ffi/cucascade_adapter.cpp
     # Execution primitives (slot-based backpressure / completion tracking)
     src/exec/admission_control.cpp
     # I/O adapters (Phase 19 — io_uring + sirius_datasource)
@@ -597,6 +598,7 @@ set(TEST_SOURCES
     test/cpp/expression_evaluator/test_expression_evaluator_ast_equivalence.cpp
     test/cpp/expression_evaluator/test_gpu_expression_translator.cpp
     test/cpp/expression_evaluator/test_nonduckdb_frontend_proof.cpp
+    test/cpp/ffi/test_cucascade_adapter.cpp
     test/cpp/helper/test_cudf_utils.cpp
     test/cpp/helper/test_logical_type.cpp
     test/cpp/helper/test_transaction_utils.cpp
