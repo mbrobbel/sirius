@@ -1,12 +1,14 @@
 //! Safe, idiomatic Rust bindings for [Sirius](https://github.com/sirius-db/sirius),
 //! the GPU-native SQL engine.
 //!
-//! This crate wraps the low-level [`sirius-sys`] cxx bindings in safe Rust types
-//! — the entry point for driving Sirius from Rust.
+//! This crate wraps the low-level
+//! [`sirius-sys`](https://docs.rs/sirius-sys) cxx bindings in safe Rust types —
+//! the entry point for driving Sirius from Rust.
 //!
-//! Today it binds just enough to prove the toolchain links against the real
-//! Sirius library: constructing a [`SiriusContext`] from defaults or a YAML
-//! config file. More of the API surface is added in later PRs.
+//! It provides eager Substrait execution and a temporary synchronous
+//! single-batch [`StreamSession`] compatibility surface.
+
+mod stream;
 
 use std::path::Path;
 
@@ -14,6 +16,8 @@ use arrow_array::ffi_stream::{ArrowArrayStreamReader, FFI_ArrowArrayStream};
 use arrow_array::{RecordBatch, RecordBatchReader};
 use arrow_schema::SchemaRef;
 use cxx::{Exception, UniquePtr, let_cxx_string};
+
+pub use stream::{StreamId, StreamSession, StreamSessionError, SubstraitPlan};
 
 /// An initialized Sirius engine context.
 ///

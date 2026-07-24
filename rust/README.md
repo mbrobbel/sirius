@@ -33,6 +33,37 @@ LD_LIBRARY_PATH="$PWD/build/release/extension/sirius:$LD_LIBRARY_PATH" \
   pixi run cargo test --manifest-path rust/Cargo.toml -p sirius -p sirius-sys
 ```
 
+## Synchronous streaming compatibility
+
+The safe crate exposes the future-facing stream-session lifecycle while the
+native streaming operators are still under development:
+
+```rust
+let plan = sirius::SubstraitPlan::decode(&substrait_plan)?;
+let input_stream = plan.input_streams()[0];
+let output_stream = plan.output_streams()[0];
+
+// Match these opaque IDs with transport metadata retained by the embedding
+// runtime during translation, then move the plan into its engine session.
+let mut session = context.create_stream_session(plan)?;
+session.push_batch(input_stream, input_batch)?;
+session.end_stream(input_stream)?;
+let output = session.pull_batch_sync(output_stream)?.unwrap();
+```
+
+This compatibility path is intentionally synchronous and single-shot. The plan
+must contain exactly one `ReadRel`; the session substitutes the one pushed Arrow
+batch for that read as an in-memory Substrait `VirtualTable`, executes the
+existing Substrait API once, and requires exactly one result batch. Additional
+input reads, input batches, result batches, or unsupported Arrow input types
+return `StreamSessionError`. Stream identifiers are discovered from the plan,
+not configured separately by the caller. `SubstraitPlan` exposes them as opaque
+correlation keys before session creation. Transport-specific exchange details
+remain in the embedding runtime and are matched to those keys; Sirius does not
+interpret or retain them. The compatibility plan exposes one input and one
+output; native streaming plans can expose one input per source and multiple
+outputs, including one per partition of a partitioned sink.
+
 ## Linkage
 
 `build.rs` discovers the Sirius artifact under `$SIRIUS_BUILD_DIR` (default

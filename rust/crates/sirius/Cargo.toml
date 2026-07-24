@@ -20,10 +20,9 @@ sirius-sys.workspace = true
 # `ffi` feature provides `ffi_stream` (FFI_ArrowArrayStream / reader).
 arrow-array = { version = "59", features = ["ffi"] }
 arrow-schema = "59"
+prost = "0.14"
+substrait = "0.63"
 
 [dev-dependencies]
-# Building a `local_files` Substrait plan + a parquet fixture for the execute test.
-substrait = "0.63"
-prost = "0.14"
 parquet = "59"
 tempfile = "3"
