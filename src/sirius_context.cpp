@@ -1365,7 +1365,16 @@ RebindQueryInfo SiriusContext::OnFinalizePrepare(ClientContext& context,
   // the unbound SQL statement — this is what gpu_execution(...) does
   // internally and it works even when LogicalGet::Copy can't.
   unique_ptr<LogicalOperator> logical_plan;
-  if (conn_state) { logical_plan = conn_state->take_captured_plan_if_current(); }
+  if (conn_state) {
+    auto const capture_status = conn_state->captured_plan_status();
+    logical_plan              = conn_state->take_captured_plan_if_current();
+    if (!logical_plan) {
+      SIRIUS_LOG_DEBUG("Transparent execution: no usable captured plan ({}); re-planning from SQL",
+                       capture_status == SiriusConnectionState::CaptureStatus::kStale
+                         ? "stale generation"
+                         : "no capture");
+    }
+  }
   // Try to capture the SQL string while the active query context is alive —
   // PreparedStatementData::unbound_statement isn't populated until *after*
   // OnFinalizePrepare returns (see ClientContext::PrepareInternal in DuckDB).

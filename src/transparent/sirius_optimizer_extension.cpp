@@ -26,9 +26,12 @@
 #include <duckdb/planner/expression/bound_conjunction_expression.hpp>
 #include <duckdb/planner/expression_iterator.hpp>
 #include <duckdb/planner/operator/logical_filter.hpp>
+#include <duckdb/planner/operator/logical_get.hpp>
+#include <duckdb/storage/table/row_group_reorderer.hpp>
 #include <log/logging.hpp>
 #include <util/duckdb_error_message.hpp>
 
+#include <chrono>
 #include <cstddef>
 #include <exception>
 #include <map>
@@ -235,10 +238,125 @@ void sirius_pre_optimizer_hook(duckdb::OptimizerExtensionInput& input,
   }
 }
 
-duckdb::unique_ptr<duckdb::LogicalOperator> copy_logical_plan(duckdb::LogicalOperator const& plan,
-                                                              duckdb::ClientContext& context)
+namespace {
+
+/// Clone a LogicalGet without the serialize round-trip: deserializing a serialized scan re-runs
+/// the table function's bind (ParquetScanDeserialize re-binds the whole multi-file list,
+/// re-opening every file), whereas FunctionData::Copy() is an in-memory copy
+/// (MultiFileBindData::Copy for parquet). Field-for-field superset of what LogicalGet's
+/// serialization restores, except `dynamic_filters`, which serialization also drops: sharing the
+/// set would couple this clone to the CPU plan DuckDB keeps for fallback. Children are cloned by
+/// the caller.
+duckdb::unique_ptr<duckdb::LogicalOperator> clone_logical_get(duckdb::LogicalGet& get,
+                                                              duckdb::ClientContext& context,
+                                                              plan_copy_stats& stats)
 {
-  return plan.Copy(context);
+  duckdb::unique_ptr<duckdb::FunctionData> bind_data_copy;
+  if (get.bind_data) {
+    try {
+      bind_data_copy = get.bind_data->Copy();
+    } catch (std::exception&) {
+      // No usable Copy() (TableFunctionData's default throws): serialize this leaf the way the
+      // whole-plan Copy used to. Deserialization re-binds the function, so this is the expensive
+      // path — but it only runs for the leaf that needs it, and only when it has no cheap copy.
+      ++stats.serialized_gets;
+      return get.Copy(context);
+    }
+  }
+  ++stats.bind_copied_gets;
+  auto clone            = duckdb::make_uniq<duckdb::LogicalGet>(get.table_index,
+                                                     get.function,
+                                                     std::move(bind_data_copy),
+                                                     get.returned_types,
+                                                     get.names,
+                                                     get.virtual_columns);
+  clone->projection_ids = get.projection_ids;
+  // Deep copy: create_plan moves table_filters out of the scan it consumes, so the clone must
+  // never alias the original's filters.
+  clone->table_filters     = std::move(*get.table_filters.Copy());
+  clone->parameters        = get.parameters;
+  clone->named_parameters  = get.named_parameters;
+  clone->input_table_types = get.input_table_types;
+  clone->input_table_names = get.input_table_names;
+  clone->projected_input   = get.projected_input;
+  // ExtraOperatorInfo is move-only (unique_ptr member); copy it field by field.
+  clone->extra_info.file_filters = get.extra_info.file_filters;
+  if (get.extra_info.total_files.IsValid()) {
+    clone->extra_info.total_files = get.extra_info.total_files.GetIndex();
+  }
+  if (get.extra_info.filtered_files.IsValid()) {
+    clone->extra_info.filtered_files = get.extra_info.filtered_files.GetIndex();
+  }
+  if (get.extra_info.sample_options) {
+    clone->extra_info.sample_options = get.extra_info.sample_options->Copy();
+  }
+  clone->ordinality_idx = get.ordinality_idx;
+  if (get.row_group_order_options) {
+    clone->row_group_order_options =
+      duckdb::make_uniq<duckdb::RowGroupOrderOptions>(*get.row_group_order_options);
+  }
+  auto column_ids = get.GetColumnIds();
+  clone->SetColumnIds(std::move(column_ids));
+  clone->types                     = get.types;
+  clone->estimated_cardinality     = get.estimated_cardinality;
+  clone->has_estimated_cardinality = get.has_estimated_cardinality;
+  for (auto const& expression : get.expressions) {
+    clone->expressions.push_back(expression->Copy());
+  }
+  return clone;
+}
+
+duckdb::unique_ptr<duckdb::LogicalOperator> clone_plan_structural(duckdb::LogicalOperator& plan,
+                                                                  duckdb::ClientContext& context,
+                                                                  plan_copy_stats& stats)
+{
+  ++stats.nodes;
+
+  // Detach the children so the node-local Copy below serializes exactly one node; each child is
+  // then cloned by recursion. The moved-out children are restored even when Copy throws.
+  auto children = std::move(plan.children);
+  plan.children.clear();
+
+  duckdb::unique_ptr<duckdb::LogicalOperator> clone;
+  try {
+    if (plan.type == duckdb::LogicalOperatorType::LOGICAL_GET) {
+      clone = clone_logical_get(plan.Cast<duckdb::LogicalGet>(), context, stats);
+    } else {
+      clone = plan.Copy(context);
+    }
+  } catch (...) {
+    plan.children = std::move(children);
+    throw;
+  }
+  plan.children = std::move(children);
+
+  for (auto& child : plan.children) {
+    clone->children.push_back(clone_plan_structural(*child, context, stats));
+  }
+  return clone;
+}
+
+}  // namespace
+
+duckdb::unique_ptr<duckdb::LogicalOperator> copy_logical_plan(duckdb::LogicalOperator& plan,
+                                                              duckdb::ClientContext& context,
+                                                              plan_copy_stats* stats)
+{
+  plan_copy_stats local_stats;
+  auto& used_stats = stats != nullptr ? *stats : local_stats;
+  auto const start = std::chrono::steady_clock::now();
+  auto clone       = clone_plan_structural(plan, context, used_stats);
+  auto const micros =
+    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start)
+      .count();
+  SIRIUS_LOG_DEBUG(
+    "Transparent execution: cloned logical plan in {} us ({} nodes, {} scans bind-data-copied, "
+    "{} scans serialized)",
+    micros,
+    used_stats.nodes,
+    used_stats.bind_copied_gets,
+    used_stats.serialized_gets);
+  return clone;
 }
 
 void sirius_optimizer_hook(duckdb::OptimizerExtensionInput& input,

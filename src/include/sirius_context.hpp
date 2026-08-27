@@ -130,6 +130,16 @@ class SiriusConnectionState : public ClientContextState {
     captured_generation_ = planning_generation_;
   }
 
+  /// \brief Why take_captured_plan_if_current is (or is not) about to return a plan; read it
+  /// before taking to attribute capture misses in logs.
+  enum class CaptureStatus { kAvailable, kEmpty, kStale };
+  [[nodiscard]] CaptureStatus captured_plan_status() const noexcept
+  {
+    if (!captured_plan_) { return CaptureStatus::kEmpty; }
+    return captured_generation_ == planning_generation_ ? CaptureStatus::kAvailable
+                                                        : CaptureStatus::kStale;
+  }
+
   /// \brief Consume the capture iff it belongs to the CURRENT planning attempt;
   /// a stale capture (generation mismatch) is dropped and nullptr is returned,
   /// which sends OnFinalizePrepare down its existing replan-from-SQL path.

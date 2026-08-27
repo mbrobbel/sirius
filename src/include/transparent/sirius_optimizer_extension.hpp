@@ -19,6 +19,8 @@
 #include <duckdb/optimizer/optimizer_extension.hpp>
 #include <duckdb/planner/logical_operator.hpp>
 
+#include <cstddef>
+
 namespace sirius::transparent {
 
 /// \brief Pre-optimization hook that derives single-table restrictions out of OR-ed filters.
@@ -53,15 +55,37 @@ void sirius_pre_optimizer_hook(duckdb::OptimizerExtensionInput& input,
 void sirius_optimizer_hook(duckdb::OptimizerExtensionInput& input,
                            duckdb::unique_ptr<duckdb::LogicalOperator>& plan);
 
+/// \brief Per-copy accounting for \c copy_logical_plan, exposed for tests and debug logging.
+struct plan_copy_stats {
+  /// Logical operators visited.
+  std::size_t nodes = 0;
+  /// Scans cloned cheaply via \c FunctionData::Copy (no file I/O).
+  std::size_t bind_copied_gets = 0;
+  /// Scans whose bind data has no usable \c Copy(), cloned via the serialize round-trip
+  /// (deserialization re-runs the table function's bind).
+  std::size_t serialized_gets = 0;
+};
+
 /// \brief Copy a logical plan for Sirius's transparent execution path.
 ///
-/// Wraps \c duckdb::LogicalOperator::Copy. Serialization omits DuckDB join-filter metadata, but
-/// Sirius discovers targets from plan structure and does not consume that metadata. The original
-/// plan remains unchanged for CPU fallback.
+/// Structural per-node clone. Non-scan nodes go through node-local
+/// \c duckdb::LogicalOperator::Copy (children detached, so each node is serialized exactly once);
+/// scan nodes are cloned field by field with \c FunctionData::Copy() for the bind data. That
+/// last part is the point: deserializing a serialized scan re-runs the table function's bind
+/// (for parquet, a full multi-file re-bind that re-opens every file), which made each whole-plan
+/// \c Copy as expensive as a DuckDB frontend pass. A scan whose bind data has no usable
+/// \c Copy() falls back to the serialize round-trip for that leaf only.
 ///
-/// \param plan     The plan to copy. Not consumed.
+/// As with serialization, the clone's scans carry no \c dynamic_filters: sharing the set would
+/// couple the GPU plan to the CPU plan DuckDB keeps for fallback. Sirius discovers dynamic-filter
+/// targets from plan structure and does not consume that metadata.
+///
+/// \param plan     The plan to copy. Not consumed; children are detached and reattached during
+///                 the walk, so the reference is non-const, but the plan is unchanged on return
+///                 (also on the exception path).
 /// \param context  DuckDB client context for \c LogicalOperator::Copy.
+/// \param stats    Optional per-copy accounting.
 [[nodiscard]] duckdb::unique_ptr<duckdb::LogicalOperator> copy_logical_plan(
-  duckdb::LogicalOperator const& plan, duckdb::ClientContext& context);
+  duckdb::LogicalOperator& plan, duckdb::ClientContext& context, plan_copy_stats* stats = nullptr);
 
 }  // namespace sirius::transparent
