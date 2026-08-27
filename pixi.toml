@@ -79,6 +79,7 @@ platforms = ["linux-64-cuda13", "linux-aarch64-cuda13"]
 
 [feature.cuda13.dependencies]
 cuda-version = "13.2.*"
+cuda-culibos-static = "*"
 libcudf = "26.06.*"
 libcuvs = "26.06.*"
 
@@ -105,8 +106,14 @@ VCPKG_CUDA_VERSION = "12"
 awscli = "*"
 bison = "*"
 libnvjitlink-dev = "*"
+libnvjitlink-static = "*"
 cuda-nvrtc-dev = "*"
+cuda-nvrtc-static = "*"
 libcurand-dev = "*"
+libcurand-static = "*"
+libcublas-static = "*"
+libcusolver-static = "*"
+libcusparse-static = "*"
 flex = "*"
 patchelf = "*"
 zip = "*"

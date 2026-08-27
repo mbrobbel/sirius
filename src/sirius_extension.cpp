@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#include "duckdb/main/database.hpp"
-#define DUCKDB_EXTENSION_MAIN
-
 #include "config.hpp"
 #include "data/data_batch_utils.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "duckdb/common/open_file_info.hpp"
+#include "duckdb/main/database.hpp"
 #include "expression_evaluator/expression_evaluator_strategy.hpp"
 
 #include <cudf/io/parquet.hpp>
@@ -105,6 +103,7 @@ extern "C" int cudaProfilerStop();
 #include "op/scan/parquet_gpu_ingestible.hpp"
 #include "pin_table.hpp"
 #include "scan_manager/sirius_scan_manager.hpp"
+#include "sirius/duckdb_extension_loader.hpp"
 #include "sirius_context.hpp"
 #include "sirius_extension.hpp"
 #include "sirius_interface.hpp"
@@ -2960,7 +2959,7 @@ static void publish_transparent_optimizer_mask(DBConfig& config)
   live.swap(updated);
 }
 
-static void LoadInternal(ExtensionLoader& loader)
+void load_sirius_extension(ExtensionLoader& loader)
 {
   sirius::util::install_segfault_backtrace_handler();
 
@@ -3021,7 +3020,7 @@ static void LoadInternal(ExtensionLoader& loader)
   if (!sirius_disabled) { publish_transparent_optimizer_mask(config); }
 }
 
-void SiriusExtension::Load(ExtensionLoader& loader) { LoadInternal(loader); }
+void SiriusExtension::Load(ExtensionLoader& loader) { load_sirius_extension(loader); }
 
 std::string SiriusExtension::Name() { return "Sirius	Extension"; }
 
@@ -3035,12 +3034,3 @@ std::string SiriusExtension::Version() const
 }
 
 }  // namespace duckdb
-
-extern "C" {
-
-DUCKDB_CPP_EXTENSION_ENTRY(sirius, loader) { duckdb::LoadInternal(loader); }
-}
-
-#ifndef DUCKDB_EXTENSION_MAIN
-#error DUCKDB_EXTENSION_MAIN not defined
-#endif

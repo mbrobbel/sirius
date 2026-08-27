@@ -35,6 +35,9 @@ cufile.log
 # Generated nightly environment
 envs/
 compile_commands.json
+
+# rattler-build output
+output/
 .cache
 /sirius-perf-sf1000.yaml
 .rumdl_cache/

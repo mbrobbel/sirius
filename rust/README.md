@@ -25,8 +25,7 @@ pixi run cargo test --no-run --manifest-path rust/Cargo.toml -p sirius -p sirius
 `SiriusContext::new()` brings up a **fully initialized** engine (it calls the C++
 `initialize()`, which does GPU bring-up) and tears it down on drop — pure RAII via
 `cxx::UniquePtr`, no uninitialized state. So **running** the proof-of-life test
-needs a GPU, and the runtime loader must find the linked library; until a
-dedicated `libsirius` is installed, point it at the build tree:
+needs a GPU, and the runtime loader must find the linked library:
 
 ```bash
 LD_LIBRARY_PATH="$PWD/build/release/extension/sirius:$LD_LIBRARY_PATH" \
@@ -36,24 +35,21 @@ LD_LIBRARY_PATH="$PWD/build/release/extension/sirius:$LD_LIBRARY_PATH" \
 ## Linkage
 
 `build.rs` discovers the Sirius artifact under `$SIRIUS_BUILD_DIR` (default
-`build/release`) and links **one self-contained library** — no hand-maintained
-dependency list:
+`build/release`) or `$SIRIUS_PREFIX` and links one library:
 
-- **default** → `libsirius.so` (shared; pulls its deps via `DT_NEEDED`). Until a
-  real `libsirius.so` exists, `build.rs` symlinks the DuckDB extension
-  (`sirius.duckdb_extension`) to it.
+- **default** → `libsirius.so` (shared; pulls its deps via `DT_NEEDED`).
 - **`--features static`** → `libsirius.a` (self-contained, no runtime deps — the
   fully static vcpkg build). Requires that bundled archive to exist.
 
-`build.rs` only needs `src/include` to compile the shim, because the bound
-surface is the lightweight `sirius_ffi.h`. That header is the seed of the public
-C++ API `libsirius` will expose; today it is compiled into the DuckDB extension,
-which the bindings link until a dedicated `libsirius` ships (at which point the
-symlink stopgap is no longer used).
+`build.rs` only needs the directory containing `sirius_ffi.hpp` to compile the
+shim. The build-tree header is used by default; installed consumers can set
+`SIRIUS_PREFIX` or `SIRIUS_INCLUDE_DIR`.
 
 ## Environment
 
 - `SIRIUS_BUILD_DIR` — Sirius build tree (default `build/release`).
+- `SIRIUS_PREFIX` — installed Sirius prefix containing `include/sirius` and `lib`.
+- `SIRIUS_INCLUDE_DIR` — explicit directory containing `sirius_ffi.hpp`.
 - `CONDA_PREFIX` — set by `pixi`; used to find the headers and the shared lib's deps.
 - `CARGO_NET_GIT_FETCH_WITH_CLI=true` — only on machines whose git config rewrites
   `https://github.com/` to SSH (the telemetry crate's `quent` git dep otherwise

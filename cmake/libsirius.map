@@ -1,0 +1,10 @@
+{
+  global:
+    _ZN6sirius3ffi*;
+    _ZNK6sirius3ffi*;
+    _ZTIN6sirius3ffi*;
+    _ZTSN6sirius3ffi*;
+    _ZTVN6sirius3ffi*;
+  local:
+    *;
+};

@@ -18,6 +18,17 @@ cmake_minimum_required(VERSION 3.30.4 FATAL_ERROR)
 
 project(sirius LANGUAGES CXX CUDA)
 
+set(SIRIUS_PACKAGE_VERSION
+    "0.1.0"
+    CACHE STRING "Version used for installable Sirius library artifacts")
+
+option(SIRIUS_BUILD_SHARED_LIBRARY
+       "Build the standalone libsirius shared library" ON)
+option(
+  SIRIUS_EXTENSION_FROM_BUNDLE
+  "Build only the DuckDB entry point against an installed Sirius static bundle"
+  OFF)
+
 # Set CUDA architecture
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   set(CMAKE_CUDA_ARCHITECTURES native)
@@ -36,6 +47,33 @@ option(ENABLE_STREAM_CHECK
 option(SIRIUS_BUILD_S3_TESTS
        "Build the testcontainers-backed S3 integration test harness" ON)
 
+if(SIRIUS_EXTENSION_FROM_BUNDLE)
+  if(EXTENSION_STATIC_BUILD)
+    message(
+      FATAL_ERROR
+        "SIRIUS_EXTENSION_FROM_BUNDLE requires EXTENSION_STATIC_BUILD=OFF; the bundle already contains DuckDB"
+    )
+  endif()
+
+  find_package(SiriusStatic CONFIG REQUIRED)
+  set(CMAKE_SKIP_RPATH ON)
+  build_loadable_extension(sirius CPP src/sirius_duckdb_entry.cpp)
+  set_target_properties(
+    sirius_loadable_extension
+    PROPERTIES CXX_STANDARD 20
+               CXX_STANDARD_REQUIRED ON
+               LINKER_TYPE BFD
+               CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+  target_link_options(sirius_loadable_extension PRIVATE
+                      -Wl,--allow-multiple-definition -Wl,--exclude-libs,ALL)
+  target_include_directories(sirius_loadable_extension
+                             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+  target_link_libraries(sirius_loadable_extension PRIVATE SiriusStatic::bundle)
+  install(TARGETS sirius_loadable_extension LIBRARY DESTINATION lib
+                                                    COMPONENT SiriusDuckDB)
+  return()
+endif()
+
 # In the vcpkg build, vcpkg headers must take priority over: 1) conda's CCCL
 # 3.1.4 (injected via CXXFLAGS as -I.../include/cccl) 2) DuckDB's bundled fmt
 # 6.1.2 (uses duckdb_fmt namespace, incompatible with spdlog) Fix: strip conda
@@ -52,6 +90,16 @@ if(VCPKG_BUILD)
   # Set the CUDA language default to the static runtime before any CUDA targets
   # are created.
   set(CMAKE_CUDA_RUNTIME_LIBRARY Static)
+
+  execute_process(
+    COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=libgomp.a
+    OUTPUT_VARIABLE _SIRIUS_STATIC_LIBGOMP
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(EXISTS "${_SIRIUS_STATIC_LIBGOMP}")
+    set(OpenMP_gomp_LIBRARY
+        "${_SIRIUS_STATIC_LIBGOMP}"
+        CACHE FILEPATH "Static GNU OpenMP runtime for the vcpkg build" FORCE)
+  endif()
 
   # Strip conda-injected -Wl,-rpath flags from linker flags and disable CMake's
   # RPATH mechanism so binaries don't carry a hardcoded path to the pixi/conda
@@ -90,6 +138,25 @@ endforeach()
 find_package(cudf REQUIRED CONFIG)
 find_package(raft REQUIRED CONFIG) # raft must be found before cuvs
 find_package(cuvs REQUIRED CONFIG)
+
+if(VCPKG_BUILD)
+  set(_SIRIUS_CUVS_TARGET cuvs::cuvs_static)
+  get_target_property(_SIRIUS_CUVS_LINK_LIBRARIES "${_SIRIUS_CUVS_TARGET}"
+                      INTERFACE_LINK_LIBRARIES)
+  foreach(_CUDA_LIBRARY cublas cusolver cusparse curand nvJitLink nvrtc)
+    if(NOT TARGET "CUDA::${_CUDA_LIBRARY}_static")
+      message(
+        FATAL_ERROR "The vcpkg build requires CUDA::${_CUDA_LIBRARY}_static")
+    endif()
+    string(REPLACE "CUDA::${_CUDA_LIBRARY}" "CUDA::${_CUDA_LIBRARY}_static"
+                   _SIRIUS_CUVS_LINK_LIBRARIES "${_SIRIUS_CUVS_LINK_LIBRARIES}")
+  endforeach()
+  set_target_properties(
+    "${_SIRIUS_CUVS_TARGET}" PROPERTIES INTERFACE_LINK_LIBRARIES
+                                        "${_SIRIUS_CUVS_LINK_LIBRARIES}")
+else()
+  set(_SIRIUS_CUVS_TARGET cuvs::cuvs)
+endif()
 find_package(spdlog REQUIRED CONFIG)
 find_package(yaml-cpp REQUIRED CONFIG)
 find_package(absl REQUIRED CONFIG)
@@ -503,8 +570,12 @@ set_source_files_properties(${SIRIUS_SUBSTRAIT_SOURCES}
                             PROPERTIES COMPILE_OPTIONS "-w")
 list(APPEND EXTENSION_SOURCES ${SIRIUS_SUBSTRAIT_SOURCES})
 
-build_static_extension(sirius ${EXTENSION_SOURCES} ${CUDA_SOURCES})
-build_loadable_extension(sirius CPP ${EXTENSION_SOURCES} ${CUDA_SOURCES})
+set(SIRIUS_DUCKDB_ENTRY_SOURCE src/sirius_duckdb_entry.cpp)
+
+build_static_extension(sirius ${EXTENSION_SOURCES} ${CUDA_SOURCES}
+                       ${SIRIUS_DUCKDB_ENTRY_SOURCE})
+build_loadable_extension(sirius CPP ${EXTENSION_SOURCES} ${CUDA_SOURCES}
+                         ${SIRIUS_DUCKDB_ENTRY_SOURCE})
 
 # The standalone FFI constructs an embedded DuckDB, which needs the no-op static
 # extension loader retained regardless of archive ordering.
@@ -586,7 +657,7 @@ foreach(_target sirius_extension sirius_loadable_extension)
   target_link_libraries(
     ${_target}
     cudf::cudf
-    cuvs::cuvs
+    ${_SIRIUS_CUVS_TARGET}
     raft::raft
     cuco::cuco
     rmm::rmm
@@ -608,6 +679,35 @@ target_link_libraries(sirius_extension PkgConfig::NUMA PkgConfig::LIBURING
 
 target_link_libraries(sirius_loadable_extension PkgConfig::LIBURING
                       PkgConfig::CURL OpenSSL::Crypto)
+
+if(SIRIUS_BUILD_SHARED_LIBRARY)
+  add_library(sirius_shared SHARED src/sirius_library_anchor.cpp)
+  add_library(Sirius::sirius ALIAS sirius_shared)
+  set_target_properties(
+    sirius_shared
+    PROPERTIES OUTPUT_NAME sirius
+               EXPORT_NAME sirius
+               VERSION "${SIRIUS_PACKAGE_VERSION}"
+               SOVERSION 0
+               INSTALL_RPATH "$ORIGIN"
+               INSTALL_REMOVE_ENVIRONMENT_RPATH ON
+               CXX_STANDARD 20
+               CXX_STANDARD_REQUIRED ON
+               LINKER_TYPE BFD
+               CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+  target_include_directories(
+    sirius_shared
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>
+           $<INSTALL_INTERFACE:include/sirius>)
+  target_link_libraries(
+    sirius_shared
+    PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,sirius_extension>" duckdb_static
+            "$<LINK_LIBRARY:WHOLE_ARCHIVE,dummy_static_extension_loader>")
+  target_link_options(
+    sirius_shared PRIVATE
+    "LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/libsirius.map")
+  add_dependencies(sirius_shared duckdb_static)
+endif()
 
 # The sirius-sys + sirius Rust crates are built by cargo, not CMake (unlike the
 # telemetry bridge above, which CMake drives via Corrosion). Their build.rs
@@ -660,6 +760,84 @@ install(
   EXPORT "${DUCKDB_EXPORT_SET}"
   LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
   ARCHIVE DESTINATION "${INSTALL_LIB_DIR}")
+
+if(SIRIUS_BUILD_SHARED_LIBRARY)
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+    cmake/SiriusConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/SiriusConfig.cmake"
+    INSTALL_DESTINATION "lib/cmake/Sirius")
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/SiriusConfigVersion.cmake"
+    VERSION "${SIRIUS_PACKAGE_VERSION}"
+    COMPATIBILITY SameMinorVersion)
+
+  install(
+    TARGETS sirius_shared
+    EXPORT SiriusTargets
+    LIBRARY DESTINATION lib COMPONENT SiriusLibrary)
+  install(
+    FILES src/include/sirius_ffi.hpp
+    DESTINATION include/sirius
+    COMPONENT SiriusLibrary)
+  install(
+    EXPORT SiriusTargets
+    FILE SiriusTargets.cmake
+    NAMESPACE Sirius::
+    DESTINATION "lib/cmake/Sirius"
+    COMPONENT SiriusLibrary)
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/SiriusConfig.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/SiriusConfigVersion.cmake"
+    DESTINATION "lib/cmake/Sirius"
+    COMPONENT SiriusLibrary)
+endif()
+
+if(VCPKG_BUILD)
+  find_program(SIRIUS_PYTHON_EXECUTABLE NAMES python3 REQUIRED)
+  set(SIRIUS_STATIC_BUNDLE "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a")
+  set(SIRIUS_STATIC_DEPENDENCIES
+      "${CMAKE_CURRENT_BINARY_DIR}/libsirius_dependencies.a")
+  set(SIRIUS_STATIC_MANIFEST "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a.manifest")
+  add_custom_command(
+    OUTPUT "${SIRIUS_STATIC_BUNDLE}" "${SIRIUS_STATIC_DEPENDENCIES}"
+           "${SIRIUS_STATIC_MANIFEST}"
+    COMMAND
+      "${SIRIUS_PYTHON_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_sirius_fat_archive.py"
+      --build-dir "${CMAKE_BINARY_DIR}" --ninja "${CMAKE_MAKE_PROGRAM}" --ar
+      "${CMAKE_AR}" --ranlib "${CMAKE_RANLIB}" --source-archive
+      "$<TARGET_FILE:sirius_extension>" --output "${SIRIUS_STATIC_BUNDLE}"
+      --dependencies-output "${SIRIUS_STATIC_DEPENDENCIES}" --manifest
+      "${SIRIUS_STATIC_MANIFEST}" --search-dir
+      "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib"
+    DEPENDS sirius_extension sirius_loadable_extension
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/create_sirius_fat_archive.py"
+    VERBATIM)
+  add_custom_target(
+    sirius_static_bundle
+    DEPENDS "${SIRIUS_STATIC_BUNDLE}" "${SIRIUS_STATIC_DEPENDENCIES}"
+            "${SIRIUS_STATIC_MANIFEST}")
+
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+    cmake/SiriusStaticConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/SiriusStaticConfig.cmake"
+    INSTALL_DESTINATION "lib/cmake/SiriusStatic")
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/SiriusStaticConfigVersion.cmake"
+    VERSION "${SIRIUS_PACKAGE_VERSION}"
+    COMPATIBILITY ExactVersion)
+  install(
+    FILES "${SIRIUS_STATIC_BUNDLE}" "${SIRIUS_STATIC_DEPENDENCIES}"
+          "${SIRIUS_STATIC_MANIFEST}"
+    DESTINATION "lib/sirius-static"
+    COMPONENT SiriusStatic)
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/SiriusStaticConfig.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/SiriusStaticConfigVersion.cmake"
+    DESTINATION "lib/cmake/SiriusStatic"
+    COMPONENT SiriusStatic)
+endif()
 
 if(ENABLE_STREAM_CHECK)
   message(

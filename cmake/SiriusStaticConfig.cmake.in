@@ -1,0 +1,33 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(CUDAToolkit REQUIRED)
+find_dependency(Threads REQUIRED)
+
+if(NOT TARGET SiriusStatic::core)
+  add_library(SiriusStatic::core STATIC IMPORTED)
+  set_target_properties(
+    SiriusStatic::core
+    PROPERTIES IMPORTED_LOCATION
+               "${PACKAGE_PREFIX_DIR}/lib/sirius-static/libsirius.a"
+               IMPORTED_LINK_INTERFACE_LANGUAGES "CXX;CUDA")
+endif()
+
+if(NOT TARGET SiriusStatic::dependencies)
+  add_library(SiriusStatic::dependencies STATIC IMPORTED)
+  set_target_properties(
+    SiriusStatic::dependencies
+    PROPERTIES IMPORTED_LOCATION
+               "${PACKAGE_PREFIX_DIR}/lib/sirius-static/libsirius_dependencies.a"
+               IMPORTED_LINK_INTERFACE_LANGUAGES "CXX;CUDA")
+endif()
+
+if(NOT TARGET SiriusStatic::bundle)
+  add_library(SiriusStatic::bundle INTERFACE IMPORTED)
+  set_target_properties(
+    SiriusStatic::bundle
+    PROPERTIES INTERFACE_LINK_LIBRARIES
+               "$<LINK_LIBRARY:WHOLE_ARCHIVE,SiriusStatic::core>;SiriusStatic::dependencies;CUDA::cuda_driver;CUDA::nvml;Threads::Threads;${CMAKE_DL_LIBS};rt")
+endif()
+
+check_required_components(SiriusStatic)

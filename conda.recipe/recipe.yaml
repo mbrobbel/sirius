@@ -1,0 +1,171 @@
+schema_version: 1
+
+context:
+  version: "0.1.0"
+  duckdb_version: "1.5.5"
+  rapids_version: "26.06"
+
+recipe:
+  name: sirius-packages
+  version: ${{ version }}
+
+source:
+  path: ..
+
+outputs:
+  - package:
+      name: libsirius
+    build:
+      number: 0
+      string: cuda${{ cuda_version }}_h${{ hash }}_${{ build_number }}
+      script: build-libsirius.sh
+      skip:
+        - not linux
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - cmake >=3.30,<5
+        - cuda-version =${{ cuda_version }}
+        - cuda-nvcc
+        - git
+        - ninja
+        - pkg-config
+        - python
+        - rust
+      host:
+        - cuda-version =${{ cuda_version }}
+        - cuda-cudart-dev
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+        - libcudf ${{ rapids_version }}.*
+        - libcuvs ${{ rapids_version }}.*
+        - libraft-headers ${{ rapids_version }}.*
+        - librmm ${{ rapids_version }}.*
+        - spdlog >=1.8,<1.9
+        - yaml-cpp
+        - libabseil
+        - libcurl
+        - liburing
+        - numactl
+        - openssl
+        - zlib
+      run:
+        - libcuvs ${{ rapids_version }}.*
+      run_constraints:
+        - __cuda >=${{ cuda_version }}
+      run_exports:
+        - ${{ pin_subpackage('libsirius', upper_bound='x.x') }}
+    tests:
+      - package_contents:
+          lib:
+            - sirius
+          include:
+            - sirius/sirius_ffi.hpp
+      - script: test-libsirius.sh
+        files:
+          recipe:
+            - tests/library-consumer/
+        requirements:
+          run:
+            - ${{ compiler('cxx') }}
+            - cmake
+            - ninja
+            - patchelf
+
+  - package:
+      name: libsirius-static
+    build:
+      number: 0
+      string: cuda${{ cuda_version }}_h${{ hash }}_${{ build_number }}
+      script: build-libsirius-static.sh
+      skip:
+        - not linux
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - bison
+        - cmake >=3.30,<5
+        - cuda-version =${{ cuda_version }}
+        - cuda-nvcc
+        - flex
+        - git
+        - make
+        - ninja
+        - patchelf
+        - pkg-config
+        - python
+        - rust
+        - unzip
+        - wget
+        - zip
+      host:
+        - cuda-version =${{ cuda_version }}
+        - cuda-cudart-dev
+        - if: cuda_version == "13"
+          then: cuda-culibos-static
+        - cuda-nvrtc-static
+        - libcublas-static
+        - libcurand-static
+        - libcusolver-static
+        - libcusparse-static
+        - libnvjitlink-dev
+        - libnvjitlink-static
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+      run_constraints:
+        - __cuda >=${{ cuda_version }}
+      ignore_run_exports:
+        by_name:
+          - cuda-cudart
+          - cuda-nvrtc
+          - libcurand
+          - libnvjitlink
+    tests:
+      - script: test-libsirius-static.sh
+        requirements:
+          run:
+            - binutils
+
+  - package:
+      name: sirius-duckdb
+    build:
+      number: 0
+      string: cuda${{ cuda_version }}_h${{ hash }}_${{ build_number }}
+      script: build-sirius-duckdb.sh
+      skip:
+        - not linux
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - cmake >=3.30,<5
+        - cuda-version =${{ cuda_version }}
+        - cuda-nvcc
+        - ninja
+      host:
+        - ${{ pin_subpackage('libsirius-static', exact=True) }}
+        - cuda-version =${{ cuda_version }}
+        - cuda-cudart-dev
+        - cuda-nvml-dev
+      run:
+        - libduckdb >=${{ duckdb_version }},<1.5.6.0a0
+      run_constraints:
+        - __cuda >=${{ cuda_version }}
+    tests:
+      - script: test-sirius-duckdb.sh
+        requirements:
+          run:
+            - binutils
+            - duckdb-cli =${{ duckdb_version }}
+            - patchelf
+
+about:
+  homepage: https://github.com/sirius-db/sirius
+  repository: https://github.com/sirius-db/sirius
+  license: Apache-2.0
+  license_file: LICENSE
+  summary: GPU-native SQL execution engine and DuckDB extension

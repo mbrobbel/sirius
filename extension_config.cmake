@@ -18,5 +18,8 @@
 # to load
 
 # Extension from this repo
+set(SIRIUS_EXTENSION_VERSION
+    "dev"
+    CACHE STRING "Sirius extension version embedded in DuckDB metadata")
 duckdb_extension_load(sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR} LOAD_TESTS
-                      EXTENSION_VERSION dev)
+                      EXTENSION_VERSION ${SIRIUS_EXTENSION_VERSION})
