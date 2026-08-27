@@ -60,9 +60,17 @@ sirius_physical_ungrouped_aggregate::sirius_physical_ungrouped_aggregate(
       SiriusPhysicalOperatorType::UNGROUPED_AGGREGATE, std::move(types), estimated_cardinality),
     aggregates(std::move(expressions))
 {
-  // Sirius's GPU aggregate path does not support DISTINCT aggregates — see the throw in
-  // build_aggregate_layout. DistinctAggregateCollectionInfo / DistinctAggregateData are not
-  // wired into any subsequent code path here, so we skip populating them.
+  // Sirius's GPU aggregate path does not support DISTINCT aggregates —
+  // DistinctAggregateCollectionInfo / DistinctAggregateData are not wired into any subsequent
+  // code path here, so we skip populating them. Reject DISTINCT now, while the physical plan is
+  // being built, so the query falls back to DuckDB's CPU execution at plan time instead of
+  // hitting the same throw in build_aggregate_layout mid-execution.
+  for (auto const& aggregate : aggregates) {
+    auto const& aggr = sirius::ast::require_aggregate(aggregate.get(), "ungrouped aggregate");
+    if (aggr.distinct()) {
+      throw not_implemented_exception("Distinct aggregates not supported in GPU path yet");
+    }
+  }
 }
 
 namespace {

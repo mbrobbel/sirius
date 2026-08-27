@@ -79,6 +79,14 @@ CudfAggregateDefinitions convert_duckdb_aggregates_to_cudf(
     auto const fid       = aggr.function();
     auto const& children = aggr.arguments();
 
+    // DISTINCT is only implemented for COUNT (COLLECT_SET / MERGE_SETS below). Every other
+    // distinct aggregate must be rejected before its non-distinct branch silently drops the
+    // flag and computes the aggregate over all rows: throwing here happens while the physical
+    // plan is being built, so the query transparently falls back to DuckDB's CPU execution.
+    if (aggr.distinct() && fid != sirius::aggregate_id::count) {
+      throw_unsupported_aggregate(fid, "with DISTINCT");
+    }
+
     // Handle AVG specially: it expands into SUM + COUNT_VALID
     if (fid == sirius::aggregate_id::avg) {
       D_ASSERT(children.size() == 1);

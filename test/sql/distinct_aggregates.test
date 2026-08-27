@@ -1,0 +1,104 @@
+# =============================================================================
+# Copyright 2026, Sirius Contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+# =============================================================================
+
+# name: test/sql/distinct_aggregates.test
+# description: DISTINCT aggregates must return distinct results (or fall back to CPU) on the
+#              transparent GPU path. Guards against the GPU grouped-aggregate path silently
+#              dropping the DISTINCT flag of SUM/AVG/MIN/MAX (COUNT DISTINCT has a native path).
+# group: [sirius]
+
+require sirius
+
+require parquet
+
+# The transparent GPU path only engages for file-backed scans; write the fixture to parquet so
+# these queries actually route through Sirius instead of staying on DuckDB's in-memory tables.
+statement ok
+COPY (
+    SELECT g, v::INTEGER AS v, d::DECIMAL(15,2) AS d FROM (VALUES
+        ('a', 1,    1.10),
+        ('a', 1,    1.10),
+        ('a', 2,    2.20),
+        ('a', NULL, NULL),
+        ('b', -3,   -3.30),
+        ('b', -3,   -3.30),
+        ('b', -3,   -3.30),
+        (NULL, 5,   5.50),
+        (NULL, 5,   5.50),
+        (NULL, 7,   7.70),
+        ('c', NULL, NULL),
+        ('c', NULL, NULL)
+    ) t(g, v, d)
+) TO '__TEST_DIR__/distinct_aggregates.parquet' (FORMAT parquet);
+
+statement ok
+CREATE VIEW t AS
+SELECT g, v, d
+FROM read_parquet('__TEST_DIR__/distinct_aggregates.parquet');
+
+# Grouped: duplicates, NULL values, a NULL group key, negatives, an all-duplicates group and an
+# all-NULL group. The buggy non-distinct results would be a=4, b=-9, NULL=17.
+query ITTIII
+SELECT g, sum(DISTINCT v), avg(DISTINCT v), min(DISTINCT v), max(DISTINCT v),
+       count(DISTINCT v)
+FROM t GROUP BY g ORDER BY g;
+----
+a	3	1.5	1	2	2
+b	-3	-3.0	-3	-3	1
+c	NULL	NULL	NULL	NULL	0
+NULL	12	6.0	5	7	2
+
+# Grouped DECIMAL: scale must be preserved through the distinct aggregation.
+query ITT
+SELECT g, sum(DISTINCT d), min(DISTINCT d) FROM t GROUP BY g ORDER BY g;
+----
+a	3.30	1.10
+b	-3.30	-3.30
+c	NULL	NULL
+NULL	13.20	5.50
+
+# Ungrouped over the same data. Non-distinct would be sum=12, avg=2.0.
+query TTIII
+SELECT sum(DISTINCT v), avg(DISTINCT v), min(DISTINCT v), max(DISTINCT v), count(DISTINCT v)
+FROM t;
+----
+12	2.4	-3	7	5
+
+query TT
+SELECT sum(DISTINCT d), avg(DISTINCT d) FROM t;
+----
+13.20	2.64
+
+# Empty input.
+query ITT
+SELECT g, sum(DISTINCT v), avg(DISTINCT v) FROM t WHERE g = 'zzz' GROUP BY g;
+----
+
+query TTI
+SELECT sum(DISTINCT v), avg(DISTINCT v), count(DISTINCT v) FROM t WHERE g = 'zzz';
+----
+NULL	NULL	0
+
+# Mixed distinct and non-distinct aggregates in one grouped query.
+query ITTII
+SELECT g, sum(DISTINCT v), sum(v), count(DISTINCT v), count(*)
+FROM t GROUP BY g ORDER BY g;
+----
+a	3	4	2	4
+b	-3	-9	1	3
+c	NULL	NULL	0	2
+NULL	12	17	2	3
+
+statement ok
+DROP VIEW t;
