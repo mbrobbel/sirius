@@ -1463,13 +1463,18 @@ RebindQueryInfo SiriusContext::OnFinalizePrepare(ClientContext& context,
     } catch (NotImplementedException&) {
       plan_is_copyable = false;
     }
+    // Read the epoch before create_plan (inside the slot window, so no mutation can interleave):
+    // the validated plan below is stashed on the execution operator and consumed by the first
+    // execution while the pin registry is still at this epoch.
+    auto const pin_registry_epoch = get_scan_manager().pin_registry_epoch();
+    duckdb::unique_ptr<sirius::op::sirius_physical_operator> validated_plan;
     if (plan_is_copyable) {
-      planner.create_plan(std::move(validation_plan));
+      validated_plan = planner.create_plan(std::move(validation_plan));
     } else {
-      // Validate by consuming the freshly re-planned logical_plan; the
-      // PhysicalSiriusExecution operator will re-plan again at execute time
-      // using the SQL string we cached above.
-      planner.create_plan(std::move(logical_plan));
+      // Validate by consuming the freshly re-planned logical_plan; later executions of the
+      // operator (beyond the first, which consumes the stashed plan) re-plan from the SQL
+      // string we cached above.
+      validated_plan = planner.create_plan(std::move(logical_plan));
       logical_plan.reset();  // signal PhysicalSiriusExecution to use the SQL replan path
     }
 
@@ -1495,6 +1500,8 @@ RebindQueryInfo SiriusContext::OnFinalizePrepare(ClientContext& context,
                                                                             std::move(cpu_fallback),
                                                                             plan_reads_s3,
                                                                             0);
+    sirius_op.Cast<sirius::transparent::PhysicalSiriusExecution>().stash_validated_plan(
+      std::move(validated_plan), pin_registry_epoch);
     new_physical_plan->SetRoot(sirius_op);
 
     // Replace the DuckDB CPU physical plan.

@@ -172,7 +172,7 @@ duckdb::SourceResultType PhysicalSiriusExecution::GetDataInternal(
       if (state.sirius_context) {
         window.emplace(*state.sirius_context, context.client, "transparent_execution");
       }
-      if (!logical_plan_ && query_sql_.empty()) {
+      if (!validated_plan_ && !logical_plan_ && query_sql_.empty()) {
         throw duckdb::ExecutorException(
           "Transparent GPU execution is missing the logical plan template");
       }
@@ -183,40 +183,65 @@ duckdb::SourceResultType PhysicalSiriusExecution::GetDataInternal(
       prepared->types = types;
       prepared->names = result_names_;
 
-      // Rebuild a fresh Sirius physical plan for this execution. DuckDB may reuse
-      // the same prepared physical operator across multiple EXECUTE calls.
-      //
-      // Prefer LogicalOperator::Copy when the plan supports it (cheap deep clone
-      // via serialization). When the plan contains a non-serializable LogicalGet,
-      // fall back to re-parsing + re-binding the unbound SQL statement, which
-      // exercises the same bind path the very first run did.
-      duckdb::unique_ptr<duckdb::LogicalOperator> fresh_plan;
-      if (logical_plan_) {
-        try {
-          fresh_plan = sirius::transparent::copy_logical_plan(*logical_plan_, context.client);
-        } catch (duckdb::NotImplementedException&) {
-          // Drop logical_plan_ — we know it can't be copied, so future executes
-          // will skip straight to the replan path.
-          logical_plan_.reset();
+      // First execution: consume the Sirius physical plan create_plan produced while
+      // validating GPU support in OnFinalizePrepare, instead of re-running create_plan on a
+      // plan copy. Valid only while the pin registry is unchanged since validation
+      // (create_plan bakes registry decisions into the plan); registry mutations happen
+      // inside the query-lifecycle slot this execution window holds, so the epoch
+      // comparison is race-free. One-shot: taken out unconditionally so a stale stash is
+      // dropped, and later executions of a reused prepared operator rebuild as before.
+      duckdb::unique_ptr<sirius::op::sirius_physical_operator> sirius_plan;
+      if (validated_plan_) {
+        auto stashed = std::move(validated_plan_);
+        if (state.sirius_context && state.sirius_context->get_scan_manager().pin_registry_epoch() ==
+                                      validated_plan_epoch_) {
+          SIRIUS_LOG_DEBUG(
+            "Transparent execution: reusing the validated Sirius physical plan for the first "
+            "execution");
+          sirius_plan = std::move(stashed);
+        } else {
+          SIRIUS_LOG_DEBUG(
+            "Transparent execution: pin registry changed since validation; rebuilding the "
+            "Sirius physical plan");
         }
       }
-      if (!fresh_plan) {
-        // Suppress the optimizer hooks for this nested replan (the guard is a
-        // no-op when Sirius has no per-connection state registered).
-        duckdb::SiriusContext::InternalQueryGuard guard(context.client);
-        duckdb::Parser parser(context.client.GetParserOptions());
-        parser.ParseQuery(query_sql_);
-        if (parser.statements.size() != 1) {
-          throw duckdb::ExecutorException(
-            "Transparent GPU execution: replan expected exactly one statement");
+
+      if (!sirius_plan) {
+        // Rebuild a fresh Sirius physical plan for this execution. DuckDB may reuse
+        // the same prepared physical operator across multiple EXECUTE calls.
+        //
+        // Prefer copy_logical_plan when the plan supports it (cheap structural
+        // clone). When the plan contains a non-clonable LogicalGet,
+        // fall back to re-parsing + re-binding the unbound SQL statement, which
+        // exercises the same bind path the very first run did.
+        duckdb::unique_ptr<duckdb::LogicalOperator> fresh_plan;
+        if (logical_plan_) {
+          try {
+            fresh_plan = sirius::transparent::copy_logical_plan(*logical_plan_, context.client);
+          } catch (duckdb::NotImplementedException&) {
+            // Drop logical_plan_ — we know it can't be copied, so future executes
+            // will skip straight to the replan path.
+            logical_plan_.reset();
+          }
         }
-        duckdb::Planner duckdb_planner(context.client);
-        duckdb_planner.CreatePlan(std::move(parser.statements[0]));
-        duckdb::Optimizer optimizer(*duckdb_planner.binder, context.client);
-        fresh_plan = optimizer.Optimize(std::move(duckdb_planner.plan));
+        if (!fresh_plan) {
+          // Suppress the optimizer hooks for this nested replan (the guard is a
+          // no-op when Sirius has no per-connection state registered).
+          duckdb::SiriusContext::InternalQueryGuard guard(context.client);
+          duckdb::Parser parser(context.client.GetParserOptions());
+          parser.ParseQuery(query_sql_);
+          if (parser.statements.size() != 1) {
+            throw duckdb::ExecutorException(
+              "Transparent GPU execution: replan expected exactly one statement");
+          }
+          duckdb::Planner duckdb_planner(context.client);
+          duckdb_planner.CreatePlan(std::move(parser.statements[0]));
+          duckdb::Optimizer optimizer(*duckdb_planner.binder, context.client);
+          fresh_plan = optimizer.Optimize(std::move(duckdb_planner.plan));
+        }
+        sirius::planner::sirius_physical_plan_generator planner(context.client);
+        sirius_plan = planner.create_plan(std::move(fresh_plan));
       }
-      sirius::planner::sirius_physical_plan_generator planner(context.client);
-      auto sirius_plan = planner.create_plan(std::move(fresh_plan));
 
       auto gpu_prepared = duckdb::make_shared_ptr<sirius::sirius_prepared_statement_data>(
         std::move(prepared), std::move(sirius_plan));

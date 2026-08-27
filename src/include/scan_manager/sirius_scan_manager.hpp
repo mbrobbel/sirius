@@ -532,6 +532,16 @@ class sirius_scan_manager {
   ///         dropped, so anything derived from this materialization (uniqueness verdicts,
   ///         say) describes data that never entered the cache. See
   ///         @ref attach_proven_unique_columns.
+  /// \brief Monotonic counter advanced by every pinned-entry mutation (insert, in-place merge,
+  /// metadata attach, remove). Plan generation bakes registry decisions (pinned vs parquet
+  /// source, zone maps, uniqueness facts) into the Sirius physical plan, so a plan is only valid
+  /// to execute while the epoch it was generated under still matches. Mutations happen inside
+  /// the query-lifecycle slot; comparing epochs while holding the slot is therefore race-free.
+  [[nodiscard]] std::uint64_t pin_registry_epoch() const noexcept
+  {
+    return _pin_registry_epoch.load(std::memory_order_acquire);
+  }
+
   [[nodiscard]] std::vector<std::string> insert_pinned_entry(
     const std::string& name,
     cache_entry_info cache_info,
@@ -762,6 +772,12 @@ class sirius_scan_manager {
   /// Source of pin generations. Never 0 — that value means "invalidated", so
   /// an origin holding it can never resolve.
   std::atomic<late_mat::pin_generation_t> _next_pin_generation{1};
+  /// Bumped on every pinned-entry mutation (see pin_registry_epoch()).
+  std::atomic<std::uint64_t> _pin_registry_epoch{0};
+  void bump_pin_registry_epoch() noexcept
+  {
+    _pin_registry_epoch.fetch_add(1, std::memory_order_release);
+  }
 
   /// Give the entry now living at @p name a fresh late-mat handle, and
   /// invalidate whatever handle it is replacing. Called after every insert;

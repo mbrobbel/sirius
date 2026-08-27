@@ -22,6 +22,8 @@
 #include <duckdb/execution/physical_operator.hpp>
 #include <duckdb/planner/logical_operator.hpp>
 
+#include <cstdint>
+
 namespace duckdb {
 class PreparedStatementData;
 }  // namespace duckdb
@@ -61,6 +63,18 @@ class PhysicalSiriusExecution : public duckdb::PhysicalOperator {
 
   std::string GetName() const override { return "SIRIUS_GPU_EXECUTION"; }
 
+  /// \brief Stash the Sirius physical plan that OnFinalizePrepare generated while validating
+  /// GPU support, so the first execution can consume it instead of re-running create_plan.
+  /// \param epoch The scan manager's pin_registry_epoch() read (inside the plan-generation
+  ///              slot window) before create_plan ran; the stash is only consumed while the
+  ///              epoch still matches, since create_plan bakes registry decisions into the plan.
+  void stash_validated_plan(duckdb::unique_ptr<sirius::op::sirius_physical_operator> plan,
+                            std::uint64_t epoch)
+  {
+    validated_plan_       = std::move(plan);
+    validated_plan_epoch_ = epoch;
+  }
+
  private:
   /// A reusable copy of the optimized logical plan.
   /// DuckDB can execute the same prepared physical operator multiple times, so
@@ -72,6 +86,14 @@ class PhysicalSiriusExecution : public duckdb::PhysicalOperator {
   /// first execute we may discover Copy() throws and need to clear this so
   /// future executes skip straight to the replan path.
   mutable duckdb::unique_ptr<duckdb::LogicalOperator> logical_plan_;
+
+  /// One-shot: the Sirius physical plan create_plan produced while validating GPU support in
+  /// OnFinalizePrepare. The first execution consumes it when the pin registry hasn't changed
+  /// since (epoch match); otherwise — and for every later execution of a reused prepared
+  /// operator — the plan is rebuilt from logical_plan_ / query_sql_ as before. Mutable for the
+  /// same reason as logical_plan_.
+  mutable duckdb::unique_ptr<sirius::op::sirius_physical_operator> validated_plan_;
+  std::uint64_t validated_plan_epoch_ = 0;
 
   /// Original SQL string used to re-plan when `logical_plan_` cannot be
   /// copied (e.g. queries against table functions whose bind_data does not
