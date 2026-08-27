@@ -589,6 +589,131 @@ static void downcast_hugeint_types(duckdb::vector<duckdb::LogicalType>& types,
   }
 }
 
+// SUM(DISTINCT x) / AVG(DISTINCT x) have no native cudf grouped aggregation, and the GPU
+// aggregate operators reject them (falling back to CPU). For the common shape where every
+// aggregate reads the same single expression, distinctness can instead be planned as a dedup
+// rewrite: γ_G(SUM(DISTINCT x), …) ≡ γ_G(SUM(x), …) over γ_{G ∪ {x}}(input). The inner
+// aggregate has no aggregate expressions — it only deduplicates {group keys, x} — and the
+// outer aggregates run non-distinct over its output. MIN/MAX are duplicate-insensitive, so
+// their DISTINCT flag is simply dropped (independently of the rewrite).
+//
+// Applies to both grouped and ungrouped aggregates (for the latter the dedup keys are just
+// {x}). Shapes the rewrite cannot express — multiple distinct expressions, distinct mixed
+// with duplicate-sensitive non-distinct aggregates (COUNT(*), SUM(y)), filters, ORDER BY
+// aggregates, grouping sets — are left untouched and rejected downstream, which triggers the
+// transparent CPU fallback.
+//
+// Eligibility must be decided before extract_aggregate_expressions: that hoist gives every
+// aggregate its own projection column, so "same expression" is only visible on the original
+// expressions. Clears the MIN/MAX flags as a side effect; returns whether the dedup rewrite
+// applies (to be performed by apply_distinct_aggregate_rewrite after the hoist).
+static bool prepare_distinct_aggregate_rewrite(duckdb::LogicalAggregate& op)
+{
+  // MIN(DISTINCT x) == MIN(x): drop the flag so the aggregate plans natively.
+  for (auto& expression : op.expressions) {
+    auto& aggregate = expression->Cast<duckdb::BoundAggregateExpression>();
+    if (!aggregate.IsDistinct() || aggregate.filter || aggregate.order_bys) { continue; }
+    auto const id = sirius::from_duckdb_aggregate_name(aggregate.function.name);
+    if (id && (*id == sirius::aggregate_id::min || *id == sirius::aggregate_id::max)) {
+      aggregate.aggr_type = duckdb::AggregateType::NON_DISTINCT;
+    }
+  }
+
+  if (op.grouping_sets.size() > 1 || !op.grouping_functions.empty()) { return false; }
+
+  // The rewrite is only correct when every aggregate reads the same single expression that the
+  // dedup uses as its extra key: distinct SUM/AVG/COUNT become plain aggregates over the
+  // deduplicated rows, and non-distinct aggregates survive dedup only if duplicate-insensitive
+  // (MIN/MAX). It must also gain something: a distinct SUM/AVG (no native GPU path), or a
+  // distinct COUNT in an ungrouped aggregate (the grouped COLLECT_SET path has no ungrouped
+  // counterpart). A grouped COUNT(DISTINCT) on its own keeps its native path.
+  bool has_distinct_sum_or_avg          = false;
+  bool has_distinct_count               = false;
+  duckdb::Expression const* shared_expr = nullptr;
+  for (auto& expression : op.expressions) {
+    auto& aggregate = expression->Cast<duckdb::BoundAggregateExpression>();
+    if (aggregate.filter || aggregate.order_bys || aggregate.children.size() != 1) { return false; }
+    auto const id = sirius::from_duckdb_aggregate_name(aggregate.function.name);
+    if (!id) { return false; }
+    if (aggregate.IsDistinct()) {
+      switch (*id) {
+        case sirius::aggregate_id::sum:
+        case sirius::aggregate_id::sum_no_overflow:
+        case sirius::aggregate_id::avg: has_distinct_sum_or_avg = true; break;
+        case sirius::aggregate_id::count: has_distinct_count = true; break;
+        default: return false;
+      }
+    } else if (*id != sirius::aggregate_id::min && *id != sirius::aggregate_id::max) {
+      return false;
+    }
+    if (shared_expr && !shared_expr->Equals(*aggregate.children[0])) { return false; }
+    shared_expr = aggregate.children[0].get();
+  }
+  return has_distinct_sum_or_avg || (op.groups.empty() && has_distinct_count);
+}
+
+// Insert the dedup aggregate below the (about to be built) outer aggregate and strip the
+// DISTINCT flags. Runs after extract_aggregate_expressions, so every group is a bare reference
+// over the hoist projection with group i at projection column i, and every aggregate child is a
+// bare reference to (a duplicate hoist column of) the one shared expression that
+// prepare_distinct_aggregate_rewrite established.
+static duckdb::unique_ptr<sirius::op::sirius_physical_operator> apply_distinct_aggregate_rewrite(
+  duckdb::LogicalAggregate& op, duckdb::unique_ptr<sirius::op::sirius_physical_operator> plan)
+{
+  D_ASSERT(!op.expressions.empty());
+  auto const& value_ref = op.expressions[0]
+                            ->Cast<duckdb::BoundAggregateExpression>()
+                            .children[0]
+                            ->Cast<duckdb::BoundReferenceExpression>();
+
+  duckdb::vector<duckdb::unique_ptr<duckdb::Expression>> dedup_groups;
+  duckdb::vector<duckdb::LogicalType> dedup_key_types;
+  duckdb::GroupingSet dedup_set;
+  for (auto& group : op.groups) {
+    auto& ref = group->Cast<duckdb::BoundReferenceExpression>();
+    dedup_set.insert(dedup_groups.size());
+    dedup_key_types.push_back(ref.return_type);
+    dedup_groups.push_back(
+      duckdb::make_uniq<duckdb::BoundReferenceExpression>(ref.return_type, ref.index));
+  }
+  auto const value_position = dedup_groups.size();
+  dedup_set.insert(value_position);
+  dedup_key_types.push_back(value_ref.return_type);
+  dedup_groups.push_back(
+    duckdb::make_uniq<duckdb::BoundReferenceExpression>(value_ref.return_type, value_ref.index));
+  duckdb::vector<duckdb::GroupingSet> dedup_sets;
+  dedup_sets.push_back(std::move(dedup_set));
+
+  SIRIUS_LOG_INFO(
+    "[sirius_plan_aggregate] Rewriting distinct aggregates over column {} into a dedup "
+    "aggregate over {} keys",
+    value_ref.index,
+    dedup_groups.size());
+
+  auto const child_cardinality = plan->estimated_cardinality;
+  auto dedup                   = duckdb::make_uniq_base<sirius::op::sirius_physical_operator,
+                                                        sirius::op::sirius_physical_grouped_aggregate>(
+    sirius::from_duckdb_vec(dedup_key_types),
+    duckdb::vector<std::unique_ptr<sirius::ast::node>>{},
+    translate_expressions(std::move(dedup_groups)),
+    std::move(dedup_sets),
+    duckdb::vector<duckdb::unsafe_vector<std::size_t>>{},
+    child_cardinality,
+    duckdb::TupleDataValidityType::CAN_HAVE_NULL_VALUES,
+    op.distinct_validity);
+  dedup->children.push_back(std::move(plan));
+
+  // The dedup emits [group keys…, x]: the outer group references (0 … G-1) already match, and
+  // every aggregate now reads x at the last key position, non-distinct.
+  for (auto& expression : op.expressions) {
+    auto& aggregate       = expression->Cast<duckdb::BoundAggregateExpression>();
+    aggregate.children[0] = duckdb::make_uniq<duckdb::BoundReferenceExpression>(
+      aggregate.children[0]->return_type, value_position);
+    aggregate.aggr_type = duckdb::AggregateType::NON_DISTINCT;
+  }
+  return dedup;
+}
+
 }  // namespace
 
 duckdb::unique_ptr<sirius::op::sirius_physical_operator>
@@ -609,8 +734,10 @@ sirius_physical_plan_generator::create_plan(duckdb::LogicalAggregate& op)
 
   auto plan = create_plan(*op.children[0]);
 
-  plan = extract_aggregate_expressions(
+  bool const dedup_distinct = prepare_distinct_aggregate_rewrite(op);
+  plan                      = extract_aggregate_expressions(
     context, std::move(plan), op.expressions, op.groups, op.grouping_sets);
+  if (dedup_distinct) { plan = apply_distinct_aggregate_rewrite(op, std::move(plan)); }
   bool can_use_simple_aggregation = true;
   for (auto& expression : op.expressions) {
     auto& aggregate = expression->Cast<duckdb::BoundAggregateExpression>();

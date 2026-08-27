@@ -105,18 +105,18 @@ TEST_CASE_METHOD(AggNullFixture,
                  "[integration][gpu_execution][aggregate][nulls]")
 {
   // Grouped COUNT(DISTINCT) runs on the GPU and skips NULLs correctly (the
-  // ungrouped form falls back to CPU -- see the next case).
+  // ungrouped form plans via the dedup rewrite -- see the next case).
   compare_gpu_vs_cpu("SELECT g, COUNT(DISTINCT v) FROM agg_n GROUP BY g");
 }
 
-// Not a result divergence: ungrouped COUNT(DISTINCT) is unsupported on the GPU
-// and is rejected while the physical plan is built, falling back to DuckDB CPU
-// (the result is still correct). Tracked in issue #1218.
+// Ungrouped COUNT(DISTINCT) plans on the GPU via the distinct-aggregate dedup
+// rewrite (a keys-only grouped aggregate on {v} under a plain COUNT) and skips
+// NULLs correctly. Previously it forced a fallback to CPU (issue #1218).
 TEST_CASE_METHOD(AggNullFixture,
-                 "gpu_execution ungrouped COUNT(DISTINCT) falls back to CPU",
+                 "gpu_execution ungrouped COUNT(DISTINCT) ignores NULLs",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  expect_plan_fallback_matches_cpu("SELECT COUNT(DISTINCT v) FROM agg_n");
+  compare_gpu_vs_cpu("SELECT COUNT(DISTINCT v) FROM agg_n");
 }
 
 TEST_CASE_METHOD(AggNullFixture,

@@ -60,6 +60,13 @@ Before either is chosen, `materialize_expression_join_keys()` pushes a projectio
 - **Grouped aggregate** — hash-based GROUP BY using cuDF's `groupby()` API
 - **AVG decomposition** — AVG is split into SUM + COUNT_VALID (cuDF doesn't support AVG directly)
 - **COUNT(DISTINCT)** — implemented via `COLLECT_SET` aggregation, then counting unique rows
+- **SUM/AVG(DISTINCT) dedup rewrite** — `prepare_distinct_aggregate_rewrite()` /
+  `apply_distinct_aggregate_rewrite()` plan `γ_G(SUM(DISTINCT x))` as `γ_G(SUM(x))` over a
+  keys-only grouped aggregate on `{G, x}` when every aggregate reads the same expression
+  (MIN/MAX simply drop their DISTINCT flag; ungrouped COUNT(DISTINCT) also routes through the
+  rewrite). Ineligible shapes are rejected by the aggregate operators — any non-COUNT distinct
+  aggregate throws at plan time, so the query falls back to CPU instead of silently computing
+  the non-distinct result
 - **HUGEINT downcast** — HUGEINT types are downcast to BIGINT (cuDF doesn't support int128)
 - **Unsupported aggregate expressions** — `translate_expressions()` rejects any aggregate expression `from_duckdb` cannot translate (see *Unsupported expressions* above), and `can_use_partitioned_aggregate()` declines on a failed translation
 
