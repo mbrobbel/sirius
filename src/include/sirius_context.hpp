@@ -130,25 +130,28 @@ class SiriusConnectionState : public ClientContextState {
     captured_generation_ = planning_generation_;
   }
 
-  /// \brief Why take_captured_plan_if_current is (or is not) about to return a plan; read it
-  /// before taking to attribute capture misses in logs.
+  /// \brief Why take_captured_plan_if_current did (or did not) return a plan; reported through
+  /// its out-parameter to attribute capture misses in logs.
   enum class CaptureStatus { kAvailable, kEmpty, kStale };
-  [[nodiscard]] CaptureStatus captured_plan_status() const noexcept
-  {
-    if (!captured_plan_) { return CaptureStatus::kEmpty; }
-    return captured_generation_ == planning_generation_ ? CaptureStatus::kAvailable
-                                                        : CaptureStatus::kStale;
-  }
 
   /// \brief Consume the capture iff it belongs to the CURRENT planning attempt;
   /// a stale capture (generation mismatch) is dropped and nullptr is returned,
   /// which sends OnFinalizePrepare down its existing replan-from-SQL path.
-  unique_ptr<LogicalOperator> take_captured_plan_if_current()
+  /// @p reason, when non-null, receives why the capture was (not) returned —
+  /// the staleness predicate lives only here, so a logged reason can never
+  /// disagree with the take decision.
+  unique_ptr<LogicalOperator> take_captured_plan_if_current(CaptureStatus* reason = nullptr)
   {
-    if (!captured_plan_ || captured_generation_ != planning_generation_) {
+    if (!captured_plan_) {
+      if (reason) { *reason = CaptureStatus::kEmpty; }
+      return nullptr;
+    }
+    if (captured_generation_ != planning_generation_) {
+      if (reason) { *reason = CaptureStatus::kStale; }
       captured_plan_.reset();
       return nullptr;
     }
+    if (reason) { *reason = CaptureStatus::kAvailable; }
     return std::move(captured_plan_);
   }
 

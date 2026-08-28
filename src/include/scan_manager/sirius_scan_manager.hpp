@@ -484,6 +484,17 @@ class sirius_scan_manager {
   /// \brief Stop the worker thread pool and the driver. Idempotent.
   void stop();
 
+  /// \brief Monotonic counter advanced by every pinned-entry mutation (insert, in-place merge,
+  /// metadata attach, remove); a validation failure or no-op remove leaves it unchanged. Plan
+  /// generation bakes registry decisions (pinned vs parquet source, zone maps, uniqueness facts)
+  /// into the Sirius physical plan, so a plan is only valid to execute while the epoch it was
+  /// generated under still matches. Mutations happen inside the query-lifecycle slot; comparing
+  /// epochs while holding the slot is therefore race-free.
+  [[nodiscard]] std::uint64_t pin_registry_epoch() const noexcept
+  {
+    return _pin_registry_epoch.load(std::memory_order_acquire);
+  }
+
   /// \brief Pin (or extend) the GPU-tier entry for a table.
   ///
   /// Releases the columns of each input @p data_tables into the entry's per-column
@@ -532,16 +543,6 @@ class sirius_scan_manager {
   ///         dropped, so anything derived from this materialization (uniqueness verdicts,
   ///         say) describes data that never entered the cache. See
   ///         @ref attach_proven_unique_columns.
-  /// \brief Monotonic counter advanced by every pinned-entry mutation (insert, in-place merge,
-  /// metadata attach, remove). Plan generation bakes registry decisions (pinned vs parquet
-  /// source, zone maps, uniqueness facts) into the Sirius physical plan, so a plan is only valid
-  /// to execute while the epoch it was generated under still matches. Mutations happen inside
-  /// the query-lifecycle slot; comparing epochs while holding the slot is therefore race-free.
-  [[nodiscard]] std::uint64_t pin_registry_epoch() const noexcept
-  {
-    return _pin_registry_epoch.load(std::memory_order_acquire);
-  }
-
   [[nodiscard]] std::vector<std::string> insert_pinned_entry(
     const std::string& name,
     cache_entry_info cache_info,
@@ -774,9 +775,41 @@ class sirius_scan_manager {
   std::atomic<late_mat::pin_generation_t> _next_pin_generation{1};
   /// Bumped on every pinned-entry mutation (see pin_registry_epoch()).
   std::atomic<std::uint64_t> _pin_registry_epoch{0};
+
+  //===------------------------------------------------------------------===//
+  // _pinned_entries mutation chokepoint
+  //
+  // Every mutation of _pinned_entries MUST go through one of the three
+  // helpers below — they are the only callers of bump_pin_registry_epoch(),
+  // so a new mutation path cannot silently skip the bump that invalidates
+  // physical plans stashed against the current epoch. Conversely the bump
+  // only happens once the registry actually (or possibly partially) changed:
+  // a validation failure or a no-op remove must not invalidate those stashes.
+  //===------------------------------------------------------------------===//
   void bump_pin_registry_epoch() noexcept
   {
     _pin_registry_epoch.fetch_add(1, std::memory_order_release);
+  }
+
+  /// Replace (or create) the entry at @p name: retires the destroyed entry's
+  /// late-mat handle FIRST (assigning over an existing name destroys that
+  /// entry in place; afterwards the handle would still resolve, and its
+  /// pointer would address the map node now holding different data), stores
+  /// the entry, publishes a fresh handle, and bumps the epoch.
+  void store_pinned_entry(const std::string& name, pinned_entry entry);
+
+  /// Erase the entry at @p name, retiring its late-mat handle first. A no-op
+  /// — including no epoch bump — when no such entry exists.
+  void erase_pinned_entry(const std::string& name);
+
+  /// Commit to mutating @p it 's entry in place and return it. Call only once
+  /// all validation has passed: the epoch is bumped immediately, because a
+  /// mutator that throws halfway has still changed the registry.
+  pinned_entry& pinned_entry_for_update(
+    std::unordered_map<std::string, pinned_entry>::iterator it) noexcept
+  {
+    bump_pin_registry_epoch();
+    return it->second;
   }
 
   /// Give the entry now living at @p name a fresh late-mat handle, and

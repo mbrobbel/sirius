@@ -19,6 +19,7 @@
 #include "sirius_context.hpp"
 
 #include <duckdb/common/enums/optimizer_type.hpp>
+#include <duckdb/common/exception.hpp>
 #include <duckdb/common/types/value.hpp>
 #include <duckdb/main/client_context.hpp>
 #include <duckdb/main/config.hpp>
@@ -255,15 +256,48 @@ duckdb::unique_ptr<duckdb::LogicalOperator> clone_logical_get(duckdb::LogicalGet
   if (get.bind_data) {
     try {
       bind_data_copy = get.bind_data->Copy();
-    } catch (std::exception&) {
-      // No usable Copy() (TableFunctionData's default throws): serialize this leaf the way the
-      // whole-plan Copy used to. Deserialization re-binds the function, so this is the expensive
-      // path — but it only runs for the leaf that needs it, and only when it has no cheap copy.
+    } catch (duckdb::NotImplementedException&) {
+      // A bind data that declares itself uncopyable.
+    } catch (duckdb::InternalException&) {
+      // TableFunctionData's default Copy() signals "no copy support" as an InternalException
+      // ("Copy not supported for TableFunctionData", duckdb/src/function/function.cpp). Only
+      // these two types select the fallback; anything else (bad_alloc, a genuine internal
+      // error from a real Copy()) propagates instead of being masked into the slow path.
+    }
+    if (!bind_data_copy) {
+      // No usable Copy(): serialize this leaf the way the whole-plan Copy used to.
+      // Deserialization re-binds the function, so this is the expensive path — but it only
+      // runs for the leaf that needs it, and only when it has no cheap copy.
       ++stats.serialized_gets;
       return get.Copy(context);
     }
   }
   ++stats.bind_copied_gets;
+  // ------------------------------------------------------------------------
+  // DRIFT TRIPWIRE — hand-copied LogicalGet state.
+  // This clone must restore every field LogicalGet's serialization does
+  // (duckdb/src/planner/operator/logical_get.cpp) plus the base
+  // LogicalOperator fields create_plan reads. When upgrading the DuckDB
+  // submodule, diff LogicalGet (logical_get.hpp) and its Serialize() against
+  // this list and extend it for any new field:
+  //   ctor:         table_index, function, bind_data, returned_types, names,
+  //                 virtual_columns
+  //   copied below: projection_ids, table_filters (deep copy), parameters,
+  //                 named_parameters, input_table_types, input_table_names,
+  //                 projected_input, extra_info (field by field: move-only),
+  //                 ordinality_idx, row_group_order_options, column_ids,
+  //                 types, estimated_cardinality, has_estimated_cardinality,
+  //                 expressions
+  //   deliberately NOT copied: dynamic_filters (serialization drops it too;
+  //                 sharing the set would couple the clone to the CPU
+  //                 fallback plan — see the function comment).
+  // A missed serialized field surfaces as the serialization-equivalence
+  // checks in test/cpp/planner/test_copy_logical_plan.cpp failing, but a new
+  // field the serializer does not cover will not — check the header, not
+  // just Serialize(). (No sizeof(LogicalGet) static_assert: object layout
+  // shifts with toolchain/standard-library changes, so it would fire on
+  // unrelated compiler bumps rather than only on real field drift.)
+  // ------------------------------------------------------------------------
   auto clone            = duckdb::make_uniq<duckdb::LogicalGet>(get.table_index,
                                                      get.function,
                                                      std::move(bind_data_copy),

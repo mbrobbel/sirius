@@ -35,11 +35,8 @@
 #include <utils/parquet_fixture_utils.hpp>
 
 #include <cstddef>
-#include <filesystem>
 #include <string>
 #include <vector>
-
-namespace fs = std::filesystem;
 
 namespace {
 
@@ -86,8 +83,8 @@ TEST_CASE("copy_logical_plan clones parquet scans without the serialize round-tr
   duckdb::DuckDB db(nullptr);
   duckdb::Connection con(db);
 
-  auto const parquet_path =
-    (fs::temp_directory_path() / "sirius_copy_logical_plan_test.parquet").string();
+  sirius::test::scratch_dir scratch("copy_logical_plan");
+  auto const parquet_path = scratch.file("scan.parquet");
   {
     auto r = con.Query("COPY (SELECT range AS k, range * 2 AS v FROM range(1000)) TO " +
                        sirius::test::sql_literal(parquet_path) + " (FORMAT PARQUET);");
@@ -129,8 +126,6 @@ TEST_CASE("copy_logical_plan clones parquet scans without the serialize round-tr
   cloned_get->bind_data.reset();
   REQUIRE_FALSE(original_get->table_filters.filters.empty());
   REQUIRE(original_get->bind_data != nullptr);
-
-  fs::remove(parquet_path);
 }
 
 TEST_CASE("copy_logical_plan falls back to the serialize round-trip for non-copyable bind data",

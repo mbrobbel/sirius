@@ -200,6 +200,16 @@ duckdb::SourceResultType PhysicalSiriusExecution::GetDataInternal(
             "execution");
           sirius_plan = std::move(stashed);
         } else {
+          // The stash is unusable (registry changed since validation, or no
+          // SiriusContext to compare epochs against). With no rebuild inputs —
+          // relation-API queries capture no SQL — surface the real problem
+          // instead of letting the replan path parse an empty string.
+          if (!logical_plan_ && query_sql_.empty()) {
+            throw duckdb::ExecutorException(
+              "Transparent GPU execution is missing the logical plan template (the validated "
+              "plan was invalidated by a pin registry change and there is no plan or SQL to "
+              "rebuild from)");
+          }
           SIRIUS_LOG_DEBUG(
             "Transparent execution: pin registry changed since validation; rebuilding the "
             "Sirius physical plan");

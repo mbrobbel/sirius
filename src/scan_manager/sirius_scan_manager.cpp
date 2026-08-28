@@ -1979,7 +1979,6 @@ std::vector<std::string> sirius_scan_manager::insert_pinned_entry(
   std::vector<std::vector<duckdb::unique_ptr<duckdb::BaseStatistics>>> chunk_stats,
   sirius::pinned_column_storage_matrix column_storage)
 {
-  bump_pin_registry_epoch();
   // chunk_memory_spaces is parallel to data_tables — the caller
   // (PinTableFunction) emits one memory_space* per coalesced batch, and
   // there is exactly one
@@ -2109,6 +2108,10 @@ std::vector<std::string> sirius_scan_manager::insert_pinned_entry(
                                     entry.cache_info.column_ids.size(),
                                     "[sirius_scan_manager::insert_pinned_entry existing entry]",
                                     /*allow_empty=*/false);
+      // Merge validated — everything below mutates the entry in place (and a
+      // mid-merge throw still leaves it partially changed), so this is the
+      // pin-registry mutation point.
+      pinned_entry_for_update(existing_it);
       // Same row count → merge unique columns into the existing entry.
       // Decide which column INDICES are new BEFORE iterating chunks. Doing
       // the contains() check per-chunk would let chunk 0 install a new
@@ -2201,8 +2204,7 @@ std::vector<std::string> sirius_scan_manager::insert_pinned_entry(
       return stored;
     }
     // Row count or completeness contract differs → drop the stale entry and rebuild below.
-    retire_late_mat_handle(name);
-    _pinned_entries.erase(existing_it);
+    erase_pinned_entry(name);
   }
 
   pinned_entry entry;
@@ -2226,13 +2228,7 @@ std::vector<std::string> sirius_scan_manager::insert_pinned_entry(
     }
   }
 
-  // Assigning over an existing name destroys that entry in place, so its
-  // handle has to be invalidated FIRST — afterwards the entry is gone but the
-  // handle would still resolve, and its pointer would address the map node now
-  // holding different data.
-  retire_late_mat_handle(name);
-  _pinned_entries[name] = std::move(entry);
-  publish_late_mat_handle(name);
+  store_pinned_entry(name, std::move(entry));
   // The replace path stored every column.
   return column_names;
 }
@@ -2265,7 +2261,6 @@ void sirius_scan_manager::insert_pinned_entry_host(
   std::vector<std::vector<duckdb::unique_ptr<duckdb::BaseStatistics>>> chunk_stats,
   sirius::pinned_column_storage_matrix column_storage)
 {
-  bump_pin_registry_epoch();
   // The host-tier path captures one chunk per emitted batch; each chunk holds every
   // pinned column (compressed or uncompressed). Re-insert always replaces — there is
   // no per-column merge analog to the GPU path because the chunk-vs-column dimensions
@@ -2332,13 +2327,7 @@ void sirius_scan_manager::insert_pinned_entry_host(
   entry.column_storage = std::move(column_storage);
   entry.zone_maps      = std::move(pin_zone_maps);
 
-  // Assigning over an existing name destroys that entry in place, so its
-  // handle has to be invalidated FIRST — afterwards the entry is gone but the
-  // handle would still resolve, and its pointer would address the map node now
-  // holding different data.
-  retire_late_mat_handle(name);
-  _pinned_entries[name] = std::move(entry);
-  publish_late_mat_handle(name);
+  store_pinned_entry(name, std::move(entry));
 }
 
 void sirius_scan_manager::insert_pinned_entry_device(
@@ -2348,7 +2337,6 @@ void sirius_scan_manager::insert_pinned_entry_device(
   cucascade::memory::memory_space& memory_space,
   sirius::pinned_column_storage_matrix column_storage)
 {
-  bump_pin_registry_epoch();
   std::size_t new_num_rows = 0;
   for (auto const& chunk : chunks) {
     if (chunk.compressed) {
@@ -2390,36 +2378,28 @@ void sirius_scan_manager::insert_pinned_entry_device(
                    entry.device_chunks.size(),
                    new_num_rows);
 
-  // Assigning over an existing name destroys that entry in place, so its
-  // handle has to be invalidated FIRST — afterwards the entry is gone but the
-  // handle would still resolve, and its pointer would address the map node now
-  // holding different data.
-  retire_late_mat_handle(name);
-  _pinned_entries[name] = std::move(entry);
-  publish_late_mat_handle(name);
+  store_pinned_entry(name, std::move(entry));
 }
 
 void sirius_scan_manager::attach_mvcc_metadata(const std::string& name,
                                                duckdb_mvcc_metadata metadata)
 {
-  bump_pin_registry_epoch();
   auto it = _pinned_entries.find(name);
   if (it == _pinned_entries.end()) {
     throw std::invalid_argument("[attach_mvcc_metadata] no pinned entry named '" + name + "'");
   }
-  it->second.mvcc = std::make_unique<duckdb_mvcc_metadata>(std::move(metadata));
+  pinned_entry_for_update(it).mvcc = std::make_unique<duckdb_mvcc_metadata>(std::move(metadata));
 }
 
 void sirius_scan_manager::attach_proven_unique_columns(
   const std::string& name, std::span<std::string const> unique_column_names)
 {
-  bump_pin_registry_epoch();
   auto it = _pinned_entries.find(name);
   if (it == _pinned_entries.end()) {
     throw std::invalid_argument("[attach_proven_unique_columns] no pinned entry named '" + name +
                                 "'");
   }
-  auto& entry       = it->second;
+  auto& entry       = pinned_entry_for_update(it);
   auto const& names = entry.cache_info.names;
   // The merge path appends columns after the previous attach sized this vector,
   // so grow it (with "unknown") rather than assume it already covers the entry.
@@ -2433,9 +2413,28 @@ void sirius_scan_manager::attach_proven_unique_columns(
 
 void sirius_scan_manager::remove_pinned_entry(const std::string& name)
 {
-  bump_pin_registry_epoch();
+  erase_pinned_entry(name);
+}
+
+void sirius_scan_manager::store_pinned_entry(const std::string& name, pinned_entry entry)
+{
+  // Assigning over an existing name destroys that entry in place, so its
+  // handle has to be invalidated FIRST — afterwards the entry is gone but the
+  // handle would still resolve, and its pointer would address the map node now
+  // holding different data.
   retire_late_mat_handle(name);
-  _pinned_entries.erase(name);
+  _pinned_entries[name] = std::move(entry);
+  publish_late_mat_handle(name);
+  bump_pin_registry_epoch();
+}
+
+void sirius_scan_manager::erase_pinned_entry(const std::string& name)
+{
+  auto it = _pinned_entries.find(name);
+  if (it == _pinned_entries.end()) { return; }
+  retire_late_mat_handle(name);
+  _pinned_entries.erase(it);
+  bump_pin_registry_epoch();
 }
 
 void sirius_scan_manager::publish_late_mat_handle(const std::string& name)

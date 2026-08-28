@@ -1366,8 +1366,8 @@ RebindQueryInfo SiriusContext::OnFinalizePrepare(ClientContext& context,
   // internally and it works even when LogicalGet::Copy can't.
   unique_ptr<LogicalOperator> logical_plan;
   if (conn_state) {
-    auto const capture_status = conn_state->captured_plan_status();
-    logical_plan              = conn_state->take_captured_plan_if_current();
+    auto capture_status = SiriusConnectionState::CaptureStatus::kEmpty;
+    logical_plan        = conn_state->take_captured_plan_if_current(&capture_status);
     if (!logical_plan) {
       SIRIUS_LOG_DEBUG("Transparent execution: no usable captured plan ({}); re-planning from SQL",
                        capture_status == SiriusConnectionState::CaptureStatus::kStale
