@@ -104,20 +104,16 @@ TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution grouped COUNT(DISTINCT) ignores NULLs",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  // Grouped COUNT(DISTINCT) runs on the GPU and skips NULLs correctly (the
-  // ungrouped form falls back to CPU -- see the next case).
+  // Grouped COUNT(DISTINCT) supports INTEGER and skips NULLs.
   compare_gpu_vs_cpu("SELECT g, COUNT(DISTINCT v) FROM agg_n GROUP BY g");
 }
 
-// Not a result divergence: ungrouped COUNT(DISTINCT) is unsupported on the GPU
-// and forces a runtime fallback to DuckDB CPU (the result is still correct).
-// Asserted with expect_gpu_fallback rather than abusing [!shouldfail] on the
-// no-fallback comparator. Tracked in issue #1218.
+// INTEGER remains outside the scoped BIGINT/VARCHAR ungrouped distinct path.
 TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution ungrouped COUNT(DISTINCT) falls back to CPU",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  expect_gpu_fallback("SELECT COUNT(DISTINCT v) FROM agg_n");
+  expect_plan_fallback_matches_cpu("SELECT COUNT(DISTINCT v) FROM agg_n");
 }
 
 TEST_CASE_METHOD(AggNullFixture,
@@ -147,4 +143,33 @@ TEST_CASE_METHOD(AggNullFixture,
                  "[integration][gpu_execution][aggregate][nulls]")
 {
   compare_gpu_vs_cpu("SELECT g, SUM(allnull), COUNT(allnull) FROM agg_n GROUP BY g");
+}
+
+TEST_CASE_METHOD(AggNullFixture,
+                 "gpu_execution ungrouped COUNT DISTINCT BIGINT and VARCHAR",
+                 "[integration][gpu_execution][aggregate][count_distinct]")
+{
+  run_ok("CREATE TABLE distinct_n (id BIGINT, phrase VARCHAR)");
+  run_ok(
+    "INSERT INTO distinct_n VALUES (-1, ''), (7, 'hello'), (7, 'hello'), "
+    "(9000000000000, 'é'), (NULL, NULL)");
+  run_ok("CHECKPOINT");
+  for (auto const* column : {"id", "phrase"}) {
+    auto query = std::string("SELECT COUNT(DISTINCT ") + column + ") FROM distinct_n";
+    compare_gpu_vs_cpu(query);
+    compare_gpu_vs_cpu(query);
+    compare_gpu_vs_cpu(query + " WHERE id IS NULL");
+    compare_gpu_vs_cpu(query + " WHERE id = 42");
+  }
+  run_ok("CREATE TABLE distinct_empty (id BIGINT, phrase VARCHAR)");
+  run_ok("CHECKPOINT");
+  compare_gpu_vs_cpu("SELECT COUNT(DISTINCT id) FROM distinct_empty");
+  compare_gpu_vs_cpu("SELECT COUNT(DISTINCT phrase) FROM distinct_empty");
+  expect_plan_fallback_matches_cpu("SELECT COUNT(DISTINCT id), COUNT(*) FROM distinct_n");
+  expect_plan_fallback_matches_cpu(
+    "SELECT COUNT(DISTINCT id), COUNT(DISTINCT phrase) FROM distinct_n");
+  expect_plan_fallback_matches_cpu("SELECT SUM(DISTINCT id) FROM distinct_n");
+  expect_plan_fallback_matches_cpu(
+    "SELECT COUNT(DISTINCT id) FILTER (WHERE id > 0) FROM distinct_n");
+  expect_plan_fallback_matches_cpu("SELECT COUNT(DISTINCT (id + 1)) FROM distinct_n");
 }

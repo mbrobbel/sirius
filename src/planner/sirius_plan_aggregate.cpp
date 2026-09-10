@@ -605,6 +605,21 @@ sirius_physical_plan_generator::create_plan(duckdb::LogicalAggregate& op)
     reject_nested_column_operation(*group, "GROUP BY");
   }
 
+  if (op.groups.empty()) {
+    for (auto const& expr : op.expressions) {
+      auto const& agg = expr->Cast<duckdb::BoundAggregateExpression>();
+      if (!agg.IsDistinct()) { continue; }
+      if (op.expressions.size() != 1 || agg.function.name != "count" || agg.children.size() != 1 ||
+          agg.filter || agg.order_bys ||
+          agg.children[0]->GetExpressionClass() != duckdb::ExpressionClass::BOUND_REF ||
+          (agg.children[0]->return_type != duckdb::LogicalType::BIGINT &&
+           agg.children[0]->return_type != duckdb::LogicalType::VARCHAR)) {
+        throw duckdb::NotImplementedException(
+          "Ungrouped DISTINCT requires a single COUNT over a BIGINT or VARCHAR column");
+      }
+    }
+  }
+
   if (auto fused = try_plan_dense_count_join(op)) { return fused; }
 
   auto plan = create_plan(*op.children[0]);

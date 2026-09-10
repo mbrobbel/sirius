@@ -372,3 +372,86 @@ TEMPLATE_TEST_CASE("sirius_physical_ungrouped_aggregate resolves AVG in merge",
     REQUIRE(avg_out[0] == Approx(expected_avg));
   }
 }
+
+TEST_CASE("ungrouped COUNT DISTINCT merges value sets",
+          "[physical_ungrouped_aggregate][count_distinct]")
+{
+  auto memory_manager = sirius::test::operator_utils::initialize_memory_manager();
+  auto* space         = memory_manager->get_memory_space(Tier::GPU, 0);
+  REQUIRE(space);
+  auto const stream      = cudf::get_default_stream();
+  LogicalType value_type = LogicalType::BIGINT;
+  std::vector<std::shared_ptr<data_batch>> inputs;
+  int64_t expected = 0;
+  SECTION("duplicates and NULLs across batches")
+  {
+    inputs.push_back(make_numeric_batch_with_nulls<int64_t>(
+      *space, {-1, 7, 7, 0}, {true, true, true, false}, cudf::type_id::INT64));
+    inputs.push_back(make_numeric_batch_with_nulls<int64_t>(
+      *space, {7, 9000000000000LL, 0}, {true, true, false}, cudf::type_id::INT64));
+    expected = 3;
+  }
+  SECTION("all NULL")
+  {
+    inputs.push_back(
+      make_numeric_batch_with_nulls<int64_t>(*space, {0, 0}, {false, false}, cudf::type_id::INT64));
+  }
+  SECTION("empty batch")
+  {
+    inputs.push_back(make_numeric_batch<int64_t>(*space, {}, cudf::type_id::INT64));
+  }
+  SECTION("one batch still finalizes")
+  {
+    inputs.push_back(make_numeric_batch<int64_t>(*space, {1, 1, 2}, cudf::type_id::INT64));
+    expected = 2;
+  }
+  SECTION("narrowed carrier")
+  {
+    inputs.push_back(make_numeric_batch<int8_t>(*space, {-1, 2, 2}, cudf::type_id::INT8));
+    expected = 2;
+  }
+  SECTION("strings across batches")
+  {
+    value_type = LogicalType::VARCHAR;
+    inputs.push_back(make_string_batch(*space, {"", "hello", "é", "hello"}));
+    inputs.push_back(make_string_batch(*space, {"é", "", "world"}));
+    expected = 4;
+  }
+  auto make_exprs = [&] {
+    duckdb::vector<duckdb::unique_ptr<duckdb::Expression>> exprs;
+    duckdb::vector<duckdb::unique_ptr<duckdb::Expression>> args;
+    args.push_back(make_uniq<BoundReferenceExpression>(value_type, 0));
+    exprs.push_back(make_uniq<BoundAggregateExpression>(
+      MakeDummyAggregate("count", {value_type}, LogicalType::BIGINT),
+      std::move(args),
+      nullptr,
+      nullptr,
+      AggregateType::DISTINCT));
+    return translate_expressions(std::move(exprs));
+  };
+  sirius_physical_ungrouped_aggregate local({sirius::from_duckdb(LogicalType::BIGINT)},
+                                            make_exprs(),
+                                            1,
+                                            TupleDataValidityType::CAN_HAVE_NULL_VALUES);
+  REQUIRE(local.get_local_output_types() ==
+          sirius::from_duckdb_vec(duckdb::vector<LogicalType>{LogicalType::LIST(value_type)}));
+  sirius_physical_ungrouped_aggregate_merge merge(&local);
+  std::vector<std::shared_ptr<data_batch>> states;
+  for (auto const& input : inputs) {
+    auto out     = local.execute(pipelineable_operator_data({input}), stream);
+    auto batches = dynamic_cast<pipelineable_operator_data&>(*out).get_data_batches();
+    REQUIRE(batches.size() == 1);
+    auto view = sirius::get_cudf_table_view(*batches[0]);
+    REQUIRE(view.num_rows() == 1);
+    REQUIRE(view.column(0).type().id() == cudf::type_id::LIST);
+    states.push_back(batches[0]);
+  }
+  auto out     = merge.execute(pipelineable_operator_data(states), stream);
+  auto batches = dynamic_cast<pipelineable_operator_data&>(*out).get_data_batches();
+  REQUIRE(batches.size() == 1);
+  auto view = sirius::get_cudf_table_view(*batches[0]);
+  REQUIRE(view.num_rows() == 1);
+  REQUIRE(view.column(0).type().id() == cudf::type_id::INT64);
+  REQUIRE(view.column(0).null_count() == 0);
+  REQUIRE(copy_column_to_host<int64_t>(view.column(0)) == std::vector<int64_t>{expected});
+}
