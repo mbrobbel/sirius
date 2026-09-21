@@ -1,0 +1,9 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q19"
+# sirius: tags = ["clickbench"]
+
+query ???? nosort
+SELECT UserID, EXTRACT(MINUTE FROM EventTime) AS m, SearchPhrase, COUNT(*) FROM hits GROUP BY UserID, m, SearchPhrase ORDER BY COUNT(*) DESC, 1, 2, 3, 4 LIMIT 10;
+----

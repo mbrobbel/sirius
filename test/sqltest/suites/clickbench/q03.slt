@@ -1,0 +1,10 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q03"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "2" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ??? rowsort
+SELECT SUM(AdvEngineID), COUNT(*), AVG(ResolutionWidth) FROM hits;
+----

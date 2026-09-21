@@ -1,0 +1,17 @@
+[workspace]
+name = "sirius-sqltest"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+rust = ">=1.94,<2"
+cmake = ">=3.30,<4"
+ninja = ">=1.12,<2"
+cxx-compiler = ">=1.9,<2"
+gh = ">=2.65,<3"
+python = ">=3.12,<3.15"
+git = ">=2.47,<3"
+
+[tasks]
+cargo = { cmd = "cargo", cwd = "../.." }
+sqltest = { cmd = "rust/target/debug/sirius-sqltest", cwd = "../.." }

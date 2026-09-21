@@ -1,0 +1,8 @@
+# Keep known gaps runnable. Add entries only after reviewing the failure and issue.
+# [[gaps]]
+# id = "tpch/q01"
+# axes = { gpu = "one", storage = "native", optimizers = "default" }
+# outcome = "error"
+# issue = "https://github.com/sirius-db/sirius/issues/NUMBER"
+# error = "specific expected error"
+gaps = []

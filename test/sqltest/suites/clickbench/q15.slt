@@ -1,0 +1,9 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q15"
+# sirius: tags = ["clickbench"]
+
+query ??? nosort
+SELECT SearchEngineID, SearchPhrase, COUNT(*) AS c FROM hits WHERE SearchPhrase <> '' GROUP BY SearchEngineID, SearchPhrase ORDER BY c DESC, 1, 2, 3 LIMIT 10;
+----

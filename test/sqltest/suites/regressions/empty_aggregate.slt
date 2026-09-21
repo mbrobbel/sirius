@@ -1,0 +1,10 @@
+statement ok
+CREATE TABLE empty_input (i INTEGER);
+
+# sirius: id = "regressions/empty_aggregate"
+# sirius: tags = ["aggregate", "empty", "null"]
+# sirius: snapshot = true
+query II
+SELECT count(*), sum(i) FROM empty_input;
+----
+0	NULL

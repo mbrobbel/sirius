@@ -1,0 +1,9 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q05"
+# sirius: tags = ["clickbench"]
+
+query ? rowsort
+SELECT COUNT(DISTINCT UserID) FROM hits;
+----

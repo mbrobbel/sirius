@@ -1,0 +1,9 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q34"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT URL, COUNT(*) AS c FROM hits GROUP BY URL ORDER BY c DESC, 1, 2 LIMIT 10;
+----

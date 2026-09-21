@@ -1,0 +1,10 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/tpcds.slt
+
+# sirius: id = "tpcds/q22"
+# sirius: tags = ["tpcds"]
+# sirius: tolerances = { "4" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ????? nosort
+SELECT i_product_name, i_brand, i_class, i_category, avg(inv_quantity_on_hand) AS qoh FROM inventory, date_dim, item WHERE inv_date_sk = d_date_sk AND inv_item_sk = i_item_sk AND d_month_seq BETWEEN 1200 AND 1200 + 11 GROUP BY ROLLUP (i_product_name, i_brand, i_class, i_category) ORDER BY qoh NULLS FIRST, i_product_name NULLS FIRST, i_brand NULLS FIRST, i_class NULLS FIRST, i_category NULLS FIRST, 1, 2, 3, 4, 5 LIMIT 100;
+----

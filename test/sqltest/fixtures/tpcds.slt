@@ -1,0 +1,71 @@
+statement ok
+CREATE __RELATION__ call_center AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/call_center.parquet');
+
+statement ok
+CREATE __RELATION__ catalog_page AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/catalog_page.parquet');
+
+statement ok
+CREATE __RELATION__ catalog_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/catalog_returns.parquet');
+
+statement ok
+CREATE __RELATION__ catalog_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/catalog_sales.parquet');
+
+statement ok
+CREATE __RELATION__ customer AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/customer.parquet');
+
+statement ok
+CREATE __RELATION__ customer_address AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/customer_address.parquet');
+
+statement ok
+CREATE __RELATION__ customer_demographics AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/customer_demographics.parquet');
+
+statement ok
+CREATE __RELATION__ date_dim AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/date_dim.parquet');
+
+statement ok
+CREATE __RELATION__ household_demographics AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/household_demographics.parquet');
+
+statement ok
+CREATE __RELATION__ income_band AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/income_band.parquet');
+
+statement ok
+CREATE __RELATION__ inventory AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/inventory.parquet');
+
+statement ok
+CREATE __RELATION__ item AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/item.parquet');
+
+statement ok
+CREATE __RELATION__ promotion AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/promotion.parquet');
+
+statement ok
+CREATE __RELATION__ reason AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/reason.parquet');
+
+statement ok
+CREATE __RELATION__ ship_mode AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/ship_mode.parquet');
+
+statement ok
+CREATE __RELATION__ store AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/store.parquet');
+
+statement ok
+CREATE __RELATION__ store_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/store_returns.parquet');
+
+statement ok
+CREATE __RELATION__ store_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/store_sales.parquet');
+
+statement ok
+CREATE __RELATION__ time_dim AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/time_dim.parquet');
+
+statement ok
+CREATE __RELATION__ warehouse AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/warehouse.parquet');
+
+statement ok
+CREATE __RELATION__ web_page AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/web_page.parquet');
+
+statement ok
+CREATE __RELATION__ web_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/web_returns.parquet');
+
+statement ok
+CREATE __RELATION__ web_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/web_sales.parquet');
+
+statement ok
+CREATE __RELATION__ web_site AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds/web_site.parquet');

@@ -1,0 +1,24 @@
+[package]
+name = "sirius-sqltest"
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+anyhow = "1"
+approx = "0.5"
+arrow = { version = "=58.4.0", default-features = false, features = ["ipc"] }
+clap = { version = "4", features = ["derive"] }
+duckdb = { version = "=1.10505.0", features = ["serde_json"] }
+glob = "0.3"
+itertools = "0.13"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sqllogictest = "=0.29.1"
+sqlparser = "=0.63.0"
+tempfile = "3"
+toml = "0.8"
+walkdir = "2"

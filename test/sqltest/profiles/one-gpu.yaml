@@ -1,0 +1,20 @@
+sirius:
+  topology:
+    num_gpus: 1
+  memory:
+    gpu:
+      usage_limit_fraction: 0.5
+      reservation_limit_fraction: 1.0
+    host:
+      capacity_bytes: 4000000000
+      initial_number_pools: 4
+      pool_size: 256
+      block_size: 1048576
+  executor:
+    pipeline:
+      num_threads: 4
+    task_creator:
+      num_threads: 2
+    downgrade:
+      num_threads: 1
+      monitor_period: 10ms

@@ -1,0 +1,77 @@
+version = 1
+default_run = "local"
+suite_roots = ["suites"]
+
+[storage.native]
+relation = "table"
+
+[storage.parquet]
+relation = "view"
+
+[profiles.one-gpu]
+gpus = 1
+config = "profiles/one-gpu.yaml"
+
+[profiles.two-gpu]
+gpus = 2
+config = "profiles/two-gpu.yaml"
+
+[fixtures.tpch]
+extensions = ["tpch"]
+sql = ["fixtures/prepare/tpch.sql"]
+tables = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "region", "supplier"]
+
+[fixtures.tpcds]
+extensions = ["tpcds"]
+sql = ["fixtures/prepare/tpcds.sql"]
+tables = ["call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer", "customer_address", "customer_demographics", "date_dim", "household_demographics", "income_band", "inventory", "item", "promotion", "reason", "ship_mode", "store", "store_returns", "store_sales", "time_dim", "warehouse", "web_page", "web_returns", "web_sales", "web_site"]
+
+[fixtures.clickbench]
+sources = ["hits"]
+sql = ["fixtures/clickbench-schema.sql", "fixtures/prepare/clickbench.sql"]
+tables = ["hits"]
+
+[sources.hits]
+url = "https://pages.cs.wisc.edu/~yxy/sirius-datasets/test_hits.tsv.gz"
+sha256 = "e852e982eda2e5119b9a4aed460de4a1422fa80b341b9c9b00a0c755d224cba4"
+
+[axes.gpu.one]
+profile = "one-gpu"
+
+[axes.gpu.two]
+profile = "two-gpu"
+
+[axes.storage.native]
+storage = "native"
+
+[axes.storage.parquet]
+storage = "parquet"
+
+[axes.optimizers.default]
+
+[axes.optimizers.fixed-joins]
+settings = { disabled_optimizers = "join_order,build_side_probe_side" }
+
+[runs.local]
+suites = "all"
+axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
+
+[runs.smoke]
+suites = ["regressions"]
+axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
+
+[runs.benchmarks]
+suites = ["tpch", "tpcds", "clickbench"]
+axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
+
+[runs.matrix]
+suites = "all"
+axes = { gpu = "all", storage = "all", optimizers = ["default"] }
+
+[runs.optimizer-sweep]
+suites = "all"
+axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
+
+[runs.full-sweep]
+suites = "all"
+axes = { gpu = "all", storage = "all", optimizers = "all" }

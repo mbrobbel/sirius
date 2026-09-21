@@ -1,0 +1,9 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q21"
+# sirius: tags = ["clickbench"]
+
+query ? rowsort
+SELECT COUNT(*) FROM hits WHERE URL LIKE '%google%';
+----

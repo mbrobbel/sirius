@@ -1,0 +1,11 @@
+statement ok
+CREATE TABLE l (id INTEGER);
+
+statement ok
+CREATE TABLE r (id INTEGER, value VARCHAR);
+
+statement ok
+INSERT INTO l VALUES (1), (2), (2), (3);
+
+statement ok
+INSERT INTO r VALUES (2, 'NULL'), (3, '');
