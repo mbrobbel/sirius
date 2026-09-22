@@ -38,3 +38,22 @@ pixi run ctest --test-dir build/nvtx-test --output-on-failure
 and the core and Parquet libraries. `SIRIUS_DUCKDB_SOURCE_DIR` selects the source
 tree; use the revision pinned by this repository. This is a build-only contract,
 not an installed Sirius target or a stable DuckDB ABI.
+
+## Installed CMake package
+
+Install the `sirius_library` component and consume `sirius::sirius` with
+`find_package(sirius CONFIG REQUIRED)`. Its public headers do not require CUDA or
+DuckDB headers. The shared library records its runtime dependencies; an installed
+consumer does not need the engine's CMake dependency targets.
+
+```bash
+pixi run cmake --install build/release --prefix "$PWD/build/stage" --component sirius_library
+mv build/stage build/relocated
+pixi run cmake -S test/cmake/installed_consumer -B build/consumer \
+  -DCMAKE_PREFIX_PATH="$PWD/build/relocated"
+pixi run cmake --build build/consumer
+```
+
+The package records the DuckDB revision, compiler, and build mode. The extension
+wrapper must call `sirius_check_duckdb_compatibility` before linking to that C++
+API; independent DuckDB versions are not supported yet.
