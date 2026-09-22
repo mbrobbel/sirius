@@ -1,6 +1,7 @@
 find_package(Catch2 3 REQUIRED CONFIG)
 
-add_executable(sirius_unittest ${TEST_SOURCES})
+add_executable(sirius_unittest ${TEST_SOURCES} src/sirius_extension_entry.cpp
+                               test/cpp/utils/sirius_extension_loader.cpp)
 
 if(VCPKG_BUILD)
   set_target_properties(sirius_unittest PROPERTIES NO_SYSTEM_FROM_IMPORTED ON)
@@ -11,18 +12,19 @@ target_include_directories(
   sirius_unittest
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/cpp>
+    ${SIRIUS_DUCKDB_SOURCE_DIR}/test/include
+    ${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/catch
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/compression/simpatico_codegen/src>
     $<$<BOOL:${SIRIUS_LEGACY_INCLUDE_DIR}>:$<BUILD_INTERFACE:${SIRIUS_LEGACY_INCLUDE_DIR}>>
 )
 
-target_link_libraries(sirius_unittest sirius_extension duckdb_static ZLIB::ZLIB
+target_link_libraries(sirius_unittest sirius_core duckdb_static ZLIB::ZLIB
                       Catch2::Catch2)
-link_extension_libraries(sirius_unittest "")
 
 # S3 container harness: the testcontainers-native bridge plus libcurl for
-# host-side fixture upload (SigV4 signing comes from sirius_extension). Gated so
+# host-side fixture upload (SigV4 signing comes from sirius_core). Gated so
 # offline/Go-less builds skip it; the harness calls in unittest.cpp are guarded
 # by SIRIUS_HAVE_TESTCONTAINERS.
 if(SIRIUS_BUILD_S3_TESTS)
@@ -75,7 +77,7 @@ target_include_directories(
 
 target_link_libraries(
   parquet_benchmark
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -84,7 +86,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(parquet_benchmark "")
+target_link_libraries(parquet_benchmark duckdb_generated_extension_loader)
 
 target_link_options(parquet_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -113,7 +115,7 @@ target_include_directories(
 
 target_link_libraries(
   prefetch_benchmark
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -122,7 +124,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(prefetch_benchmark "")
+target_link_libraries(prefetch_benchmark duckdb_generated_extension_loader)
 
 target_link_options(prefetch_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -154,7 +156,7 @@ target_include_directories(
 
 target_link_libraries(
   prefetch_hybrid_scan_benchmark
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -163,7 +165,8 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(prefetch_hybrid_scan_benchmark "")
+target_link_libraries(prefetch_hybrid_scan_benchmark
+                      duckdb_generated_extension_loader)
 
 target_link_options(prefetch_hybrid_scan_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -192,7 +195,7 @@ target_include_directories(
 
 target_link_libraries(
   columnar_parquet_poc
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -201,7 +204,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(columnar_parquet_poc "")
+target_link_libraries(columnar_parquet_poc duckdb_generated_extension_loader)
 
 target_link_options(columnar_parquet_poc PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -230,7 +233,7 @@ target_include_directories(
 
 target_link_libraries(
   retirer_benchmark
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -239,7 +242,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(retirer_benchmark "")
+target_link_libraries(retirer_benchmark duckdb_generated_extension_loader)
 
 target_link_options(retirer_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -269,7 +272,7 @@ target_include_directories(
 
 target_link_libraries(
   s3_throughput_test
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -278,7 +281,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(s3_throughput_test "")
+target_link_libraries(s3_throughput_test duckdb_generated_extension_loader)
 
 target_link_options(s3_throughput_test PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -310,7 +313,7 @@ target_include_directories(
 
 target_link_libraries(
   s3_autotune_throughput_bench
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -319,7 +322,8 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(s3_autotune_throughput_bench "")
+target_link_libraries(s3_autotune_throughput_bench
+                      duckdb_generated_extension_loader)
 
 target_link_options(s3_autotune_throughput_bench PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -349,7 +353,7 @@ target_include_directories(
 
 target_link_libraries(
   range_prefetch_benchmark
-  sirius_extension
+  sirius_core
   duckdb_static
   cudf::cudf
   rmm::rmm
@@ -358,7 +362,8 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-link_extension_libraries(range_prefetch_benchmark "")
+target_link_libraries(range_prefetch_benchmark
+                      duckdb_generated_extension_loader)
 
 target_link_options(range_prefetch_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")

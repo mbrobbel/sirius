@@ -16,7 +16,7 @@ import duckdb
 
 con = duckdb.connect("tpch_s1.duckdb", config={"allow_unsigned_extensions": "true"})
 con.execute(
-    "load '/mnt/nvme/sirius/build/release/extension/sirius/sirius.duckdb_extension'"
+    "load '/mnt/nvme/sirius/build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension'"
 )
 con.execute("call gpu_buffer_init('1 GB', '1 GB')")
 # con.execute("create table T(A int, B double);");

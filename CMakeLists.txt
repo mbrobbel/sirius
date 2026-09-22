@@ -19,9 +19,12 @@ cmake_minimum_required(VERSION 3.30.4 FATAL_ERROR)
 project(
   sirius
   VERSION 0.0.0
-  LANGUAGES CXX CUDA)
+  LANGUAGES C CXX CUDA)
 
 include(GNUInstallDirs)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+option(SIRIUS_BUILD_TESTS "Build Sirius C++ tests" OFF)
 
 # Set CUDA architecture
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
@@ -126,6 +129,7 @@ else()
   )
 endif()
 
-include(cmake/sirius-test-sources.cmake)
-
-include(cmake/sirius-tests.cmake)
+if(SIRIUS_BUILD_TESTS)
+  include(cmake/sirius-test-sources.cmake)
+  include(cmake/sirius-tests.cmake)
+endif()

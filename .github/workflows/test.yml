@@ -169,7 +169,7 @@ jobs:
         # otherwise produce, there is no extension repository to install from.
         run: |
           for attempt in 1 2 3; do
-            if ./build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
+            if ./build/release/sirius-duckdb/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
               exit 0
             fi
             echo "::warning::Extension install attempt ${attempt} failed; retrying in $((attempt * 10))s"
@@ -178,14 +178,31 @@ jobs:
           echo "::error::Could not install the avro and iceberg extensions after 3 attempts." >&2
           exit 1
 
+      - name: Load the extension into a separate DuckDB host
+        env:
+          SIRIUS_CONFIG_FILE: ${{ github.workspace }}/test/cpp/integration/integration.yaml
+        run: |
+          timeout 60s python - <<'PY'
+          from pathlib import Path
+
+          import duckdb
+
+          extension = Path("build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension").resolve()
+          with duckdb.connect(config={"allow_unsigned_extensions": "true"}) as connection:
+              connection.execute(f"LOAD '{extension}'")
+              assert connection.execute("SELECT current_setting('gpu_execution')").fetchone() == (True,)
+              connection.execute("CREATE TABLE smoke AS SELECT i::INTEGER AS i FROM range(100) t(i)")
+              assert connection.execute("SELECT sum(i) FROM smoke").fetchone() == (4950,)
+          PY
+
       # Two Catch2 shards per GPU. Each shard sees only its assigned GPU; [multi_gpu]
       # tests run afterwards with all GPUs. Declaration order keeps tests using
       # the same shared environment together.
       - name: Run C++ unit tests
         run: |
           nvidia-smi
-          bin=./build/release/extension/sirius/test/cpp/sirius_unittest
-          log_root=$PWD/build/release/extension/sirius/test/cpp/log
+          bin=./build/release/test/cpp/sirius_unittest
+          log_root=$PWD/build/release/test/cpp/log
           gpus=$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)
           if ((gpus < 2)); then
             echo "::error::Expected at least 2 GPUs, found $gpus" >&2
@@ -228,7 +245,7 @@ jobs:
             echo "::error::Expected at least 2 GPUs for multi-GPU tests, found $gpus" >&2
             exit 1
           fi
-          timeout 20m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort --order decl --durations yes \
+          timeout 20m ./build/release/test/cpp/sirius_unittest --abort --order decl --durations yes \
             "[multi_gpu]~[.]" 2>&1 | tee /tmp/unittest_multi_gpu.log
 
       # The late-materialization gate is read from the environment once per process, so the
@@ -239,7 +256,7 @@ jobs:
         run: |
           set -o pipefail
           SIRIUS_EXP_LATE_MAT=1 \
-            timeout 20m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort --order decl \
+            timeout 20m ./build/release/test/cpp/sirius_unittest --abort --order decl \
             "[late_mat],[deferred_query],[native_filter]" 2>&1 | tee /tmp/unittest_late_mat.log
 
       - name: Iceberg conformance (correctness + connection liveness)
@@ -255,7 +272,7 @@ jobs:
           set -o pipefail
           python3 test/cpp/integration/data/iceberg_conformance/run_conformance.py \
             test/cpp/integration/data/iceberg_conformance \
-            --duckdb ./build/release/duckdb 2>&1 | tee /tmp/conformance.log
+            --duckdb ./build/release/sirius-duckdb/duckdb 2>&1 | tee /tmp/conformance.log
 
       - name: Surface test failures
         if: failure()
@@ -276,7 +293,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unittest-logs-cuda${{ matrix.cuda.version }}-${{ github.run_id }}
-          path: build/release/extension/sirius/test/cpp/log/
+          path: build/release/test/cpp/log/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -285,7 +302,7 @@ jobs:
           ./setup_test_datasets.sh
           chmod -R a+r test_datasets/
           mkdir -p test_datasets/tpch_parquet_sf1
-          ./build/release/duckdb -f scripts/tpch_to_parquet.sql
+          ./build/release/sirius-duckdb/duckdb -f scripts/tpch_to_parquet.sql
 
       - name: TPC-H performance snapshot
         id: tpch
