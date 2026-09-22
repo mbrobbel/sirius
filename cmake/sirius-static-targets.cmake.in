@@ -1,0 +1,13 @@
+if(TARGET sirius::sirius_static)
+  return()
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/libsirius.a.cmake")
+add_library(sirius::sirius_static_archive STATIC IMPORTED)
+set_target_properties(sirius::sirius_static_archive PROPERTIES
+  IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/libsirius.a")
+add_library(sirius::sirius_static INTERFACE IMPORTED)
+set_target_properties(sirius::sirius_static PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@"
+  INTERFACE_COMPILE_FEATURES cxx_std_20
+  INTERFACE_LINK_LIBRARIES "$<LINK_LIBRARY:WHOLE_ARCHIVE,sirius::sirius_static_archive>;${SIRIUS_STATIC_SYSTEM_LIBRARIES}"
+  INTERFACE_LINK_OPTIONS "LINKER:--allow-multiple-definition;LINKER:--export-dynamic-symbol=InitializeInjectionNvtx2;LINKER:--export-dynamic-symbol=dlopen")

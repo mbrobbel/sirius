@@ -103,3 +103,29 @@ pixi run ctest --test-dir build/release -R nvtx --output-on-failure
 SQLLogic tests belong to `sirius-duckdb/test/sql` and run with DuckDB's test
 runner from the separate wrapper build. Run them from the repository root so
 fixture paths resolve. GPU tests require an NVIDIA device and driver.
+
+## Combined static archive
+
+`SIRIUS_BUILD_STATIC=ON` creates `libsirius.a`; `SIRIUS_BUILD_SHARED=OFF` skips the
+shared output. Build target `sirius_static`, then install the same
+`sirius_library` component. Use the vcpkg static dependency environment for this
+mode. A shared redistributable dependency makes archive assembly fail.
+
+The archive includes Sirius's resolved CUDA device link and its redistributable
+static dependencies, including DuckDB and the Rust bridge. CMake dependency
+interfaces determine membership. The installed `sirius::sirius_static` target
+retains registration objects with whole-archive linking and declares the
+remaining platform, C++ runtime, and NVIDIA driver libraries. It does not require
+vcpkg or internal dependency targets in a consumer project.
+
+The build writes `libsirius.a.json` with input names and SHA-256 hashes, and
+`libsirius.a.cmake` with the external link requirements. Build paths are excluded
+from installed metadata. A static-only install also exposes `sirius::sirius`.
+
+The archive helper can be tested without CUDA:
+
+```bash
+pixi run cmake -S test/cmake/static_bundle -B build/archive-test -G Ninja
+pixi run cmake --build build/archive-test
+pixi run ctest --test-dir build/archive-test --output-on-failure
+```

@@ -197,3 +197,13 @@ if(TARGET CUDA::nvml_static)
     endif()
   endif()
 endif()
+
+if(NOT SIRIUS_BUILD_SHARED)
+  set_target_properties(sirius_shared PROPERTIES EXCLUDE_FROM_ALL ON)
+endif()
+if(SIRIUS_BUILD_STATIC)
+  include("${CMAKE_CURRENT_LIST_DIR}/sirius-static-bundle.cmake")
+  sirius_add_static_bundle(
+    sirius_static "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a" sirius_core
+    dummy_static_extension_loader)
+endif()

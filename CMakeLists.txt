@@ -25,6 +25,11 @@ include(GNUInstallDirs)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 option(SIRIUS_BUILD_TESTS "Build Sirius C++ tests" OFF)
+option(SIRIUS_BUILD_SHARED "Build the shared Sirius library" ON)
+option(SIRIUS_BUILD_STATIC "Build a combined static Sirius archive" OFF)
+if(NOT SIRIUS_BUILD_SHARED AND NOT SIRIUS_BUILD_STATIC)
+  message(FATAL_ERROR "Enable SIRIUS_BUILD_SHARED or SIRIUS_BUILD_STATIC")
+endif()
 
 # Set CUDA architecture
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
