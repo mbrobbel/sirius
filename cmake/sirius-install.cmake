@@ -30,7 +30,8 @@ if(SIRIUS_BUILD_SHARED)
     COMPONENT sirius_library)
 endif()
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/sirius-config.cmake"
+  FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sirius-source-revision.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/sirius-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/sirius-config-version.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/sirius-duckdb-compatibility.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
@@ -51,6 +52,13 @@ if(SIRIUS_BUILD_STATIC)
     COMPONENT sirius_library)
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a.json"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/sirius"
+    COMPONENT sirius_library)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/input-manifest.json")
+  install(
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/input-manifest.json"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/sirius"
     COMPONENT sirius_library)
 endif()

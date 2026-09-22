@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
   Corrosion
   GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-  GIT_TAG v0.6.1)
+  GIT_TAG 1499b14e4906a2890f5cee1547c8848db261753d) # v0.6.1
 FetchContent_MakeAvailable(Corrosion)
 
 # --- Import the Rust bridge crate (CXX bridges) ---

@@ -10,6 +10,9 @@ if(NOT EXISTS "${SIRIUS_DUCKDB_SOURCE_DIR}/src/include/duckdb.hpp")
       "Initialize the DuckDB submodule or set SIRIUS_DUCKDB_SOURCE_DIR")
 endif()
 
+include("${CMAKE_CURRENT_LIST_DIR}/sirius-source-revision.cmake")
+sirius_source_revision("${SIRIUS_DUCKDB_SOURCE_DIR}" SIRIUS_DUCKDB_REVISION)
+
 function(sirius_add_duckdb_source)
   # Keep DuckDB options scoped to its dependency build.
   set(DUCKDB_EXTENSION_CONFIGS "")
@@ -17,6 +20,7 @@ function(sirius_add_duckdb_source)
   set(BUILD_SHELL OFF)
   set(BUILD_UNITTESTS OFF)
   set(OVERRIDE_GIT_DESCRIBE "v1.5.5")
+  string(SUBSTRING "${SIRIUS_DUCKDB_REVISION}" 0 10 OVERRIDE_GIT_HASH)
   add_subdirectory("${SIRIUS_DUCKDB_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/duckdb"
                    EXCLUDE_FROM_ALL)
 endfunction()
@@ -37,12 +41,6 @@ set_target_properties(
     INTERFACE_COMPILE_DEFINITIONS "${_duckdb_definitions}"
     INTERFACE_LINK_LIBRARIES
     "duckdb_static;core_functions_extension;parquet_extension")
-
-find_package(Git REQUIRED)
-execute_process(
-  COMMAND "${GIT_EXECUTABLE}" -C "${SIRIUS_DUCKDB_SOURCE_DIR}" rev-parse HEAD
-  OUTPUT_VARIABLE SIRIUS_DUCKDB_REVISION
-  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
 
 include(CheckCXXSourceCompiles)
 foreach(abi 0 1)
