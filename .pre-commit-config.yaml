@@ -34,6 +34,7 @@ repos:
         exclude: '^\.claude/(commands/(commit-push-pr|review)\.md|skills/skill-creator)$'
       - id: check-toml
       - id: check-yaml
+        exclude: ^packaging/conda/[^/]+/meta\.yaml$
       - id: debug-statements
       - id: destroyed-symlinks
       - id: detect-private-key

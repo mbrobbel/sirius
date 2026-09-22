@@ -25,3 +25,26 @@ libraries.
 Archive member order, ownership, and timestamps are normalized to the selected
 commit's timestamp. Keep the archive and sidecar with CI artifacts. These steps
 prepare and test artifacts; they do not publish a conda channel.
+
+## Shared conda packages
+
+The shared recipe emits `libsirius` (runtime library and its target export) and
+`libsirius-devel` (public headers and common CMake package metadata). Install the
+development package with a library package. Keeping common metadata independent
+of the runtime allows a static-only consumer environment.
+
+```bash
+pixi exec --spec conda-build=26.7.1 -- python scripts/build-conda.py \
+  build/sirius-source.tar.gz --kind shared --cuda 13.3 --render-only
+pixi exec --spec conda-build=26.7.1 -- python scripts/build-conda.py \
+  build/sirius-source.tar.gz --kind shared --cuda 13.3
+```
+
+Use `--cuda 12.9` for CUDA 12. Native Linux x86-64 and aarch64 builds use the same
+recipe. Runtime dependency bounds come from the host packages' run exports; the
+NVIDIA driver is represented by `__cuda`. Tests compile an installed consumer
+without CUDA headers and do not initialize a GPU. The build driver always disables
+channel upload and verifies the source archive checksum before invoking conda-build.
+
+The recipes use conda-build's [multiple outputs](https://docs.conda.io/projects/conda-build/en/stable/resources/define-metadata.html#outputs-section)
+so each package has an explicit file list.

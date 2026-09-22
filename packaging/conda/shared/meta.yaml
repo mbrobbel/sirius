@@ -1,0 +1,112 @@
+{% set host_dependencies = ["cuda-version " + cuda_compiler_version + ".*",
+    "cuda-cudart-dev",
+    "cuda-driver-dev",
+    "cuda-nvml-dev",
+    "cuda-nvrtc-dev",
+    "libcurand-dev",
+    "libcudf ==26.08.01",
+    "libcuvs ==26.08.01",
+    "libraft-headers ==26.08.00",
+    "librmm ==26.08.00",
+    "libnuma",
+    "liburing",
+    "libcurl",
+    "openssl",
+    "yaml-cpp",
+    "spdlog 1.8.*",
+    "libabseil",
+    "croaring",
+    "zlib"] %}
+{% set version = "0.0.0" %}
+{% set cuda_major = cuda_compiler_version.split('.')[0] %}
+{% set revision = environ["SIRIUS_SOURCE_REVISION"] %}
+
+package:
+  name: sirius-shared-build
+  version: {{ version }}
+
+source:
+  url: {{ environ["SIRIUS_SOURCE_URL"] }}
+  sha256: {{ environ["SIRIUS_SOURCE_SHA256"] }}
+
+build:
+  number: 0
+  skip: true  # [not linux]
+  string: cuda{{ cuda_major }}_g{{ revision[:8] }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+  script: bash "$RECIPE_DIR/build.sh"
+  missing_dso_whitelist:
+    - "*/libcuda.so.1"
+    - "*/libnvidia-ml.so.1"
+  error_overlinking: true
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ compiler('cuda') }}
+    - {{ stdlib('c') }}
+    - cmake >=3.30.4
+    - ninja
+    - make
+    - git
+    - pkg-config
+    - python >=3.12
+    - rust >=1.88
+    - lld
+  host:
+{% for dependency in host_dependencies %}
+    - {{ dependency }}
+{% endfor %}
+
+outputs:
+  - name: libsirius
+    files:
+      - lib/libsirius.so*
+      - lib/cmake/sirius/sirius-targets*.cmake
+      - share/sirius
+      - share/licenses/sirius
+    requirements:
+      host:
+{% for dependency in host_dependencies %}
+        - {{ dependency }}
+{% endfor %}
+      run:
+        - __cuda >={{ cuda_major }}
+    build:
+      string: cuda{{ cuda_major }}_g{{ revision[:8] }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      error_overlinking: true
+      run_exports:
+        - {{ pin_subpackage('libsirius', exact=True) }}
+      missing_dso_whitelist:
+        - "*/libcuda.so.1"
+        - "*/libnvidia-ml.so.1"
+    test:
+      commands:
+        - test -f "$PREFIX/lib/libsirius.so.0"
+        - test -f "$PREFIX/share/sirius/input-manifest.json"
+
+  - name: libsirius-devel
+    build:
+      string: cuda{{ cuda_major }}_g{{ revision[:8] }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+    files:
+      - include/sirius
+      - lib/cmake/sirius/sirius-config*.cmake
+      - lib/cmake/sirius/sirius-duckdb-compatibility.cmake
+      - lib/cmake/sirius/sirius-source-revision.cmake
+    test:
+      requires:
+        - {{ pin_subpackage('libsirius', exact=True) }}
+        - {{ compiler('cxx') }}
+        - cmake >=3.30.4
+        - ninja
+      source_files:
+        - test/cmake/installed_consumer
+      commands:
+        - cmake -S test/cmake/installed_consumer -B consumer -G Ninja -DCMAKE_PREFIX_PATH="$PREFIX"
+        - cmake --build consumer
+
+about:
+  home: https://github.com/sirius-db/sirius
+  summary: GPU SQL engine with an independently consumable C++ library
+  license: Apache-2.0
+  license_file: LICENSE
