@@ -5,6 +5,7 @@
 import argparse
 from pathlib import Path
 import subprocess
+import shutil
 
 
 def run(*args):
@@ -28,7 +29,9 @@ def main():
         if line and not line.startswith(("#", "//")) and "=" in line:
             key, value = line.split("=", 1)
             cache[key.split(":", 1)[0]] = value
-    run("cmake", "--build", str(build), "--target", *args.targets)
+    bundled = cache.get("SIRIUS_BUILD_STATIC") == "ON"
+    targets = args.targets + (["sirius_static"] if bundled else [])
+    run("cmake", "--build", str(build), "--target", *targets)
     prefix = build / "install"
     run(
         "cmake",
@@ -74,10 +77,21 @@ def main():
         f"-DDUCKDB_EXTENSION_CONFIGS={root / 'sirius-duckdb/extension_config.cmake'}",
         "-DOVERRIDE_GIT_DESCRIBE=v1.5.5",
         "-DEXTENSION_STATIC_BUILD=ON",
+        f"-DSIRIUS_DUCKDB_LINKAGE={'static' if bundled else 'shared'}",
         "-DCMAKE_CXX_SCAN_FOR_MODULES=OFF",
         *(f"-D{key}={cache[key]}" for key in forwarded if key in cache),
     )
     run("cmake", "--build", str(extension), "--target", *args.extension_targets)
+    if bundled:
+        # extension-ci-tools collects distribution artifacts at these paths.
+        artifact = extension / "extension/sirius/sirius.duckdb_extension"
+        if artifact.is_file():
+            destination = build / "extension/sirius"
+            destination.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(artifact, destination / artifact.name)
+        repository = extension / "repository"
+        if repository.is_dir():
+            shutil.copytree(repository, build / "repository", dirs_exist_ok=True)
 
 
 if __name__ == "__main__":

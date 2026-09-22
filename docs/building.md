@@ -129,3 +129,19 @@ pixi run cmake -S test/cmake/static_bundle -B build/archive-test -G Ninja
 pixi run cmake --build build/archive-test
 pixi run ctest --test-dir build/archive-test --output-on-failure
 ```
+
+## Bundled DuckDB distribution
+
+Configure the wrapper with `SIRIUS_DUCKDB_LINKAGE=shared` (default) to depend on
+`libsirius.so`, or `static` to consume installed `sirius::sirius_static`. Both
+modes use the same entrypoint source and DuckDB metadata generation. Static mode
+requires a combined archive and does not compile engine sources in the wrapper.
+
+The bundled extension exports its DuckDB entrypoint, NVTX injector, and RMM
+resource registry. Other bundled symbols remain private. When linking Sirius
+into the DuckDB executable, the host's generated loader takes precedence over
+the standalone library's loader, retaining automatic registration.
+
+The vcpkg presets enable the combined archive. The Make driver installs it,
+builds the bundled wrapper, and stages distribution artifacts at the paths
+expected by extension-ci-tools. These are build artifacts, not published releases.
