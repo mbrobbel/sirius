@@ -19,7 +19,7 @@ def main():
     parser.add_argument(
         "--extension-targets",
         nargs="+",
-        default=["duckdb", "duckdb_local_extension_repo"],
+        default=["duckdb", "shell", "duckdb_local_extension_repo"],
     )
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent

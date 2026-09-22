@@ -73,3 +73,27 @@ registry objects are fetched by vcpkg using the pinned baseline and overlays.
 `VCPKG_BINARY_SOURCES` and `VCPKG_DOWNLOADS` can point to existing build caches.
 The recipe cannot substitute conda shared GPU libraries for missing static
 dependencies: archive assembly rejects them.
+
+## CI and consumer checks
+
+The `Sirius packages` workflow prepares one source artifact and builds native
+Linux x86-64/aarch64 packages for CUDA 12.9 and 13.3. It runs on relevant changes
+to `dev` and can be dispatched manually. It uploads artifacts without publishing
+a channel. Each build links C++ and Rust consumers against installed packages,
+then builds the independent DuckDB wrapper in both linkage modes. ELF inspection
+rejects shared GPU dependencies in the bundled extension. Separate x86-64 GPU
+jobs load both extensions and check transparent and explicit GPU query results.
+GPU execution on aarch64 requires an additional GPU runner.
+
+To exercise the same installed consumers against a local output channel:
+
+```bash
+pixi exec --spec conda-build=26.7.1 -- bash packaging/test-consumers.sh \
+  build build/conda shared 13.3
+pixi exec --spec conda-build=26.7.1 -- bash packaging/test-consumers.sh \
+  gpu build/conda shared 13.3
+```
+
+Use `static` for the combined archive. The `gpu` phase requires the wrapper
+artifacts from the `build` phase and a working NVIDIA driver. The ordinary engine
+CI retains the full C++ integration suite; package smoke tests complement it.

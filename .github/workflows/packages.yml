@@ -1,0 +1,141 @@
+name: Sirius packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'packaging/**'
+      - 'scripts/*conda*'
+      - 'scripts/prepare-package-source.py'
+      - 'sirius-duckdb/**'
+      - '.github/workflows/packages.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source:
+    runs-on: [self-hosted, ubuntu-24.04, cpu-xl]
+    timeout-minutes: 45
+    env:
+      CONDA_OVERRIDE_CUDA: '13.3'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: git submodule update --init --recursive --depth=1 duckdb cucascade substrait vcpkg
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.71.1
+          cache: false
+      - name: CPU build contracts
+        run: |
+          pixi run --locked python -m unittest discover -s test/packaging
+          for fixture in nvtx_injection static_bundle; do
+            pixi run --locked cmake -S test/cmake/$fixture -B build/$fixture -G Ninja
+            pixi run --locked cmake --build build/$fixture
+            pixi run --locked ctest --test-dir build/$fixture --output-on-failure
+          done
+          pixi run --locked cmake -S test/cmake/static_bundle -B build/negative -G Ninja -DBUNDLE_WITH_SHARED_DEP=ON
+          if pixi run --locked cmake --build build/negative > build/negative.log 2>&1; then
+            echo 'Shared dependency was accepted into the static bundle' >&2
+            exit 1
+          fi
+          grep 'Non-static or unsupported dependency in bundle:' build/negative.log
+      - name: Prepare immutable inputs
+        run: pixi run --locked python scripts/prepare-package-source.py build/sirius-source.tar.gz --with-vcpkg
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sirius-source
+          path: |
+            build/sirius-source.tar.gz
+            build/sirius-source.tar.json
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    needs: source
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [cpu-xl, arm-xl]
+        cuda:
+          - version: '12.9'
+            runner: ubuntu-22.04
+          - version: '13.3'
+            runner: ubuntu-24.04
+    runs-on: ${{ fromJSON(format('["self-hosted", "{0}", "{1}"]', matrix.cuda.runner, matrix.architecture)) }}
+    timeout-minutes: 360
+    env:
+      CONDA_OVERRIDE_CUDA: ${{ matrix.cuda.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: git submodule update --init --depth=1 duckdb
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.71.1
+          run-install: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sirius-source
+          path: build
+      - name: Build and test packages
+        run: |
+          for kind in shared static; do
+            pixi exec --spec conda-build=26.7.1 -- python scripts/build-conda.py \
+              build/sirius-source.tar.gz --kind "$kind" --cuda '${{ matrix.cuda.version }}'
+            pixi exec --spec conda-build=26.7.1 -- bash packaging/test-consumers.sh \
+              build build/conda "$kind" '${{ matrix.cuda.version }}'
+          done
+      - name: Pack installed consumer artifacts
+        run: |
+          tar -cf build/package-wrappers.tar \
+            build/package-wrapper-shared/duckdb \
+            build/package-wrapper-shared/extension/sirius/sirius.duckdb_extension \
+            build/package-wrapper-static/duckdb \
+            build/package-wrapper-static/extension/sirius/sirius.duckdb_extension
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sirius-packages-${{ matrix.architecture }}-cuda${{ matrix.cuda.version }}
+          path: |
+            build/conda/**/*.conda
+            build/conda/**/*.tar.bz2
+            build/package-wrappers.tar
+          if-no-files-found: error
+          retention-days: 14
+
+  gpu:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        cuda:
+          - version: '12.9'
+            runner: ubuntu-22.04
+          - version: '13.3'
+            runner: ubuntu-24.04
+    runs-on: ${{ fromJSON(format('["self-hosted", "{0}", "gpu-2xt4"]', matrix.cuda.runner)) }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.71.1
+          run-install: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sirius-packages-cpu-xl-cuda${{ matrix.cuda.version }}
+          path: build
+      - name: Run installed package consumers
+        run: |
+          nvidia-smi
+          tar -xf build/package-wrappers.tar
+          for kind in shared static; do
+            pixi exec --spec conda-build=26.7.1 -- bash packaging/test-consumers.sh \
+              gpu build/conda "$kind" '${{ matrix.cuda.version }}'
+          done

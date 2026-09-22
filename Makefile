@@ -16,7 +16,7 @@ CMAKE ?= cmake
 DUCKDB_DIR ?= duckdb
 TEST_BUILD_TARGET ?= sirius_unittest
 MAIN_BUILD_TARGETS ?= sirius_shared
-DUCKDB_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo
+DUCKDB_BUILD_TARGETS ?= duckdb shell duckdb_local_extension_repo
 
 BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 

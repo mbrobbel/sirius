@@ -3,6 +3,7 @@ set -euo pipefail
 export CARGO_NET_OFFLINE=true
 export CARGO_HOME="$SRC_DIR/.cargo-home"
 export VCPKG_DISABLE_METRICS=1
+: "${cuda_compiler_version:?conda-build must select a CUDA variant}"
 export VCPKG_CUDA_VERSION="${cuda_compiler_version%%.*}"
 
 # Restore only the pinned Git objects needed by vcpkg's builtin registry.
