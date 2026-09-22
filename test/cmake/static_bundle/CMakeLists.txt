@@ -31,3 +31,10 @@ add_executable(host_consumer host_main.cpp)
 target_link_libraries(host_consumer PRIVATE wrapper)
 target_link_options(host_consumer PRIVATE "LINKER:--allow-multiple-definition")
 add_test(NAME host_registration_precedence COMMAND host_consumer)
+
+add_test(
+  NAME installed_static_target
+  COMMAND
+    "${CMAKE_COMMAND}" "-DROOT=${CMAKE_CURRENT_LIST_DIR}/../../.."
+    "-DBUNDLE_DIR=${CMAKE_CURRENT_BINARY_DIR}" -P
+    "${CMAKE_CURRENT_LIST_DIR}/test_install.cmake")

@@ -48,3 +48,28 @@ channel upload and verifies the source archive checksum before invoking conda-bu
 
 The recipes use conda-build's [multiple outputs](https://docs.conda.io/projects/conda-build/en/stable/resources/define-metadata.html#outputs-section)
 so each package has an explicit file list.
+
+## Static conda package
+
+After building the shared recipe into the local output channel, build the static
+recipe with the same source archive and CUDA variant:
+
+```bash
+pixi exec --spec conda-build=26.7.1 -- python scripts/build-conda.py \
+  build/sirius-source.tar.gz --kind static --cuda 13.3
+```
+
+`libsirius-static` contains the combined archive, static CMake target, external
+link metadata, dependency hashes, and third-party notices. It depends on the
+matching `libsirius-devel` revision, whose headers and ABI metadata are checked
+against the static build. It does not depend on shared Sirius or shared RAPIDS
+packages. Its test environment links an installed consumer and checks that shared
+Sirius and cuDF are absent. NVIDIA driver stubs are needed at link time; deployed
+applications use the host driver.
+
+Static source preparation also records a Git bundle for vcpkg's pinned registry.
+The recipe restores that bundle locally; subsequent port assets and historical
+registry objects are fetched by vcpkg using the pinned baseline and overlays.
+`VCPKG_BINARY_SOURCES` and `VCPKG_DOWNLOADS` can point to existing build caches.
+The recipe cannot substitute conda shared GPU libraries for missing static
+dependencies: archive assembly rejects them.

@@ -2,6 +2,17 @@ if(TARGET sirius::sirius_static)
   return()
 endif()
 include("${CMAKE_CURRENT_LIST_DIR}/libsirius.a.cmake")
+# Driver stubs are link-time inputs; deployed applications use the host driver.
+foreach(driver cuda nvidia-ml)
+  if(driver IN_LIST SIRIUS_STATIC_SYSTEM_LIBRARIES)
+    find_library(_sirius_driver_${driver} NAMES "${driver}" "lib${driver}.so.1"
+      HINTS "${PACKAGE_PREFIX_DIR}/lib"
+            "${PACKAGE_PREFIX_DIR}/targets/${CMAKE_SYSTEM_PROCESSOR}-linux/lib/stubs"
+      REQUIRED NO_CACHE)
+    list(TRANSFORM SIRIUS_STATIC_SYSTEM_LIBRARIES
+         REPLACE "^${driver}$" "${_sirius_driver_${driver}}")
+  endif()
+endforeach()
 add_library(sirius::sirius_static_archive STATIC IMPORTED)
 set_target_properties(sirius::sirius_static_archive PROPERTIES
   IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/libsirius.a")

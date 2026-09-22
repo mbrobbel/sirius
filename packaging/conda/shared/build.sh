@@ -5,6 +5,7 @@ export CARGO_HOME="$SRC_DIR/.cargo-home"
 export CARGO_TARGET_DIR="$SRC_DIR/build-cargo"
 cmake -S "$SRC_DIR" -B build-conda -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CUDA_HOST_COMPILER="$CXX" \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_INSTALL_LIBDIR=lib \
   -DCMAKE_PREFIX_PATH="$PREFIX;$BUILD_PREFIX" \

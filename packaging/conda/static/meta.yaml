@@ -1,0 +1,85 @@
+{% set version = "0.0.0" %}
+{% set cuda_major = cuda_compiler_version.split('.')[0] %}
+{% set revision = environ["SIRIUS_SOURCE_REVISION"] %}
+
+package:
+  name: libsirius-static
+  version: {{ version }}
+
+source:
+  url: {{ environ["SIRIUS_SOURCE_URL"] }}
+  sha256: {{ environ["SIRIUS_SOURCE_SHA256"] }}
+
+build:
+  number: 0
+  skip: true  # [not linux]
+  string: cuda{{ cuda_major }}_g{{ revision[:8] }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+  script: bash "$RECIPE_DIR/build.sh"
+  script_env:
+    - VCPKG_BINARY_SOURCES
+    - VCPKG_DOWNLOADS
+  run_exports:
+    - {{ pin_subpackage('libsirius-static', exact=True) }}
+  ignore_run_exports_from:
+    - cuda-cudart-dev
+    - cuda-nvrtc-dev
+    - libcurand-dev
+    - libnvjitlink-dev
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ compiler('cuda') }}
+    - {{ stdlib('c') }}
+    - cmake >=3.30.4
+    - ninja
+    - make
+    - git
+    - pkg-config
+    - python >=3.12
+    - rust >=1.88
+    - lld
+    - autoconf
+    - automake
+    - libtool
+    - bison
+    - flex
+    - curl
+    - zip
+    - unzip
+  host:
+    - libsirius-devel {{ version }} cuda{{ cuda_major }}_g{{ revision[:8] }}_*
+    - cuda-version {{ cuda_compiler_version }}.*
+    - cuda-cudart-dev
+    - cuda-driver-dev
+    - cuda-nvml-dev
+    - cuda-nvrtc-dev
+    - libcurand-dev
+    - libnvjitlink-dev
+  run:
+    - libsirius-devel {{ version }} cuda{{ cuda_major }}_g{{ revision[:8] }}_*
+    - __cuda >={{ cuda_major }}
+
+test:
+  requires:
+    - {{ compiler('cxx') }}
+    - cuda-driver-dev
+    - cuda-nvml-dev
+    - cmake >=3.30.4
+    - ninja
+    - python >=3.12
+  source_files:
+    - test/cmake/installed_consumer
+  commands:
+    - test -f "$PREFIX/lib/libsirius.a"
+    - test ! -e "$PREFIX/lib/libsirius.so"
+    - test ! -e "$PREFIX/lib/libcudf.so"
+    - cmake -S test/cmake/installed_consumer -B consumer -G Ninja -DCMAKE_PREFIX_PATH="$PREFIX" -DSIRIUS_TEST_LINKAGE=static
+    - cmake --build consumer
+
+about:
+  home: https://github.com/sirius-db/sirius
+  summary: Combined static Sirius archive with redistributable dependencies
+  license: Apache-2.0
+  license_file: LICENSE

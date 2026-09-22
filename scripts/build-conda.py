@@ -34,6 +34,14 @@ def main():
         raise RuntimeError("Prepared source archive checksum mismatch")
     if args.kind == "static" and "vcpkg" not in manifest["revisions"]:
         raise RuntimeError("Prepare static package sources with --with-vcpkg")
+    if (
+        args.kind == "static"
+        and not args.render_only
+        and "packaging/vendor/vcpkg.bundle" not in manifest["sha256"]
+    ):
+        raise RuntimeError(
+            "Recreate the prepared source archive with the pinned vcpkg Git bundle"
+        )
     os.environ.update(
         SIRIUS_SOURCE_URL=source.as_uri(),
         SIRIUS_SOURCE_SHA256=actual,
@@ -62,12 +70,25 @@ def main():
         ):
             print(api.output_yaml(metadata))
         return
+    output = args.output.resolve()
+    channels = []
+    if args.kind == "static":
+        development_packages = list(output.glob("*/libsirius-devel-*.conda")) + list(
+            output.glob("*/libsirius-devel-*.tar.bz2")
+        )
+        if not development_packages:
+            raise RuntimeError(
+                "Build the shared recipe first to supply libsirius-devel in the local output channel"
+            )
+        subprocess.run(["conda", "index", str(output)], check=True)
+        channels = ["-c", output.as_uri()]
     subprocess.run(
         [
             "conda-build",
             str(recipe),
             "--no-anaconda-upload",
             "--override-channels",
+            *channels,
             "-c",
             "rapidsai",
             "-c",

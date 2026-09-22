@@ -117,6 +117,28 @@ def main():
             snapshot(root / path, pins[path], source / path, revisions, path)
         vendor = source / "packaging/vendor"
         vendor.mkdir(parents=True, exist_ok=True)
+        if args.with_vcpkg:
+            if git(root / "vcpkg", "rev-parse", "HEAD") != pins["vcpkg"]:
+                raise RuntimeError(
+                    "Check out the pinned vcpkg submodule before packaging"
+                )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(root / "vcpkg"),
+                    "-c",
+                    "pack.threads=1",
+                    "-c",
+                    "pack.window=0",
+                    "bundle",
+                    "create",
+                    str(vendor / "vcpkg.bundle"),
+                    "HEAD",
+                ],
+                check=True,
+            )
+
         corrosion = args.corrosion_source
         if corrosion is None:
             corrosion = temporary / "corrosion"
@@ -164,6 +186,10 @@ def main():
                 for name in ("pixi.lock", "rust/Cargo.lock", "vcpkg.json")
             },
         }
+        if args.with_vcpkg:
+            manifest["sha256"]["packaging/vendor/vcpkg.bundle"] = checksum(
+                vendor / "vcpkg.bundle"
+            )
         (source / "packaging/input-manifest.json").write_text(
             json.dumps(manifest, indent=2) + "\n"
         )
