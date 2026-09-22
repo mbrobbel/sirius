@@ -15,7 +15,8 @@
 CMAKE ?= cmake
 DUCKDB_DIR ?= duckdb
 TEST_BUILD_TARGET ?= sirius_unittest
-MAIN_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo sirius_shared
+MAIN_BUILD_TARGETS ?= sirius_shared
+DUCKDB_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo
 
 BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 
@@ -28,62 +29,55 @@ BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 	s3-test-aws s3-test-aws-sigv4 s3-test-aws-broker s3-bench \
 	slot-gate-test
 
-PRESETS_LINK := $(DUCKDB_DIR)/CMakePresets.json
-
-# Inputs that should trigger a CMake re-configure
-CMAKE_INPUTS := cmake/CMakePresets.json CMakeLists.txt extension_config.cmake $(wildcard cmake/*.cmake)
+# The driver installs Sirius before configuring the independent extension build.
+CMAKE_INPUTS := CMakePresets.json cmake/CMakePresets.json CMakeLists.txt $(wildcard cmake/*.cmake)
 
 all: release
 
-$(PRESETS_LINK): cmake/CMakePresets.json
-	rm -f $(DUCKDB_DIR)/CMakeUserPresets.json
-	ln -sf ../cmake/CMakePresets.json $@
-
-# Configure step — only re-runs when cmake inputs change
-build/%/build.ninja: $(CMAKE_INPUTS) | $(PRESETS_LINK)
-	cd $(DUCKDB_DIR) && $(CMAKE) --preset $*
+build/%/build.ninja: $(CMAKE_INPUTS)
+	$(CMAKE) --preset $*
 
 release: build/release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset release --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py release --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 debug: build/debug/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset debug --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py debug --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 reldebug: relwithdebinfo
 
 debug-release: relwithdebinfo
 
 relwithdebinfo: build/relwithdebinfo/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset relwithdebinfo --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py relwithdebinfo --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 legacy-release: build/legacy-release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset legacy-release --target $(MAIN_BUILD_TARGETS)
+	python3 scripts/build-split.py legacy-release --targets $(MAIN_BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 clang-release: build/clang-release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-release --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py clang-release --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 clang-debug: build/clang-debug/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-debug --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py clang-debug --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 clang-relwithdebinfo: build/clang-relwithdebinfo/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-relwithdebinfo --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py clang-relwithdebinfo --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 # AddressSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   ASAN_OPTIONS="protect_shadow_gap=0:detect_leaks=0:halt_on_error=0:abort_on_error=1" \
-#     ./build/clang-asan/extension/sirius/test/cpp/sirius_unittest
+#     ./build/clang-asan/test/cpp/sirius_unittest
 clang-asan: build/clang-asan/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-asan --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py clang-asan --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 # ThreadSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   TSAN_OPTIONS="suppressions=$$PWD/tsan.supp:ignore_noninstrumented_modules=1:halt_on_error=0:history_size=7:detect_deadlocks=0" \
-#     ./build/clang-tsan/extension/sirius/test/cpp/sirius_unittest
+#     ./build/clang-tsan/test/cpp/sirius_unittest
 clang-tsan: build/clang-tsan/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset clang-tsan --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py clang-tsan --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 ci-release: build/ci-release/build.ninja
-	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset ci-release --target $(BUILD_TARGETS)
+	python3 scripts/build-split.py ci-release --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
 
 configure_ci:
 	@echo "configure_ci step is skipped for this extension build..."
@@ -94,22 +88,22 @@ set_duckdb_version:
 test: test_release
 
 test_release: release
-	./build/release/extension/sirius/test/cpp/sirius_unittest
+	./build/release/test/cpp/sirius_unittest
 
 test_debug: debug
-	./build/debug/extension/sirius/test/cpp/sirius_unittest
+	./build/debug/test/cpp/sirius_unittest
 
 test_reldebug: relwithdebinfo
-	./build/relwithdebinfo/extension/sirius/test/cpp/sirius_unittest
+	./build/relwithdebinfo/test/cpp/sirius_unittest
 
 test_ci-release: ci-release
-	./build/ci-release/extension/sirius/test/cpp/sirius_unittest
+	./build/ci-release/test/cpp/sirius_unittest
 
 clean:
 	rm -rf build
 
-list-presets: $(PRESETS_LINK)
-	cd $(DUCKDB_DIR) && $(CMAKE) --list-presets
+list-presets:
+	$(CMAKE) --list-presets
 
 # -----------------------------------------------------------------------------
 # S3 integration test gates
@@ -147,7 +141,7 @@ list-presets: $(PRESETS_LINK)
 #
 # See test/cpp/integration/s3/README.md for details.
 
-S3_TEST_BIN ?= build/release/extension/sirius/test/cpp/sirius_unittest
+S3_TEST_BIN ?= build/release/test/cpp/sirius_unittest
 
 # Query-lifecycle concurrency gates. Runs the hidden [slot_leak_gate] cases
 # (the worker-pressure gate needs a TPC-H lineitem parquet fixture) plus the
@@ -250,7 +244,7 @@ s3-test-aws-broker:
 # SF10 lineitem fixture (SIRIUS_TEST_S3_LARGE=1), and SIRIUS_TEST_S3_STRICT=1
 # makes a MinIO bring-up failure fail the benchmark loud instead of skipping to a
 # false green. The JSON baseline emits
-# build/release/extension/sirius/test/cpp/log/s3_rest_perf_<ts>.json and appends
+# build/release/test/cpp/log/s3_rest_perf_<ts>.json and appends
 # per-run history under doc/s3support/perf-history-<backend>.jsonl.
 # Set SIRIUS_BENCH_BACKEND=aws-s3 to hit real AWS instead of MinIO (manual only —
 # export the SIRIUS_TEST_S3_* env yourself: regional endpoint, bucket, assume-role
