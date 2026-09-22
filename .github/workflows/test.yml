@@ -88,6 +88,12 @@ jobs:
           set -o pipefail
           make -j$(nproc) 2>&1 | tee /tmp/build.log
 
+      - name: Check installed consumer and build boundaries
+        run: |
+          python scripts/check-build-boundaries.py build/release
+          cmake --build build/release --target injection_pie injection_nonpie injection_shared_driver
+          ctest --test-dir build/release -R nvtx --output-on-failure
+
       - name: Surface build errors
         if: failure()
         run: |
@@ -159,7 +165,7 @@ jobs:
         # otherwise produce, there is no extension repository to install from.
         run: |
           for attempt in 1 2 3; do
-            if ./build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
+            if ./build/release/sirius-duckdb/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
               exit 0
             fi
             echo "::warning::Extension install attempt ${attempt} failed; retrying in $((attempt * 10))s"
@@ -172,7 +178,7 @@ jobs:
         run: |
           set -o pipefail
           nvidia-smi
-          timeout 45m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort 2>&1 | tee /tmp/unittest.log
+          timeout 45m ./build/release/test/cpp/sirius_unittest --abort 2>&1 | tee /tmp/unittest.log
 
       # The late-materialization gate is read from the environment once per process, so the
       # feature is entirely absent from the run above. Without this step the end-to-end case
@@ -182,7 +188,7 @@ jobs:
         run: |
           set -o pipefail
           SIRIUS_EXP_LATE_MAT=1 \
-            timeout 20m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort \
+            timeout 20m ./build/release/test/cpp/sirius_unittest --abort \
             "[late_mat],[deferred_query],[native_filter]" 2>&1 | tee /tmp/unittest_late_mat.log
 
       - name: Iceberg conformance (correctness + connection liveness)
@@ -198,7 +204,7 @@ jobs:
           set -o pipefail
           python3 test/cpp/integration/data/iceberg_conformance/run_conformance.py \
             test/cpp/integration/data/iceberg_conformance \
-            --duckdb ./build/release/duckdb 2>&1 | tee /tmp/conformance.log
+            --duckdb ./build/release/sirius-duckdb/duckdb 2>&1 | tee /tmp/conformance.log
 
       - name: Surface test failures
         if: failure()
@@ -218,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unittest-logs-cuda${{ matrix.cuda.version }}-${{ github.run_id }}
-          path: build/release/extension/sirius/test/cpp/log/
+          path: build/release/test/cpp/log/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -227,7 +233,7 @@ jobs:
           ./setup_test_datasets.sh
           chmod -R a+r test_datasets/
           mkdir -p test_datasets/tpch_parquet_sf1
-          ./build/release/duckdb -f scripts/tpch_to_parquet.sql
+          ./build/release/sirius-duckdb/duckdb -f scripts/tpch_to_parquet.sql
 
       - name: TPC-H performance snapshot
         id: tpch
