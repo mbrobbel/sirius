@@ -30,7 +30,7 @@
  */
 
 #include "log/logging.hpp"
-#include "sirius_extension.hpp"
+#include "utils/sirius_test_extension.hpp"
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -1235,7 +1235,7 @@ void run_ac7_load_union(fs::path const& database_path,
     return;
   }
   mark_workload_started(output_path, out);
-  db.LoadStaticExtension<duckdb::SiriusExtension>();
+  db.LoadStaticExtension<duckdb::SiriusTestExtension>();
 
   duckdb::Value current_setting;
   auto lookup = connection.context->TryGetCurrentSetting("disabled_optimizers", current_setting);

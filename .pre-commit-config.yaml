@@ -55,7 +55,7 @@ repos:
         # further from the reference implementation. check-json still validates these files.
         exclude: '^test/cpp/integration/data/iceberg_conformance/.*\.json$'
       - id: trailing-whitespace
-        exclude: 'test/sql/clickbench-sirius\.test'
+        exclude: 'sirius-duckdb/test/sql/clickbench-sirius\.test'
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:

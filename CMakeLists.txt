@@ -130,6 +130,8 @@ else()
 endif()
 
 if(SIRIUS_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(test/cmake/nvtx_injection)
   include(cmake/sirius-test-sources.cmake)
   include(cmake/sirius-tests.cmake)
 endif()

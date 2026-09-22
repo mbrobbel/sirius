@@ -45,7 +45,7 @@
 #include <pipeline/sirius_pipeline.hpp>
 #include <planner/sirius_physical_plan_generator.hpp>
 #include <sirius_engine.hpp>
-#include <sirius_extension.hpp>
+#include <utils/sirius_test_extension.hpp>
 
 // duckdb
 #include <duckdb.hpp>
@@ -95,7 +95,7 @@ void safe_load_extension(DuckDB& db)
 {
   if (!g_extension_loaded) {
     try {
-      db.LoadStaticExtension<SiriusExtension>();
+      db.LoadStaticExtension<SiriusTestExtension>();
       g_extension_loaded = true;
     } catch (const std::exception& e) {
       // Extension might already be loaded by a previous test, that's ok

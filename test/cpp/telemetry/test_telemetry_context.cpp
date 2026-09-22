@@ -17,9 +17,9 @@
 #include "catch.hpp"
 #include "duckdb.hpp"
 #include "sirius_config.hpp"
-#include "sirius_extension.hpp"
 #include "telemetry/nvtx_injection.hpp"
 #include "telemetry/telemetry_context.hpp"
+#include "utils/sirius_test_extension.hpp"
 
 #include <dlfcn.h>
 
@@ -107,7 +107,7 @@ TEST_CASE("SIRIUS_DISABLE skips automatic NVTX injection discovery",
 
   {
     duckdb::DuckDB db(nullptr);
-    duckdb::SiriusExtension extension;
+    duckdb::SiriusTestExtension extension;
     REQUIRE(db.ExtensionIsLoaded(extension.Name()));
   }
 

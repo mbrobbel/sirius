@@ -1,4 +1,5 @@
-add_executable(sirius_unittest ${TEST_SOURCES} src/sirius_extension_entry.cpp)
+add_executable(sirius_unittest ${TEST_SOURCES}
+                               test/cpp/utils/sirius_extension_loader.cpp)
 
 if(VCPKG_BUILD)
   set_target_properties(sirius_unittest PROPERTIES NO_SYSTEM_FROM_IMPORTED ON)
@@ -18,7 +19,6 @@ target_include_directories(
 )
 
 target_link_libraries(sirius_unittest sirius_core duckdb_static ZLIB::ZLIB)
-target_link_libraries(sirius_unittest duckdb_generated_extension_loader)
 
 # S3 container harness: the testcontainers-native bridge plus libcurl for
 # host-side fixture upload (SigV4 signing comes from sirius_core). Gated so
@@ -93,3 +93,7 @@ set_target_properties(
   PROPERTIES CXX_STANDARD 20
              CXX_STANDARD_REQUIRED ON
              RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/io")
+
+add_test(NAME sirius_cpp COMMAND sirius_unittest)
+set_tests_properties(sirius_cpp PROPERTIES LABELS "gpu" WORKING_DIRECTORY
+                                           "${CMAKE_CURRENT_SOURCE_DIR}")

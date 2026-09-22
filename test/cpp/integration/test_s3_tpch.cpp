@@ -6,8 +6,8 @@
  */
 
 #include "catch.hpp"
-#include "sirius_extension.hpp"
 #include "utils/s3_container.hpp"
+#include "utils/sirius_test_extension.hpp"
 #include "utils/tpch_queries.hpp"
 #include "utils/transparent_execution_test_utils.hpp"
 
@@ -214,7 +214,7 @@ void tpch_require_query_ok(duckdb::Connection& connection, std::string const& sq
 void tpch_load_sirius_extension(duckdb::DuckDB& db)
 {
   try {
-    db.LoadStaticExtension<duckdb::SiriusExtension>();
+    db.LoadStaticExtension<duckdb::SiriusTestExtension>();
   } catch (std::exception const& error) {
     auto const message = std::string{error.what()};
     if (message.find("already exists") == std::string::npos &&

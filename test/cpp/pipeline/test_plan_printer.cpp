@@ -41,9 +41,9 @@
 #include <sirius_config.hpp>
 #include <sirius_context.hpp>
 #include <sirius_engine.hpp>
-#include <sirius_extension.hpp>
 #include <sirius_interface.hpp>
 #include <utils/pipeline_conversion_test_utils.hpp>
+#include <utils/sirius_test_extension.hpp>
 
 // duckdb
 #include <duckdb.hpp>
@@ -102,7 +102,7 @@ void set_test_config_env()
 void safe_load_extension(DuckDB& db)
 {
   try {
-    db.LoadStaticExtension<SiriusExtension>();
+    db.LoadStaticExtension<SiriusTestExtension>();
   } catch (const std::exception& e) {
     std::string msg = e.what();
     if (msg.find("already exists") == std::string::npos &&

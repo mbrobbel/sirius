@@ -11,8 +11,8 @@
 #include "io/sirius_datasource.hpp"
 #include "io/uri_parser.hpp"
 #include "sirius_context.hpp"
-#include "sirius_extension.hpp"
 #include "utils/s3_container.hpp"
+#include "utils/sirius_test_extension.hpp"
 
 #include <arpa/inet.h>
 #include <duckdb.hpp>
@@ -238,7 +238,7 @@ std::string read_text_file(fs::path const& path)
 void load_sirius_extension(duckdb::DuckDB& db)
 {
   try {
-    db.LoadStaticExtension<duckdb::SiriusExtension>();
+    db.LoadStaticExtension<duckdb::SiriusTestExtension>();
   } catch (std::exception const& e) {
     auto const msg = std::string{e.what()};
     if (msg.find("already exists") == std::string::npos &&

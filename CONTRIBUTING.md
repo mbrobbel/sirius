@@ -7,8 +7,7 @@
 ```bash
 git clone --recurse-submodules <repo>
 cd sirius
-pixi shell                              # activate environment
-CMAKE_BUILD_PARALLEL_LEVEL=$(nproc) make
+pixi run make
 ```
 
 If you create a new git worktree, initialize submodules manually:
@@ -20,17 +19,17 @@ git submodule update --init --recursive
 
 ```bash
 # C++ unit tests
-build/release/extension/sirius/test/cpp/sirius_unittest
+build/release/test/cpp/sirius_unittest
 
 # Run a specific tag or test name
-build/release/extension/sirius/test/cpp/sirius_unittest "[cpu_cache]"
-build/release/extension/sirius/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
+build/release/test/cpp/sirius_unittest "[cpu_cache]"
+build/release/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
 
 # SQL logic tests (end-to-end)
-make test
+pixi run build/release/sirius-duckdb/test/unittest --test-dir . sirius-duckdb/test/sql/tpch-sirius.test
 ```
 
-Test logs are written to `build/release/extension/sirius/test/cpp/log/`.
+Test logs are written to `build/release/test/cpp/log/`.
 
 ## Code style
 

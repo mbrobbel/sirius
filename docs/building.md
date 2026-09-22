@@ -87,3 +87,19 @@ pixi run cmake --build build/consumer
 The package records the DuckDB revision, compiler, and build mode. The extension
 wrapper must call `sirius_check_duckdb_compatibility` before linking to that C++
 API; independent DuckDB versions are not supported yet.
+
+## Tests
+
+Enable `SIRIUS_BUILD_TESTS` for the engine's C++ tests. Their test-only loader
+registers the engine directly, preserving automatic registration without linking
+the DuckDB wrapper. `SIRIUS_BUILD_S3_TESTS` only adds its Go/container harness when
+engine tests are enabled.
+
+```bash
+pixi run ctest --test-dir build/release -L gpu --output-on-failure
+pixi run ctest --test-dir build/release -R nvtx --output-on-failure
+```
+
+SQLLogic tests belong to `sirius-duckdb/test/sql` and run with DuckDB's test
+runner from the separate wrapper build. Run them from the repository root so
+fixture paths resolve. GPU tests require an NVIDIA device and driver.
