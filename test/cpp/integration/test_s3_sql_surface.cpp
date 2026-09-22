@@ -1164,8 +1164,7 @@ fs::path unittest_log_dir()
 #ifdef SIRIUS_UNITTEST_LOG_DIR
   return fs::path{SIRIUS_UNITTEST_LOG_DIR};
 #else
-  return fs::path(SIRIUS_PROJECT_ROOT) / "build" / "release" / "extension" / "sirius" / "test" /
-         "cpp" / "log";
+  return fs::path(SIRIUS_PROJECT_ROOT) / "build" / "release" / "test" / "cpp" / "log";
 #endif
 }
 

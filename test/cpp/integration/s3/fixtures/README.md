@@ -4,7 +4,7 @@ The hidden `[.][s3][bench]` Catch2 benchmark uses an SF=10 `lineitem`
 Parquet fixture. It is now generated and uploaded **by the test binary itself**
 (`test/cpp/utils/s3_container.*`) when `SIRIUS_TEST_S3_LARGE=1`, which:
 
-1. uses the in-tree DuckDB CLI (`build/release/duckdb`, or `SIRIUS_TEST_DUCKDB`)
+1. uses the in-tree DuckDB CLI (`build/release/sirius-duckdb/duckdb`, or `SIRIUS_TEST_DUCKDB`)
    and its `tpch` extension to generate SF=10 data,
 2. exports the full `lineitem` table to Parquet (cached across invocations), and
 3. uploads it from the host via Sirius's SigV4 signer + libcurl (no `mc`).

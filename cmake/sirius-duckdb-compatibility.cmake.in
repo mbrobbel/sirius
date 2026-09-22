@@ -1,6 +1,7 @@
 set(SIRIUS_DUCKDB_REVISION "@SIRIUS_DUCKDB_REVISION@")
 set(SIRIUS_CXX_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@")
 set(SIRIUS_CXX_COMPILER_VERSION "@CMAKE_CXX_COMPILER_VERSION@")
+set(SIRIUS_LIBSTDCXX_ABI "@SIRIUS_LIBSTDCXX_ABI@")
 set(SIRIUS_BUILD_TYPE "@CMAKE_BUILD_TYPE@")
 
 # DuckDB's C++ extension ABI is tied to the source revision and toolchain.
@@ -18,6 +19,14 @@ function(sirius_check_duckdb_compatibility source_dir)
      NOT CMAKE_CXX_COMPILER_VERSION STREQUAL SIRIUS_CXX_COMPILER_VERSION)
     message(FATAL_ERROR
       "Build sirius-duckdb with ${SIRIUS_CXX_COMPILER_ID} ${SIRIUS_CXX_COMPILER_VERSION}, matching Sirius")
+  endif()
+  include(CheckCXXSourceCompiles)
+  unset(_sirius_consumer_abi_matches CACHE)
+  check_cxx_source_compiles(
+    "#include <string>\nstatic_assert(_GLIBCXX_USE_CXX11_ABI == ${SIRIUS_LIBSTDCXX_ABI});\nint main() {}"
+    _sirius_consumer_abi_matches)
+  if(NOT _sirius_consumer_abi_matches)
+    message(FATAL_ERROR "Sirius and sirius-duckdb must use the same libstdc++ ABI")
   endif()
   if((CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT SIRIUS_BUILD_TYPE STREQUAL "Debug") OR
      (SIRIUS_BUILD_TYPE STREQUAL "Debug" AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))

@@ -31,7 +31,7 @@ import sys
 
 ap = argparse.ArgumentParser()
 ap.add_argument("corpus")
-ap.add_argument("--duckdb", default="build/release/duckdb")
+ap.add_argument("--duckdb", default="build/release/sirius-duckdb/duckdb")
 ap.add_argument("--timeout", type=int, default=90)
 ap.add_argument("--case", default=None, help="run only this case")
 args = ap.parse_args()

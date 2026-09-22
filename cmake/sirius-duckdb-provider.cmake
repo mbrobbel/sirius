@@ -43,3 +43,18 @@ execute_process(
   COMMAND "${GIT_EXECUTABLE}" -C "${SIRIUS_DUCKDB_SOURCE_DIR}" rev-parse HEAD
   OUTPUT_VARIABLE SIRIUS_DUCKDB_REVISION
   OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+
+include(CheckCXXSourceCompiles)
+foreach(abi 0 1)
+  unset(_sirius_abi_matches CACHE)
+  check_cxx_source_compiles(
+    "#include <string>\nstatic_assert(_GLIBCXX_USE_CXX11_ABI == ${abi});\nint main() {}"
+    _sirius_abi_matches)
+  if(_sirius_abi_matches)
+    set(SIRIUS_LIBSTDCXX_ABI "${abi}")
+    break()
+  endif()
+endforeach()
+if(NOT DEFINED SIRIUS_LIBSTDCXX_ABI)
+  message(FATAL_ERROR "Sirius requires a supported libstdc++ ABI")
+endif()

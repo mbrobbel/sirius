@@ -41,7 +41,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SIRIUS_DUCKDB="$PROJECT_DIR/build/release/duckdb"
+SIRIUS_DUCKDB="$PROJECT_DIR/build/release/sirius-duckdb/duckdb"
 
 DUCKDB_FILE=""
 NUM_ITERATIONS=2

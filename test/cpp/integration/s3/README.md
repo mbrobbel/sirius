@@ -42,7 +42,7 @@ never touches Docker. The behavior:
   configure/build: CMake fetches + patches upstream testcontainers-native and
   builds it as a Go c-archive (see `cmake/testcontainers_native.cmake`).
 - Python 3.9+ (stdlib only) and `openssl` at run time, both from the pixi env.
-- For the large gate: the in-tree `build/release/duckdb` CLI (or
+- For the large gate: the in-tree `build/release/sirius-duckdb/duckdb` CLI (or
   `SIRIUS_TEST_DUCKDB`) to generate the SF10 fixture.
 
 ## Typical flow
@@ -62,7 +62,7 @@ make s3-test-large
 
 # Manually, without the Makefile:
 SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_STRICT=1 \
-  build/release/extension/sirius/test/cpp/sirius_unittest "[s3]~[large]~[aws]"
+  build/release/test/cpp/sirius_unittest "[s3]~[large]~[aws]"
 ```
 
 ## Pinned image version

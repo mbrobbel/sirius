@@ -112,10 +112,10 @@ fi
 echo
 
 echo "***DuckDB***"
-if [ -f "build/release/duckdb" ]; then
-    build/release/duckdb --version
-elif [ -f "build/debug/duckdb" ]; then
-    build/debug/duckdb --version
+if [ -f "build/release/sirius-duckdb/duckdb" ]; then
+    build/release/sirius-duckdb/duckdb --version
+elif [ -f "build/debug/sirius-duckdb/duckdb" ]; then
+    build/debug/sirius-duckdb/duckdb --version
 else
     echo "DuckDB binary not found in build/"
 fi

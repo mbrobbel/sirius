@@ -15,7 +15,9 @@ RUN_TIME_LINE = "Run Time (s):"
 
 current_path = os.path.abspath(__file__)
 sirius_path = os.path.dirname(os.path.dirname(os.path.dirname(current_path)))
-default_sirius_exec_path = os.path.join(sirius_path, "build/release/duckdb")
+default_sirius_exec_path = os.path.join(
+    sirius_path, "build/release/sirius-duckdb/duckdb"
+)
 default_duckdb_db_path = os.path.join(sirius_path, "clickbench.duckdb")
 default_result_save_path = os.path.join(os.path.dirname(current_path), "result.csv")
 default_output_save_path = os.path.join(os.path.dirname(current_path), "output.txt")

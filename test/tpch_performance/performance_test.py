@@ -584,7 +584,7 @@ def _build_nsys_temp_sql(qnum, source, iterations, pin, qdir, data_source="parqu
     sql_path = os.path.join(qdir, "nsys.sql")
     timing_path = os.path.join(qdir, "timings.csv")
 
-    # NOTE: the DuckDB CLI (build/release/duckdb) statically links the Sirius
+    # NOTE: the DuckDB CLI (build/release/sirius-duckdb/duckdb) statically links the Sirius
     # extension, so gpu_execution is already registered at startup. An explicit
     # `LOAD '<ext>'` here throws "Table Function gpu_execution already exists".
     # (Only the non-nsys path, which uses the vanilla Python duckdb module,

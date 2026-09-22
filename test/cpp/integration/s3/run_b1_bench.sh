@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-S3_TEST_BIN="${S3_TEST_BIN:-${PROJECT_ROOT}/build/release/extension/sirius/test/cpp/sirius_unittest}"
+S3_TEST_BIN="${S3_TEST_BIN:-${PROJECT_ROOT}/build/release/test/cpp/sirius_unittest}"
 : "${SIRIUS_BENCH_OUTPUT_PATH:=${SCRIPT_DIR}/pr6-b1-bench-results.md}"
 export SIRIUS_BENCH_OUTPUT_PATH
 

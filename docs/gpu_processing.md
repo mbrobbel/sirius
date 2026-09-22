@@ -29,7 +29,7 @@ cd duckdb && cmake --preset release -DENABLE_LEGACY_SIRIUS=ON && cmake --build -
 
 ```bash
 export SIRIUS_DISABLE=1
-./build/release/duckdb {DATABASE_NAME}.duckdb
+./build/release/sirius-duckdb/duckdb {DATABASE_NAME}.duckdb
 ```
 
 ## Running
@@ -93,7 +93,7 @@ cd ../../
 
 To load the TPC-H dataset to duckdb:
 ```
-./build/release/duckdb {DATABASE_NAME}.duckdb
+./build/release/sirius-duckdb/duckdb {DATABASE_NAME}.duckdb
 .read scripts/tpch_load.sql
 ```
 
@@ -109,7 +109,7 @@ cd ..
 
 To load the dataset to duckdb:
 ```
-./build/release/duckdb {DATABASE_NAME}.duckdb
+./build/release/sirius-duckdb/duckdb {DATABASE_NAME}.duckdb
 .read scripts/clickbench_load_duckdb.sql
 ```
 

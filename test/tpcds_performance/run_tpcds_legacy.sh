@@ -30,8 +30,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DUCKDB="$PROJECT_DIR/build/release/duckdb"
-EXTENSION="$PROJECT_DIR/build/release/extension/sirius/sirius.duckdb_extension"
+DUCKDB="$PROJECT_DIR/build/release/sirius-duckdb/duckdb"
+EXTENSION="$PROJECT_DIR/build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension"
 QUERY_DIR="$SCRIPT_DIR/queries"
 
 # --- Parse arguments ---

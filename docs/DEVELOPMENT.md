@@ -32,13 +32,13 @@ CMAKE_BUILD_PARALLEL_LEVEL=8 pixi run make
 Run the Sirius-linked DuckDB binary — the extension is statically built in and loads automatically:
 
 ```bash
-./build/release/duckdb
+./build/release/sirius-duckdb/duckdb
 ```
 
 Alternatively, load the extension into an existing DuckDB shell:
 
 ```sql
-LOAD 'build/release/extension/sirius/sirius.duckdb_extension';
+LOAD 'build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension';
 ```
 
 ## Pre-commit
@@ -66,8 +66,8 @@ pixi run make test
 Run tests by Catch2 tag or name:
 
 ```bash
-pixi run build/release/extension/sirius/test/cpp/sirius_unittest "[cpu_cache]"
-pixi run build/release/extension/sirius/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
+pixi run build/release/test/cpp/sirius_unittest "[cpu_cache]"
+pixi run build/release/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
 ```
 
 ## Using CLion for development
