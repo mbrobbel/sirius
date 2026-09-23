@@ -39,8 +39,8 @@ using PinMvccInsertFixture = sirius::test::GpuExecutionFixture;
 namespace {
 
 /// Runs @p query expecting a plan-time decline into the transparent CPU
-/// fallback, then checks the results against a plain CPU run.
-void expect_fallback_matches_cpu(sirius::test::GpuExecutionFixture& fx, const std::string& query)
+/// fallback. Result comparisons live in the pin_mvcc_insert SQL suite.
+void require_plan_fallback(sirius::test::GpuExecutionFixture& fx, const std::string& query)
 {
   fx.con->Query("SET gpu_execution = true;");
   auto before     = sirius::test::get_transparent_execution_stats(*fx.con);
@@ -50,18 +50,6 @@ void expect_fallback_matches_cpu(sirius::test::GpuExecutionFixture& fx, const st
   REQUIRE_FALSE(gpu_result->HasError());
   auto after = sirius::test::get_transparent_execution_stats(*fx.con);
   sirius::test::require_transparent_execution_delta(before, after, 0, 1, 0);
-
-  fx.con->Query("SET gpu_execution = false;");
-  auto cpu_result = fx.con->Query(query);
-  fx.con->Query("SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE_FALSE(cpu_result->HasError());
-
-  auto gpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    gpu_result->Cast<duckdb::MaterializedQueryResult>());
-  auto cpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    cpu_result->Cast<duckdb::MaterializedQueryResult>());
-  REQUIRE(gpu_rows == cpu_rows);
 }
 
 /// Opens a second connection to the same database (concurrent writer / older snapshot).
@@ -82,26 +70,6 @@ void run_ok_on(duckdb::Connection& con, const std::string& sql)
   REQUIRE_FALSE(result->HasError());
 }
 
-/// Compares GPU vs CPU results on the given connection (no counter assertions).
-void compare_gpu_vs_cpu_on(duckdb::Connection& con, const std::string& query)
-{
-  run_ok_on(con, "SET gpu_execution = true;");
-  auto gpu_result = con.Query(query);
-  REQUIRE(gpu_result);
-  if (gpu_result->HasError()) { UNSCOPED_INFO("gpu query error: " << gpu_result->GetError()); }
-  REQUIRE_FALSE(gpu_result->HasError());
-  run_ok_on(con, "SET gpu_execution = false;");
-  auto cpu_result = con.Query(query);
-  run_ok_on(con, "SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE_FALSE(cpu_result->HasError());
-  auto gpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    gpu_result->Cast<duckdb::MaterializedQueryResult>());
-  auto cpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    cpu_result->Cast<duckdb::MaterializedQueryResult>());
-  REQUIRE(gpu_rows == cpu_rows);
-}
-
 }  // namespace
 
 TEST_CASE_METHOD(PinMvccInsertFixture,
@@ -115,8 +83,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t SELECT range::INTEGER + 50000 FROM range(200);");
   run_ok("DELETE FROM t WHERE k >= 50100;");  // half the delta, tombstoned pre-query
 
-  compare_gpu_vs_cpu("SELECT count(*), max(k), sum(k) FROM t;");
-  compare_gpu_vs_cpu("SELECT k FROM t WHERE k >= 49990 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), max(k), sum(k) FROM t;");
+  require_gpu_execution("SELECT k FROM t WHERE k >= 49990 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -136,11 +104,12 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t SELECT range::INTEGER + 50000 FROM range(500);");
 
   // The old snapshot: delta rows exist physically but are invisible to it.
-  compare_gpu_vs_cpu_on(*reader, "SELECT count(*), max(k) FROM t;");
+  run_ok_on(*reader, "SET gpu_execution = true;");
+  run_ok_on(*reader, "SELECT count(*), max(k) FROM t;");
   run_ok_on(*reader, "ROLLBACK;");
 
   // A fresh snapshot sees them.
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -158,8 +127,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t SELECT range::INTEGER + 200000, 0 FROM range(3000);");
   run_ok("DELETE FROM t WHERE k >= 202000;");  // and over the delta
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(k), sum(v) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k > 199990 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), sum(k), sum(v) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k > 199990 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -177,8 +146,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // Plus a small transient append: both lanes in one delta.
   run_ok("INSERT INTO t VALUES (180000);");
 
-  compare_gpu_vs_cpu("SELECT count(*), max(k), sum(k) FROM t;");
-  compare_gpu_vs_cpu("SELECT count(*) FROM t WHERE k >= 100000;");
+  require_gpu_execution("SELECT count(*), max(k), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*) FROM t WHERE k >= 100000;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -195,11 +164,11 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // stats rather than the file.
   run_ok("INSERT INTO t SELECT range::INTEGER + 20000, 7 FROM range(130000);");
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(k), sum(v), min(v), max(v) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k >= 149995 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), sum(k), sum(v), min(v), max(v) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k >= 149995 ORDER BY k;");
   // Constant-column-only projection: the persistent delta splits become
   // blockless-only (no file reads, no datasource) and must still serve.
-  compare_gpu_vs_cpu("SELECT sum(v), min(v), max(v) FROM t;");
+  require_gpu_execution("SELECT sum(v), min(v), max(v) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -219,8 +188,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t SELECT range::INTEGER + 20000, 9 FROM range(130000);");
   run_ok("INSERT INTO t VALUES (150001, 7);");
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(v), min(v), max(v) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k >= 149998 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), sum(v), min(v), max(v) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k >= 149998 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -238,10 +207,10 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // the NULL-ness lives only in the CONSTANT validity segments' stats.
   run_ok("INSERT INTO t SELECT range::INTEGER + 20000, NULL::INTEGER FROM range(130000);");
 
-  compare_gpu_vs_cpu("SELECT count(*), count(v), sum(k) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k >= 149995 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), count(v), sum(k) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k >= 149995 ORDER BY k;");
   // All-NULL-column-only projection: blockless-only splits, no datasource.
-  compare_gpu_vs_cpu("SELECT count(v) FROM t;");
+  require_gpu_execution("SELECT count(v) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -258,8 +227,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 20000, NULL::VARCHAR FROM range(130000);");
 
-  compare_gpu_vs_cpu("SELECT count(*), count(s) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, s FROM t WHERE k >= 149995 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), count(s) FROM t;");
+  require_gpu_execution("SELECT k, s FROM t WHERE k >= 149995 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -276,8 +245,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("CHECKPOINT;");
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
-  compare_gpu_vs_cpu("SELECT count(*), count(v), sum(v) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k BETWEEN 9998 AND 10008 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), count(v), sum(v) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k BETWEEN 9998 AND 10008 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -298,8 +267,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
     "CASE WHEN range % 5 = 0 THEN NULL ELSE range::INTEGER END "
     "FROM range(2000);");
 
-  compare_gpu_vs_cpu("SELECT count(*), count(opt), min(s), max(s) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, s, opt FROM t WHERE k >= 49995 ORDER BY k;");
+  require_gpu_execution("SELECT count(*), count(opt), min(s), max(s) FROM t;");
+  require_gpu_execution("SELECT k, s, opt FROM t WHERE k >= 49995 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -314,7 +283,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t SELECT range::INTEGER + 80000 FROM range(1000);");
   run_ok("DELETE FROM t WHERE k IN (5, 80003);");
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -330,7 +299,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 60000, 7 FROM range(300);");
 
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT a.g, count(*) FROM t a JOIN t b ON a.k = b.k GROUP BY a.g ORDER BY a.g;");
   run_ok("CALL unpin_table('t');");
 }
@@ -348,7 +317,8 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 60000 FROM range(5000);");
 
-  compare_gpu_vs_cpu("SELECT u.g, count(*) FROM t JOIN u ON t.k = u.k GROUP BY u.g ORDER BY u.g;");
+  require_gpu_execution(
+    "SELECT u.g, count(*) FROM t JOIN u ON t.k = u.k GROUP BY u.g ORDER BY u.g;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -361,13 +331,13 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
   run_ok("INSERT INTO t VALUES (40000);");
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 40001 FROM range(999);");
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");
 
   run_ok("DELETE FROM t WHERE k = 40500;");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -380,7 +350,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 10 FROM range(5000);");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -396,7 +366,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   // The pushed filter zone-map-prunes every cached chunk; only the delta rows
   // match and must still arrive.
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t WHERE k >= 500000;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t WHERE k >= 500000;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -412,7 +382,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // (merged on append) makes the plan-time varchar probe decline. The query
   // must project the string column; without it the scan legitimately serves.
   run_ok("INSERT INTO t VALUES (20000, repeat('x', 5000));");
-  expect_fallback_matches_cpu(*this, "SELECT count(*), max(k), max(strlen(s)) FROM t;");
+  require_plan_fallback(*this, "SELECT count(*), max(k), max(strlen(s)) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -427,60 +397,9 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t VALUES (30000);");
   // Bare count(*) binds only rowid, which is never cached, so the
   // column-mismatch guard declines; the fallback must still count the delta row.
-  expect_fallback_matches_cpu(*this, "SELECT count(*) FROM t;");
+  require_plan_fallback(*this, "SELECT count(*) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
-
-// NOTE: The two ARRAY guard tests below encoded the pre-array-delta contract
-// (pin_table refuses ARRAY columns; ARRAY projections decline while a delta
-// exists). Fixed-size ARRAY columns now pin and serve through the insert delta,
-// so both are commented out and superseded by the ARRAY-delta cases appended at
-// the end of this file.
-/*
-TEST_CASE_METHOD(PinMvccInsertFixture,
-                 "mvcc guards: pinning an ARRAY column is refused",
-                 "[integration][gpu_execution][pin_table_mvcc_insert]")
-{
-  run_ok(
-    "CREATE TABLE t AS SELECT range::INTEGER AS k, "
-    "CAST([range::INTEGER, 1, 2] AS INTEGER[3]) AS a FROM range(1000);");
-  run_ok("CHECKPOINT;");
-
-  // Appended ARRAY rows hide in the array-validity/child segment trees the
-  // uncheckpointed-append guard cannot see, so ARRAY pins are refused outright
-  // — checkpoint-clean ones included.
-  auto refused = con->Query("CALL pin_table(format='duckdb', name='t', tier='gpu');");
-  REQUIRE(refused);
-  REQUIRE(refused->HasError());
-  REQUIRE_THAT(refused->GetError(), Catch::Contains("ARRAY"));
-
-  // A subset pin that leaves the ARRAY column out still works.
-  run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu', cols=['k']);");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
-  run_ok("CALL unpin_table('t');");
-}
-
-TEST_CASE_METHOD(PinMvccInsertFixture,
-                 "mvcc guards: ARRAY projections decline while a delta exists",
-                 "[integration][gpu_execution][pin_table_mvcc_insert]")
-{
-  run_ok(
-    "CREATE TABLE t AS SELECT range::INTEGER AS k, "
-    "CAST([range::INTEGER, 1, 2] AS INTEGER[3]) AS a FROM range(20000);");
-  run_ok("CHECKPOINT;");
-  // ARRAY columns cannot be pinned, so pin the scalar subset.
-  run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu', cols=['k']);");
-
-  run_ok("INSERT INTO t VALUES (20000, CAST([9, 9, 9] AS INTEGER[3]));");
-
-  // Projecting the unpinned ARRAY column declines; the fallback must still
-  // return correct rows.
-  expect_fallback_matches_cpu(*this, "SELECT k, a FROM t WHERE k >= 19998 ORDER BY k;");
-  // Projecting only the pinned scalar column serves from cache + delta.
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
-  run_ok("CALL unpin_table('t');");
-}
-*/
 
 TEST_CASE_METHOD(PinMvccInsertFixture,
                  "mvcc insert: the residency gate installs no narrow sidecar when deltas serve",
@@ -533,7 +452,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // chunks legitimately restore to native at the scan (no sidecar, so the
   // narrow cache carriers widen), and delta rows arrive native and unverified.
   auto const before = sirius::test::get_compressed_materialization_stats(*con);
-  compare_gpu_vs_cpu("SELECT count(*), max(k), sum(k) FROM t_delta_comp;");
+  require_gpu_execution("SELECT count(*), max(k), sum(k) FROM t_delta_comp;");
   auto const after = sirius::test::get_compressed_materialization_stats(*con);
   REQUIRE(after.scan_sidecars_installed == before.scan_sidecars_installed);
   REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -559,7 +478,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
   // No delta: the array decodes straight from the pinned prefix.
-  compare_gpu_vs_cpu("SELECT k, a FROM t WHERE k >= 19995 ORDER BY k;");
+  require_gpu_execution("SELECT k, a FROM t WHERE k >= 19995 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -582,7 +501,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   // Spans the pin boundary: base rows 19998-19999 from cache, delta rows
   // 20000-20001 from the transient delta lane.
-  compare_gpu_vs_cpu("SELECT k, a FROM t WHERE k >= 19998 ORDER BY k;");
+  require_gpu_execution("SELECT k, a FROM t WHERE k >= 19998 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -607,9 +526,9 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   run_ok("INSERT INTO t VALUES (200000, CAST([1, 2, 3] AS INTEGER[3]));");
 
   // Persistent delta rows.
-  compare_gpu_vs_cpu("SELECT k, a FROM t WHERE k >= 149997 AND k < 150000 ORDER BY k;");
+  require_gpu_execution("SELECT k, a FROM t WHERE k >= 149997 AND k < 150000 ORDER BY k;");
   // The transient tail append.
-  compare_gpu_vs_cpu("SELECT k, a FROM t WHERE k >= 200000 ORDER BY k;");
+  require_gpu_execution("SELECT k, a FROM t WHERE k >= 200000 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -631,7 +550,7 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
     "(20001, CAST([NULL, 5, NULL] AS INTEGER[3])), "
     "(20002, CAST([7, NULL, 9] AS INTEGER[3]));");
 
-  compare_gpu_vs_cpu("SELECT k, a FROM t WHERE k >= 19999 ORDER BY k;");
+  require_gpu_execution("SELECT k, a FROM t WHERE k >= 19999 ORDER BY k;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -665,9 +584,9 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
   // Reference only the pinned ARRAY column with no predicate. A filter on the
   // unpinned k breaks the partial pin's cache-or-CPU contract, and an array
   // subscript filter (a[1]) is unsupported on the GPU scan; either forces a
-  // fallback. The unordered compare over all rows still covers the folded-in
-  // append row (k=1000).
-  compare_gpu_vs_cpu("SELECT a FROM t;");
+  // fallback. The SQL suite compares all rows, including the folded-in append
+  // row (k=1000).
+  require_gpu_execution("SELECT a FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -690,6 +609,6 @@ TEST_CASE_METHOD(PinMvccInsertFixture,
 
   // Pinning the scalar subset (leaving the ARRAY out) still works.
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu', cols=['k']);");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
