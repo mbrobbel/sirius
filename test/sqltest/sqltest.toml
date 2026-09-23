@@ -223,3 +223,1052 @@ profile = "hive-watchdog"
 [runs.hive-watchdog]
 suites = ["hive_watchdog"]
 profile = "hive-watchdog"
+
+[sources.iceberg-50270c2a54e4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/data/00000-0-85081e41-26c0-406a-af5e-32ff07eb8884.parquet"
+sha256 = "d1e11af8c667bbd72b0058259db2a2ad257b4b6efa94c96e5067aaabc7948c91"
+
+[sources.iceberg-d06e8cf65125]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/data/00000-0-9ac8dead-1aab-45c9-be2a-a708d85d3327.parquet"
+sha256 = "1e752ff11f35f6d2d418697505c1c0825ae18ce82ab7e2a542013fdf595bc2bc"
+
+[sources.iceberg-59f557ebf429]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/00000-1788c127-2d62-459b-9ac4-b9a44b0fae22.metadata.json"
+sha256 = "a50a1507a31a494727359f6211965b2341e79155225764aceb4580433df93dd4"
+
+[sources.iceberg-832c3d7642f3]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/00001-39874214-0a0d-405d-9253-72997bf04302.metadata.json"
+sha256 = "ce62d1d8e20229300be78fdf651a04f908303619f6996431302a039ec4e481a9"
+
+[sources.iceberg-ee4bfdf69cc7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/00002-4c1e50f2-c1df-4211-9dab-abb318b486cb.metadata.json"
+sha256 = "98bb0ebf5e179d70a9c9dda5c8e6702374431ae20efc197226ca3cc870e102ed"
+
+[sources.iceberg-203ca2bf3a1c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/00003-4cc0e7d1-6e27-4c27-9b39-da630ed16785.metadata.json"
+sha256 = "ca1738f6ece220d1703d3a3019e9c444acf40ddc462e5a0df049f0276005f48e"
+
+[sources.iceberg-eb5dc6389785]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/85081e41-26c0-406a-af5e-32ff07eb8884-m0.avro"
+sha256 = "0848f23e7c0f1550a9c64635e7c954e63d4f057c436611816a0cdaa8a9ff3c54"
+
+[sources.iceberg-c45e0b9d1fed]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/9ac8dead-1aab-45c9-be2a-a708d85d3327-m0.avro"
+sha256 = "2e46865facd3ed7a8b509870cc705ff1098780327f9fe2782304e45e711b663d"
+
+[sources.iceberg-9304e4294fea]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/snap-5734603587265841069-0-85081e41-26c0-406a-af5e-32ff07eb8884.avro"
+sha256 = "1c2f6f4d0fb330223f4585a071b3a3f5c9e4f37dcf7b6f0add4eb7d791256df7"
+
+[sources.iceberg-f684f5366d0e]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/add_column/conf/add_column/metadata/snap-6204621527650249004-0-9ac8dead-1aab-45c9-be2a-a708d85d3327.avro"
+sha256 = "3c5fb70dc6ab52be696def7cc144ac5ccc892c1ec0e49df41269bc8044d1a80a"
+
+[sources.iceberg-1b1dbea28d11]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/append_only/conf/append_only/data/00000-0-b4630554-9751-49f1-b362-c0c9ea9535b3.parquet"
+sha256 = "24634cc738c0e3b91af3fd83687730ed6c239e56f824bb0ea709c09b41c15746"
+
+[sources.iceberg-b2b942e71a10]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/append_only/conf/append_only/metadata/00000-84ccc447-7c79-4d03-b523-5762dca8f0eb.metadata.json"
+sha256 = "95dddc14a1af3bfae43cf431d5c88384c5d6ede188ebd64a3d18ac6c570dcd55"
+
+[sources.iceberg-554a92cfb20d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/append_only/conf/append_only/metadata/00001-95fc9adf-fbdf-422e-b90d-b5afd795552c.metadata.json"
+sha256 = "120f5e6369221b0661a53a03b477eb6614241f7a52aa060bf491881bea3ee1c1"
+
+[sources.iceberg-eed271ccafae]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/append_only/conf/append_only/metadata/b4630554-9751-49f1-b362-c0c9ea9535b3-m0.avro"
+sha256 = "635343f2f437f41d7e7fb9a3fed74dac43f07ace306b035e7635aa672c2a7560"
+
+[sources.iceberg-3c5b95c2f737]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/append_only/conf/append_only/metadata/snap-2738471339267532079-0-b4630554-9751-49f1-b362-c0c9ea9535b3.avro"
+sha256 = "1f2f65fb90aa33eac7b83622a0bd7ec4e15e775bf112783955d919f03100d554"
+
+[sources.iceberg-a505b417fe7a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/data/00000-0-c7f9505c-6cf9-40ad-9e49-074eb760691a.parquet"
+sha256 = "831b2e10eee8013613b9c0b047ea9132b02b269703c7c8273819b78166adb4fa"
+
+[sources.iceberg-a36828274244]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/00000-f805b5bf-7672-43ba-996a-1569dc5a6a17.metadata.json"
+sha256 = "e2cb38551618473037a1ba7176aca680656c3d19cb4009e6f27732a5ff793e88"
+
+[sources.iceberg-a6e683450144]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/00001-04d59889-9536-47fd-903d-3101091ac7d8.metadata.json"
+sha256 = "d15b81f61a970f5a469901ca9d8b17c507baf4f11cf016c8ce53a2f35a536a8d"
+
+[sources.iceberg-9b255bbfb99d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/00002-979f7c70-776d-4855-b0c7-b7d8b59a75c7.metadata.json"
+sha256 = "9726f597ea4d3eb6aa63eb95f6f62187b18f0a6f2a4de4bb1f77f845dbf82d18"
+
+[sources.iceberg-85ab5c09fdf4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/00003-6da28b2b-f495-4752-bc20-0daf750fa66c.metadata.json"
+sha256 = "50d85c5e1c2b64ddc441c7ff9540db70a2333914f3d45a0cc486ca208a26e2ff"
+
+[sources.iceberg-e14087eea6f7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/c7f9505c-6cf9-40ad-9e49-074eb760691a-m0.avro"
+sha256 = "ee5bf5151124cdeb277650f335d5276d53ed3c9e980591e122fb15a03439f0ac"
+
+[sources.iceberg-8bd277600cf4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd/metadata/snap-2926213281689314888-0-c7f9505c-6cf9-40ad-9e49-074eb760691a.avro"
+sha256 = "00764c8e0d7cf927901214ef5e958e135a24cef281e278d34841f8d19b1b8963"
+
+[sources.iceberg-6e30fd3a548b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/data/00000-0-1f276fa2-8c3e-473e-9c37-292abfad25a9.parquet"
+sha256 = "32b58b558317199b56490ee5871dbd33d411a28c575f6133df8573dbf5eaa11d"
+
+[sources.iceberg-ac5ca3b705e1]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/data/00000-0-571c62d9-f336-4fc6-b0c0-6ee9232f603c.parquet"
+sha256 = "70f822d68a779c1d384ea40cb6c3f46c2e51b64241ff07f27782a28602cb967c"
+
+[sources.iceberg-b34939f97f6b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/00000-6de4647e-1851-424c-86c4-eeb0be3c0dbf.metadata.json"
+sha256 = "f431c850a5c940a3b0a081b7f26e05d1c034b2af9fbaaed9753488baf0b014d5"
+
+[sources.iceberg-964a772e10c4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/00001-8cc5520a-4111-4d14-9824-99377a09d32e.metadata.json"
+sha256 = "4480d0c6300b798327e88fc2b89ceeafa241a5deb03a777a4243efafd3786a3e"
+
+[sources.iceberg-81d92e972f4d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/00002-40fc2edb-d57e-470d-9ef4-ba6e9a65e726.metadata.json"
+sha256 = "8343b2dbcfc27810c96d0b3bbb033cb0fc4a0a8c319ccb34a9c0b1b185dc3d77"
+
+[sources.iceberg-bd5d853887c3]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/00003-cd5b55f2-2958-49f5-873b-91b8f7e144d6.metadata.json"
+sha256 = "e87916a919e162f46e57b245c4f95257bd057d6bfa7adc3186d5916d2fe77af2"
+
+[sources.iceberg-7cd5362c5170]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/1f276fa2-8c3e-473e-9c37-292abfad25a9-m0.avro"
+sha256 = "56d9de9ba53e69a51af567278fbcd452855eb2a34ed9c987228e207f11c7d23a"
+
+[sources.iceberg-db466c20db01]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/571c62d9-f336-4fc6-b0c0-6ee9232f603c-m0.avro"
+sha256 = "6cd4cf61b8c00d2a43e9acbcf9de41c81b38e9ce76eec913a2fdca7631c86571"
+
+[sources.iceberg-ee1dda5e75a8]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/snap-4961426206131534342-0-571c62d9-f336-4fc6-b0c0-6ee9232f603c.avro"
+sha256 = "daa920212e10be61358c74046df4c5d5cf8f67aece612c9151fe02e0e4bb1130"
+
+[sources.iceberg-c7541a462c5a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_conformance/rename_col/conf/rename_col/metadata/snap-6676722121545018144-0-1f276fa2-8c3e-473e-9c37-292abfad25a9.avro"
+sha256 = "af230e2ac5d8bb81f43d309bb0135543662ba18f74daebd6a724d73096a18156"
+
+[sources.iceberg-110cab8d3f08]
+kind = "file"
+path = "../cpp/integration/data/iceberg_deflate_manifest/data/00000-data.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-9fe623c67b8c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_deflate_manifest/metadata/manifest-m0.avro"
+sha256 = "9dc4df238375dddc61023f29dc9bea23d107e10e0948bdb0bddb12a780744e94"
+
+[sources.iceberg-099074413f04]
+kind = "file"
+path = "../cpp/integration/data/iceberg_deflate_manifest/metadata/snap-9500000000000001-1-ml.avro"
+sha256 = "dd6f2c74424da6a27e7a14030577376f6a856a67693565195e68f0b124013e97"
+
+[sources.iceberg-55f600396b63]
+kind = "file"
+path = "../cpp/integration/data/iceberg_deflate_manifest/metadata/v1.metadata.json"
+sha256 = "e7c4b1afd0369405b8370f3ce8f43a2361b421c14757da8db8f32f93e7f20bc2"
+
+[sources.iceberg-3ea0d495b54f]
+kind = "file"
+path = "../cpp/integration/data/iceberg_deflate_manifest/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-dea700db38e9]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/data/data1.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-2463b9880a74]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/data/data2.parquet"
+sha256 = "445c4edb11c29dfeacac1d01660e0cfc9b6a84d3920ac19b47e7a3f52d2115a4"
+
+[sources.iceberg-3b69270d3cad]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/data/delete-eq.parquet"
+sha256 = "0a368f84d8a14c5027e016a43581d88b13f5c80834b3abc07cecbfe38af3863d"
+
+[sources.iceberg-5b307fbbe888]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/manifest-data1.avro"
+sha256 = "85bfbe5f210a48aee5456ceb6bc700c922dca0ec384e874a9986ee9cfc076d07"
+
+[sources.iceberg-58def614486f]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/manifest-data2.avro"
+sha256 = "6c4839c484452406f586c08505eeb31748ddf08bb7cc13e93fad38de97b848e5"
+
+[sources.iceberg-b26224692ef1]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/manifest-delete.avro"
+sha256 = "c1688ccff829ea6ed3a3b525fcc1143a02bb4b8ab3bfa851ef29ec661e2126ec"
+
+[sources.iceberg-37555a40b023]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/snap-9600000000000001-1-ml.avro"
+sha256 = "f15cb16dee164543489f0c5cde2e09525d4cc200d32dfa65feaf66059eb87a85"
+
+[sources.iceberg-586f56d78733]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/snap-9600000000000002-2-ml.avro"
+sha256 = "ef019583e645758d1c0521c1716915aa3156055fd0d7b1b636090a6176b59bd5"
+
+[sources.iceberg-4fc0f648ab2f]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/snap-9600000000000003-3-ml.avro"
+sha256 = "796bfdf2866ba13023ff749c6ec2587cae7ac51c92be565f6f747c9693e5d1a2"
+
+[sources.iceberg-869ab3aad654]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/v1.metadata.json"
+sha256 = "97d79743cd2918ee7747343da282262899e9866d5090a9eb36ef23b213174f65"
+
+[sources.iceberg-2efad0063d4a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_eq_seq_number/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-ca7ae40cf451]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/data/00000-0-data-file-1.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-98ced82f652b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/data/00000-0-data-file-2.parquet"
+sha256 = "ae45158d41fdffb585a38f340180b90e68dce8ca1d280a3b3b8928a98eafdcaf"
+
+[sources.iceberg-aef63eddb87e]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/manifest-snap1-m0.avro"
+sha256 = "bf17be5ddb3332e3923c3020c4ce3f42139333b3c34869bc46d369d3a6067d7b"
+
+[sources.iceberg-abebaa361405]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/manifest-snap2-m0.avro"
+sha256 = "c604496f79f747f5ad0999d0f1f30b43ddf1ef9505490d20193fd6e0a84c6ba2"
+
+[sources.iceberg-8bf82bac2def]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/snap-9100000000000001-1-ml.avro"
+sha256 = "ecd4373c8e7f4e7d257ed0bc9a2d183b0239ecbf27a2dae504377d17e2a80a4d"
+
+[sources.iceberg-5ccbc3e55c5a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/snap-9100000000000002-2-ml.avro"
+sha256 = "161cafab62634a05ceaf333a9095bd031bcef47121ea7b23a09cfa7dd5d843f4"
+
+[sources.iceberg-c9055380aee8]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/v1.metadata.json"
+sha256 = "0be6692b079bcdb09b547926a0e4cea050153422df5212fb76a614406ec8e74d"
+
+[sources.iceberg-399fe8f9b4b7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_schema_evolution/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-95fb547a29b4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/data/00000-data.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-1f13d0786cbc]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/data/delete-00000.parquet"
+sha256 = "8e36767830d0b799d0b585d56c1231b298909a95ceb7df8ef2994952c08330e6"
+
+[sources.iceberg-2da968509ce9]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/manifest-data-m0.avro"
+sha256 = "f7ef456365e8d06aebe8067c837ef11d88dadc1b65c4dc6a1967ca21618cd1cb"
+
+[sources.iceberg-66a05a66dcca]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/manifest-delete-m1.avro"
+sha256 = "9a0e3efaad169539994f54cc88af298413cd8ea5dfa64c090d76ccfd0483c956"
+
+[sources.iceberg-99e173976e65]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/snap-9400000000000001-1-ml.avro"
+sha256 = "d81ef5542ffc837dbde30d5272d29171e0d2d4956019bf8d554ed5dedc49718e"
+
+[sources.iceberg-e8aba4b07713]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/snap-9400000000000002-2-ml.avro"
+sha256 = "155f294e908bb6bd5efaaa9018c1a1f21f41f31fc01d415a7e4d86e1c59d2b89"
+
+[sources.iceberg-95efe4d074b9]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/v1.metadata.json"
+sha256 = "4ce1b6c9649edd4f6c208224cb0218b13586cbe92eaaf7147fe6876f8aea431d"
+
+[sources.iceberg-21d10ed1bdf9]
+kind = "file"
+path = "../cpp/integration/data/iceberg_snapshot_deletes/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-965c42cfbb87]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-7754ae9ebeac]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro"
+sha256 = "2780ed29d1a9a57ed406569df1058740660513ba244d2f3e4357a0352d19d2ec"
+
+[sources.iceberg-506f52cbb63f]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro"
+sha256 = "12da7077fa2a62fc36239e06c46c4bb84ab2de1070470005e5807ebed70f6ab1"
+
+[sources.iceberg-0cfdbfc22681]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1/metadata/v1.metadata.json"
+sha256 = "434406710149a241e6db0c1123868a210924d252ef2315f3bff9808910d2b5ed"
+
+[sources.iceberg-6d96bb7c19f7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-a575a4a38ce5]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_no_field_ids/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet"
+sha256 = "4864eb5a96d860f046553f519e13ab06ecb67c0cb851f43beb1ae174c5ef03ef"
+
+[sources.iceberg-d1d184ef9969]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_no_field_ids/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro"
+sha256 = "b00c8da7a656abc5ff19063c9153c3cbedf1d483618cd8ef393bc87241c59577"
+
+[sources.iceberg-66370dd22b64]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_no_field_ids/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro"
+sha256 = "ed7af13391f1e8369e69e8510f780230841102da3d19c26183a65c0458c2bdc6"
+
+[sources.iceberg-a0120b30cfb6]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_no_field_ids/metadata/v1.metadata.json"
+sha256 = "531b02e145c66b53c7625d8b94cdad04ab3ea92e9803d9e23f67111ba70e54dd"
+
+[sources.iceberg-c69a9ca2ebb7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_no_field_ids/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-a1630230121a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_promoted_type/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet"
+sha256 = "b29da4a2cfaa0bc7f9ababef294883b895944277e6a68674990de6d113c5ee4b"
+
+[sources.iceberg-a77960d46b7a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_promoted_type/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro"
+sha256 = "7f97f444ea76ac2b56f6f1f53bb33939701baa8ceb76eb57afdb286488d84dee"
+
+[sources.iceberg-b761b64f4ca4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_promoted_type/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro"
+sha256 = "274f0b3701e65228bb6495b82340b53c0e6df7cd2ac655b449260313e5e81775"
+
+[sources.iceberg-16a9fe442fda]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_promoted_type/metadata/v1.metadata.json"
+sha256 = "3c89be710fd2a192323d8109a0531cdbca5bfb470932b34edb778fc218564645"
+
+[sources.iceberg-262e8e905677]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_promoted_type/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-6dc27d0886da]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_reordered/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet"
+sha256 = "618914f0efa24414a7820a01ee1a89535061eb77bf613e47fd64adf6aaf2bae9"
+
+[sources.iceberg-50e23a0b17d0]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_reordered/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro"
+sha256 = "a3de4113dca158781171c0b23bcc44a5c313dfec607812fdc0e96553f0d4db61"
+
+[sources.iceberg-4a96a4c1bcbf]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_reordered/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro"
+sha256 = "fb495f61d493e79efa1ade3fa883aa7a8b32f3d6dfee88033db4e4df64a08769"
+
+[sources.iceberg-78396bc7c295]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_reordered/metadata/v1.metadata.json"
+sha256 = "5022e5763b64b4f8d825bc473b57c55cebf529fa75a9c7627cb8f678836b9a0a"
+
+[sources.iceberg-71d60551acc0]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v1_reordered/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-c107bc34c53d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/data/00000-0-b2c3d4e5-0002-0002-0002-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-b40e05900139]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/data/delete-00000-0-b2c3d4e5-0002-0002-0002-000000000002-00001.parquet"
+sha256 = "adbf39a0ad77eaa580c190641fe6853a227131c15d85cdbc1cc6c3e6820de2b1"
+
+[sources.iceberg-1b5328264f97]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/metadata/b2c3d4e5-0002-0002-0002-000000000003-m0.avro"
+sha256 = "2ef53a6cecfeec470972f22257fc4e47e7a6efd404b966b7c262fd2ff0dfbe93"
+
+[sources.iceberg-b417dd742b17]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/metadata/b2c3d4e5-0002-0002-0002-000000000004-m1.avro"
+sha256 = "28a73c41b2db8a7ab47fc3d6289b3caa384f58178a8d067d26b80a8040b6aef7"
+
+[sources.iceberg-3936791f5feb]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/metadata/snap-2000000000000000001-1-b2c3d4e5-0002-0002-0002-000000000005.avro"
+sha256 = "952faa07e52d54d4caac67a4f88ceb5d45d38d9516b582173396b9a27999c766"
+
+[sources.iceberg-0fa3271d0981]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/metadata/v1.metadata.json"
+sha256 = "8f4819ed4230c1435da946032a9aedb1a5209ef166a2e207789a39d2df45fda4"
+
+[sources.iceberg-17a8ae853a6d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_delete/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-f84aa7c1c786]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/data/00000-0-f6a7b8c9-0006-0006-0006-000000000001-00001.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-fe3a04535e7d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/data/delete-eq-f6a7b8c9-0006-0006-0006-000000000002-00001.parquet"
+sha256 = "001261e805f7e60f7af0084c35d42bd06b37f6b6da5d62551497a190676ff327"
+
+[sources.iceberg-ac5d90019628]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/metadata/f6a7b8c9-0006-0006-0006-000000000003-m0.avro"
+sha256 = "60a6cd561d71229d749e4b0ae9241331248bd9e3ef18e62b7a8baec79cf56171"
+
+[sources.iceberg-7575eafc4dba]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/metadata/f6a7b8c9-0006-0006-0006-000000000004-m1.avro"
+sha256 = "780e573d8daa8d0950d1f049f058f79a30bef852f681fe918fdc911d94cb06b0"
+
+[sources.iceberg-1bc8df5c78fa]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/metadata/snap-6000000000000000001-1-f6a7b8c9-0006-0006-0006-000000000005.avro"
+sha256 = "0fd2f0844f7aa8dfe829a24c05c692bc5e1338466c32ee5fb3977eb98b3d5c98"
+
+[sources.iceberg-8de6acb83a86]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/metadata/v1.metadata.json"
+sha256 = "e64864c5bc557cd18a5a493247ee901f7286f56a61cea028683a346bea6c67ae"
+
+[sources.iceberg-d6cf3a6fa065]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_all_deleted/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-bb4c8fbec1bc]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/data/00000-0-c3d4e5f6-0003-0003-0003-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-cf4f25c6fb4a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/data/delete-eq-00000-0-c3d4e5f6-0003-0003-0003-000000000002-00001.parquet"
+sha256 = "76a92986934e2e3cde80a70247657fd5140312318b9736b112a00f7c3d83040c"
+
+[sources.iceberg-6dc5cd3c8f1b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/metadata/c3d4e5f6-0003-0003-0003-000000000003-m0.avro"
+sha256 = "12fb61fb49558fba7652288a995366923c648289ee3646d8d2c352685765ae7b"
+
+[sources.iceberg-888dd034174c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/metadata/c3d4e5f6-0003-0003-0003-000000000004-m1.avro"
+sha256 = "5b44d810ecf7e2ad7988869a3b442ad78042931390174a41c004e7db589b71c0"
+
+[sources.iceberg-a631dd4efe79]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/metadata/snap-3000000000000000001-1-c3d4e5f6-0003-0003-0003-000000000005.avro"
+sha256 = "d7a4be64549585a9a1c22295d868e4abdc5bc00ccf98a3b52d724e27c2f68d0d"
+
+[sources.iceberg-b36d37bd5042]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/metadata/v1.metadata.json"
+sha256 = "bb4e2fb2bc68725970bd68c52bb46979a95693e96008ad8513f10f4e3adab220"
+
+[sources.iceberg-315b7acfb4d4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_delete_retired/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-2b82ba85ad57]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/data/00000-0-b8c9d0e1-0008-0008-0008-000000000001-00001.parquet"
+sha256 = "0a166e643345a5653e1a8cba37e3460c0c2faa839c4b5de85453d0b72577cc1b"
+
+[sources.iceberg-5784ef9a867a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/data/00001-0-b8c9d0e1-0008-0008-0008-000000000002-00001.parquet"
+sha256 = "44a7e647f4e7bc851211877d7e6f31e5f632f6c19e71ebc924f84757988eeb92"
+
+[sources.iceberg-34d382a8fec7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/data/delete-eq-b8c9d0e1-0008-0008-0008-000000000003-00001.parquet"
+sha256 = "f6f8dd193755a9ff0634330cc7ab8b7bdc227480bd00975d25ecd09b9cab04ae"
+
+[sources.iceberg-9a36a19e3329]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/metadata/b8c9d0e1-0008-0008-0008-000000000004-m0.avro"
+sha256 = "e0e312595c9e7897764a47d25618f56a5867646a7334ffdcb404eea43a0b08a4"
+
+[sources.iceberg-a53d4a2feae0]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/metadata/b8c9d0e1-0008-0008-0008-000000000005-m1.avro"
+sha256 = "356ddec1823dda08c442fdbf70b7551c9a750c36eee02810da1700679a740a6c"
+
+[sources.iceberg-6687bdca7a52]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/metadata/snap-8000000000000000001-1-b8c9d0e1-0008-0008-0008-000000000006.avro"
+sha256 = "751284d9bc9c6eaa7a8432f01382d061676eecc3d4f22daceeb4c9d73897b1d4"
+
+[sources.iceberg-b91dee95f28a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/metadata/v1.metadata.json"
+sha256 = "fe03d5f9db932e8c08ffd08c8f76e6e23fa3050a13c9a0b5fa01af5a71593759"
+
+[sources.iceberg-4cb78dc71831]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_data_file/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-b9a97feab85b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/data/00000-0-e5f6a7b8-0005-0005-0005-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-e48592bc59c0]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/data/delete-eq-1-e5f6a7b8-0005-0005-0005-000000000002-00001.parquet"
+sha256 = "ab15cee03117e7bf6ddc23c6e563d4bb2cb914b09bf9d05b61defd058799c72f"
+
+[sources.iceberg-9d0091b41b21]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/data/delete-eq-2-e5f6a7b8-0005-0005-0005-000000000003-00001.parquet"
+sha256 = "148c92850330b7b62085251969bcdee7163e4519d863fa882a6d743175c1182a"
+
+[sources.iceberg-815250fdc425]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/metadata/e5f6a7b8-0005-0005-0005-000000000004-m0.avro"
+sha256 = "6afb94f8c96e9e2475f04e50dd669ac1869696a8e71fae7dc659ffb6a771ff99"
+
+[sources.iceberg-6aa5d69526b1]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/metadata/e5f6a7b8-0005-0005-0005-000000000005-m1.avro"
+sha256 = "a9f3f98afb9c639e50a016a1941f3bdb68fc0c83f5aaee28ae06d6ebcb3190cb"
+
+[sources.iceberg-48d594bb6a64]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/metadata/snap-5000000000000000001-1-e5f6a7b8-0005-0005-0005-000000000006.avro"
+sha256 = "29166a56f6dcbd7c6561418a29cf5cf1155608dfc13a595626d7aba51e633bf7"
+
+[sources.iceberg-78f53f360e3b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/metadata/v1.metadata.json"
+sha256 = "5148a5286199e9ec1cde01affa46233cea7e715b92928a482a1622d41e8e9367"
+
+[sources.iceberg-6042485628c7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_multi_delete_file/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-ebfb9048963b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/data/00000-0-a7b8c9d0-0007-0007-0007-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-b2ae472f237a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/data/delete-eq-a7b8c9d0-0007-0007-0007-000000000003-00001.parquet"
+sha256 = "ab15cee03117e7bf6ddc23c6e563d4bb2cb914b09bf9d05b61defd058799c72f"
+
+[sources.iceberg-a93cdfc6dc32]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/data/delete-pos-a7b8c9d0-0007-0007-0007-000000000002-00001.parquet"
+sha256 = "b3ca4cefdf201cb1efa18a752beeae861544b0015343408fc915bf283249f894"
+
+[sources.iceberg-4a69053654eb]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000004-m0.avro"
+sha256 = "f037ddbd52459fcd2af9eeeb65fd6fff0bc9cef12e84cddad6171461bca9b894"
+
+[sources.iceberg-d0bf47dcd22d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000005-m1.avro"
+sha256 = "2dceb19023c3a08fe5744c14c9aa5456263737c32269841bd60428cfa6336a4b"
+
+[sources.iceberg-e706c5832cef]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000006-m2.avro"
+sha256 = "51f5edd4b3221d351fee8fc8267d37258fe322b8c99a12077bc6def042fb314f"
+
+[sources.iceberg-023aeaf1e5fd]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/snap-7000000000000000001-1-a7b8c9d0-0007-0007-0007-000000000007.avro"
+sha256 = "4df367c2394a0bfa3258d023ec0b13cac21524d39032e6ef394f49dd9e7efb40"
+
+[sources.iceberg-d2b0e5c5815d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/v1.metadata.json"
+sha256 = "78dcd94f3ec1307872a9210a486bf968f98c1e9a2da83c923952385726e3025e"
+
+[sources.iceberg-e92a8ebad267]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_pos_combined/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-773dbd18f6b7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/data/00000-0-d4e5f6a7-0004-0004-0004-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-e64289f0017c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/data/delete-eq-d4e5f6a7-0004-0004-0004-000000000002-00001.parquet"
+sha256 = "a04362ff734969e46018ba0aaa52082360f8a56f86639a5453c7ae76cad6504a"
+
+[sources.iceberg-24862472d409]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/metadata/d4e5f6a7-0004-0004-0004-000000000003-m0.avro"
+sha256 = "f4fdaeda63c35325eac9bddb4b462fd8672bd90b76ae5cfc6cea61f96b25f13d"
+
+[sources.iceberg-590578925fa4]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/metadata/d4e5f6a7-0004-0004-0004-000000000004-m1.avro"
+sha256 = "4f48cba723878df8bd18d8313e6d831e848ded1dbe22cf5361874abd7157c952"
+
+[sources.iceberg-f471bbbac82c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/metadata/snap-4000000000000000001-1-d4e5f6a7-0004-0004-0004-000000000005.avro"
+sha256 = "c87cece05dc2f788d4ae43f460760765d97dcc190caf2351195877e27f98e9a0"
+
+[sources.iceberg-8cec5a942099]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/metadata/v1.metadata.json"
+sha256 = "10e2b22bc9702506736ee8a7b338d73675024f82a070102071518c6dbe399b1f"
+
+[sources.iceberg-97a1ac0b66b1]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_eq_single_col/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-9bd8d681ace3]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/data/00000-0-c3d4e5f6-0003-0003-0003-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-d6b40452c54b]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/data/delete-eq-00000-0-c3d4e5f6-0003-0003-0003-000000000002-00001.parquet"
+sha256 = "76a92986934e2e3cde80a70247657fd5140312318b9736b112a00f7c3d83040c"
+
+[sources.iceberg-6bd90075603d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/metadata/c3d4e5f6-0003-0003-0003-000000000003-m0.avro"
+sha256 = "fba77cecf1a34759a53ee70bb78e2d997313b5c5550e1f8dcd7cb0c95833f021"
+
+[sources.iceberg-4d9994ea68a5]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/metadata/c3d4e5f6-0003-0003-0003-000000000004-m1.avro"
+sha256 = "c1d7f23e1b3b442ab70120eb6892c5b3e7054433788b4743b1b63291907bc341"
+
+[sources.iceberg-06111a381000]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/metadata/snap-3000000000000000001-1-c3d4e5f6-0003-0003-0003-000000000005.avro"
+sha256 = "709ea6c4960153969748f70560d555aa2fe366c5506ebb6fdb20c9d0dde89735"
+
+[sources.iceberg-a6fe3410f658]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/metadata/v1.metadata.json"
+sha256 = "8f2f04838c6474be63e8b2ff45fbcb8930fc8b66f86208a4fd468be81b3f41a5"
+
+[sources.iceberg-cbf2ae97ca3e]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_equality_delete/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-501ac0d15c71]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/data/00000-0-b2c3d4e5-0002-0002-0002-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-7b524b8fb019]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/data/delete-00000-0-b2c3d4e5-0002-0002-0002-000000000002-00001.parquet"
+sha256 = "adbf39a0ad77eaa580c190641fe6853a227131c15d85cdbc1cc6c3e6820de2b1"
+
+[sources.iceberg-71add50faa09]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/metadata/b2c3d4e5-0002-0002-0002-000000000003-m0.avro"
+sha256 = "1d98ce9dba14137efe8a1ef3b12af418426814af574a8312865e7421b7bc3033"
+
+[sources.iceberg-f64c1b134939]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/metadata/b2c3d4e5-0002-0002-0002-000000000004-m1.avro"
+sha256 = "8fcb2faae8334654cb5fd0e8865dbb62ab8a58243b508379b04281dc6672c9c7"
+
+[sources.iceberg-dd2852c30913]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/metadata/snap-2000000000000000001-1-b2c3d4e5-0002-0002-0002-000000000005.avro"
+sha256 = "37fb723b1b0ad1caac6499470ff36402cc58bb456d1e57e0e5c03939872e5e91"
+
+[sources.iceberg-d69830908b43]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/metadata/v1.metadata.json"
+sha256 = "9856c9eab5721c3ddc83e1b06c9fb16705fdcf640cfb336328247c3b0ee9d9a1"
+
+[sources.iceberg-bb0bd756434e]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v2_pos_delete_retired/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-6272239027f3]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-412741408f8d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/data/dv-00000-0-d7e8f9a0-0007-0007-0007-000000000002-00001.puffin"
+sha256 = "0fd972cf5b608d80a8507fc5a884825ea2b314463f1c412d423633a11575395a"
+
+[sources.iceberg-0dc44e79e692]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro"
+sha256 = "d1d6a5555aa9cb71c08dac73852aa85d6803761e6f2c56d59a5f5197aadf0c2a"
+
+[sources.iceberg-a38b33ce7495]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro"
+sha256 = "c51dac240f8e0864378734f22a59abaa305e05f9e34c80de14594dff6d138a73"
+
+[sources.iceberg-bf386d9129e9]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro"
+sha256 = "840b340ba4b6ccadac65952eec072094bab82d233cb679626ac55f0f7e104f4b"
+
+[sources.iceberg-7640be494eca]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/metadata/v1.metadata.json"
+sha256 = "649d2217823576af180b28db24b44da6dde179f5282f428277c9def0dd92a0cc"
+
+[sources.iceberg-50e3cc3eee45]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_deletion_vector/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-125f9c47695f]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-1cc829905d7d]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/data/00001-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet"
+sha256 = "dc9f0750fcb6263f2bc0ad28c595d74fce8e847af3ff1a96e1a2c3fd600037e3"
+
+[sources.iceberg-3be7ac369266]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/data/dv-00000-0-d7e8f9a0-0007-0007-0007-000000000002-00001.puffin"
+sha256 = "e1a70895affd7e52e7735a3984ef7ef73e0e32ede5af2267685cbd9ffb993d73"
+
+[sources.iceberg-4d0de35c6dc7]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro"
+sha256 = "5aafcd19619b79bd355c041f573ccd5214a9066d8f6fc4c15d107a2e4642ac3a"
+
+[sources.iceberg-359a627fe12a]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro"
+sha256 = "1029bdf5a167e307e4ba8edd2486d3106889be3d9f324cdf399379732e79f269"
+
+[sources.iceberg-1408ddc1a0ec]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro"
+sha256 = "613299b6ac534939a32d0af228723aaba11243579a18423300854ff47cfe61f4"
+
+[sources.iceberg-3dfed5c460ca]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/metadata/v1.metadata.json"
+sha256 = "fa62d5ac8e67980b7407c3e0c689e6c02a59a764e272fde34bd06f68a6e7197e"
+
+[sources.iceberg-89249c242bbb]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_misbound/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[sources.iceberg-0a37b983eedf]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet"
+sha256 = "5ec2749bc70c3d59f984d32a86854580582aeb00b9f21e7b8ea82499e1ea2aaf"
+
+[sources.iceberg-03468551294c]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/data/dv-active-00000-0-d7e8f9a0-0007-0007-0007-000000000002.puffin"
+sha256 = "fef24ace7e86b00ed739a364c8cef9853d1bbd7f7f27e88acfc2d739c1c39d3e"
+
+[sources.iceberg-1a0c225644f2]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/data/dv-retired-00000-0-d7e8f9a0-0007-0007-0007-000000000002.puffin"
+sha256 = "3961dd25b749475b885499a406fc54dc5d8c88c45cc8e5103c46c0f9d6ac2992"
+
+[sources.iceberg-d3db13aea1df]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro"
+sha256 = "01027de11ac0c8f8c1a3ce205410ff937c08de804118dbd20cf73af9d1c83650"
+
+[sources.iceberg-c07e8b6ad894]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro"
+sha256 = "effeab6665e96e469c19d4b90c8855716b7cfd717ce12551579b2c7af175b957"
+
+[sources.iceberg-8bf2afac0dae]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro"
+sha256 = "1e9ea5db9f9056e3dfa30babd29957779c83ee1da352f2f1bb9ad6770e0256e3"
+
+[sources.iceberg-46126f6caa63]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/metadata/v1.metadata.json"
+sha256 = "326bfdca76456c5484d86582796b68cd371e4b4cfe689dd7264f5db7efba2323"
+
+[sources.iceberg-38fecacae164]
+kind = "file"
+path = "../cpp/integration/data/iceberg_v3_dv_replaced/metadata/version-hint.text"
+sha256 = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+
+[fixtures.iceberg-original]
+extensions = ["avro", "iceberg"]
+
+[fixtures.iceberg-original.files]
+"iceberg_conformance/add_column/conf/add_column/data/00000-0-85081e41-26c0-406a-af5e-32ff07eb8884.parquet" = "iceberg-50270c2a54e4"
+"iceberg_conformance/add_column/conf/add_column/data/00000-0-9ac8dead-1aab-45c9-be2a-a708d85d3327.parquet" = "iceberg-d06e8cf65125"
+"iceberg_conformance/add_column/conf/add_column/metadata/00000-1788c127-2d62-459b-9ac4-b9a44b0fae22.metadata.json" = "iceberg-59f557ebf429"
+"iceberg_conformance/add_column/conf/add_column/metadata/00001-39874214-0a0d-405d-9253-72997bf04302.metadata.json" = "iceberg-832c3d7642f3"
+"iceberg_conformance/add_column/conf/add_column/metadata/00002-4c1e50f2-c1df-4211-9dab-abb318b486cb.metadata.json" = "iceberg-ee4bfdf69cc7"
+"iceberg_conformance/add_column/conf/add_column/metadata/00003-4cc0e7d1-6e27-4c27-9b39-da630ed16785.metadata.json" = "iceberg-203ca2bf3a1c"
+"iceberg_conformance/add_column/conf/add_column/metadata/85081e41-26c0-406a-af5e-32ff07eb8884-m0.avro" = "iceberg-eb5dc6389785"
+"iceberg_conformance/add_column/conf/add_column/metadata/9ac8dead-1aab-45c9-be2a-a708d85d3327-m0.avro" = "iceberg-c45e0b9d1fed"
+"iceberg_conformance/add_column/conf/add_column/metadata/snap-5734603587265841069-0-85081e41-26c0-406a-af5e-32ff07eb8884.avro" = "iceberg-9304e4294fea"
+"iceberg_conformance/add_column/conf/add_column/metadata/snap-6204621527650249004-0-9ac8dead-1aab-45c9-be2a-a708d85d3327.avro" = "iceberg-f684f5366d0e"
+"iceberg_conformance/append_only/conf/append_only/data/00000-0-b4630554-9751-49f1-b362-c0c9ea9535b3.parquet" = "iceberg-1b1dbea28d11"
+"iceberg_conformance/append_only/conf/append_only/metadata/00000-84ccc447-7c79-4d03-b523-5762dca8f0eb.metadata.json" = "iceberg-b2b942e71a10"
+"iceberg_conformance/append_only/conf/append_only/metadata/00001-95fc9adf-fbdf-422e-b90d-b5afd795552c.metadata.json" = "iceberg-554a92cfb20d"
+"iceberg_conformance/append_only/conf/append_only/metadata/b4630554-9751-49f1-b362-c0c9ea9535b3-m0.avro" = "iceberg-eed271ccafae"
+"iceberg_conformance/append_only/conf/append_only/metadata/snap-2738471339267532079-0-b4630554-9751-49f1-b362-c0c9ea9535b3.avro" = "iceberg-3c5b95c2f737"
+"iceberg_conformance/drop_readd/conf/drop_readd/data/00000-0-c7f9505c-6cf9-40ad-9e49-074eb760691a.parquet" = "iceberg-a505b417fe7a"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/00000-f805b5bf-7672-43ba-996a-1569dc5a6a17.metadata.json" = "iceberg-a36828274244"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/00001-04d59889-9536-47fd-903d-3101091ac7d8.metadata.json" = "iceberg-a6e683450144"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/00002-979f7c70-776d-4855-b0c7-b7d8b59a75c7.metadata.json" = "iceberg-9b255bbfb99d"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/00003-6da28b2b-f495-4752-bc20-0daf750fa66c.metadata.json" = "iceberg-85ab5c09fdf4"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/c7f9505c-6cf9-40ad-9e49-074eb760691a-m0.avro" = "iceberg-e14087eea6f7"
+"iceberg_conformance/drop_readd/conf/drop_readd/metadata/snap-2926213281689314888-0-c7f9505c-6cf9-40ad-9e49-074eb760691a.avro" = "iceberg-8bd277600cf4"
+"iceberg_conformance/rename_col/conf/rename_col/data/00000-0-1f276fa2-8c3e-473e-9c37-292abfad25a9.parquet" = "iceberg-6e30fd3a548b"
+"iceberg_conformance/rename_col/conf/rename_col/data/00000-0-571c62d9-f336-4fc6-b0c0-6ee9232f603c.parquet" = "iceberg-ac5ca3b705e1"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/00000-6de4647e-1851-424c-86c4-eeb0be3c0dbf.metadata.json" = "iceberg-b34939f97f6b"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/00001-8cc5520a-4111-4d14-9824-99377a09d32e.metadata.json" = "iceberg-964a772e10c4"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/00002-40fc2edb-d57e-470d-9ef4-ba6e9a65e726.metadata.json" = "iceberg-81d92e972f4d"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/00003-cd5b55f2-2958-49f5-873b-91b8f7e144d6.metadata.json" = "iceberg-bd5d853887c3"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/1f276fa2-8c3e-473e-9c37-292abfad25a9-m0.avro" = "iceberg-7cd5362c5170"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/571c62d9-f336-4fc6-b0c0-6ee9232f603c-m0.avro" = "iceberg-db466c20db01"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/snap-4961426206131534342-0-571c62d9-f336-4fc6-b0c0-6ee9232f603c.avro" = "iceberg-ee1dda5e75a8"
+"iceberg_conformance/rename_col/conf/rename_col/metadata/snap-6676722121545018144-0-1f276fa2-8c3e-473e-9c37-292abfad25a9.avro" = "iceberg-c7541a462c5a"
+"iceberg_deflate_manifest/data/00000-data.parquet" = "iceberg-110cab8d3f08"
+"iceberg_deflate_manifest/metadata/manifest-m0.avro" = "iceberg-9fe623c67b8c"
+"iceberg_deflate_manifest/metadata/snap-9500000000000001-1-ml.avro" = "iceberg-099074413f04"
+"iceberg_deflate_manifest/metadata/v1.metadata.json" = "iceberg-55f600396b63"
+"iceberg_deflate_manifest/metadata/version-hint.text" = "iceberg-3ea0d495b54f"
+"iceberg_eq_seq_number/data/data1.parquet" = "iceberg-dea700db38e9"
+"iceberg_eq_seq_number/data/data2.parquet" = "iceberg-2463b9880a74"
+"iceberg_eq_seq_number/data/delete-eq.parquet" = "iceberg-3b69270d3cad"
+"iceberg_eq_seq_number/metadata/manifest-data1.avro" = "iceberg-5b307fbbe888"
+"iceberg_eq_seq_number/metadata/manifest-data2.avro" = "iceberg-58def614486f"
+"iceberg_eq_seq_number/metadata/manifest-delete.avro" = "iceberg-b26224692ef1"
+"iceberg_eq_seq_number/metadata/snap-9600000000000001-1-ml.avro" = "iceberg-37555a40b023"
+"iceberg_eq_seq_number/metadata/snap-9600000000000002-2-ml.avro" = "iceberg-586f56d78733"
+"iceberg_eq_seq_number/metadata/snap-9600000000000003-3-ml.avro" = "iceberg-4fc0f648ab2f"
+"iceberg_eq_seq_number/metadata/v1.metadata.json" = "iceberg-869ab3aad654"
+"iceberg_eq_seq_number/metadata/version-hint.text" = "iceberg-2efad0063d4a"
+"iceberg_schema_evolution/data/00000-0-data-file-1.parquet" = "iceberg-ca7ae40cf451"
+"iceberg_schema_evolution/data/00000-0-data-file-2.parquet" = "iceberg-98ced82f652b"
+"iceberg_schema_evolution/metadata/manifest-snap1-m0.avro" = "iceberg-aef63eddb87e"
+"iceberg_schema_evolution/metadata/manifest-snap2-m0.avro" = "iceberg-abebaa361405"
+"iceberg_schema_evolution/metadata/snap-9100000000000001-1-ml.avro" = "iceberg-8bf82bac2def"
+"iceberg_schema_evolution/metadata/snap-9100000000000002-2-ml.avro" = "iceberg-5ccbc3e55c5a"
+"iceberg_schema_evolution/metadata/v1.metadata.json" = "iceberg-c9055380aee8"
+"iceberg_schema_evolution/metadata/version-hint.text" = "iceberg-399fe8f9b4b7"
+"iceberg_snapshot_deletes/data/00000-data.parquet" = "iceberg-95fb547a29b4"
+"iceberg_snapshot_deletes/data/delete-00000.parquet" = "iceberg-1f13d0786cbc"
+"iceberg_snapshot_deletes/metadata/manifest-data-m0.avro" = "iceberg-2da968509ce9"
+"iceberg_snapshot_deletes/metadata/manifest-delete-m1.avro" = "iceberg-66a05a66dcca"
+"iceberg_snapshot_deletes/metadata/snap-9400000000000001-1-ml.avro" = "iceberg-99e173976e65"
+"iceberg_snapshot_deletes/metadata/snap-9400000000000002-2-ml.avro" = "iceberg-e8aba4b07713"
+"iceberg_snapshot_deletes/metadata/v1.metadata.json" = "iceberg-95efe4d074b9"
+"iceberg_snapshot_deletes/metadata/version-hint.text" = "iceberg-21d10ed1bdf9"
+"iceberg_v1/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet" = "iceberg-965c42cfbb87"
+"iceberg_v1/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro" = "iceberg-7754ae9ebeac"
+"iceberg_v1/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro" = "iceberg-506f52cbb63f"
+"iceberg_v1/metadata/v1.metadata.json" = "iceberg-0cfdbfc22681"
+"iceberg_v1/metadata/version-hint.text" = "iceberg-6d96bb7c19f7"
+"iceberg_v1_no_field_ids/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet" = "iceberg-a575a4a38ce5"
+"iceberg_v1_no_field_ids/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro" = "iceberg-d1d184ef9969"
+"iceberg_v1_no_field_ids/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro" = "iceberg-66370dd22b64"
+"iceberg_v1_no_field_ids/metadata/v1.metadata.json" = "iceberg-a0120b30cfb6"
+"iceberg_v1_no_field_ids/metadata/version-hint.text" = "iceberg-c69a9ca2ebb7"
+"iceberg_v1_promoted_type/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet" = "iceberg-a1630230121a"
+"iceberg_v1_promoted_type/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro" = "iceberg-a77960d46b7a"
+"iceberg_v1_promoted_type/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro" = "iceberg-b761b64f4ca4"
+"iceberg_v1_promoted_type/metadata/v1.metadata.json" = "iceberg-16a9fe442fda"
+"iceberg_v1_promoted_type/metadata/version-hint.text" = "iceberg-262e8e905677"
+"iceberg_v1_reordered/data/00000-0-a1b2c3d4-0001-0001-0001-000000000003-00001.parquet" = "iceberg-6dc27d0886da"
+"iceberg_v1_reordered/metadata/a1b2c3d4-0001-0001-0001-000000000002-m0.avro" = "iceberg-50e23a0b17d0"
+"iceberg_v1_reordered/metadata/snap-1000000000000000001-1-a1b2c3d4-0001-0001-0001-000000000001.avro" = "iceberg-4a96a4c1bcbf"
+"iceberg_v1_reordered/metadata/v1.metadata.json" = "iceberg-78396bc7c295"
+"iceberg_v1_reordered/metadata/version-hint.text" = "iceberg-71d60551acc0"
+"iceberg_v2_delete/data/00000-0-b2c3d4e5-0002-0002-0002-000000000001-00001.parquet" = "iceberg-c107bc34c53d"
+"iceberg_v2_delete/data/delete-00000-0-b2c3d4e5-0002-0002-0002-000000000002-00001.parquet" = "iceberg-b40e05900139"
+"iceberg_v2_delete/metadata/b2c3d4e5-0002-0002-0002-000000000003-m0.avro" = "iceberg-1b5328264f97"
+"iceberg_v2_delete/metadata/b2c3d4e5-0002-0002-0002-000000000004-m1.avro" = "iceberg-b417dd742b17"
+"iceberg_v2_delete/metadata/snap-2000000000000000001-1-b2c3d4e5-0002-0002-0002-000000000005.avro" = "iceberg-3936791f5feb"
+"iceberg_v2_delete/metadata/v1.metadata.json" = "iceberg-0fa3271d0981"
+"iceberg_v2_delete/metadata/version-hint.text" = "iceberg-17a8ae853a6d"
+"iceberg_v2_eq_all_deleted/data/00000-0-f6a7b8c9-0006-0006-0006-000000000001-00001.parquet" = "iceberg-f84aa7c1c786"
+"iceberg_v2_eq_all_deleted/data/delete-eq-f6a7b8c9-0006-0006-0006-000000000002-00001.parquet" = "iceberg-fe3a04535e7d"
+"iceberg_v2_eq_all_deleted/metadata/f6a7b8c9-0006-0006-0006-000000000003-m0.avro" = "iceberg-ac5d90019628"
+"iceberg_v2_eq_all_deleted/metadata/f6a7b8c9-0006-0006-0006-000000000004-m1.avro" = "iceberg-7575eafc4dba"
+"iceberg_v2_eq_all_deleted/metadata/snap-6000000000000000001-1-f6a7b8c9-0006-0006-0006-000000000005.avro" = "iceberg-1bc8df5c78fa"
+"iceberg_v2_eq_all_deleted/metadata/v1.metadata.json" = "iceberg-8de6acb83a86"
+"iceberg_v2_eq_all_deleted/metadata/version-hint.text" = "iceberg-d6cf3a6fa065"
+"iceberg_v2_eq_delete_retired/data/00000-0-c3d4e5f6-0003-0003-0003-000000000001-00001.parquet" = "iceberg-bb4c8fbec1bc"
+"iceberg_v2_eq_delete_retired/data/delete-eq-00000-0-c3d4e5f6-0003-0003-0003-000000000002-00001.parquet" = "iceberg-cf4f25c6fb4a"
+"iceberg_v2_eq_delete_retired/metadata/c3d4e5f6-0003-0003-0003-000000000003-m0.avro" = "iceberg-6dc5cd3c8f1b"
+"iceberg_v2_eq_delete_retired/metadata/c3d4e5f6-0003-0003-0003-000000000004-m1.avro" = "iceberg-888dd034174c"
+"iceberg_v2_eq_delete_retired/metadata/snap-3000000000000000001-1-c3d4e5f6-0003-0003-0003-000000000005.avro" = "iceberg-a631dd4efe79"
+"iceberg_v2_eq_delete_retired/metadata/v1.metadata.json" = "iceberg-b36d37bd5042"
+"iceberg_v2_eq_delete_retired/metadata/version-hint.text" = "iceberg-315b7acfb4d4"
+"iceberg_v2_eq_multi_data_file/data/00000-0-b8c9d0e1-0008-0008-0008-000000000001-00001.parquet" = "iceberg-2b82ba85ad57"
+"iceberg_v2_eq_multi_data_file/data/00001-0-b8c9d0e1-0008-0008-0008-000000000002-00001.parquet" = "iceberg-5784ef9a867a"
+"iceberg_v2_eq_multi_data_file/data/delete-eq-b8c9d0e1-0008-0008-0008-000000000003-00001.parquet" = "iceberg-34d382a8fec7"
+"iceberg_v2_eq_multi_data_file/metadata/b8c9d0e1-0008-0008-0008-000000000004-m0.avro" = "iceberg-9a36a19e3329"
+"iceberg_v2_eq_multi_data_file/metadata/b8c9d0e1-0008-0008-0008-000000000005-m1.avro" = "iceberg-a53d4a2feae0"
+"iceberg_v2_eq_multi_data_file/metadata/snap-8000000000000000001-1-b8c9d0e1-0008-0008-0008-000000000006.avro" = "iceberg-6687bdca7a52"
+"iceberg_v2_eq_multi_data_file/metadata/v1.metadata.json" = "iceberg-b91dee95f28a"
+"iceberg_v2_eq_multi_data_file/metadata/version-hint.text" = "iceberg-4cb78dc71831"
+"iceberg_v2_eq_multi_delete_file/data/00000-0-e5f6a7b8-0005-0005-0005-000000000001-00001.parquet" = "iceberg-b9a97feab85b"
+"iceberg_v2_eq_multi_delete_file/data/delete-eq-1-e5f6a7b8-0005-0005-0005-000000000002-00001.parquet" = "iceberg-e48592bc59c0"
+"iceberg_v2_eq_multi_delete_file/data/delete-eq-2-e5f6a7b8-0005-0005-0005-000000000003-00001.parquet" = "iceberg-9d0091b41b21"
+"iceberg_v2_eq_multi_delete_file/metadata/e5f6a7b8-0005-0005-0005-000000000004-m0.avro" = "iceberg-815250fdc425"
+"iceberg_v2_eq_multi_delete_file/metadata/e5f6a7b8-0005-0005-0005-000000000005-m1.avro" = "iceberg-6aa5d69526b1"
+"iceberg_v2_eq_multi_delete_file/metadata/snap-5000000000000000001-1-e5f6a7b8-0005-0005-0005-000000000006.avro" = "iceberg-48d594bb6a64"
+"iceberg_v2_eq_multi_delete_file/metadata/v1.metadata.json" = "iceberg-78f53f360e3b"
+"iceberg_v2_eq_multi_delete_file/metadata/version-hint.text" = "iceberg-6042485628c7"
+"iceberg_v2_eq_pos_combined/data/00000-0-a7b8c9d0-0007-0007-0007-000000000001-00001.parquet" = "iceberg-ebfb9048963b"
+"iceberg_v2_eq_pos_combined/data/delete-eq-a7b8c9d0-0007-0007-0007-000000000003-00001.parquet" = "iceberg-b2ae472f237a"
+"iceberg_v2_eq_pos_combined/data/delete-pos-a7b8c9d0-0007-0007-0007-000000000002-00001.parquet" = "iceberg-a93cdfc6dc32"
+"iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000004-m0.avro" = "iceberg-4a69053654eb"
+"iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000005-m1.avro" = "iceberg-d0bf47dcd22d"
+"iceberg_v2_eq_pos_combined/metadata/a7b8c9d0-0007-0007-0007-000000000006-m2.avro" = "iceberg-e706c5832cef"
+"iceberg_v2_eq_pos_combined/metadata/snap-7000000000000000001-1-a7b8c9d0-0007-0007-0007-000000000007.avro" = "iceberg-023aeaf1e5fd"
+"iceberg_v2_eq_pos_combined/metadata/v1.metadata.json" = "iceberg-d2b0e5c5815d"
+"iceberg_v2_eq_pos_combined/metadata/version-hint.text" = "iceberg-e92a8ebad267"
+"iceberg_v2_eq_single_col/data/00000-0-d4e5f6a7-0004-0004-0004-000000000001-00001.parquet" = "iceberg-773dbd18f6b7"
+"iceberg_v2_eq_single_col/data/delete-eq-d4e5f6a7-0004-0004-0004-000000000002-00001.parquet" = "iceberg-e64289f0017c"
+"iceberg_v2_eq_single_col/metadata/d4e5f6a7-0004-0004-0004-000000000003-m0.avro" = "iceberg-24862472d409"
+"iceberg_v2_eq_single_col/metadata/d4e5f6a7-0004-0004-0004-000000000004-m1.avro" = "iceberg-590578925fa4"
+"iceberg_v2_eq_single_col/metadata/snap-4000000000000000001-1-d4e5f6a7-0004-0004-0004-000000000005.avro" = "iceberg-f471bbbac82c"
+"iceberg_v2_eq_single_col/metadata/v1.metadata.json" = "iceberg-8cec5a942099"
+"iceberg_v2_eq_single_col/metadata/version-hint.text" = "iceberg-97a1ac0b66b1"
+"iceberg_v2_equality_delete/data/00000-0-c3d4e5f6-0003-0003-0003-000000000001-00001.parquet" = "iceberg-9bd8d681ace3"
+"iceberg_v2_equality_delete/data/delete-eq-00000-0-c3d4e5f6-0003-0003-0003-000000000002-00001.parquet" = "iceberg-d6b40452c54b"
+"iceberg_v2_equality_delete/metadata/c3d4e5f6-0003-0003-0003-000000000003-m0.avro" = "iceberg-6bd90075603d"
+"iceberg_v2_equality_delete/metadata/c3d4e5f6-0003-0003-0003-000000000004-m1.avro" = "iceberg-4d9994ea68a5"
+"iceberg_v2_equality_delete/metadata/snap-3000000000000000001-1-c3d4e5f6-0003-0003-0003-000000000005.avro" = "iceberg-06111a381000"
+"iceberg_v2_equality_delete/metadata/v1.metadata.json" = "iceberg-a6fe3410f658"
+"iceberg_v2_equality_delete/metadata/version-hint.text" = "iceberg-cbf2ae97ca3e"
+"iceberg_v2_pos_delete_retired/data/00000-0-b2c3d4e5-0002-0002-0002-000000000001-00001.parquet" = "iceberg-501ac0d15c71"
+"iceberg_v2_pos_delete_retired/data/delete-00000-0-b2c3d4e5-0002-0002-0002-000000000002-00001.parquet" = "iceberg-7b524b8fb019"
+"iceberg_v2_pos_delete_retired/metadata/b2c3d4e5-0002-0002-0002-000000000003-m0.avro" = "iceberg-71add50faa09"
+"iceberg_v2_pos_delete_retired/metadata/b2c3d4e5-0002-0002-0002-000000000004-m1.avro" = "iceberg-f64c1b134939"
+"iceberg_v2_pos_delete_retired/metadata/snap-2000000000000000001-1-b2c3d4e5-0002-0002-0002-000000000005.avro" = "iceberg-dd2852c30913"
+"iceberg_v2_pos_delete_retired/metadata/v1.metadata.json" = "iceberg-d69830908b43"
+"iceberg_v2_pos_delete_retired/metadata/version-hint.text" = "iceberg-bb0bd756434e"
+"iceberg_v3_deletion_vector/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet" = "iceberg-6272239027f3"
+"iceberg_v3_deletion_vector/data/dv-00000-0-d7e8f9a0-0007-0007-0007-000000000002-00001.puffin" = "iceberg-412741408f8d"
+"iceberg_v3_deletion_vector/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro" = "iceberg-0dc44e79e692"
+"iceberg_v3_deletion_vector/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro" = "iceberg-a38b33ce7495"
+"iceberg_v3_deletion_vector/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro" = "iceberg-bf386d9129e9"
+"iceberg_v3_deletion_vector/metadata/v1.metadata.json" = "iceberg-7640be494eca"
+"iceberg_v3_deletion_vector/metadata/version-hint.text" = "iceberg-50e3cc3eee45"
+"iceberg_v3_dv_misbound/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet" = "iceberg-125f9c47695f"
+"iceberg_v3_dv_misbound/data/00001-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet" = "iceberg-1cc829905d7d"
+"iceberg_v3_dv_misbound/data/dv-00000-0-d7e8f9a0-0007-0007-0007-000000000002-00001.puffin" = "iceberg-3be7ac369266"
+"iceberg_v3_dv_misbound/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro" = "iceberg-4d0de35c6dc7"
+"iceberg_v3_dv_misbound/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro" = "iceberg-359a627fe12a"
+"iceberg_v3_dv_misbound/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro" = "iceberg-1408ddc1a0ec"
+"iceberg_v3_dv_misbound/metadata/v1.metadata.json" = "iceberg-3dfed5c460ca"
+"iceberg_v3_dv_misbound/metadata/version-hint.text" = "iceberg-89249c242bbb"
+"iceberg_v3_dv_replaced/data/00000-0-d7e8f9a0-0007-0007-0007-000000000001-00001.parquet" = "iceberg-0a37b983eedf"
+"iceberg_v3_dv_replaced/data/dv-active-00000-0-d7e8f9a0-0007-0007-0007-000000000002.puffin" = "iceberg-03468551294c"
+"iceberg_v3_dv_replaced/data/dv-retired-00000-0-d7e8f9a0-0007-0007-0007-000000000002.puffin" = "iceberg-1a0c225644f2"
+"iceberg_v3_dv_replaced/metadata/d7e8f9a0-0007-0007-0007-000000000003-m0.avro" = "iceberg-d3db13aea1df"
+"iceberg_v3_dv_replaced/metadata/d7e8f9a0-0007-0007-0007-000000000004-m1.avro" = "iceberg-c07e8b6ad894"
+"iceberg_v3_dv_replaced/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro" = "iceberg-8bf2afac0dae"
+"iceberg_v3_dv_replaced/metadata/v1.metadata.json" = "iceberg-46126f6caa63"
+"iceberg_v3_dv_replaced/metadata/version-hint.text" = "iceberg-38fecacae164"

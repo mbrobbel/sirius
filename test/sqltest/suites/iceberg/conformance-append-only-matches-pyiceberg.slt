@@ -1,0 +1,53 @@
+# gpu_execution iceberg - conformance append-only matches pyiceberg
+
+statement ok
+LOAD avro;
+
+statement ok
+LOAD iceberg;
+
+statement ok
+SET GLOBAL unsafe_enable_version_guessing = true;
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+INSERT INTO fixture_check SELECT
+  count(*) = 0
+FROM
+  iceberg_metadata('__TEST_DIR__/test/cpp/integration/data/iceberg_conformance/append_only/conf/append_only')
+WHERE
+  content <> 'EXISTING';
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:987
+# sirius: id = "iceberg/conformance-append-only-matches-pyiceberg/001"
+# sirius: timeout = 90
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  id,
+  name
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_conformance/append_only/conf/append_only', snapshot_from_id = 2738471339267532079) ORDER BY id;
+----
+1	"a"
+2	"b"
+3	"c"
+
+# sirius: id = "iceberg/conformance-append-only-matches-pyiceberg/liveness"
+# sirius: tags = ["integration", "iceberg", "liveness"]
+# sirius: snapshot = true
+# sirius: execution = "allow_fallback"
+# sirius: timeout = 90
+query T
+SELECT
+  'LIVENESS_OK' AS probe;
+----
+"LIVENESS_OK"
+
+statement ok
+DROP TABLE fixture_check;

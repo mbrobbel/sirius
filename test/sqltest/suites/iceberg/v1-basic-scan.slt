@@ -1,0 +1,41 @@
+# gpu_execution iceberg - V1 basic scan
+
+statement ok
+LOAD avro;
+
+statement ok
+LOAD iceberg;
+
+statement ok
+SET unsafe_enable_version_guessing = true;
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+INSERT INTO fixture_check SELECT
+  count(*) = 0
+FROM
+  iceberg_metadata('__TEST_DIR__/test/cpp/integration/data/iceberg_v1')
+WHERE
+  content <> 'EXISTING';
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:1077
+# sirius: id = "iceberg/v1-basic-scan/001"
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  fruit,
+  count
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_v1', snapshot_from_id = 1000000000000000001) ORDER BY count;
+----
+"apple"	1
+"banana"	2
+"cherry"	3
+
+statement ok
+DROP TABLE fixture_check;

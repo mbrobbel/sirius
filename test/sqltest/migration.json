@@ -5351,6 +5351,366 @@
       "test": "gpu_execution hive partition count star completes under watchdog"
     },
     {
+      "file": "suites/iceberg/an-explicitly-pinned-scan-reaches-the-gpu.slt",
+      "id": "iceberg/an-explicitly-pinned-scan-reaches-the-gpu/001",
+      "identity": "2d30d4902c652565fe15119a5ad4020501a18b3b6fc920cc00089acadf95912c",
+      "kind": "snapshot",
+      "line": 975,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - an explicitly pinned scan reaches the GPU"
+    },
+    {
+      "file": "suites/iceberg/conformance-append-only-matches-pyiceberg.slt",
+      "id": "iceberg/conformance-append-only-matches-pyiceberg/001",
+      "identity": "e4ccb431e98c2b2bda5fe79d972f95e1c87341c9865a3c2395126ad5784e9d68",
+      "kind": "snapshot",
+      "line": 987,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - conformance append-only matches pyiceberg"
+    },
+    {
+      "file": "suites/iceberg/conformance-dropped-and-re-added-column-reads-null.slt",
+      "id": "iceberg/conformance-dropped-and-re-added-column-reads-null/001",
+      "identity": "bca7d35648892e05e86e87b7b75e52c055d0ece0297f4d81273435b41085f3d9",
+      "kind": "snapshot",
+      "line": 1028,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - conformance dropped-and-re-added column reads NULL"
+    },
+    {
+      "file": "suites/iceberg/conformance-renamed-column-declines-at-plan-time.slt",
+      "id": "iceberg/conformance-renamed-column-declines-at-plan-time/001",
+      "identity": "ea29553c3e7d23617a302761cc83b25cef2ce3fdac0e5b02ffe4fe7aa3a5e299",
+      "kind": "snapshot",
+      "line": 1047,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - conformance renamed column declines at plan time"
+    },
+    {
+      "file": "suites/iceberg/conformance-added-column-declines-at-plan-time.slt",
+      "id": "iceberg/conformance-added-column-declines-at-plan-time/001",
+      "identity": "af285da01ddd3bdefe4ac1290284a9db037485961714c0af1ad1ddba8b5efefc",
+      "kind": "snapshot",
+      "line": 1061,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - conformance added column declines at plan time"
+    },
+    {
+      "file": "suites/iceberg/v1-basic-scan.slt",
+      "id": "iceberg/v1-basic-scan/001",
+      "identity": "4f002e1c5ec030c7ee172801cd0ec17c13b44274918bcef8cb15cae2a4a4cf1a",
+      "kind": "snapshot",
+      "line": 1077,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V1 basic scan"
+    },
+    {
+      "file": "suites/iceberg/data-file-with-no-field-ids-declines.slt",
+      "id": "iceberg/data-file-with-no-field-ids-declines/001",
+      "identity": "b3d9aa3e152408139b36d185f98ff2fd5df091a5bac1a1430a869c7d6ff486ef",
+      "kind": "snapshot",
+      "line": 1087,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - data file with no field ids declines"
+    },
+    {
+      "file": "suites/iceberg/promoted-column-type-declines.slt",
+      "id": "iceberg/promoted-column-type-declines/001",
+      "identity": "a513e312b9f7a7800c58292fc435ec9d9d015e2ae1c1defafbd914d67fd5cab6",
+      "kind": "snapshot",
+      "line": 1102,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - promoted column type declines"
+    },
+    {
+      "file": "suites/iceberg/reordered-data-file-declines.slt",
+      "id": "iceberg/reordered-data-file-declines/001",
+      "identity": "b612c08d2bdd1a7a7a5c72f01b7df4505b3a03c955f6d399de5d9fbaf76d4fe4",
+      "kind": "snapshot",
+      "line": 1116,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - reordered data file declines"
+    },
+    {
+      "file": "suites/iceberg/unpinned-scan-declines.slt",
+      "id": "iceberg/unpinned-scan-declines/001",
+      "identity": "3aaa4631eef65a58ca875d8e83b29422c81972b33fffba932934fd6657dc0666",
+      "kind": "snapshot",
+      "line": 1138,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - unpinned scan declines"
+    },
+    {
+      "file": "suites/iceberg/unpinned-scan-declines.slt",
+      "id": "iceberg/unpinned-scan-declines/002",
+      "identity": "ffcbf638f4141e04c83795d66748c5d4e22b7edd6026bc3b4ec59ae4ec874be8",
+      "kind": "snapshot",
+      "line": 1138,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - unpinned scan declines"
+    },
+    {
+      "file": "suites/iceberg/allow-moved-paths-declines.slt",
+      "id": "iceberg/allow-moved-paths-declines/001",
+      "identity": "be314a4a224d11488c4441b88a484c5172f1d133c23cf22b2357551b338d55fd",
+      "kind": "snapshot",
+      "line": 1156,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - allow_moved_paths declines"
+    },
+    {
+      "file": "suites/iceberg/v1-count.slt",
+      "id": "iceberg/v1-count/001",
+      "identity": "6d43355d83458cb48afbc9c567458330a79956c1926ba7ffbbded96df4ecea3e",
+      "kind": "snapshot",
+      "line": 1168,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V1 count(*)"
+    },
+    {
+      "file": "suites/iceberg/v1-filter-and-order-by.slt",
+      "id": "iceberg/v1-filter-and-order-by/001",
+      "identity": "7ab3024efca8b01a29ded131958603861d1679f2306ec02ff3af4be56fbc51dd",
+      "kind": "snapshot",
+      "line": 1176,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V1 filter and order by"
+    },
+    {
+      "file": "suites/iceberg/v2-positional-deletes-basic-scan.slt",
+      "id": "iceberg/v2-positional-deletes-basic-scan/001",
+      "identity": "4b8e5548a356b07403b4967a52f0c4613a57e987f12179fa1c3402a044ed4b70",
+      "kind": "snapshot",
+      "line": 1193,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 positional deletes basic scan"
+    },
+    {
+      "file": "suites/iceberg/v2-positional-deletes-count.slt",
+      "id": "iceberg/v2-positional-deletes-count/001",
+      "identity": "7bc320bac03a5bb784f132c9f8f3e60473d7697305eef978737484d7c24794b3",
+      "kind": "snapshot",
+      "line": 1203,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 positional deletes count(*)"
+    },
+    {
+      "file": "suites/iceberg/v2-positional-deletes-order-by-desc.slt",
+      "id": "iceberg/v2-positional-deletes-order-by-desc/001",
+      "identity": "738dff92ded158861d04c362dbb1a579257ce2e681f12d2eab516c657c12f462",
+      "kind": "snapshot",
+      "line": 1214,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 positional deletes order by desc"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-basic-scan.slt",
+      "id": "iceberg/v2-equality-deletes-basic-scan/001",
+      "identity": "8ca8a70c6505b535be97f2216ff38754a294bf114b7c746e4419206fe5ef9528",
+      "kind": "snapshot",
+      "line": 1242,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes basic scan"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-count.slt",
+      "id": "iceberg/v2-equality-deletes-count/001",
+      "identity": "62f8862289d8697a6870590d1af36371d994b961c9a22c220518d9eba6c682c8",
+      "kind": "snapshot",
+      "line": 1252,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes count(*)"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-filter-on-surviving-rows.slt",
+      "id": "iceberg/v2-equality-deletes-filter-on-surviving-rows/001",
+      "identity": "23816d98f3e8b3aa8e2035d86774055a147299275c660e942d81b84e6f38c8c6",
+      "kind": "snapshot",
+      "line": 1261,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes filter on surviving rows"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-single-column-key.slt",
+      "id": "iceberg/v2-equality-deletes-single-column-key/001",
+      "identity": "e65ad21cdbfefa0129870c42d21e836eaa3dbaa0417e3c50b2edcbdd34dc080f",
+      "kind": "snapshot",
+      "line": 1296,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes single-column key"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-multiple-delete-files.slt",
+      "id": "iceberg/v2-equality-deletes-multiple-delete-files/001",
+      "identity": "4f39380312a195a835cb9c90f2ae90076a972fa1c25d0a44351191d69f1c7e11",
+      "kind": "snapshot",
+      "line": 1309,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes multiple delete files"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-all-rows-deleted.slt",
+      "id": "iceberg/v2-equality-deletes-all-rows-deleted/001",
+      "identity": "e40bd2f00a95a254ebed0dcc39c310753d551d8300ffd7e9aa6b9171e6902a34",
+      "kind": "snapshot",
+      "line": 1321,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes all rows deleted"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-and-positional-deletes-combined.slt",
+      "id": "iceberg/v2-equality-and-positional-deletes-combined/001",
+      "identity": "e69e9b5dc2677501a7d010e86f7414c427c1482dfaf38646f58426e298e330fd",
+      "kind": "snapshot",
+      "line": 1332,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality and positional deletes combined"
+    },
+    {
+      "file": "suites/iceberg/v2-equality-deletes-multiple-data-files.slt",
+      "id": "iceberg/v2-equality-deletes-multiple-data-files/001",
+      "identity": "baab0ce178b2f235d8c00bf4fd5bc8abddafc654f1bb3a45a64d2a8a6e72695d",
+      "kind": "snapshot",
+      "line": 1346,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V2 equality deletes multiple data files"
+    },
+    {
+      "file": "suites/iceberg/v3-deletion-vector-basic-scan.slt",
+      "id": "iceberg/v3-deletion-vector-basic-scan/001",
+      "identity": "d7f0e50772062f325674101535eb99aa4d865402387e4403c16076294b9640b4",
+      "kind": "snapshot",
+      "line": 1378,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V3 deletion vector basic scan"
+    },
+    {
+      "file": "suites/iceberg/v3-deletion-vector-count.slt",
+      "id": "iceberg/v3-deletion-vector-count/001",
+      "identity": "93650f9919a8594214c33679ff15755af9d31eca7a0d637ee8dce0d0c4954065",
+      "kind": "snapshot",
+      "line": 1388,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V3 deletion vector count(*)"
+    },
+    {
+      "file": "suites/iceberg/v3-deletion-vector-filter.slt",
+      "id": "iceberg/v3-deletion-vector-filter/001",
+      "identity": "2b81dd323acabd20369768769cbf8187f9230cd12e654a6a44f53226116eed7c",
+      "kind": "snapshot",
+      "line": 1397,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - V3 deletion vector filter"
+    },
+    {
+      "file": "suites/iceberg/a-retired-deletion-vector-stays-retired.slt",
+      "id": "iceberg/a-retired-deletion-vector-stays-retired/001",
+      "identity": "a184f0137d6e37cb5e9979b8b00349b4affe41b485251aa37ee1c636695b87a9",
+      "kind": "snapshot",
+      "line": 1433,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - a retired deletion vector stays retired"
+    },
+    {
+      "file": "suites/iceberg/a-deletion-vector-bound-to-the-wrong-data-file-is-refused.slt",
+      "id": "iceberg/a-deletion-vector-bound-to-the-wrong-data-file-is-refused/001",
+      "identity": "67d063575135e479a8484e64661896562d2f9ea7fa59cf45a688add9126eaf95",
+      "kind": "snapshot",
+      "line": 1465,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - a deletion vector bound to the wrong data file is refused"
+    },
+    {
+      "file": "suites/iceberg/a-retired-positional-delete-file-stops-applying.slt",
+      "id": "iceberg/a-retired-positional-delete-file-stops-applying/001",
+      "identity": "9a0be3c28073e7a58b594c76fcf4ee797af91b7128d68b1e9a8dbe40cc89b9a9",
+      "kind": "snapshot",
+      "line": 1516,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - a retired positional-delete file stops applying"
+    },
+    {
+      "file": "suites/iceberg/a-retired-equality-delete-file-does-not-refuse-the-gpu.slt",
+      "id": "iceberg/a-retired-equality-delete-file-does-not-refuse-the-gpu/001",
+      "identity": "769f375b0759387c0e8a95447e425d61994999115d101ff9c5b274a82fda10c1",
+      "kind": "snapshot",
+      "line": 1530,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - a retired equality-delete file does not refuse the GPU"
+    },
+    {
+      "file": "suites/iceberg/snapshot-aware-deletes.slt",
+      "id": "iceberg/snapshot-aware-deletes/001",
+      "identity": "fa22c4a84e06437eb54393c22a1d14617c9f0d35fa9162d9250416ab3c1dcaa3",
+      "kind": "snapshot",
+      "line": 1607,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - snapshot-aware deletes"
+    },
+    {
+      "file": "suites/iceberg/snapshot-aware-deletes.slt",
+      "id": "iceberg/snapshot-aware-deletes/002",
+      "identity": "6b5467a40e4b901a1189727e5865875f5045d00a0700dbe517464ee103b5b0a9",
+      "kind": "snapshot",
+      "line": 1607,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - snapshot-aware deletes"
+    },
+    {
+      "file": "suites/iceberg/equality-delete-sequence-numbers.slt",
+      "id": "iceberg/equality-delete-sequence-numbers/001",
+      "identity": "6000af44735b3fe8e6e0200405385f3a06a7a2c85cebbe9c148c4a8d333ae4ef",
+      "kind": "snapshot",
+      "line": 1632,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - equality delete sequence numbers"
+    },
+    {
+      "file": "suites/iceberg/deflate-compressed-manifests.slt",
+      "id": "iceberg/deflate-compressed-manifests/001",
+      "identity": "b32dd867ea8495f55739ecd6756cf3cdf590379b4bb559727a4a0c48dede9eae",
+      "kind": "snapshot",
+      "line": 1646,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "iceberg",
+      "test": "gpu_execution iceberg - deflate compressed manifests"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
@@ -5829,6 +6189,46 @@
       "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
       "suite": "csv_disabled",
       "test": "gpu_execution csv - order by date column"
+    },
+    {
+      "file": "suites/iceberg/conformance-added-column-declines-at-plan-time.slt",
+      "id": "iceberg/conformance-added-column-declines-at-plan-time/liveness",
+      "identity": "623784b45095aad869b98b4c134e2f70a71931494a2757c87b00a2ec66910d1d",
+      "kind": "query",
+      "line": 65,
+      "source": "test/cpp/integration/data/iceberg_conformance/run_conformance.py",
+      "suite": "iceberg",
+      "test": "conformance-added-column-declines-at-plan-time: connection liveness after scan"
+    },
+    {
+      "file": "suites/iceberg/conformance-append-only-matches-pyiceberg.slt",
+      "id": "iceberg/conformance-append-only-matches-pyiceberg/liveness",
+      "identity": "38d241b959ac0385afe4a3b80c3e6fd3e093547d180e265fd5053596c887d3d3",
+      "kind": "query",
+      "line": 65,
+      "source": "test/cpp/integration/data/iceberg_conformance/run_conformance.py",
+      "suite": "iceberg",
+      "test": "conformance-append-only-matches-pyiceberg: connection liveness after scan"
+    },
+    {
+      "file": "suites/iceberg/conformance-dropped-and-re-added-column-reads-null.slt",
+      "id": "iceberg/conformance-dropped-and-re-added-column-reads-null/liveness",
+      "identity": "7f51c9194cb26dd64d41ea01a9b2d4b6bfede60a937d84566690886e393355a9",
+      "kind": "query",
+      "line": 65,
+      "source": "test/cpp/integration/data/iceberg_conformance/run_conformance.py",
+      "suite": "iceberg",
+      "test": "conformance-dropped-and-re-added-column-reads-null: connection liveness after scan"
+    },
+    {
+      "file": "suites/iceberg/conformance-renamed-column-declines-at-plan-time.slt",
+      "id": "iceberg/conformance-renamed-column-declines-at-plan-time/liveness",
+      "identity": "646389e423bde4107e93a494416a760b981e94143d56817ced1d787f0eea4fbc",
+      "kind": "query",
+      "line": 65,
+      "source": "test/cpp/integration/data/iceberg_conformance/run_conformance.py",
+      "suite": "iceberg",
+      "test": "conformance-renamed-column-declines-at-plan-time: connection liveness after scan"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",
