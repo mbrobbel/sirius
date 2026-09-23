@@ -1,0 +1,249 @@
+# =============================================================================
+# Copyright 2025, Sirius Contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+# =============================================================================
+
+include ../../fixtures/migrated/legacy_regressions/issue_56.slt
+
+# Test IS NOT DISTINCT with string data
+# sirius: id = "legacy_regressions/issue_56/01"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataStringOne IS NOT DISTINCT FROM dataStringTwo;
+----
+1
+2
+
+# Test IS NOT DISTINCT with non-NULL constant string
+# sirius: id = "legacy_regressions/issue_56/02"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  'DEF' IS NOT DISTINCT FROM dataStringTwo;
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to string
+# sirius: id = "legacy_regressions/issue_56/03"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  NULL IS NOT DISTINCT FROM dataStringTwo;
+----
+1
+4
+
+# Test IS NOT DISTINCT with int data
+# sirius: id = "legacy_regressions/issue_56/04"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataIntOne IS NOT DISTINCT FROM dataIntTwo;
+----
+1
+2
+
+# Test IS NOT DISTINCT with non-NULL constant int
+# sirius: id = "legacy_regressions/issue_56/05"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  200 IS NOT DISTINCT FROM dataIntTwo;
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to int
+# sirius: id = "legacy_regressions/issue_56/06"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  NULL IS NOT DISTINCT FROM dataIntTwo;
+----
+1
+4
+
+# Test IS NOT DISTINCT with non-NULL constant string [constant on right]
+# sirius: id = "legacy_regressions/issue_56/07"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataStringTwo IS NOT DISTINCT FROM 'DEF';
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to string [constant on right]
+# sirius: id = "legacy_regressions/issue_56/08"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataStringTwo IS NOT DISTINCT FROM NULL;
+----
+1
+4
+
+# Test IS NOT DISTINCT with int data
+# sirius: id = "legacy_regressions/issue_56/09"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataIntOne IS NOT DISTINCT FROM dataIntTwo;
+----
+1
+2
+
+# Test IS NOT DISTINCT with non-NULL constant int [constant on right]
+# sirius: id = "legacy_regressions/issue_56/10"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataIntTwo IS NOT DISTINCT FROM 200;
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to int [constant on right]
+# sirius: id = "legacy_regressions/issue_56/11"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataIntTwo IS NOT DISTINCT FROM NULL;
+----
+1
+4
+
+# Test IS NOT DISTINCT with decimal data
+# sirius: id = "legacy_regressions/issue_56/12"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataDecOne IS NOT DISTINCT FROM dataDecTwo;
+----
+1
+2
+
+# Test IS NOT DISTINCT with non-NULL constant decimal
+# sirius: id = "legacy_regressions/issue_56/13"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  200.00 IS NOT DISTINCT FROM dataDecTwo;
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to decimal
+# sirius: id = "legacy_regressions/issue_56/14"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  NULL IS NOT DISTINCT FROM dataDecTwo;
+----
+1
+4
+
+# Test IS NOT DISTINCT with non-NULL constant decimal [constant on right]
+# sirius: id = "legacy_regressions/issue_56/15"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataDecTwo IS NOT DISTINCT FROM 200.00;
+----
+3
+
+# Test IS NOT DISTINCT with NULL compared to decimal [constant on right]
+# sirius: id = "legacy_regressions/issue_56/16"
+# sirius: tags = ["regression", "issue_56", "null", "is_not_distinct"]
+# sirius: snapshot = true
+query I rowsort
+SELECT
+  rowID
+FROM
+  issue_56
+WHERE
+  dataDecTwo IS NOT DISTINCT FROM NULL;
+----
+1
+4

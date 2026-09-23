@@ -971,6 +971,276 @@
       "test": "gpu_execution MARK join (IN) emits TRUE/FALSE/NULL"
     },
     {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/01",
+      "identity": "11833db4f6fe848d8240167e2f048abb828cb3b671b7bb35b10a3768e9f1da96",
+      "kind": "query",
+      "line": 58,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with string data"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/02",
+      "identity": "ba637c6a05442a2ee0a64d206b936053b17a20f235560ebc1522b22bb7a2e995",
+      "kind": "query",
+      "line": 65,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant string"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/03",
+      "identity": "26dbda104ef2e75f0a9ae7def098d75dd2a280d31dd4071d85f6b56d2834f7c6",
+      "kind": "query",
+      "line": 71,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to string"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/04",
+      "identity": "b7486503cf195f40ce3507b317845c8ba92f3e17f8ae4adb44e0233abb624f5d",
+      "kind": "query",
+      "line": 78,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with int data"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/05",
+      "identity": "ce525b532d1dbbd6e9c4dcabaeab23c9e304a1c8d8771e1dd566e3a7a9be6cdc",
+      "kind": "query",
+      "line": 85,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant int"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/06",
+      "identity": "1a3052bf319bfec17d077ac4629848f6da937e4c5def24f4a26f8821ccaee8c8",
+      "kind": "query",
+      "line": 91,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to int"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/07",
+      "identity": "ccc769fb94d0ff770e8cc57678d4cd292c0abcff4e4eea1ff6dcdd3fbf5083be",
+      "kind": "query",
+      "line": 100,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant string [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/08",
+      "identity": "ece089372bb9c8fcea4bb389bd153b91b66c1d983d0be359459eae8f150ca8c9",
+      "kind": "query",
+      "line": 106,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to string [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/09",
+      "identity": "1641b6895566cfbb01315a47221073302d9c1319f3aa498e68e57157cc700beb",
+      "kind": "query",
+      "line": 113,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with int data"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/10",
+      "identity": "74eeaebb3a9f229d55122b23e588cb79016e7573bb85aabea7b38c6e73e39828",
+      "kind": "query",
+      "line": 120,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant int [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/11",
+      "identity": "1c1e5da72283c5a705e03874f9255bb487003454cd2e240f91735563ed67c2c7",
+      "kind": "query",
+      "line": 126,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to int [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/12",
+      "identity": "eaf1a1cf472875b8fa08d35c597a07c7d8f058f28c59f97b2342f484c84f6caf",
+      "kind": "query",
+      "line": 133,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with decimal data"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/13",
+      "identity": "89e7d5aee4499894db5f5d70a984dc049b076cba9c749b477d3634a08937c2ff",
+      "kind": "query",
+      "line": 140,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant decimal"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/14",
+      "identity": "b124e6d669a93fc1c4a9c50c5d81caaa53185a1c5001d4989201bc690dbb606c",
+      "kind": "query",
+      "line": 146,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to decimal"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/15",
+      "identity": "b3b8ef68003786a7e72609f869ae1202cb1581ab2678bcc8b424832a0368f631",
+      "kind": "query",
+      "line": 153,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with non-NULL constant decimal [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/issue_56.slt",
+      "id": "legacy_regressions/issue_56/16",
+      "identity": "b95343d3cf8dbd4af2798421bda9f36124c68c82f8bfa4a4a944b8877a13babd",
+      "kind": "query",
+      "line": 159,
+      "source": "test/sql/bugfix.test",
+      "suite": "legacy_regressions",
+      "test": "Test IS NOT DISTINCT with NULL compared to decimal [constant on right]"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/01",
+      "identity": "e21a247cec743aefebd5731fad99be86b74c1a45d54944e664ab371184b48436",
+      "kind": "query",
+      "line": 22,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A from T where A = 3"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/02",
+      "identity": "7c6f3340e168b2c2d3d17f204855386cbcca3191f0dc928153e4456d2086ae20",
+      "kind": "query",
+      "line": 23,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A from T where A = NULL"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/03",
+      "identity": "9eb5a9e34dca81f17ab3acc790c88460c4ba099f0342c028a241198a614b25a2",
+      "kind": "query",
+      "line": 24,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A from T where A IS NOT NULL"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/04",
+      "identity": "0190b8002ae155aa371ce48c67becdd86ecb9567f9d0b7d646561ee716504c1c",
+      "kind": "query",
+      "line": 25,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A from T where A IS NULL"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/05",
+      "identity": "6c0a3a9153f27e7e69ac19c76fa91761b97214c36ad520a2de7f7d1fe858121d",
+      "kind": "query",
+      "line": 26,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select count(A) from T"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/06",
+      "identity": "3655b8fbe4031ff97372c2a84ebc2885b45c629bff99656cdba32af3801204f5",
+      "kind": "query",
+      "line": 27,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select count(*) from T"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/07",
+      "identity": "7f1b59617d0268352bbde0cab13f383ff154b8ba068a87dcfbf3642351d2d69a",
+      "kind": "query",
+      "line": 28,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select sum(A) from T"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/08",
+      "identity": "4de82006f07ab222d62634bbc569a82a66fcbb88f5e3c82c91f77602e32ad64e",
+      "kind": "query",
+      "line": 29,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A, sum(B) from T group by A"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/09",
+      "identity": "78eaba29b0dde76250f3330b943adb342393c9c7b38ab5ee6cdb6664dfbcc988",
+      "kind": "query",
+      "line": 30,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A, count(*) from T group by A"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/10",
+      "identity": "2ebf8cbc66eea6f4d914f85f5f63ab1d77579dc5382dd40bf43b53515875160f",
+      "kind": "query",
+      "line": 31,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select A, count(A) from T group by A"
+    },
+    {
+      "file": "suites/legacy_regressions/nulls.slt",
+      "id": "legacy_regressions/nulls/11",
+      "identity": "0d8c0237302539965d3c8e93f48668578f98ab8ba5c788311341f72f6a83c77f",
+      "kind": "query",
+      "line": 32,
+      "source": "test/test_null.sql",
+      "suite": "legacy_regressions",
+      "test": "select sum(C) from S"
+    },
+    {
       "file": "suites/array/scan-integer-3-passthrough.slt",
       "id": "array/scan-integer-3-passthrough/001",
       "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",
