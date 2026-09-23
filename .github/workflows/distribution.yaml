@@ -17,6 +17,7 @@ jobs:
       ci_tools_version: v1.5-variegata
       extension_name: sirius
       exclude_archs: "linux_amd64_musl;linux_arm64_musl;osx_amd64;osx_arm64;windows_amd64;windows_arm64;windows_amd64_mingw;wasm_mvp;wasm_eh;wasm_threads"
+      runners: '{"linux_x64": ["self-hosted", "ubuntu-24.04", "cpu-xl"], "linux_arm64": ["self-hosted", "ubuntu-24.04", "arm-xl"]}'
 
   code-quality-check:
     name: Code Quality Check
