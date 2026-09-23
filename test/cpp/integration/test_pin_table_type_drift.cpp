@@ -60,7 +60,7 @@ class drift_cleanup_guard {
 };
 
 /// Pin `drift_t` (compressed materialization on, asserting the pin actually narrowed), drop and
-/// recreate it per @p recipe, then verify GPU-only queries return the fresh values.
+/// recreate it per @p recipe, then require GPU execution. The SQL suite checks fresh values.
 void run_drift_case(PinDriftFixture& fx,
                     std::string const& tier,
                     drift_recipe const& recipe,
@@ -88,9 +88,9 @@ void run_drift_case(PinDriftFixture& fx,
   fx.run_ok("SET enable_duckdb_fallback = false;");
   // count(a), not count(*): a zero-column scan requests the rowid sentinel, which an MVCC pin can
   // never serve, so the plan-time cache-or-CPU guard would reject it before the drift matters.
-  fx.compare_gpu_vs_cpu("SELECT count(a) FROM drift_t;");
-  fx.compare_gpu_vs_cpu_ordered("SELECT a FROM drift_t ORDER BY a LIMIT 5;");
-  fx.compare_gpu_vs_cpu(recipe.filter_query);
+  fx.require_gpu_execution("SELECT count(a) FROM drift_t;");
+  fx.require_gpu_execution("SELECT a FROM drift_t ORDER BY a LIMIT 5;");
+  fx.require_gpu_execution(recipe.filter_query);
 }
 
 /// No-drift positive control: pin `drift_t` narrowed, run the same GPU-only queries WITHOUT a
@@ -114,8 +114,8 @@ void run_no_drift_case(PinDriftFixture& fx, std::string const& tier)
   fx.run_ok("SET enable_compressed_materialization = false;");
   fx.run_ok("SET enable_duckdb_fallback = false;");
   auto const before = sirius::test::get_compressed_materialization_stats(*fx.con);
-  fx.compare_gpu_vs_cpu("SELECT count(a) FROM drift_t;");
-  fx.compare_gpu_vs_cpu("SELECT count(*) FROM drift_t WHERE a >= 10050;");
+  fx.require_gpu_execution("SELECT count(a) FROM drift_t;");
+  fx.require_gpu_execution("SELECT count(*) FROM drift_t WHERE a >= 10050;");
   auto const after = sirius::test::get_compressed_materialization_stats(*fx.con);
   REQUIRE(after.scan_columns_restored > before.scan_columns_restored);
   REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
