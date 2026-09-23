@@ -1,0 +1,13 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:615
+# sirius: id = "fallback_mix/zero-empty/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  round(id)
+FROM
+  read_parquet('__TEST_DIR__/empty.parquet');
+----

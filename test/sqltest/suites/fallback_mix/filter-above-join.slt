@@ -1,0 +1,32 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:796
+# sirius: id = "fallback_mix/filter-above-join/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') a
+  JOIN read_parquet('__TEST_DIR__/nested.parquet') b ON a.id = b.id
+WHERE
+  round(a.a + b.b) > 1;
+----
+249
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:799
+# sirius: id = "fallback_mix/filter-above-join/002"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') a
+  JOIN read_parquet('__TEST_DIR__/nested.parquet') b ON a.id = b.id
+WHERE
+  a.a + b.b > 1;
+----
+249

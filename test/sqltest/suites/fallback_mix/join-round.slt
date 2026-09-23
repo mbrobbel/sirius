@@ -1,0 +1,15 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:587
+# sirius: id = "fallback_mix/join-round/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') a
+  JOIN read_parquet('__TEST_DIR__/nested.parquet') b ON round(a.id) = round(b.id);
+----
+300

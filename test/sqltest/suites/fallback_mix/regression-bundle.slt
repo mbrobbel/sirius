@@ -1,0 +1,102 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:591
+# sirius: id = "fallback_mix/regression-bundle/001"
+# sirius: tags = ["integration", "fallback"]
+query ? rowsort
+SELECT
+  st
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet');
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:592
+# sirius: id = "fallback_mix/regression-bundle/002"
+# sirius: tags = ["integration", "fallback"]
+query ? rowsort
+SELECT
+  li
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet');
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:594
+# sirius: id = "fallback_mix/regression-bundle/003"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet')
+WHERE
+  round(id) > 1;
+----
+198
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:596
+# sirius: id = "fallback_mix/regression-bundle/004"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  mix_native
+WHERE
+  round(id) > 1;
+----
+198
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:597
+# sirius: id = "fallback_mix/regression-bundle/005"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(id)
+FROM
+  read_parquet('__TEST_DIR__/hive/*/*.parquet', hive_partitioning = true)
+WHERE
+  part = 1;
+----
+300
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:599
+# sirius: id = "fallback_mix/regression-bundle/006"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(st)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet');
+----
+300
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:600
+# sirius: id = "fallback_mix/regression-bundle/007"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(li)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet');
+----
+300
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:601
+# sirius: id = "fallback_mix/regression-bundle/008"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(round(x))
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet');
+----
+257

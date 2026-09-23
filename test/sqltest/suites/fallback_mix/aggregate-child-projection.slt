@@ -1,0 +1,21 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:582
+# sirius: id = "fallback_mix/aggregate-child-projection/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ?? rowsort
+SELECT
+  r,
+  count(*)
+FROM
+  (
+    SELECT
+      round(a) AS r,
+      b
+    FROM
+      read_parquet('__TEST_DIR__/nested.parquet')
+  ) q
+GROUP BY
+  r;
+----
