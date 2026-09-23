@@ -20,3 +20,4 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 [tasks]
 cargo = { cmd = "cargo", cwd = "../.." }
+sqlformat = { cmd = "cargo run --quiet --locked --manifest-path rust/Cargo.toml -p sirius-sqltest-format --", cwd = "../.." }

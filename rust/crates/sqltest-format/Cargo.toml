@@ -1,0 +1,13 @@
+[package]
+name = "sirius-sqltest-format"
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+sqllogictest = "=0.29.1"
+sqlparser = "=0.63.0"
+walkdir = "2"
