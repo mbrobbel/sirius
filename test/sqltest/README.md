@@ -154,3 +154,275 @@ files = { "database.duckdb" = "original-database" }
 Keys are relative output paths; values name input sources. Preparation copies
 the files and records output hashes. Every run verifies the copies. The migrated
 TPC-H suites use the original native database and Parquet files this way.
+
+## Specialized runs
+
+`legacy-tpch` preserves the original extension test's SF1 table files, schema,
+query variants, and complete CSV goldens. It is separate from the smaller
+benchmark fixture. Generate its inputs from the repository's original dbgen
+archive, prepare the checksum-verified cache, then run:
+
+```bash
+pixi run bash setup_test_datasets.sh --tpch-only
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run legacy-tpch
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run legacy-tpch --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/legacy-tpch-001
+```
+
+The original CSV goldens live under `fixtures/goldens/tpch`; each file has one
+copy, moved unchanged from the retired test harness. CPU setup reads them with explicit SQL
+types and checks every row in order against DuckDB. The
+runner then compares Sirius with that checked reference. This uses the same
+fixture and statement machinery as other suites.
+
+The runner supports transparent Sirius execution only. The `legacy-tpch` name
+identifies the source of these fixtures, not an execution mode. The old legacy
+SQL test files, unused goldens and generators, Python test script, and DuckDB
+extension test registration are removed. Engine code and performance tools are
+unchanged.
+
+`compressed-gate` runs the compressed-materialization residency cases with
+their original 2 GiB GPU memory cap and 16 KiB scan batches. These settings
+preserve the multi-chunk pinning premise. `compressed-partition` uses the same
+memory cap with 256 KiB scan batches, 64 KiB hash partitions, and a 1 KiB build
+limit to exercise narrow carriers across partition exchanges. Both suites are
+included in `correctness` with fixed profiles. Their named runs are convenience
+selections for running either family alone:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run compressed-gate --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/compressed-gate-001
+```
+
+`hive-watchdog` similarly selects the four Hive watchdog cases, preserving
+their 60-second timeout and original memory/thread settings. They also belong
+to `correctness`.
+
+`partition_memory` preserves the single-GPU partition-memory regression in
+`correctness`: eight two-million-row Parquet files, a 200,000-row build table,
+a 512 MiB GPU limit, and five consecutive joins. The fixed profile preserves
+the original scan, build, and partition limits. To run its two-GPU variant:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run partition-memory-multi-gpu \
+  --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/partition-memory-multi-gpu-001
+```
+
+These suites use the original fixture defaults; exploratory size or memory
+changes belong in separate suites or configuration sweeps. Reproductions retain
+each worker's Parquet files and profile.
+
+`operators-multi-gpu` combines the two-GPU partition-memory case with the
+sort, grouped-aggregate, hash-join, broadcast, and Q11-shaped operator cases.
+Each suite has a fixed profile preserving its original memory and partition
+settings. DuckDB supplies the reference even where the old helper accidentally
+ran its reference query on the GPU. Those cases keep two consecutive queries
+per original comparison; repeated build/probe and scale-up cases keep eight
+and six GPU queries respectively. CPU-only validation works on machines
+without two GPUs:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run operators-multi-gpu --cpu-only --output runs/operators-cpu-001
+```
+
+The original operator C++ comparisons retain coverage of their legacy explicit
+entrypoint. C++ also checks per-device scheduling and broadcast/filter publication.
+The old helper's `cache` and `duckdb_scan_num_threads` fields were never emitted
+into its YAML; the SQL profiles preserve the configuration actually used.
+
+`tpch-multi-gpu` runs the migrated TPC-H suites with the original two-GPU
+integration profile. `sf10` runs the four original SF10 cases and requires two
+GPUs plus eight supplied Parquet files. Its suite declares `minimum_gpus = 2`,
+which excludes incompatible profiles from a sweep. Missing physical GPUs are
+reported as unavailable infrastructure; a two-GPU run never falls back to one.
+Local development on one GPU does not require running these selections. C++
+retains their internal routing and dynamic-filter assertions; SQL owns result
+comparisons. CI selects the original 44 native/Parquet TPC-H queries on two GPUs.
+
+SF10 sources use `kind = "provided"`. Each requires a local `--source` binding
+when first prepared. Their input hashes are recorded in the fixture manifest;
+the cached files are checked on each run. Supplying changed inputs to an
+existing cache fails; use a new preparation directory.
+
+```bash
+inputs=()
+for table in customer lineitem nation orders part partsupp region supplier; do
+  inputs+=(--source "sf10-${table}=/absolute/path/to/sf10/${table}.parquet")
+done
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare \
+  --run sf10 "${inputs[@]}"
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run sf10 --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/sf10-001
+```
+
+Neither SF10 nor previously disabled cases are part of `correctness`. The latter
+include 19 restored CSV cases: they pass CPU validation and currently report
+Sirius's unsupported `read_csv` error with fallback disabled.
+
+Two opt-in double-inequality cases keep Sirius's original FULL JOIN but use
+an equivalent INNER JOIN for the DuckDB oracle. Their WHERE predicates reject
+all unmatched rows, so row multiplicities, ordering, and LIMIT are unchanged.
+Engine-specific temporary views express this in SQLLogicTest without runner
+special cases. The original data scale and fallback policy are preserved.
+
+### Managed S3 service
+
+The `s3` run starts a private MinIO container for each SQL script through
+Testcontainers, uploads checksum-verified fixtures, and removes the container
+after its workers exit. It requires a reachable Docker daemon; `DOCKER_HOST`
+can select one. The Docker CLI is not required. CPU-only runs, completion,
+preparation, and dry runs do not start containers.
+The runner pulls `quay.io/minio/minio` using the manifest's explicit `image_tag`;
+the fully qualified image is recorded with the service results.
+The supplied S3 services mount `/data` on a private, 2 GiB tmpfs. This limit
+is a ceiling, not a reservation; the SF1 objects occupy about 311 MiB. Object
+data is discarded with the container, and uploads do not depend on the free
+space in Docker's data directory. Docker still needs disk space for images and
+logs. Set `storage = { kind = "container" }` to use its writable layer instead.
+The storage policy is recorded in service metadata and comparison fingerprints.
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run s3
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run s3 --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/s3-001
+```
+
+When running on the host with artifacts built inside a container, use:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest-host \
+  --extension /absolute/path/to/sirius.duckdb_extension \
+  s3 s3-sf1 s3-pagination
+```
+
+The Rust launcher uses the already-built runner and the activated environment's
+`DUCKDB_LIB_DIR` (override with `--duckdb-lib-dir PATH`) and creates a new
+`runs/host-*` directory. It finds GPU libraries in this worktree's Pixi environment or in the
+host source of a running container's mount at this worktree's `.pixi` path.
+Use `--gpu-lib-dir PATH` to select the directory explicitly. Docker mount
+discovery requires a local daemon and a readable source directory. On NixOS,
+the launcher also adds `/run/opengl-driver/lib` when it exists to resolve NVIDIA
+driver libraries, and preserves the inherited `LD_LIBRARY_PATH`. Missing shared
+libraries fail before fixture preparation or MinIO startup. Named runs
+execute sequentially, and failures do not prevent the remaining runs from
+producing their reports.
+
+Declare services in `sqltest.toml` and select one with
+`object_store = "local-s3"` in the suite's manifest:
+
+```toml
+[services.local-s3]
+kind = "minio"
+image_tag = "RELEASE.2025-09-07T16-13-09Z-cpuv1"
+bucket = "sirius-test"
+storage = { kind = "tmpfs", size_mib = 2048 }
+
+[services.local-s3.objects]
+"parquet/nation.parquet" = { fixture = "tpch-parquet-original", path = "nation.parquet" }
+```
+
+Object keys are literal, including `%`, `?`, and `#`; their fixture paths must
+name declared outputs. Service fixtures are automatically included in preparation
+and verification. The managed service uses the C++ fixture's test credentials
+(`minioadmin` / `minioadmin`) and region (`us-east-1`). Its endpoint and credentials
+are bound into a private copy of the selected Sirius YAML profile.
+
+Use `onlyif duckdb` setup to create local reference views and `onlyif sirius`
+setup for S3 views. `__S3_BUCKET__` expands in Sirius SQL. S3 view binding requires
+GPU execution, so its setup statement explicitly enables `gpu_execution` before
+creating the views; query execution still enforces the normal fallback policy.
+Each setup statement starts with GPU execution disabled. Put `SET gpu_execution
+= true;` in the same `statement ok` block as the S3 `CREATE VIEW`; a separate
+statement does not carry that setting into the next setup operation.
+
+For repeated objects, declare a counted copy recipe:
+
+```toml
+[[services.s3-glob-scale.copies]]
+source = { fixture = "tpch-parquet-original", path = "nation.parquet" }
+key_prefix = "glob-scale/part_"
+key_suffix = ".parquet"
+count = 1001
+```
+
+This expands keys from `part_0.parquet` through `part_1000.parquet`, preserving
+literal prefix and suffix bytes. Counts must be positive; generated keys must
+be valid and distinct from all other declared keys. Each worker also receives
+the service's complete object layout under `__TEST_DIR__/.sqltest-objects`.
+A DuckDB substitution can point there to compare the same glob with local files.
+These private copies are rebuilt during completion and reproduction, without
+Docker. Source fixtures retain their hashes; service recipes and uploaded object
+hashes are recorded in results.
+
+The explicit `s3-pagination` run preserves the original 1,001-object LIST-page
+regression and its expected count, sum, minimum, and maximum. Prepare it with
+`sqltest prepare --run s3-pagination`, then use `sqltest run --run s3-pagination`
+with the extension artifact.
+
+Each case records the service recipe, runtime endpoint, container ID, uploaded
+object hashes, and both original and resolved profiles. Service recipes affect
+comparison fingerprints; random ports do not. Replaying the saved `repro.slt`
+and `suite.toml` through `--suite-dir` starts a fresh service using the original
+corpus manifest. The resolved `repro.sql` refers to the previous container and
+is for inspection. MinIO logs are saved beside the worker logs when available.
+Startup or upload failures produce infrastructure failures and an incomplete
+report, rather than successful skips.
+
+Suites can declare different literal contents for DuckDB and Sirius:
+
+```toml
+[substitutions.OBJECT_ROOT]
+duckdb = "__FIXTURE_ROOT__/s3-surface-original"
+sirius = "s3://__S3_BUCKET__"
+```
+
+```sql
+SELECT count(*)
+FROM read_parquet('__OBJECT_ROOT__/parquet/nation.parquet');
+```
+
+Both executed queries retain a literal path, which Sirius needs to recognize S3
+scans. Names use uppercase letters, digits and single underscores; built-in names
+are reserved. Declare both engine values. Values are unescaped string contents,
+not SQL expressions: the runner escapes single quotes once. They can reference
+`__FIXTURE_ROOT__`, `__TEST_DIR__`, and `__S3_BUCKET__` (which requires an
+`object_store`). Custom substitutions cannot reference one another. Unknown
+placeholders fail before execution. The `__NAME__` syntax is reserved in SQL.
+`__RELATION__` remains a built-in SQL keyword substitution.
+
+CPU-only runs use DuckDB values for both workers, and `complete` uses DuckDB
+values. Saved suite manifests retain substitutions for replay, and changes to
+either engine's values change comparison fingerprints.
+
+The initial `s3_tpch` suite preserves the original tiny Q1–Q22 sequence, Parquet
+files, memory profile, and floating-point tolerance. It is separate from
+`correctness`. All 57 regular S3 cases, 22 SF1 cases, and the pagination case
+have passed against DuckDB with managed MinIO and fallback disabled. Surface
+cases use literal path substitutions and preserve encoded-key layouts and fixed
+profiles. C++ retains execution counters, REST routing and cache checks, raw
+object-list assertions, and negative-error checks; SQL owns result comparisons.
+Legacy `gpu_execution('…')` and `gpu_processing` entrypoints are outside this
+migration; the runner uses transparent SQL execution.
+
+The `s3-sf1` run preserves the transparent SF1 Q1–Q22 sequence separately from
+the tiny S3 run:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run s3-sf1
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run s3-sf1 --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/s3-sf1-001
+```
+
+Its fixture uses the original `dbgen(sf=1)` recipe and Snappy Parquet encoding.
+SQL fixture recipes accept `compression = "snappy"` or `"zstd"`; the default is
+Zstd. The fixed SF1 profile retains the original 2 GiB GPU, 4 GiB host, and
+16 GiB disk capacities. CPU-only validation uses local Parquet files without
+starting MinIO. The retained C++ TPC-H tests verify GPU routing at both scales.
