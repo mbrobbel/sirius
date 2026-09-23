@@ -1,0 +1,81 @@
+statement ok
+CREATE TABLE vs_probe AS SELECT i AS id, [i, i, i]::FLOAT[3] AS vec FROM range(2000) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  pin_table(name => 'vs_probe', tier => 'gpu', format => 'duckdb');
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  sirius_create_ann_index('vs_probe', 'vec', metric => 'l2', n_lists => 16);
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  vs_probe ORDER BY array_distance(vec, [0.0, 0.0, 0.0]::FLOAT[3]) LIMIT 10;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  sirius_knn_search('vs_probe', 'vec', [0.0, 0.0, 0.0]::FLOAT[3], k => 10, output_columns => ['id'], n_probes => 16);
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:250
+# sirius: id = "vector_search/probes-distance/001"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  *
+FROM
+  search_result;
+----
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  array_distance(vec, [0.0, 0.0, 0.0]::FLOAT[3]) AS distance
+FROM
+  vs_probe ORDER BY array_distance(vec, [0.0, 0.0, 0.0]::FLOAT[3]) LIMIT 10;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  distance
+FROM
+  sirius_knn_search('vs_probe', 'vec', [0.0, 0.0, 0.0]::FLOAT[3], k => 10, output_columns => ['id']) ORDER BY distance;
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:257
+# sirius: id = "vector_search/probes-distance/002"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+# sirius: float_tolerance = { absolute = 0.0001, relative = 0.0001 }
+query ? nosort
+SELECT
+  *
+FROM
+  search_result ORDER BY distance;
+----
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  unpin_table('vs_probe');

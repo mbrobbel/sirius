@@ -1,0 +1,46 @@
+statement ok
+CREATE TABLE vs_enn_cos AS SELECT i AS id, [1.0, i, 0.0]::FLOAT[3] AS vec FROM range(2000) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  pin_table(name => 'vs_enn_cos', tier => 'gpu', format => 'duckdb');
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  vs_enn_cos ORDER BY array_cosine_distance(vec, [1.0, 0.0, 0.0]::FLOAT[3]) LIMIT 5;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  sirius_knn_search('vs_enn_cos', 'vec', [1.0, 0.0, 0.0]::FLOAT[3], k => 5, output_columns => ['id'], metric => 'cosine', use_index => false);
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:504
+# sirius: id = "vector_search/enn-cosine/001"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  *
+FROM
+  search_result;
+----
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  unpin_table('vs_enn_cos');

@@ -1,0 +1,53 @@
+statement ok
+CREATE TABLE idx_err AS SELECT i AS id, [i, i, i]::FLOAT[3] AS vec FROM range(400) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  pin_table(name => 'idx_err', tier => 'gpu', format => 'duckdb');
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  sirius_create_ann_index('idx_err', 'vec', metric => 'l2');
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  idx_err ORDER BY array_distance(vec, [0.0, 0.0, 0.0]::FLOAT[3]) LIMIT 5;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  sirius_knn_search('idx_err', 'vec', [0.0, 0.0, 0.0]::FLOAT[3], k => 5, output_columns => ['id'], n_probes => 1000000);
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:1032
+# sirius: id = "vector_search/default-lists/001"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  *
+FROM
+  search_result;
+----
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  unpin_table('idx_err');
