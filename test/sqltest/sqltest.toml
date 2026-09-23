@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["csv_disabled", "tpch", "tpcds", "clickbench", "hive_disabled"]
+exclude_suites = ["csv_disabled", "tpch", "tpcds", "clickbench", "hive_disabled", "operator_mgpu_aggregate"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -1272,3 +1272,11 @@ extensions = ["avro", "iceberg"]
 "iceberg_v3_dv_replaced/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro" = "iceberg-8bf2afac0dae"
 "iceberg_v3_dv_replaced/metadata/v1.metadata.json" = "iceberg-46126f6caa63"
 "iceberg_v3_dv_replaced/metadata/version-hint.text" = "iceberg-38fecacae164"
+
+[profiles.operator-mgpu-partitioned]
+gpus = 2
+config = "profiles/operator-mgpu-partitioned.yaml"
+
+[runs.operators-multi-gpu]
+suites = ["operator_mgpu_aggregate"]
+profile = "operator-mgpu-partitioned"

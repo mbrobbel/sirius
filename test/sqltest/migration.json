@@ -6651,6 +6651,66 @@
       "test": "S3 mix: filter-above-join"
     },
     {
+      "file": "suites/operator_mgpu_aggregate/high-cardinality.slt",
+      "id": "operator_mgpu_aggregate/high-cardinality/001",
+      "identity": "b0c1b1e73fc7447631bbfadd2ba30f76772a48f5b64f00397d0209ca0edc45f5",
+      "kind": "query",
+      "line": 114,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - group by with high cardinality distributes across both GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_aggregate/high-cardinality.slt",
+      "id": "operator_mgpu_aggregate/high-cardinality/002",
+      "identity": "7dbdf885577a2815f84ecb997aa056a8e7c49e68804a25b529ae7e6eba331b44",
+      "kind": "query",
+      "line": 114,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - group by with high cardinality distributes across both GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_aggregate/single-key.slt",
+      "id": "operator_mgpu_aggregate/single-key/001",
+      "identity": "15f9748b0776b852657ccc29e01f1eee9294bfeeda710f1d1f5001563e31b661",
+      "kind": "query",
+      "line": 165,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - group by with single key forces single-GPU path"
+    },
+    {
+      "file": "suites/operator_mgpu_aggregate/single-key.slt",
+      "id": "operator_mgpu_aggregate/single-key/002",
+      "identity": "9d1710fe48ee930d83881fb4e21c6fe13313a559d6e072c7f7648cdc30db1cee",
+      "kind": "query",
+      "line": 165,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - group by with single key forces single-GPU path"
+    },
+    {
+      "file": "suites/operator_mgpu_aggregate/count.slt",
+      "id": "operator_mgpu_aggregate/count/001",
+      "identity": "bda110da93fc3cd5cedbf3a2b188539804ad69453c1e360f42f54a7e1f380044",
+      "kind": "query",
+      "line": 206,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - count(*)-only aggregate across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_aggregate/count.slt",
+      "id": "operator_mgpu_aggregate/count/002",
+      "identity": "f4965b77a91fc9eb4621e21e05e23c6b447d0f032785c9b44c42a8e406ffd84d",
+      "kind": "query",
+      "line": 206,
+      "source": "test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp",
+      "suite": "operator_mgpu_aggregate",
+      "test": "grouped_aggregate_merge - count(*)-only aggregate across two GPUs"
+    },
+    {
       "file": "suites/csv_disabled/scan-single-column.slt",
       "id": "csv_disabled/scan-single-column",
       "identity": "4d783c167d2aa2db68361526bd9ed70a5d38fe77c35e91023200d5ab6cd2e14d",
