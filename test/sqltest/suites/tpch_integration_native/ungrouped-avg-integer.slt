@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped avg integer
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:615
+# sirius: id = "tpch_integration_native/ungrouped-avg-integer/001"
+# sirius: tags = ["integration", "gpu_execution", "aggregate", "avg"]
+query ? rowsort
+SELECT
+  avg(n_nationkey)
+FROM
+  nation;
+----

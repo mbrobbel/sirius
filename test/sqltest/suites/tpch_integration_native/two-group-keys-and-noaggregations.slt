@@ -1,0 +1,15 @@
+# gpu_execution - two group keys and noaggregations
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:700
+# sirius: id = "tpch_integration_native/two-group-keys-and-noaggregations/001"
+# sirius: tags = ["integration", "gpu_execution", "grouped_aggregate"]
+query ?? rowsort
+SELECT
+  c_nationkey,
+  c_mktsegment
+FROM
+  customer
+GROUP BY
+  c_mktsegment, c_nationkey;
+----

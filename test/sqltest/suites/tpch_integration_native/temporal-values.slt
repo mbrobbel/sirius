@@ -1,0 +1,18 @@
+# gpu_execution - temporal values
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4700
+# sirius: id = "tpch_integration_native/temporal-values/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values", "types"]
+query ?? rowsort
+SELECT
+  d,
+  ts
+FROM
+  (
+    VALUES
+      (DATE '2024-01-02', TIMESTAMP '2024-01-02 03:04:05.123456'),
+      (DATE '1999-12-31', TIMESTAMP '1999-12-31 23:59:59.999999'),
+      (NULL::DATE, NULL::TIMESTAMP)
+  ) t (d, ts);
+----

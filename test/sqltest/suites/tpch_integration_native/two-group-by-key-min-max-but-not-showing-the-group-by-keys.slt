@@ -1,0 +1,15 @@
+# gpu_execution - two group by key: min max, but not showing the group by keys
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:683
+# sirius: id = "tpch_integration_native/two-group-by-key-min-max-but-not-showing-the-group-by-keys/001"
+# sirius: tags = ["integration", "gpu_execution", "grouped_aggregate"]
+query ?? rowsort
+SELECT
+  min(c_custkey),
+  max(c_custkey)
+FROM
+  customer
+GROUP BY
+  c_nationkey, c_mktsegment;
+----

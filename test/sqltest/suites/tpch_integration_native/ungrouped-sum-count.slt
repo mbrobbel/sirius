@@ -1,0 +1,13 @@
+# gpu_execution - ungrouped sum count
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:585
+# sirius: id = "tpch_integration_native/ungrouped-sum-count/001"
+# sirius: tags = ["integration", "gpu_execution", "aggregate"]
+query ?? rowsort
+SELECT
+  sum(n_regionkey),
+  count(n_nationkey)
+FROM
+  nation;
+----

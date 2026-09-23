@@ -1,0 +1,21 @@
+# gpu_execution - TPC-H Query 3
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4151
+# sirius: id = "tpch_integration_native/tpc-h-query-3/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  l.l_orderkey,
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue,
+  o.o_orderdate,
+  o.o_shippriority
+FROM
+  customer c,
+  orders o,
+  lineitem l
+WHERE
+  c.c_mktsegment = 'HOUSEHOLD' AND c.c_custkey = o.o_custkey AND l.l_orderkey = o.o_orderkey AND o.o_orderdate < DATE '1995-03-25' AND l.l_shipdate > DATE '1995-03-25'
+GROUP BY
+  l.l_orderkey, o.o_orderdate, o.o_shippriority ORDER BY revenue DESC, o.o_orderdate LIMIT 10;
+----

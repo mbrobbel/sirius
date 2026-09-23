@@ -1,0 +1,20 @@
+# gpu_execution - values source fanned out to multiple consumers
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4751
+# sirius: id = "tpch_integration_native/values-source-fanned-out-to-multiple-consumers/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ?? rowsort
+WITH t (b) AS (
+  VALUES
+    (1),
+    (2),
+    (3)
+)
+SELECT
+  a.b,
+  c.b
+FROM
+  t a
+  JOIN t c USING(b);
+----

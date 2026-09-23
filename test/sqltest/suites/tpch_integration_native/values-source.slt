@@ -1,0 +1,17 @@
+# gpu_execution - values source
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4674
+# sirius: id = "tpch_integration_native/values-source/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  b
+FROM
+  (
+    VALUES
+      (1),
+      (2),
+      (3)
+  ) t (b);
+----

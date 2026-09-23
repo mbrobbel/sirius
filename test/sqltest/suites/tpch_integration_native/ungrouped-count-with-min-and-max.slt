@@ -1,0 +1,14 @@
+# gpu_execution - ungrouped count(*) with min and max
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4881
+# sirius: id = "tpch_integration_native/ungrouped-count-with-min-and-max/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ??? rowsort
+SELECT
+  count(*),
+  min(n_nationkey),
+  max(n_nationkey)
+FROM
+  nation;
+----

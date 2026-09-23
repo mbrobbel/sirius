@@ -1,0 +1,24 @@
+# gpu_execution - TPC-H Query 22
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4448
+# sirius: id = "tpch_integration_native/tpc-h-query-22/001"
+# sirius: tags = ["integration", "tpch"]
+query ??? rowsort
+SELECT
+  cntrycode,
+  count(*) AS numcust,
+  sum(c_acctbal) AS totacctbal
+FROM
+  (
+    SELECT
+      SUBSTRING(c_phone FROM 1 FOR 2) AS cntrycode,
+      c_acctbal
+    FROM
+      customer c
+    WHERE
+      SUBSTRING(c_phone FROM 1 FOR 2) IN ('24', '31', '11', '16', '21', '20', '34') AND c_acctbal > (SELECT avg(c_acctbal) FROM customer WHERE c_acctbal > 0.00 AND SUBSTRING(c_phone FROM 1 FOR 2) IN ('24', '31', '11', '16', '21', '20', '34')) AND NOT EXISTS (SELECT * FROM orders o WHERE o.o_custkey = c.c_custkey)
+  ) AS custsale
+GROUP BY
+  cntrycode ORDER BY cntrycode;
+----
