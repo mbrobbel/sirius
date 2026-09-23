@@ -39,9 +39,11 @@ pixi run pre-commit run -a                 # all formatting/lint hooks
 
 Running tests directly (non-obvious invocations):
 ```bash
-pixi run build/release/test/unittest --test-dir . test/sql/tpch-sirius.test    # one SQLLogic file
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run --run smoke --extension build/release/extension/sirius/sirius.duckdb_extension --output runs/smoke-001
 pixi run build/release/extension/sirius/test/cpp/sirius_unittest "[cpu_cache]"  # by Catch2 tag/test name
 ```
+
+See `test/sqltest/README.md` for SQL runner setup, fixture preparation, and suite selection.
 
 **Python API** (links against the repo's `duckdb/` submodule via `DUCKDB_SOURCE_PATH`):
 ```bash

@@ -19,8 +19,8 @@ Build Sirius using pixi and run the tests the user selects.
    ```
    Build succeeded. Which tests would you like to run?
 
-   1. All SQL logic tests (make test)
-   2. A specific SQL logic test file (provide path, e.g. test/sql/tpch-sirius.test)
+   1. SQL correctness suites
+   2. A specific SQL suite or case (e.g. tpch_legacy/q01)
    3. All C++ unit tests
    4. A specific C++ unit test (provide name or [tag])
    5. Auto-detect from changed files
@@ -29,8 +29,8 @@ Build Sirius using pixi and run the tests the user selects.
    Wait for the user to choose before proceeding.
 
 3. Run the selected tests using pixi:
-   - **All SQL logic tests**: `pixi run make test`
-   - **Specific SQL test**: `pixi run bash -c "build/release/test/unittest --test-dir . <test-file>"`
+   - **SQL correctness suites**: Follow `test/sqltest/README.md` to prepare the runner and fixtures, then use `pixi run --manifest-path tools/sqltest/pixi.toml sqltest run --run correctness --extension build/release/extension/sirius/sirius.duckdb_extension --output runs/correctness-001` with a new output directory.
+   - **Specific SQL test**: Select the appropriate named run, then add `--suite <suite>` or `--select <case-id>` to the SQL runner command.
    - **All C++ unit tests**: `pixi run bash -c "build/release/extension/sirius/test/cpp/sirius_unittest"`
    - **Specific C++ unit test**: `pixi run bash -c "build/release/extension/sirius/test/cpp/sirius_unittest '<name-or-tag>'"`
    - **Auto-detect**: Check `git diff dev --name-only` to identify changed files, then run the most relevant tests. Explain the reasoning to the user before running.

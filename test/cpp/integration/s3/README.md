@@ -4,6 +4,12 @@ Catch2 `[s3]` tests for the S3 backend — from the lower-level `s3_ioctx` and
 retry/cache paths through `scan_manager`, parquet split-provider routing,
 `describe_parquet`, and the SQL-over-S3 surface.
 
+Transparent SQL result comparisons live in the [SQL corpus](../../../sqltest/README.md).
+Its `s3`, `s3-sf1`, and `s3-pagination` runs cover 80 cases against DuckDB.
+C++ retains routing counters, REST/cache probes, literal-key LIST assertions,
+and error checks. `make s3-tpch` runs the TPC-H routing checks; the 1,001-object
+pagination fixture is managed exclusively by the SQL runner.
+
 ## How MinIO is managed
 
 MinIO is started **by the test binary itself** via the vendored, patched
@@ -65,6 +71,39 @@ SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_STRICT=1 \
   build/release/extension/sirius/test/cpp/sirius_unittest "[s3]~[large]~[aws]"
 ```
 
+## Retained assertions after SQL migration
+
+To verify the retained transparent-execution, literal-key, cache, and TPC-H
+routing assertions, run the following from the repository root on a GPU host
+with Docker. This selects 20 C++ cases, including both tiny and SF1 TPC-H,
+and enables strict setup so missing services cannot silently skip the checks.
+
+The C++ harness uses disk-backed MinIO. Docker's backing filesystem must have
+enough free capacity for MinIO to accept writes; the SQL runner's tmpfs setting
+does not apply here. The SF1 fixtures are generated and cached by the harness.
+
+When the build's Pixi environment is mounted only inside a development
+container, set `SIRIUS_GPU_LIB_DIR` to the host library directory printed by
+`sqltest-host` as `GPU libraries:`. Otherwise the default below uses the local
+build environment. On NixOS, the driver directory is added separately.
+
+```bash
+(
+  set -euo pipefail
+  export LD_LIBRARY_PATH="${SIRIUS_GPU_LIB_DIR:-$PWD/.pixi/envs/default/lib}:${LD_LIBRARY_PATH:-}"
+  if [ -d /run/opengl-driver/lib ]; then
+    export LD_LIBRARY_PATH="/run/opengl-driver/lib:$LD_LIBRARY_PATH"
+  fi
+  docker info >/dev/null
+  mkdir -p runs
+  export SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_STRICT=1 SIRIUS_TEST_S3_TPCH=1
+  pixi run --manifest-path tools/sqltest/pixi.toml \
+    build/release/extension/sirius/test/cpp/sirius_unittest \
+    '[s3][transparent],[s3][integration][filesystem][glob],[s3][integration][sql][tpch]~[bench]' \
+    2>&1 | tee runs/s3-retained-cpp-host.log
+)
+```
+
 ## Pinned image version
 
 The MinIO image is pinned to an exact release tag (in `s3_container.cpp`) rather
@@ -72,7 +111,7 @@ than `:latest` so the same Sirius commit is reproducible over time:
 
 | image | tag |
 |---|---|
-| `minio/minio` | `RELEASE.2025-09-07T16-13-09Z-cpuv1` |
+| `quay.io/minio/minio` | `RELEASE.2025-09-07T16-13-09Z-cpuv1` |
 
 To bump it, edit `kMinioImage` in `test/cpp/utils/s3_container.cpp` and confirm
 `make s3-test` still passes.

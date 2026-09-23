@@ -1,11 +1,17 @@
-# Testing this extension
-This directory contains all the tests for this extension. The `sql` directory holds tests that are written as [SQLLogicTests](https://duckdb.org/dev/sqllogictest/intro.html). DuckDB aims to have most its tests in this format as SQL statements, so for the quack extension, this should probably be the goal too.
+# Testing Sirius
 
-The root makefile contains targets to build and run all of these tests. To run the SQLLogicTests:
+Use the [SQL correctness runner](sqltest/README.md) for SQL regression tests and
+DuckDB-versus-Sirius comparisons. Suites under `sqltest/suites/` are discovered
+automatically; fixtures and configuration sweeps are declared in TOML. The runner
+accepts a built `.duckdb_extension` and saves results, logs, and reproduction SQL.
+
+Run the C++ unit and integration tests with:
+
 ```bash
-make test
+pixi run make test
+pixi run make test_debug
 ```
-or
-```bash
-make test_debug
-```
+
+The [migration inventory](sqltest/MIGRATION.md) tracks which existing tests have
+SQL replacements and which assertions still need to be preserved. The old SQL harness and standalone correctness runners are removed; performance
+and profiling tools remain separate.
