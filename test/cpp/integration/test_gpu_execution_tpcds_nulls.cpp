@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Differential (GPU-vs-CPU) NULL-correctness coverage over a real TPC-DS dataset
+// GPU execution coverage over a real TPC-DS dataset
 // (issue #1095, sub-issue: broad NULL regression net). These are hand-written,
 // NULL-focused queries over the TPC-DS *tables* (not the canonical q1-q99), which
 // naturally carry NULLs in measures, dimension foreign keys, dates and strings.
@@ -23,8 +23,8 @@
 // LEFT-join NULL-padding, star joins, string (concat vs ||) semantics, and NULL
 // propagation through arithmetic / CAST / COALESCE / CASE / date functions.
 //
-// Every query runs through the shared GpuExecutionFixture: on the GPU with no
-// fallback, then on DuckDB CPU, and the results are compared.
+// Every query asserts GPU execution without fallback. Result comparisons and
+// NULL fixture assertions also run in test/sqltest/suites/tpcds_nulls/.
 //
 // The dataset is a pre-generated TPC-DS (sf=0.01) DuckDB file committed under
 // data/duckdb/tpcds.duckdb (see generate_tpcds_duckdb.sh), attached read-only -- so
@@ -109,78 +109,70 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // store_sales foreign keys (ss_addr_sk, ss_cdemo_sk, ss_hdemo_sk, …) are
   // nullable by design.
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NULL");
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NOT NULL");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NULL");
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NOT NULL");
+  require_gpu_execution(
     "SELECT count(*) FROM store_sales WHERE ss_cdemo_sk IS NULL OR ss_hdemo_sk IS NULL");
   // Three-valued OR: a TRUE branch survives a NULL branch (TRUE OR NULL = TRUE).
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_addr_sk = 5 OR ss_promo_sk = 1");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_addr_sk = 5 OR ss_promo_sk = 1");
+  require_gpu_execution(
     "SELECT count(*) FROM store_sales WHERE ss_quantity IS NULL AND ss_sales_price IS NULL");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NOT DISTINCT FROM ss_cdemo_sk");
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_quantity BETWEEN 1 AND 20");
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_store_sk IN (1, 2, 4)");
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_quantity BETWEEN 1 AND 20");
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_store_sk IN (1, 2, 4)");
 }
 
 TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds aggregates over nullable columns",
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // COUNT(*) counts rows; COUNT(col) skips NULLs on nullable foreign keys.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(ss_addr_sk), count(ss_customer_sk), count(ss_promo_sk) "
     "FROM store_sales");
-  // Exact comparison uses only order-independent aggregates (integer SUM/AVG,
-  // MIN/MAX); decimal SUM/AVG go through the approx case below. NULL-skipping over
-  // decimal measures is still covered here via COUNT / MIN / MAX.
-  compare_gpu_vs_cpu(
+  // Exercise integer aggregates and NULL-skipping decimal COUNT / MIN / MAX.
+  require_gpu_execution(
     "SELECT sum(ss_quantity), avg(ss_quantity), min(ss_sales_price), max(ss_sales_price) "
     "FROM store_sales");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(ss_net_profit), min(ss_net_profit), max(ss_net_profit) FROM store_sales");
   // GROUP BY a nullable foreign key: NULL forms its own group.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT ss_store_sk, count(*), sum(ss_quantity), min(ss_sales_price), max(ss_sales_price) "
     "FROM store_sales GROUP BY ss_store_sk");
   // Multi-key GROUP BY over two nullable keys.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT ss_store_sk, ss_promo_sk, count(*) FROM store_sales GROUP BY ss_store_sk, ss_promo_sk");
 }
 
 TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds float aggregates over nullable measures (approx)",
                  "[integration][gpu_execution][tpcds][nulls]")
-{  // Decimal SUM/AVG compared with a relative tolerance (reduction-order low-bit
-  // differences); approx_cols name the 0-based measure columns, keys/counts stay
-  // exact. Non-negative columns only; cancellation-prone signed measures (e.g.
-  // ss_net_profit) stay in the exact COUNT/MIN/MAX case above.
-  compare_gpu_vs_cpu_approx("SELECT sum(ss_sales_price), avg(ss_sales_price) FROM store_sales",
-                            {0, 1});
-  compare_gpu_vs_cpu_approx("SELECT sum(ws_sales_price), avg(ws_sales_price) FROM web_sales",
-                            {0, 1});
+{  // Exercise decimal SUM and AVG; the SQL suite compares decimal results exactly
+  // and floating-point results with tolerance.
+  require_gpu_execution("SELECT sum(ss_sales_price), avg(ss_sales_price) FROM store_sales");
+  require_gpu_execution("SELECT sum(ws_sales_price), avg(ws_sales_price) FROM web_sales");
   // Grouped by a unique key (col 0, exact) with an approximate measure (col 1).
-  compare_gpu_vs_cpu_approx(
-    "SELECT ss_store_sk, avg(ss_sales_price) FROM store_sales GROUP BY ss_store_sk", {1});
-  compare_gpu_vs_cpu_approx(
+  require_gpu_execution(
+    "SELECT ss_store_sk, avg(ss_sales_price) FROM store_sales GROUP BY ss_store_sk");
+  require_gpu_execution(
     "SELECT i.i_category, avg(ss.ss_sales_price) "
     "FROM store_sales ss JOIN item i ON ss.ss_item_sk = i.i_item_sk "
-    "GROUP BY i.i_category",
-    {1});
-  compare_gpu_vs_cpu_approx("SELECT sum(sr_return_amt), avg(sr_return_amt) FROM store_returns",
-                            {0, 1});
+    "GROUP BY i.i_category");
+  require_gpu_execution("SELECT sum(sr_return_amt), avg(sr_return_amt) FROM store_returns");
 }
 
 TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds nullable columns across web_sales / catalog_sales",
                  "[integration][gpu_execution][tpcds][nulls]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(ws_ship_date_sk), count(ws_ship_addr_sk) FROM web_sales");
-  compare_gpu_vs_cpu("SELECT count(*) FROM web_sales WHERE ws_ship_date_sk IS NULL");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT count(*) FROM web_sales WHERE ws_ship_date_sk IS NULL");
+  require_gpu_execution(
     "SELECT sum(ws_quantity), min(ws_sales_price), max(ws_sales_price) FROM web_sales");
-  compare_gpu_vs_cpu("SELECT count(*), count(cs_ship_date_sk) FROM catalog_sales");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT count(*), count(cs_ship_date_sk) FROM catalog_sales");
+  require_gpu_execution(
     "SELECT cs_warehouse_sk, count(*), sum(cs_quantity) FROM catalog_sales GROUP BY "
     "cs_warehouse_sk");
 }
@@ -189,25 +181,25 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows",
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // A NULL / unmatched ss_customer_sk leaves the customer side NULL-padded.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(c.c_customer_sk) "
     "FROM store_sales ss LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) "
     "FROM store_sales ss LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk "
     "WHERE c.c_customer_sk IS NULL");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c.c_current_addr_sk, count(*) "
     "FROM store_sales ss LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk "
     "GROUP BY c.c_current_addr_sk");
   // Nullable join key on the probe side (ws_ship_date_sk) -> unmatched -> NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(d.d_date_sk) "
     "FROM web_sales ws LEFT JOIN date_dim d ON ws.ws_ship_date_sk = d.d_date_sk");
   // Contrast with an INNER join on the same nullable key: NULL never equals NULL,
   // so rows with a NULL ss_customer_sk are dropped entirely (fewer than the LEFT
   // join above keeps).
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) "
     "FROM store_sales ss JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk");
 }
@@ -216,15 +208,15 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds star joins with nullable filters/aggregates",
                  "[integration][gpu_execution][tpcds][nulls]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), sum(ss.ss_quantity) "
     "FROM store_sales ss JOIN item i ON ss.ss_item_sk = i.i_item_sk "
     "WHERE i.i_current_price IS NOT NULL");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT i.i_category, count(*), min(ss.ss_sales_price), max(ss.ss_sales_price) "
     "FROM store_sales ss JOIN item i ON ss.ss_item_sk = i.i_item_sk "
     "GROUP BY i.i_category");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT d.d_year, count(*), sum(ss.ss_quantity) "
     "FROM store_sales ss JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk "
     "GROUP BY d.d_year");
@@ -235,15 +227,16 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // Customer name/email columns are nullable. concat() ignores NULLs; ||
   // propagates them; length/substring propagate NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_customer_sk, concat(c_first_name, ' ', c_last_name) AS n FROM customer");
-  compare_gpu_vs_cpu("SELECT c_customer_sk, c_first_name || ' ' || c_last_name AS n FROM customer");
-  compare_gpu_vs_cpu("SELECT c_customer_sk, length(c_email_address) AS l FROM customer");
-  compare_gpu_vs_cpu("SELECT count(*) FROM customer WHERE c_email_address IS NULL");
-  compare_gpu_vs_cpu("SELECT i_item_sk, coalesce(i_size, 'unknown') AS sz FROM item");
+  require_gpu_execution(
+    "SELECT c_customer_sk, c_first_name || ' ' || c_last_name AS n FROM customer");
+  require_gpu_execution("SELECT c_customer_sk, length(c_email_address) AS l FROM customer");
+  require_gpu_execution("SELECT count(*) FROM customer WHERE c_email_address IS NULL");
+  require_gpu_execution("SELECT i_item_sk, coalesce(i_size, 'unknown') AS sz FROM item");
   // LIKE / NOT LIKE on a nullable column is three-valued: NULL rows are excluded.
-  compare_gpu_vs_cpu("SELECT count(*) FROM customer WHERE c_last_name LIKE 'A%'");
-  compare_gpu_vs_cpu("SELECT count(*) FROM customer WHERE c_email_address NOT LIKE '%.com'");
+  require_gpu_execution("SELECT count(*) FROM customer WHERE c_last_name LIKE 'A%'");
+  require_gpu_execution("SELECT count(*) FROM customer WHERE c_email_address NOT LIKE '%.com'");
 }
 
 TEST_CASE_METHOD(TpcdsNullFixture,
@@ -253,17 +246,17 @@ TEST_CASE_METHOD(TpcdsNullFixture,
   // store_sales twice: COUNT(expr) vs COUNT(*) verifies NULL propagation, and the
   // integer SUMs verify the produced values deterministically (order-independent).
   // Arithmetic propagates NULL when either operand is NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(ss_ext_sales_price - ss_ext_discount_amt) FROM store_sales");
   // COALESCE replaces NULL keys with -1.
-  compare_gpu_vs_cpu("SELECT sum(coalesce(ss_addr_sk, -1)) FROM store_sales");
+  require_gpu_execution("SELECT sum(coalesce(ss_addr_sk, -1)) FROM store_sales");
   // NULLIF yields NULL where ss_promo_sk = 1 (and where it is already NULL).
-  compare_gpu_vs_cpu("SELECT count(*), count(nullif(ss_promo_sk, 1)) FROM store_sales");
+  require_gpu_execution("SELECT count(*), count(nullif(ss_promo_sk, 1)) FROM store_sales");
   // CAST preserves NULL; SUM verifies the cast values.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*), count(CAST(ss_quantity AS BIGINT)), sum(CAST(ss_quantity AS BIGINT)) "
     "FROM store_sales");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT sum(CASE WHEN ss_addr_sk IS NULL THEN 1 ELSE 0 END) AS null_addrs FROM store_sales");
 }
 
@@ -274,17 +267,17 @@ TEST_CASE_METHOD(TpcdsNullFixture,
   // unique per row -- a deterministic total order -- so NULLS FIRST/LAST placement
   // is actually verified. Ordered comparison keeps emitted order instead of
   // sorting it away.
-  compare_gpu_vs_cpu_ordered(
+  require_gpu_execution(
     "SELECT ss_store_sk, count(*) FROM store_sales GROUP BY ss_store_sk "
     "ORDER BY ss_store_sk NULLS FIRST");
-  compare_gpu_vs_cpu_ordered(
+  require_gpu_execution(
     "SELECT ss_store_sk, count(*) FROM store_sales GROUP BY ss_store_sk "
     "ORDER BY ss_store_sk NULLS LAST");
-  compare_gpu_vs_cpu_ordered(
+  require_gpu_execution(
     "SELECT ss_store_sk, count(*) FROM store_sales GROUP BY ss_store_sk "
     "ORDER BY ss_store_sk DESC NULLS FIRST");
   // Top-N: the NULL group must sort to the correct end before the LIMIT cut.
-  compare_gpu_vs_cpu_ordered(
+  require_gpu_execution(
     "SELECT ss_store_sk, count(*) FROM store_sales GROUP BY ss_store_sk "
     "ORDER BY ss_store_sk NULLS LAST LIMIT 5");
 }
@@ -294,7 +287,7 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // NOT IN over a set containing NULL is three-valued: every non-matching row is
   // UNKNOWN, so the result is empty.
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_sales WHERE ss_store_sk NOT IN (1, 2, NULL)");
+  require_gpu_execution("SELECT count(*) FROM store_sales WHERE ss_store_sk NOT IN (1, 2, NULL)");
 }
 
 TEST_CASE_METHOD(TpcdsNullFixture,
@@ -303,7 +296,7 @@ TEST_CASE_METHOD(TpcdsNullFixture,
 {  // Like the literal-list case but via anti/MARK-join semantics: NOT IN a subquery
   // whose result contains NULL (ss_addr_sk is nullable) is three-valued, so the
   // predicate is UNKNOWN for every non-matching row and the result is empty.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM store_sales "
     "WHERE ss_store_sk NOT IN (SELECT ss_addr_sk FROM store_sales)");
 }
@@ -314,7 +307,7 @@ TEST_CASE_METHOD(TpcdsNullFixture,
 {
   // Both ss_addr_sk and sr_addr_sk are nullable, so a null-safe join matches their
   // NULL rows to each other -- a plain `=` would drop them (fixed in #1291).
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM store_sales ss JOIN store_returns sr "
     "ON ss.ss_addr_sk IS NOT DISTINCT FROM sr.sr_addr_sk");
 }
@@ -323,13 +316,13 @@ TEST_CASE_METHOD(TpcdsNullFixture,
                  "gpu_execution tpcds date functions and returns tables with NULLs",
                  "[integration][gpu_execution][tpcds][nulls]")
 {  // year() over a NULL date (unmatched LEFT join) must propagate NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT year(d.d_date) AS y, count(*) "
     "FROM web_sales ws LEFT JOIN date_dim d ON ws.ws_ship_date_sk = d.d_date_sk "
     "GROUP BY year(d.d_date)");
-  compare_gpu_vs_cpu("SELECT count(*), count(sr_return_amt) FROM store_returns");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT count(*), count(sr_return_amt) FROM store_returns");
+  require_gpu_execution(
     "SELECT sr_store_sk, count(sr_return_amt), min(sr_return_amt), max(sr_return_amt) "
     "FROM store_returns GROUP BY sr_store_sk");
-  compare_gpu_vs_cpu("SELECT count(*) FROM store_returns WHERE sr_customer_sk IS NULL");
+  require_gpu_execution("SELECT count(*) FROM store_returns WHERE sr_customer_sk IS NULL");
 }
