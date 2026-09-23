@@ -1,0 +1,14 @@
+# gpu_execution - TPC-H Query 6 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4226
+# sirius: id = "tpch_integration_parquet/tpc-h-query-6-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l_extendedprice * l_discount) AS revenue
+FROM
+  lineitem
+WHERE
+  l_shipdate >= DATE '1997-01-01' AND l_shipdate < DATE '1998-01-01' AND l_discount BETWEEN 0.03 - 0.01 AND 0.03 + 0.01 AND l_quantity < 24;
+----

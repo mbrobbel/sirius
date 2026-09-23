@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped avg integer parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:622
+# sirius: id = "tpch_integration_parquet/ungrouped-avg-integer-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "aggregate", "avg"]
+query ? rowsort
+SELECT
+  avg(n_nationkey)
+FROM
+  nation;
+----

@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped count(*) parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4832
+# sirius: id = "tpch_integration_parquet/ungrouped-count-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "gpu_values"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem;
+----

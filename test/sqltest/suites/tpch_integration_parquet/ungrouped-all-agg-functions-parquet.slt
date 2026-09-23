@@ -1,0 +1,15 @@
+# gpu_execution - ungrouped all agg functions parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:607
+# sirius: id = "tpch_integration_parquet/ungrouped-all-agg-functions-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "aggregate"]
+query ???? rowsort
+SELECT
+  sum(n_regionkey),
+  min(n_nationkey),
+  max(n_regionkey),
+  count(n_nationkey)
+FROM
+  nation;
+----

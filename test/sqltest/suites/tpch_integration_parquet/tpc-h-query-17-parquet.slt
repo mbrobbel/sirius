@@ -1,0 +1,15 @@
+# gpu_execution - TPC-H Query 17 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4380
+# sirius: id = "tpch_integration_parquet/tpc-h-query-17-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM
+  lineitem l,
+  part p
+WHERE
+  p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#13' AND p.p_container = 'JUMBO CAN' AND l.l_quantity < (SELECT 0.2 * avg(l2.l_quantity) FROM lineitem l2 WHERE l2.l_partkey = p.p_partkey);
+----

@@ -1,0 +1,23 @@
+# gpu_execution - TPC-H Query 18 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4394
+# sirius: id = "tpch_integration_parquet/tpc-h-query-18-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ?????? rowsort
+SELECT
+  c.c_name,
+  c.c_custkey,
+  o.o_orderkey,
+  o.o_orderdate,
+  o.o_totalprice,
+  sum(l.l_quantity)
+FROM
+  customer c,
+  orders o,
+  lineitem l
+WHERE
+  o.o_orderkey IN (SELECT l_orderkey FROM lineitem GROUP BY l_orderkey HAVING sum(l_quantity) > 300) AND c.c_custkey = o.o_custkey AND o.o_orderkey = l.l_orderkey
+GROUP BY
+  c.c_name, c.c_custkey, o.o_orderkey, o.o_orderdate, o.o_totalprice ORDER BY o.o_totalprice DESC, o.o_orderdate LIMIT 100;
+----

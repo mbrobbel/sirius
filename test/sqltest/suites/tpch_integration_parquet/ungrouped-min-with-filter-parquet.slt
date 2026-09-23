@@ -1,0 +1,14 @@
+# gpu_execution - ungrouped min with filter parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:578
+# sirius: id = "tpch_integration_parquet/ungrouped-min-with-filter-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "aggregate"]
+query ? rowsort
+SELECT
+  min(n_nationkey)
+FROM
+  nation
+WHERE
+  n_regionkey = 1;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - ungrouped min max parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:564
+# sirius: id = "tpch_integration_parquet/ungrouped-min-max-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "aggregate"]
+query ?? rowsort
+SELECT
+  min(n_regionkey),
+  max(n_nationkey)
+FROM
+  nation;
+----
