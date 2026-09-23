@@ -3,3 +3,4 @@ pub mod result;
 pub mod corpus;
 pub mod config;
 pub mod worker;
+pub mod services;
