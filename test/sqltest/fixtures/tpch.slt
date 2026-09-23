@@ -1,0 +1,23 @@
+statement ok
+CREATE __RELATION__ "customer" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/customer.parquet');
+
+statement ok
+CREATE __RELATION__ "lineitem" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/lineitem.parquet');
+
+statement ok
+CREATE __RELATION__ "nation" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/nation.parquet');
+
+statement ok
+CREATE __RELATION__ "orders" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/orders.parquet');
+
+statement ok
+CREATE __RELATION__ "part" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/part.parquet');
+
+statement ok
+CREATE __RELATION__ "partsupp" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/partsupp.parquet');
+
+statement ok
+CREATE __RELATION__ "region" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/region.parquet');
+
+statement ok
+CREATE __RELATION__ "supplier" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch/supplier.parquet');
