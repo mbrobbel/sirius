@@ -310,7 +310,7 @@ TEST_CASE(
         // flat) while the keys restore to native during scan normalization.
         bool const gpu_tier = std::string_view(tier) == "gpu";
         auto const before   = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, kJoinQuery);
+        require_gpu_query(con, kJoinQuery);
         auto const after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
         REQUIRE(after.partition_narrow_columns > before.partition_narrow_columns);
@@ -326,7 +326,7 @@ TEST_CASE(
         // and nothing narrow reaches the exchange.
         require_ok(con.Query("SET enable_compressed_materialization = false;"), "disable flag");
         auto const off_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, kJoinQuery);
+        require_gpu_query(con, kJoinQuery);
         auto const off_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(off_after.partition_narrow_columns == off_before.partition_narrow_columns);
         REQUIRE(off_after.scan_columns_restored > off_before.scan_columns_restored);
@@ -417,10 +417,9 @@ TEST_CASE("gpu_execution - outer joins over narrow carriers match the CPU",
       for (auto const& query : runtime_empty_side_queries()) {
         INFO("query: " << query);
         auto const before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, query);
+        require_gpu_query(con, query);
         auto const after = sirius::test::get_compressed_materialization_stats(con);
-        // The residency gate installed a narrow sidecar for this query, so the comparison above is
-        // a flag-on result over narrow carriers rather than a silently inert one.
+        // Require the residency gate to install a narrow sidecar for this query.
         REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
         REQUIRE(after.scan_narrow_targets_retracted == before.scan_narrow_targets_retracted);
       }
@@ -551,7 +550,7 @@ TEST_CASE("gpu_execution - narrow group keys cross the aggregate exchange",
     // sidecar. v is an aggregate input — a boundary restore the policy retracts — so it emits
     // native at the scan.
     auto const before = sirius::test::get_compressed_materialization_stats(con);
-    compare_gpu_vs_cpu(con, kGroupByQuery);
+    require_gpu_query(con, kGroupByQuery);
     auto const after = sirius::test::get_compressed_materialization_stats(con);
     REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
     REQUIRE(after.partition_narrow_columns > before.partition_narrow_columns);
@@ -561,7 +560,7 @@ TEST_CASE("gpu_execution - narrow group keys cross the aggregate exchange",
     // carrier native before the aggregate-side exchange; with k the only scanned column and kept
     // narrow, the tier policy retracts nothing.
     auto const count_before = sirius::test::get_compressed_materialization_stats(con);
-    compare_gpu_vs_cpu(con, kCountValidGroupByQuery);
+    require_gpu_query(con, kCountValidGroupByQuery);
     auto const count_after = sirius::test::get_compressed_materialization_stats(con);
     REQUIRE(count_after.scan_sidecars_installed > count_before.scan_sidecars_installed);
     REQUIRE(count_after.partition_narrow_columns > count_before.partition_narrow_columns);
@@ -571,7 +570,7 @@ TEST_CASE("gpu_execution - narrow group keys cross the aggregate exchange",
     // Flag-off contrast: everything restores at the scan; the exchange sees native batches.
     require_ok(con.Query("SET enable_compressed_materialization = false;"), "disable flag");
     auto const off_before = sirius::test::get_compressed_materialization_stats(con);
-    compare_gpu_vs_cpu(con, kGroupByQuery);
+    require_gpu_query(con, kGroupByQuery);
     auto const off_after = sirius::test::get_compressed_materialization_stats(con);
     REQUIRE(off_after.partition_narrow_columns == off_before.partition_narrow_columns);
 
