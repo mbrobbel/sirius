@@ -1,0 +1,18 @@
+# parquet nulls — CASE expression over partially-NULL column
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:901
+# sirius: id = "parquet_nulls/case-expression-over-partially-null-column/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? rowsort
+SELECT
+  id,
+  CASE
+    WHEN p_int IS NULL THEN
+      0
+    ELSE
+      p_int
+  END AS v
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

@@ -1,0 +1,63 @@
+# parquet nulls — constant-valid run followed by an all-NULL run
+include ../../fixtures/migrated/parquet_nulls/ParquetNullRunFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1013
+# sirius: id = "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ????? rowsort
+SELECT
+  COUNT(*),
+  COUNT(c_run),
+  SUM(c_run),
+  MIN(c_run),
+  MAX(c_run)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1015
+# sirius: id = "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet')
+WHERE
+  c_run IS NOT NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1016
+# sirius: id = "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet')
+WHERE
+  c_run IS NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1021
+# sirius: id = "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  c_run
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet') ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1024
+# sirius: id = "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/005"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? nosort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet')
+WHERE
+  c_run IS NOT NULL ORDER BY id;
+----

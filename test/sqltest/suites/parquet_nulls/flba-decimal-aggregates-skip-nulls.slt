@@ -1,0 +1,26 @@
+# parquet nulls — FLBA decimal aggregates skip NULLs
+include ../../fixtures/migrated/parquet_nulls/ParquetFlbaDecimalNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1067
+# sirius: id = "parquet_nulls/flba-decimal-aggregates-skip-nulls/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(big_dec),
+  MIN(big_dec),
+  MAX(big_dec)
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1069
+# sirius: id = "parquet_nulls/flba-decimal-aggregates-skip-nulls/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(n_big_dec),
+  MIN(n_big_dec),
+  MAX(n_big_dec)
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+----

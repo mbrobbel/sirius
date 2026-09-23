@@ -1,0 +1,507 @@
+# Original fixture: ParquetNullFixture
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+CREATE TABLE nt (
+  id INTEGER,
+  n_int INTEGER,
+  n_big BIGINT,
+  n_dbl DOUBLE,
+  n_flt FLOAT,
+  n_dec32 DECIMAL(9,2),
+  n_dec64 DECIMAL(18,2),
+  n_date DATE,
+  n_ts TIMESTAMP,
+  n_bool BOOLEAN,
+  n_str VARCHAR,
+  p_int INTEGER,
+  p_big BIGINT,
+  p_dbl DOUBLE,
+  p_flt FLOAT,
+  p_dec32 DECIMAL(9,2),
+  p_dec64 DECIMAL(18,2),
+  p_date DATE,
+  p_ts TIMESTAMP,
+  p_bool BOOLEAN,
+  p_str VARCHAR
+);
+
+statement ok
+INSERT INTO nt SELECT
+  i,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i * 1000
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i * 1.5
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i * 0.25
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      DATE '2021-01-01' + CAST(i AS INTEGER)
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      TIMESTAMP '2021-01-01 00:00:00' + INTERVAL (i) HOUR
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      (i % 4 = 0)
+  END,
+  CASE
+    WHEN i % 2 = 0 THEN
+      'v' || CAST(i AS VARCHAR)
+  END
+FROM
+  range(1, 17) AS t (i);
+
+statement ok
+COPY nt TO '__TEST_DIR__/nulls.parquet' (FORMAT PARQUET);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT32')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_int' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT64')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_big' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'DOUBLE')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_dbl' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'FLOAT')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_flt' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT32')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_dec32' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT64')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_dec64' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT32')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_date' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'INT64')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_ts' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'BOOLEAN')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_bool' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'BYTE_ARRAY')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_str' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'DATE')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_date' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'TIMESTAMP_MICROS')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_ts' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'UTF8')
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_str' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'DECIMAL' AND precision = 9 AND scale = 2)
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_dec32' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'DECIMAL' AND precision = 18 AND scale = 2)
+FROM
+  parquet_schema('__TEST_DIR__/nulls.parquet')
+WHERE
+  name = 'p_dec64' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_int';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_int) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_big';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_big) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_dbl';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_dbl) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_flt';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_flt) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_dec32';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_dec32) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_dec64';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_dec64) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_date';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_date) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_ts';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_ts) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_bool';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_bool) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 16)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'n_str';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(n_str) = 0
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_int';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_int) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_big';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_big) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_dbl';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_dbl) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_flt';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_flt) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_dec32';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_dec32) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_dec64';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_dec64) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_date';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_date) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_ts';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_ts) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_bool';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_bool) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'p_str';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(p_str) = 8
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 16 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 0)
+FROM
+  parquet_metadata('__TEST_DIR__/nulls.parquet')
+WHERE
+  path_in_schema = 'id';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 16 AND count(id) = 16
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+
+statement ok
+DROP TABLE fixture_check;

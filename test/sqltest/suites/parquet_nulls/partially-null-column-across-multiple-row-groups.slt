@@ -1,0 +1,90 @@
+# parquet nulls — partially-NULL column across multiple row groups
+include ../../fixtures/migrated/parquet_nulls/ParquetMultiRowGroupFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:971
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  COUNT(*),
+  COUNT(part),
+  SUM(part)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:972
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  part IS NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:973
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  part IS NOT NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:980
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  part
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  id BETWEEN 2040 AND 2056 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:980
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/005"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  part
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  id BETWEEN 4088 AND 4104 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:980
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/006"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  part
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  id BETWEEN 6136 AND 6152 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:984
+# sirius: id = "parquet_nulls/partially-null-column-across-multiple-row-groups/007"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  part
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  id > 8192 ORDER BY id;
+----

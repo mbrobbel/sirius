@@ -1,0 +1,72 @@
+# Original fixture: ParquetFlbaDecimalNullFixture
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+COPY (SELECT i AS id, CASE WHEN i % 3 <> 0 THEN CAST(i AS DECIMAL(38,4)) ELSE NULL END AS big_dec, CAST(NULL AS DECIMAL(38,4)) AS n_big_dec FROM range(1, 41) AS t (i)) TO '__TEST_DIR__/flba_dec.parquet' (FORMAT PARQUET);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'FIXED_LEN_BYTE_ARRAY')
+FROM
+  parquet_schema('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  name = 'big_dec' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(type = 'FIXED_LEN_BYTE_ARRAY')
+FROM
+  parquet_schema('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  name = 'n_big_dec' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'DECIMAL' AND precision = 38 AND scale = 4)
+FROM
+  parquet_schema('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  name = 'big_dec' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(converted_type = 'DECIMAL' AND precision = 38 AND scale = 4)
+FROM
+  parquet_schema('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  name = 'n_big_dec' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 40 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 13)
+FROM
+  parquet_metadata('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  path_in_schema = 'big_dec';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 40 AND count(big_dec) = 27
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 40 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 40)
+FROM
+  parquet_metadata('__TEST_DIR__/flba_dec.parquet')
+WHERE
+  path_in_schema = 'n_big_dec';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 40 AND count(n_big_dec) = 0
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+
+statement ok
+DROP TABLE fixture_check;

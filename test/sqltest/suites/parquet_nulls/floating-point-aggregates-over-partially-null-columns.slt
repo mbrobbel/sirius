@@ -1,0 +1,27 @@
+# parquet nulls — floating-point aggregates over partially-NULL columns
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:868
+# sirius: id = "parquet_nulls/floating-point-aggregates-over-partially-null-columns/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+# sirius: tolerances = { "0" = { absolute = 1e-6, relative = 1e-6 }, "1" = { absolute = 1e-6, relative = 1e-6 } }
+query ?? nosort
+SELECT
+  SUM(p_dbl),
+  SUM(p_flt)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:869
+# sirius: id = "parquet_nulls/floating-point-aggregates-over-partially-null-columns/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ???? rowsort
+SELECT
+  MIN(p_dbl),
+  MAX(p_dbl),
+  MIN(p_flt),
+  MAX(p_flt)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

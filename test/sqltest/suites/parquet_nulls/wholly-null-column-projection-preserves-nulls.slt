@@ -1,0 +1,22 @@
+# parquet nulls — wholly-NULL column projection preserves NULLs
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:762
+# sirius: id = "parquet_nulls/wholly-null-column-projection-preserves-nulls/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??????????? rowsort
+SELECT
+  id,
+  n_int,
+  n_big,
+  n_dbl,
+  n_flt,
+  n_dec32,
+  n_dec64,
+  n_date,
+  n_ts,
+  n_bool,
+  n_str
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

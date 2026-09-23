@@ -1,0 +1,22 @@
+# parquet nulls — FLBA decimal projected alone
+include ../../fixtures/migrated/parquet_nulls/ParquetFlbaDecimalNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1091
+# sirius: id = "parquet_nulls/flba-decimal-projected-alone/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  big_dec
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1092
+# sirius: id = "parquet_nulls/flba-decimal-projected-alone/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_big_dec
+FROM
+  read_parquet('__TEST_DIR__/flba_dec.parquet');
+----

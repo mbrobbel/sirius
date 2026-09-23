@@ -1,0 +1,22 @@
+# parquet nulls — COUNT(*) vs COUNT(col) on wholly-NULL columns
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:773
+# sirius: id = "parquet_nulls/count-vs-count-col-on-wholly-null-columns/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??????????? rowsort
+SELECT
+  COUNT(*),
+  COUNT(n_int),
+  COUNT(n_big),
+  COUNT(n_dbl),
+  COUNT(n_flt),
+  COUNT(n_dec32),
+  COUNT(n_dec64),
+  COUNT(n_date),
+  COUNT(n_ts),
+  COUNT(n_bool),
+  COUNT(n_str)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

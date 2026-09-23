@@ -1,0 +1,51 @@
+# parquet nulls — aggregates skip NULLs on wholly-NULL columns
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:785
+# sirius: id = "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(n_int),
+  MIN(n_int),
+  MAX(n_int)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:786
+# sirius: id = "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(n_dec32),
+  MIN(n_dec32),
+  MAX(n_dec32)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:787
+# sirius: id = "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(n_dec64),
+  MIN(n_dec64),
+  MAX(n_dec64)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:788
+# sirius: id = "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ???? rowsort
+SELECT
+  MIN(n_date),
+  MAX(n_date),
+  MIN(n_ts),
+  MAX(n_ts)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

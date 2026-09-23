@@ -1,0 +1,93 @@
+# parquet nulls — aggregates over partially-NULL columns across all types
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:849
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?????????? rowsort
+SELECT
+  COUNT(p_int),
+  COUNT(p_big),
+  COUNT(p_dbl),
+  COUNT(p_flt),
+  COUNT(p_dec32),
+  COUNT(p_dec64),
+  COUNT(p_date),
+  COUNT(p_ts),
+  COUNT(p_bool),
+  COUNT(p_str)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:854
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(p_int),
+  MIN(p_int),
+  MAX(p_int)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:855
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(p_big),
+  MIN(p_big),
+  MAX(p_big)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:856
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(p_dec32),
+  MIN(p_dec32),
+  MAX(p_dec32)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:857
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/005"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(p_dec64),
+  MIN(p_dec64),
+  MAX(p_dec64)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:858
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/006"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ???? rowsort
+SELECT
+  MIN(p_date),
+  MAX(p_date),
+  MIN(p_ts),
+  MAX(p_ts)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:859
+# sirius: id = "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/007"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? rowsort
+SELECT
+  MIN(p_str),
+  MAX(p_str)
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

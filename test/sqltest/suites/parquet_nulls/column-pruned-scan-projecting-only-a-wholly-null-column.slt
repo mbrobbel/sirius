@@ -1,0 +1,62 @@
+# parquet nulls — column-pruned scan projecting only a wholly-NULL column
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:811
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_int
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:812
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_str
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:813
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_dec32
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:814
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_dec64
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:815
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/005"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_bool
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:816
+# sirius: id = "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/006"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  n_ts
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
