@@ -1,0 +1,49 @@
+# transparent S3 non-glob reads distinguish literal percent keys from spaces
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2672
+# sirius: id = "s3_surface/percent-vs-space/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/f%20g.parquet') ORDER BY 1;
+----
+25
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2672
+# sirius: id = "s3_surface/percent-vs-space/002"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/f g.parquet') ORDER BY 1;
+----
+5
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2672
+# sirius: id = "s3_surface/percent-vs-space/003"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/f%20g.parquet');
+----
+25
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2672
+# sirius: id = "s3_surface/percent-vs-space/004"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/f g.parquet');
+----
+5

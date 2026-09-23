@@ -1,0 +1,19 @@
+# transparent S3 glob preserves hive partition columns
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2822
+# sirius: id = "s3_surface/hive-columns/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ???? nosort
+SELECT
+  year,
+  count(*),
+  min(n_nationkey),
+  max(n_nationkey)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/hive/year=*/nation.parquet', hive_partitioning = true)
+GROUP BY
+  year ORDER BY year;
+----
+2024	25	0	24
+2025	25	0	24

@@ -1,0 +1,12 @@
+profile = "s3-surface"
+storage = ["parquet"]
+checkpoint = "explicit"
+object_store = "s3-surface"
+
+[substitutions.OBJECT_ROOT]
+duckdb = "__FIXTURE_ROOT__/s3-surface-original"
+sirius = "s3://__S3_BUCKET__"
+
+[substitutions.UPPERCASE_OBJECT_ROOT]
+duckdb = "__FIXTURE_ROOT__/s3-surface-original"
+sirius = "S3://__S3_BUCKET__"

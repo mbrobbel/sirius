@@ -1,0 +1,5 @@
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2983
+# sirius: id = "s3_surface/no-match/001"
+# sirius: tags = ["s3", "integration", "glob", "error"]
+query error [Nn]o files
+SELECT count(*) FROM read_parquet('__OBJECT_ROOT__/glob/multi/no-match-*.parquet');
