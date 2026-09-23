@@ -1,0 +1,34 @@
+include ../../fixtures/migrated/cast_date.slt
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:224
+# sirius: id = "cast_date/native-pin-t-foldedpredicates-18/ids"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "native-pin"]
+query ? rowsort
+SELECT
+  id
+FROM
+  t
+WHERE
+  d <= TIMESTAMP '1998-09-19 23:59:59.999999';
+----
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:224
+# sirius: id = "cast_date/native-pin-t-foldedpredicates-18/aggregate"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "native-pin"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(id)
+FROM
+  t
+WHERE
+  d <= TIMESTAMP '1998-09-19 23:59:59.999999';
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
