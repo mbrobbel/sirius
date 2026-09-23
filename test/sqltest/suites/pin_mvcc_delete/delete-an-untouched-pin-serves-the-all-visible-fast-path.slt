@@ -1,0 +1,27 @@
+# mvcc delete: an untouched pin serves the all-visible fast path
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(200000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:155
+# sirius: id = "pin_mvcc_delete/delete-an-untouched-pin-serves-the-all-visible-fast-path/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

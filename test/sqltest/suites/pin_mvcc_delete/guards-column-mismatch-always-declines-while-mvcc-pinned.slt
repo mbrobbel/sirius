@@ -1,0 +1,55 @@
+# mvcc guards: column-mismatch always declines while MVCC-pinned
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS a, (range * 3)::INTEGER AS b FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu', cols = ['a']);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:319
+# sirius: id = "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  sum(b)
+FROM
+  t;
+----
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  a < 100;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:324
+# sirius: id = "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  sum(b)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:327
+# sirius: id = "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(a)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

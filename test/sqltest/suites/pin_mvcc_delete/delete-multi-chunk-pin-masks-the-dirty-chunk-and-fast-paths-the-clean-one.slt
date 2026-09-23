@@ -1,0 +1,37 @@
+# mvcc delete: multi-chunk pin masks the dirty chunk and fast-paths the clean one
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+onlyif sirius
+statement ok
+SET scan_task_batch_size = 100000000;
+
+statement ok
+CREATE TABLE t AS SELECT range AS k FROM range(13000000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k < 100000 AND k % 7 = 0;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:183
+# sirius: id = "pin_mvcc_delete/delete-multi-chunk-pin-masks-the-dirty-chunk-and-fast-paths-the-clean-one/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

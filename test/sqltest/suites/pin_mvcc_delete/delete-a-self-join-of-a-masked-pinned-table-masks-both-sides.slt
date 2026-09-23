@@ -1,0 +1,36 @@
+# mvcc delete: a self-join of a masked pinned table masks both sides
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, (range % 100)::INTEGER AS g FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k % 3 = 0 OR k IN (31, 32, 2048);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:405
+# sirius: id = "pin_mvcc_delete/delete-a-self-join-of-a-masked-pinned-table-masks-both-sides/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  a.g,
+  count(*)
+FROM
+  t a
+  JOIN t b ON a.k = b.k + 1
+GROUP BY
+  a.g ORDER BY a.g;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

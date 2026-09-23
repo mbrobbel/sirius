@@ -3511,6 +3511,286 @@
       "test": "parquet predicate shapes that remain pushable"
     },
     {
+      "file": "suites/pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve.slt",
+      "id": "pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve/001",
+      "identity": "51744dbbf056746bf3a805ccde73cf44e6e2781875377edb4da508f48ba68699",
+      "kind": "query",
+      "line": 107,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: committed post-pin deletes are masked out of the cached serve"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve.slt",
+      "id": "pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve/002",
+      "identity": "f14f027a4da2ef9402018f7fe2d2dbed1d319d45409a39121a6eb7a3a5893c56",
+      "kind": "query",
+      "line": 108,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: committed post-pin deletes are masked out of the cached serve"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered.slt",
+      "id": "pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered/001",
+      "identity": "19370f85153dd5770cb1b350fba1d9022fbff38d58596307d335c1795350b384",
+      "kind": "query",
+      "line": 125,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: pre-pin checkpointed tombstones are filtered"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered.slt",
+      "id": "pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered/002",
+      "identity": "d759d837f0f70e39f976083c9e54bcf05376038c8bdeb407def680c95d22d3ee",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: pre-pin checkpointed tombstones are filtered"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores.slt",
+      "id": "pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores/001",
+      "identity": "f6b3cde5f336db6c7349d53589557a0ce32e09991ab23aecca222132bb5f83c4",
+      "kind": "query",
+      "line": 141,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: the query's own uncommitted deletes are honored and rollback restores"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores.slt",
+      "id": "pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores/002",
+      "identity": "5338299e86413b4de751e8bf0f00edbf3820a339b1ab139fce3c1af0da01afe0",
+      "kind": "query",
+      "line": 144,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: the query's own uncommitted deletes are honored and rollback restores"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-an-untouched-pin-serves-the-all-visible-fast-path.slt",
+      "id": "pin_mvcc_delete/delete-an-untouched-pin-serves-the-all-visible-fast-path/001",
+      "identity": "68a7ca8ce5ffcb404ac99152bfc84c72111540793bedc1605ae5ba069d8be57c",
+      "kind": "query",
+      "line": 155,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: an untouched pin serves the all-visible fast path"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-host-tier-pins-mask-deletes-too.slt",
+      "id": "pin_mvcc_delete/delete-host-tier-pins-mask-deletes-too/001",
+      "identity": "e2859e7c93cf9200becfca9ea6486e68d2a061a97539ec50a65ec996325c0b01",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: host-tier pins mask deletes too"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-multi-chunk-pin-masks-the-dirty-chunk-and-fast-paths-the-clean-one.slt",
+      "id": "pin_mvcc_delete/delete-multi-chunk-pin-masks-the-dirty-chunk-and-fast-paths-the-clean-one/001",
+      "identity": "d9cc9d9e4275dabb5b64abaa0eb7efaecb1f7b7414b7e27428d66f394a2f25ad",
+      "kind": "query",
+      "line": 183,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: multi-chunk pin masks the dirty chunk and fast-paths the clean one"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result.slt",
+      "id": "pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result/001",
+      "identity": "bb648f7f3d6d70a07b5c3e1888a8346fef6762e4b8066b0ece03d41edbb31b6d",
+      "kind": "fallback",
+      "line": 199,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: a fully-deleted table serves an empty result"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result.slt",
+      "id": "pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result/002",
+      "identity": "d5e0f6075967c22ac8a8775a52277fe63bbe5f55a83b2eb50a1be4d29f89f821",
+      "kind": "query",
+      "line": 201,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: a fully-deleted table serves an empty result"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result.slt",
+      "id": "pin_mvcc_delete/delete-a-fully-deleted-table-serves-an-empty-result/003",
+      "identity": "efc6d4fe1e2b6db55c50301f7e837e05ce9b9651a9ae1cb343e9b64a2b15e4bb",
+      "kind": "query",
+      "line": 202,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: a fully-deleted table serves an empty result"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate.slt",
+      "id": "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/001",
+      "identity": "c9fd38becc172a10c0b74b871e12d3e53d397e6596b338fcf206a08da6db5d0c",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: masks are recomputed per query as deletes accumulate"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate.slt",
+      "id": "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/002",
+      "identity": "7324178a26fd49db13d4b0a471cd554bf0d67e5d80e92b83c019f4a8388800e2",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: masks are recomputed per query as deletes accumulate"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate.slt",
+      "id": "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/003",
+      "identity": "6f78c0a54813a663365f4518db83c6de7218f51d00da8f2feea443ca071f47f4",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: masks are recomputed per query as deletes accumulate"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits.slt",
+      "id": "pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits/001",
+      "identity": "9e91cf0f7c30a4ed6644e6a933798bc86930a36073e3b56a758247a040e05d5e",
+      "kind": "fallback",
+      "line": 246,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: a transaction older than the pin falls back until it commits"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits.slt",
+      "id": "pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits/002",
+      "identity": "08b2a13729cc577091b870161a9a545c0d16f1926f72d5f104513d558aaace7d",
+      "kind": "query",
+      "line": 260,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: a transaction older than the pin falls back until it commits"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/insert-committed-post-pin-inserts-serve-from-the-cache-plus-the-delta.slt",
+      "id": "pin_mvcc_delete/insert-committed-post-pin-inserts-serve-from-the-cache-plus-the-delta/001",
+      "identity": "5afd62133c777e5127c60fa8bdcbe971eecd7b52e3558eacb075996759baa80d",
+      "kind": "query",
+      "line": 280,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc insert: committed post-pin inserts serve from the cache plus the delta"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes.slt",
+      "id": "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/001",
+      "identity": "fce33199e8ba1c2d1200cdfece3567c7327d16be47eab2f580fb1ab2bfae7c91",
+      "kind": "fallback",
+      "line": 294,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: own-transaction inserts decline; commit serves, rollback resumes"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes.slt",
+      "id": "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/002",
+      "identity": "1289182d69b5404428f23d9a4d04fa4d4d3386d770854c9f1d4afface3574050",
+      "kind": "query",
+      "line": 297,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: own-transaction inserts decline; commit serves, rollback resumes"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes.slt",
+      "id": "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/003",
+      "identity": "3c159a5828f342cba007994c05e1299f8b7af4b1235a944dfefac6b24f239aef",
+      "kind": "query",
+      "line": 302,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: own-transaction inserts decline; commit serves, rollback resumes"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned.slt",
+      "id": "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/001",
+      "identity": "cfbc4dd003fbbfe3d502a5ef5dc6815625afdebcb5203d9a443d611bf91529d2",
+      "kind": "fallback",
+      "line": 319,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: column-mismatch always declines while MVCC-pinned"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned.slt",
+      "id": "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/002",
+      "identity": "c495e5de1c8f70f498f1dbd2bc8cf435fb5f13f1febf645ab57de657e9fa4784",
+      "kind": "fallback",
+      "line": 324,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: column-mismatch always declines while MVCC-pinned"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned.slt",
+      "id": "pin_mvcc_delete/guards-column-mismatch-always-declines-while-mvcc-pinned/003",
+      "identity": "8b716a8958eec9cd1bbc84682933c2edc82c16d7fcf7b3fcd3bb16ba96e69bce",
+      "kind": "query",
+      "line": 327,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: column-mismatch always declines while MVCC-pinned"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-pinning-a-table-with-update-chains-is-refused-until-checkpoint.slt",
+      "id": "pin_mvcc_delete/guards-pinning-a-table-with-update-chains-is-refused-until-checkpoint/001",
+      "identity": "3b80d59a02d0070fb94a104acc170a38018fe9539ba2d5acacf71bd6b27d7e1e",
+      "kind": "query",
+      "line": 348,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: pinning a table with update chains is refused until CHECKPOINT"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/guards-pinning-a-table-with-uncheckpointed-appends-is-refused-until-checkpoint.slt",
+      "id": "pin_mvcc_delete/guards-pinning-a-table-with-uncheckpointed-appends-is-refused-until-checkpoint/001",
+      "identity": "4010af3fd1f2503c471db00cec4c231f9f5455b070fd962668ba847ee0e7107a",
+      "kind": "query",
+      "line": 370,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc guards: pinning a table with uncheckpointed appends is refused until CHECKPOINT"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-a-masked-pinned-table-joins-an-unpinned-table-correctly.slt",
+      "id": "pin_mvcc_delete/delete-a-masked-pinned-table-joins-an-unpinned-table-correctly/001",
+      "identity": "0b4a6627ff9b9654a4aa572b762971480c930a5c64edd2ba80a8a0c9893ad38c",
+      "kind": "query",
+      "line": 386,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: a masked pinned table joins an unpinned table correctly"
+    },
+    {
+      "file": "suites/pin_mvcc_delete/delete-a-self-join-of-a-masked-pinned-table-masks-both-sides.slt",
+      "id": "pin_mvcc_delete/delete-a-self-join-of-a-masked-pinned-table-masks-both-sides/001",
+      "identity": "6e6a59ed3b2425e93218b32b242237bb5cb0a30ef4d2ad783caaa0314d21fc5e",
+      "kind": "query",
+      "line": 405,
+      "source": "test/cpp/integration/test_pin_table_mvcc_delete.cpp",
+      "suite": "pin_mvcc_delete",
+      "test": "mvcc delete: a self-join of a masked pinned table masks both sides"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",

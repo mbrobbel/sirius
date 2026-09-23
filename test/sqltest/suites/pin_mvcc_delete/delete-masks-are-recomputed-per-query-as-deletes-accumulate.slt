@@ -1,0 +1,67 @@
+# mvcc delete: masks are recomputed per query as deletes accumulate
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k < 10;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:215
+# sirius: id = "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  min(k)
+FROM
+  t;
+----
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k >= 99990;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:217
+# sirius: id = "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k % 2 = 0;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:219
+# sirius: id = "pin_mvcc_delete/delete-masks-are-recomputed-per-query-as-deletes-accumulate/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

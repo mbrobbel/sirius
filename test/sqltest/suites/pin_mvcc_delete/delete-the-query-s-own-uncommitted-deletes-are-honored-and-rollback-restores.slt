@@ -1,0 +1,50 @@
+# mvcc delete: the query's own uncommitted deletes are honored and rollback restores
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+BEGIN TRANSACTION;
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k < 1000;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:141
+# sirius: id = "pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  min(k)
+FROM
+  t;
+----
+
+statement ok
+ROLLBACK;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:144
+# sirius: id = "pin_mvcc_delete/delete-the-query-s-own-uncommitted-deletes-are-honored-and-rollback-restores/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  min(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

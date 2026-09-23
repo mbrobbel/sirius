@@ -1,0 +1,47 @@
+# mvcc delete: committed post-pin deletes are masked out of the cached serve
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, (range * 2)::INTEGER AS v FROM range(300000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k IN (0, 31, 32, 2047, 2048, 122879, 122880, 122881, 299999) OR k % 50000 = 17;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:107
+# sirius: id = "pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ??? rowsort
+SELECT
+  count(*),
+  sum(k),
+  sum(v)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:108
+# sirius: id = "pin_mvcc_delete/delete-committed-post-pin-deletes-are-masked-out-of-the-cached-serve/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  k,
+  v
+FROM
+  t
+WHERE
+  k < 5000;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
