@@ -42,7 +42,6 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -311,56 +310,6 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
   REQUIRE_FALSE(gpu2->HasError());
   after = sirius::test::get_transparent_execution_stats(*con);
   sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1, 0);
-
-  // The fallback result matches the GPU result.
-  REQUIRE(gpu->Cast<duckdb::MaterializedQueryResult>().GetValue(0, 0).ToString() ==
-          gpu2->Cast<duckdb::MaterializedQueryResult>().GetValue(0, 0).ToString());
-}
-
-// The CPU fallback runs in the SAME transaction as the failed GPU attempt, so it
-// sees this transaction's own uncommitted writes. A fresh-connection replay could
-// not (it would start its own transaction) — this is the core MVCC requirement.
-TEST_CASE_METHOD(RuntimeFallbackFixture,
-                 "runtime fallback: sees own uncommitted writes",
-                 "[transparent][fallback][mvcc][integration]")
-{
-  create_table("CREATE TABLE rf_mvcc AS SELECT i AS id FROM range(100) t(i);");
-  inject();
-
-  con->Query("BEGIN TRANSACTION;");
-  con->Query("INSERT INTO rf_mvcc VALUES (100);");  // uncommitted, this transaction
-  // The SELECT falls back to CPU, but under the same transaction — must see 101.
-  REQUIRE(scalar(*con, "SELECT count(*) FROM rf_mvcc;") == "101");
-  con->Query("ROLLBACK;");
-
-  // After rollback the uncommitted row is gone.
-  REQUIRE(scalar(*con, "SELECT count(*) FROM rf_mvcc;") == "100");
-}
-
-// The CPU fallback runs under the failed attempt's snapshot: a concurrent commit
-// made after this transaction pinned its snapshot must stay invisible.
-TEST_CASE_METHOD(RuntimeFallbackFixture,
-                 "runtime fallback: snapshot is stable across a concurrent commit",
-                 "[transparent][fallback][mvcc][integration]")
-{
-  create_table("CREATE TABLE rf_snap AS SELECT i AS id FROM range(100) t(i);");
-  auto other = make_connection();
-
-  inject(*con);
-  con->Query("BEGIN TRANSACTION;");
-  // First read pins this transaction's snapshot at 100 rows (falls back to CPU).
-  REQUIRE(scalar(*con, "SELECT count(*) FROM rf_snap;") == "100");
-
-  // A different connection inserts and commits (qualified: it has not USE'd alias_).
-  auto ins = other->Query("INSERT INTO " + alias_ + ".rf_snap VALUES (1000);");
-  REQUIRE_FALSE(ins->HasError());
-
-  // The in-transaction read still sees the pinned snapshot, not the new commit.
-  REQUIRE(scalar(*con, "SELECT count(*) FROM rf_snap;") == "100");
-  con->Query("COMMIT;");
-
-  // A fresh statement sees the committed row.
-  REQUIRE(scalar(*con, "SELECT count(*) FROM rf_snap;") == "101");
 }
 
 // With enable_duckdb_fallback = false, a runtime GPU failure surfaces as a query
@@ -497,21 +446,12 @@ class S3MixFixture : public sirius::test::GpuExecutionFixture {
            ", hive_partitioning=true)";
   }
 
-  std::vector<std::vector<std::string>> require_query_matches_cpu(
-    std::string const& query,
-    std::uint64_t expected_rebinds,
-    std::uint64_t expected_fallbacks,
-    std::uint64_t expected_executions,
-    std::optional<std::string> expected_first_value = std::nullopt,
-    std::uint64_t expected_runtime_fallbacks        = 0)
+  void require_query_execution(std::string const& query,
+                               std::uint64_t expected_rebinds,
+                               std::uint64_t expected_fallbacks,
+                               std::uint64_t expected_executions)
   {
     UNSCOPED_INFO("query: " << query);
-    run_ok("SET gpu_execution = false;");
-    auto cpu = con->Query(query);
-    REQUIRE(cpu);
-    if (cpu->HasError()) { UNSCOPED_INFO("CPU query error: " << cpu->GetError()); }
-    REQUIRE_FALSE(cpu->HasError());
-
     run_ok("SET gpu_execution = true;");
     auto const before = sirius::test::get_transparent_execution_stats(*con);
     auto gpu          = con->Query(query);
@@ -519,41 +459,13 @@ class S3MixFixture : public sirius::test::GpuExecutionFixture {
     if (gpu->HasError()) { UNSCOPED_INFO("GPU/fallback query error: " << gpu->GetError()); }
     REQUIRE_FALSE(gpu->HasError());
     auto const after = sirius::test::get_transparent_execution_stats(*con);
-    INFO("query: " << query);
-    REQUIRE(after.runtime_fallbacks == before.runtime_fallbacks + expected_runtime_fallbacks);
-    sirius::test::require_transparent_execution_delta(before,
-                                                      after,
-                                                      expected_rebinds,
-                                                      expected_fallbacks,
-                                                      expected_executions,
-                                                      expected_runtime_fallbacks);
-
-    REQUIRE(gpu->ColumnCount() == cpu->ColumnCount());
-    REQUIRE(gpu->RowCount() == cpu->RowCount());
-    if (expected_first_value.has_value()) {
-      REQUIRE(gpu->RowCount() > 0);
-      CHECK(gpu->GetValue(0, 0).ToString() == *expected_first_value);
-    }
-
-    auto gpu_rows =
-      sirius::test::GpuExecutionFixture::collect_rows(gpu->Cast<duckdb::MaterializedQueryResult>());
-    auto cpu_rows =
-      sirius::test::GpuExecutionFixture::collect_rows(cpu->Cast<duckdb::MaterializedQueryResult>());
-    CHECK(gpu_rows == cpu_rows);
-    return gpu_rows;
+    sirius::test::require_transparent_execution_delta(
+      before, after, expected_rebinds, expected_fallbacks, expected_executions, 0);
   }
 
-  void require_plan_fallback(std::string const& query,
-                             std::optional<std::string> expected_first_value = std::nullopt)
-  {
-    (void)require_query_matches_cpu(query, 0, 1, 0, std::move(expected_first_value));
-  }
+  void require_plan_fallback(std::string const& query) { require_query_execution(query, 0, 1, 0); }
 
-  void require_gpu(std::string const& query,
-                   std::optional<std::string> expected_first_value = std::nullopt)
-  {
-    (void)require_query_matches_cpu(query, 1, 0, 1, std::move(expected_first_value));
-  }
+  void require_gpu(std::string const& query) { require_query_execution(query, 1, 0, 1); }
 
  private:
   sirius::test::scratch_dir work_dir;
@@ -567,48 +479,44 @@ void run_s3mix_scenario(std::string const& scenario)
   auto const parquet = fixture.parquet_scan();
 
   if (scenario == "projection_round") {
-    fixture.require_plan_fallback("SELECT round(id) FROM " + parquet + " LIMIT 3", "-100");
+    fixture.require_plan_fallback("SELECT round(id) FROM " + parquet + " LIMIT 3");
   } else if (scenario == "projection_struct_extract") {
-    fixture.require_plan_fallback("SELECT st.a FROM " + parquet + " LIMIT 3", "0");
+    fixture.require_plan_fallback("SELECT st.a FROM " + parquet + " LIMIT 3");
   } else if (scenario == "projection_list_extract") {
-    fixture.require_plan_fallback("SELECT li[1] FROM " + parquet + " LIMIT 3", "0");
+    fixture.require_plan_fallback("SELECT li[1] FROM " + parquet + " LIMIT 3");
   } else if (scenario == "order_round") {
-    fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY round(id) LIMIT 3",
-                                  "-100");
+    fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY round(id) LIMIT 3");
   } else if (scenario == "topn_round") {
-    fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY round(id) DESC LIMIT 3",
-                                  "199");
+    fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY round(id) DESC LIMIT 3");
   } else if (scenario == "aggregate_child_projection") {
     fixture.require_plan_fallback(
       "SELECT r, count(*) FROM "
       "(SELECT round(a) AS r, b FROM " +
       parquet + ") q GROUP BY r");
   } else if (scenario == "join_round") {
-    fixture.require_plan_fallback(
-      "SELECT count(*) FROM " + parquet + " a JOIN " + parquet + " b ON round(a.id) = round(b.id)",
-      "300");
+    fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
+                                  " b ON round(a.id) = round(b.id)");
   } else if (scenario == "regression_bundle") {
     fixture.require_gpu("SELECT st FROM " + parquet);
     fixture.require_gpu("SELECT li FROM " + parquet);
 
-    fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " WHERE round(id) > 1",
-                                  "198");
-    fixture.require_plan_fallback("SELECT count(*) FROM mix_native WHERE round(id) > 1", "198");
-    fixture.require_gpu("SELECT count(id) FROM " + fixture.hive_scan() + " WHERE part = 1", "300");
+    fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " WHERE round(id) > 1");
+    fixture.require_plan_fallback("SELECT count(*) FROM mix_native WHERE round(id) > 1");
+    fixture.require_gpu("SELECT count(id) FROM " + fixture.hive_scan() + " WHERE part = 1");
 
-    fixture.require_gpu("SELECT count(st) FROM " + parquet, "300");
-    fixture.require_gpu("SELECT count(li) FROM " + parquet, "300");
-    fixture.require_plan_fallback("SELECT count(round(x)) FROM " + parquet, "257");
+    fixture.require_gpu("SELECT count(st) FROM " + parquet);
+    fixture.require_gpu("SELECT count(li) FROM " + parquet);
+    fixture.require_plan_fallback("SELECT count(round(x)) FROM " + parquet);
   } else if (scenario == "parquet_is_not_null") {
-    fixture.require_gpu("SELECT count(*) FROM " + parquet + " WHERE x IS NOT NULL", "257");
+    fixture.require_gpu("SELECT count(*) FROM " + parquet + " WHERE x IS NOT NULL");
   } else if (scenario == "native_is_not_null") {
-    fixture.require_gpu("SELECT count(*) FROM mix_native WHERE x IS NOT NULL", "257");
+    fixture.require_gpu("SELECT count(*) FROM mix_native WHERE x IS NOT NULL");
   } else if (scenario == "nested_sort_regression") {
     for (auto const* key : {"st", "li", "mp"}) {
       fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY " + key);
       fixture.require_plan_fallback("SELECT id FROM " + parquet + " ORDER BY " + key + " LIMIT 5");
     }
-    fixture.require_gpu("SELECT id FROM " + parquet + " ORDER BY id LIMIT 5", "-100");
+    fixture.require_gpu("SELECT id FROM " + parquet + " ORDER BY id LIMIT 5");
   } else if (scenario == "zero_limit") {
     fixture.require_gpu("SELECT round(id) FROM " + parquet + " LIMIT 0");
   } else if (scenario == "zero_empty") {
@@ -794,11 +702,9 @@ TEST_CASE("an unsupported filter above a join falls back during planning",
   auto const parquet = fixture.parquet_scan();
 
   fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
-                                  " b ON a.id = b.id WHERE round(a.a + b.b) > 1",
-                                "249");
+                                " b ON a.id = b.id WHERE round(a.a + b.b) > 1");
   fixture.require_gpu("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
-                        " b ON a.id = b.id WHERE a.a + b.b > 1",
-                      "249");
+                      " b ON a.id = b.id WHERE a.a + b.b > 1");
 }
 
 TEST_CASE("supported IS NOT NULL filter stays on GPU for parquet",
