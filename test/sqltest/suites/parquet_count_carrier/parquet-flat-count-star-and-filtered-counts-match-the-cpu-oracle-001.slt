@@ -1,0 +1,11 @@
+include ../../fixtures/migrated/parquet_count_carrier.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:274
+# sirius: id = "parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle/001"
+# sirius: tags = ["integration", "parquet", "carrier"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/flat.parquet', hive_partitioning = false);
+----

@@ -1,0 +1,21 @@
+include ../../fixtures/migrated/parquet_count_carrier.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:292
+# sirius: id = "parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column/001"
+# sirius: tags = ["integration", "parquet", "carrier"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/null_carrier.parquet', hive_partitioning = false);
+----
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:292
+# sirius: id = "parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column/002"
+# sirius: tags = ["integration", "parquet", "carrier"]
+query ? rowsort
+SELECT
+  count(id)
+FROM
+  read_parquet('__TEST_DIR__/null_carrier.parquet', hive_partitioning = false);
+----

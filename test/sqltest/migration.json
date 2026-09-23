@@ -5521,6 +5521,106 @@
       "test": "cast-shaped DATE predicates on dates beyond TIMESTAMP range"
     },
     {
+      "file": "suites/parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle-001.slt",
+      "id": "parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle/001",
+      "identity": "e930de3dd21d3fe3b97e0ba292d6daaf16e99d1472b5bf90216f1b9297c799cb",
+      "kind": "query",
+      "line": 274,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet flat count star and filtered counts match the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle-002.slt",
+      "id": "parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle/002",
+      "identity": "99bbd64db3a16ed7b4c00d71084400b5c851cc000a55473db76dcc6edeefe32b",
+      "kind": "query",
+      "line": 274,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet flat count star and filtered counts match the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle-003.slt",
+      "id": "parquet_count_carrier/parquet-flat-count-star-and-filtered-counts-match-the-cpu-oracle/003",
+      "identity": "be20e5fae66ea465707eb1b88b1f5f31ebbce594c18db3fd29d2fd511051f762",
+      "kind": "query",
+      "line": 274,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet flat count star and filtered counts match the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column.slt",
+      "id": "parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column/001",
+      "identity": "4da635fb6a79dddb32ae489312a35ac612bf4793d01200a23278ce26f7455ef9",
+      "kind": "query",
+      "line": 292,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet counts remain correct with an entirely null carrier column"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column.slt",
+      "id": "parquet_count_carrier/parquet-counts-remain-correct-with-an-entirely-null-carrier-column/002",
+      "identity": "f09f3cf6588be120454fb3a0fdb44ac7a3ef7851af980502c38b8766f703eaec",
+      "kind": "query",
+      "line": 292,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet counts remain correct with an entirely null carrier column"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-partition-only-grouped-counts-match-the-cpu-oracle.slt",
+      "id": "parquet_count_carrier/parquet-partition-only-grouped-counts-match-the-cpu-oracle/001",
+      "identity": "36d8568a222cfecf1de779943b095eb3075674ad1694ad7b13039dfd89d2c46a",
+      "kind": "query",
+      "line": 300,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet partition-only grouped counts match the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-multi-file-count-star-matches-the-cpu-oracle.slt",
+      "id": "parquet_count_carrier/parquet-multi-file-count-star-matches-the-cpu-oracle/001",
+      "identity": "7290e852a01f085160bfb233ad8927861797bd02b94f381010bb45240e2d7274",
+      "kind": "query",
+      "line": 308,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet multi-file count star matches the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-partition-counts-tolerate-a-missing-non-output-carrier-candidate.slt",
+      "id": "parquet_count_carrier/parquet-partition-counts-tolerate-a-missing-non-output-carrier-candidate/001",
+      "identity": "bab3b01e57479e8802e5cf427547a0960001597fd312e806638a2c8648c4c595",
+      "kind": "query",
+      "line": 315,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet partition counts tolerate a missing non-output carrier candidate"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-all-varchar-count-star-matches-the-cpu-oracle.slt",
+      "id": "parquet_count_carrier/parquet-all-varchar-count-star-matches-the-cpu-oracle/001",
+      "identity": "309de8d045ce03e628558b5071050a4a6e25b7f507a60a2eb14329cd350d2425",
+      "kind": "query",
+      "line": 324,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet all-varchar count star matches the CPU oracle"
+    },
+    {
+      "file": "suites/parquet_count_carrier/parquet-empty-file-count-star-matches-the-cpu-oracle.slt",
+      "id": "parquet_count_carrier/parquet-empty-file-count-star-matches-the-cpu-oracle/001",
+      "identity": "7277f13115f33e0a80449880f617712dbaac1d2e4e441cb146b957de7f263ef1",
+      "kind": "query",
+      "line": 331,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "parquet_count_carrier",
+      "test": "parquet empty-file count star matches the CPU oracle"
+    },
+    {
       "file": "suites/compressed_materialization_gate/pinned-narrow-gpu.slt",
       "id": "compressed_materialization_gate/pinned-narrow-gpu/001",
       "identity": "8df6b0b1eaaeac996ce257ff424b59da86545343eda49abe71b6eaf537129ed7",
