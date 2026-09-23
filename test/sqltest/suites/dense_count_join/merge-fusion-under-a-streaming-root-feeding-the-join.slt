@@ -1,0 +1,58 @@
+# gpu_execution dense count-join: merge fusion under a streaming root feeding the join
+include ../../fixtures/migrated/dense_count_join.slt
+
+onlyif sirius
+statement ok
+SET fuse_merge_pipelines = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:206
+# sirius: id = "dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(t.o_cust) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	1
+3	0
+4	0
+5	1
+6	0
+7	0
+8	0
+NULL	0
+
+onlyif sirius
+statement ok
+SET fuse_merge_pipelines = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:210
+# sirius: id = "dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(t.o_cust) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	1
+3	0
+4	0
+5	1
+6	0
+7	0
+8	0
+NULL	0

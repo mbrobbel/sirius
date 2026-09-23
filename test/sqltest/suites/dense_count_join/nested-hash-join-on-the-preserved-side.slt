@@ -1,0 +1,146 @@
+# gpu_execution dense count-join: nested hash join on the preserved side
+include ../../fixtures/migrated/dense_count_join.slt
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:178
+# sirius: id = "dense_count_join/nested-hash-join-on-the-preserved-side/001-fused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(o_id) AS c_count
+FROM
+  (
+    SELECT
+      c1.c_id
+    FROM
+      cust c1
+      JOIN cust c2 ON c1.c_grp = c2.c_grp
+  ) c
+  LEFT JOIN ord ON c.c_id = o_cust
+GROUP BY
+  c.c_id;
+----
+1	0
+2	10
+3	11
+4	0
+5	15
+6	0
+7	0
+8	0
+NULL	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:178
+# sirius: id = "dense_count_join/nested-hash-join-on-the-preserved-side/001-unfused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(o_id) AS c_count
+FROM
+  (
+    SELECT
+      c1.c_id
+    FROM
+      cust c1
+      JOIN cust c2 ON c1.c_grp = c2.c_grp
+  ) c
+  LEFT JOIN ord ON c.c_id = o_cust
+GROUP BY
+  c.c_id;
+----
+1	0
+2	10
+3	11
+4	0
+5	15
+6	0
+7	0
+8	0
+NULL	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:182
+# sirius: id = "dense_count_join/nested-hash-join-on-the-preserved-side/002-fused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(*) AS c_count
+FROM
+  (
+    SELECT
+      c1.c_id
+    FROM
+      cust c1
+      JOIN cust c2 ON c1.c_grp = c2.c_grp
+  ) c
+  LEFT JOIN ord ON c.c_id = o_cust
+GROUP BY
+  c.c_id;
+----
+1	6
+2	10
+3	11
+4	6
+5	15
+6	6
+7	5
+8	6
+NULL	11
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:182
+# sirius: id = "dense_count_join/nested-hash-join-on-the-preserved-side/002-unfused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(*) AS c_count
+FROM
+  (
+    SELECT
+      c1.c_id
+    FROM
+      cust c1
+      JOIN cust c2 ON c1.c_grp = c2.c_grp
+  ) c
+  LEFT JOIN ord ON c.c_id = o_cust
+GROUP BY
+  c.c_id;
+----
+1	6
+2	10
+3	11
+4	6
+5	15
+6	6
+7	5
+8	6
+NULL	11
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;

@@ -1,0 +1,26 @@
+# gpu_execution dense count-join: COUNT(col) grouped by the LEFT-join key
+include ../../fixtures/migrated/dense_count_join.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:66
+# sirius: id = "dense_count_join/count-col-grouped-by-the-left-join-key/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(o_id) AS c_count
+FROM
+  cust
+  LEFT JOIN ord ON c_id = o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	2
+3	2
+4	0
+5	3
+6	0
+7	0
+8	0
+NULL	0

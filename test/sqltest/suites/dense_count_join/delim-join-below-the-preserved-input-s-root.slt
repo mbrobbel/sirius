@@ -1,0 +1,55 @@
+# gpu_execution dense count-join: delim join below the preserved input's root
+include ../../fixtures/migrated/dense_count_join.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:248
+# sirius: id = "dense_count_join/delim-join-below-the-preserved-input-s-root/001-fused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(o_id) AS c_count
+FROM
+  ord
+  RIGHT JOIN (SELECT c_id FROM cust c1 WHERE (EXISTS (SELECT 1 FROM cust c2 WHERE c2.c_grp = c1.c_grp AND c2.c_id > c1.c_id)) = (c_id % 2 = 0)) c ON o_cust = c.c_id
+GROUP BY
+  c.c_id;
+----
+2	2
+4	0
+6	0
+7	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:248
+# sirius: id = "dense_count_join/delim-join-below-the-preserved-input-s-root/001-unfused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c.c_id,
+  count(o_id) AS c_count
+FROM
+  ord
+  RIGHT JOIN (SELECT c_id FROM cust c1 WHERE (EXISTS (SELECT 1 FROM cust c2 WHERE c2.c_grp = c1.c_grp AND c2.c_id > c1.c_id)) = (c_id % 2 = 0)) c ON o_cust = c.c_id
+GROUP BY
+  c.c_id;
+----
+2	2
+4	0
+6	0
+7	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
