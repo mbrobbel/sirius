@@ -41,12 +41,12 @@ class DenseCountJoinFixture : public sirius::test::GpuExecutionFixture {
     run_ok("CHECKPOINT;");
   }
 
-  // Run `query` fused, then on the unfused GPU join plan, each against CPU.
-  void compare_fused_and_unfused(std::string const& query)
+  // Require GPU execution for both fused and unfused join plans.
+  void require_fused_and_unfused_execution(std::string const& query)
   {
-    compare_gpu_vs_cpu(query);
+    require_gpu_execution(query);
     sirius::test::scoped_sirius_setting unfused{*con, "enable_dense_count_join", false};
-    compare_gpu_vs_cpu(query);
+    require_gpu_execution(query);
   }
 
   std::optional<sirius::test::scoped_sirius_setting> enable_guard;
@@ -63,7 +63,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: COUNT(col) grouped by the LEFT-join key",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_id) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
 }
 
@@ -71,9 +71,9 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: COUNT(*) and nullable COUNT(col) semantics",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(*) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_val) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY "
     "c_id");
 }
@@ -82,7 +82,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: RIGHT-join orientation",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_id) AS c_count FROM ord RIGHT JOIN cust ON o_cust = c_id GROUP BY "
     "c_id");
 }
@@ -91,7 +91,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: full q13 distribution shape with ORDER BY",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_gpu_vs_cpu_ordered(
+  require_gpu_execution(
     "SELECT c_count, count(*) AS custdist FROM ("
     "  SELECT c_id, count(o_id) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY "
     "c_id"
@@ -103,9 +103,9 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "[integration][gpu_execution][dense_count_join]")
 {
   sirius::test::scoped_sirius_setting budget{*con, "dense_count_join_max_bytes", std::uint64_t{8}};
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_id) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(*) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
 }
 
@@ -114,7 +114,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "[integration][gpu_execution][dense_count_join]")
 {
   sirius::test::scoped_sirius_setting disabled{*con, "enable_dense_count_join", false};
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_id) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
 }
 
@@ -145,13 +145,13 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "[integration][gpu_execution][dense_count_join]")
 {
   // Keep scans nonempty at plan time so filters produce empty inputs at runtime.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o.o_id) AS c_count FROM cust "
     "LEFT JOIN (SELECT * FROM ord WHERE o_val > 1000000) o ON c_id = o.o_cust GROUP BY c_id");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c.c_id, count(o_id) AS c_count FROM (SELECT * FROM cust WHERE c_grp > 1000000) c "
     "LEFT JOIN ord ON c.c_id = o_cust GROUP BY c.c_id");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c.c_id, count(o.o_id) AS c_count FROM (SELECT * FROM cust WHERE c_grp > 1000000) c "
     "LEFT JOIN (SELECT * FROM ord WHERE o_val > 1000000) o ON c.c_id = o.o_cust "
     "GROUP BY c.c_id");
@@ -161,11 +161,11 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: nested hash join on the counted side",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(o.o_id) AS c_count FROM cust LEFT JOIN ("
     "  SELECT o1.o_id, o1.o_cust FROM ord o1 JOIN ord o2 ON o1.o_cust = o2.o_cust"
     ") o ON c_id = o.o_cust GROUP BY c_id");
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(*) AS c_count FROM cust LEFT JOIN ("
     "  SELECT o1.o_id, o1.o_cust FROM ord o1 JOIN ord o2 ON o1.o_cust = o2.o_cust"
     ") o ON c_id = o.o_cust GROUP BY c_id");
@@ -175,11 +175,11 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: nested hash join on the preserved side",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c.c_id, count(o_id) AS c_count FROM ("
     "  SELECT c1.c_id FROM cust c1 JOIN cust c2 ON c1.c_grp = c2.c_grp"
     ") c LEFT JOIN ord ON c.c_id = o_cust GROUP BY c.c_id");
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c.c_id, count(*) AS c_count FROM ("
     "  SELECT c1.c_id FROM cust c1 JOIN cust c2 ON c1.c_grp = c2.c_grp"
     ") c LEFT JOIN ord ON c.c_id = o_cust GROUP BY c.c_id");
@@ -189,8 +189,8 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_fused_and_unfused(having_counted_query);
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(having_counted_query);
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(*) AS c_count FROM cust LEFT JOIN ("
     "  SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1"
     ") t ON c_id = t.o_cust GROUP BY c_id");
@@ -203,11 +203,11 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
 {
   {
     sirius::test::scoped_sirius_setting fused{*con, "fuse_merge_pipelines", true};
-    compare_gpu_vs_cpu(having_counted_query);
+    require_gpu_execution(having_counted_query);
   }
   {
     sirius::test::scoped_sirius_setting unfused{*con, "fuse_merge_pipelines", false};
-    compare_gpu_vs_cpu(having_counted_query);
+    require_gpu_execution(having_counted_query);
   }
 }
 
@@ -216,7 +216,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "input",
                  "[integration][gpu_execution][dense_count_join]")
 {
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c.c_id, count(o_id) AS c_count FROM ord RIGHT JOIN ("
     "  SELECT c1.c_id FROM cust c1 JOIN cust c2 ON c1.c_grp = c2.c_grp"
     ") c ON o_cust = c.c_id GROUP BY c.c_id");
@@ -227,7 +227,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
                  "[integration][gpu_execution][dense_count_join]")
 {
   // The nested join stays in the plan; its producer pipeline delivers no rows to the counted port.
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(o.o_id) AS c_count FROM cust LEFT JOIN ("
     "  SELECT o1.o_id, o1.o_cust FROM ord o1 JOIN ord o2 ON o1.o_cust = o2.o_cust"
     "  WHERE o1.o_val > 1000000"
@@ -245,7 +245,7 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
   // sizing partitions run before the join's task hint polls the MARK join; on the probe side the
   // hint reaches the unsized MARK join and the process aborts.
   sirius::test::disabled_optimizers_guard build_side_pin{*con, "build_side_probe_side"};
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c.c_id, count(o_id) AS c_count FROM ord RIGHT JOIN ("
     "  SELECT c_id FROM cust c1 WHERE (EXISTS (SELECT 1 FROM cust c2"
     "    WHERE c2.c_grp = c1.c_grp AND c2.c_id > c1.c_id)) = (c_id % 2 = 0)"
@@ -261,12 +261,12 @@ TEST_CASE_METHOD(DenseCountJoinFixture,
   run_ok("INSERT INTO ord VALUES (108, 8, NULL);");
   run_ok("CHECKPOINT;");
 
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(o_val) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
-  compare_fused_and_unfused(
+  require_fused_and_unfused_execution(
     "SELECT c_id, count(*) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
 
   sirius::test::scoped_sirius_setting budget{*con, "dense_count_join_max_bytes", std::uint64_t{8}};
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT c_id, count(o_val) AS c_count FROM cust LEFT JOIN ord ON c_id = o_cust GROUP BY c_id");
 }
