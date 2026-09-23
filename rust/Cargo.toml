@@ -8,6 +8,7 @@ members = [
     "crates/telemetry/model",
     "crates/sirius-sys",
     "crates/sirius",
+    "crates/sqltest",
     "crates/sqltest-format"
 ]
 
