@@ -1,0 +1,135 @@
+onlyif duckdb
+statement ok
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/nation.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/nation.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/region.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/region.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/customer.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/customer.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/orders.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/orders.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/part.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/part.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/partsupp.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/partsupp.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/supplier.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/supplier.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_parquet('s3://__S3_BUCKET__/parquet/lineitem.parquet');

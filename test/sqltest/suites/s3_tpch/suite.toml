@@ -1,0 +1,4 @@
+profile = "s3-tpch-tiny"
+storage = ["parquet"]
+checkpoint = "explicit"
+object_store = "s3-tpch-tiny"
