@@ -1,0 +1,26 @@
+statement ok
+COPY (SELECT range AS k, range * 2 AS v, range * 3 AS w FROM range(100000)) TO '__TEST_DIR__/kvw.parquet' (FORMAT PARQUET);
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/kvw.parquet', tier = 'gpu', name = 'merge_pin', cols = ['k', 'v']);
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/kvw.parquet', tier = 'gpu', name = 'merge_pin', cols = ['k', 'w']);
+
+# Original query: test/cpp/integration/test_pin_table_merge_columns.cpp:219
+# sirius: id = "pin_column_merge/overlapping-columns/001"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  sum(w)
+FROM
+  read_parquet('__TEST_DIR__/kvw.parquet');
+----
+14999850000
+
+onlyif sirius
+statement ok
+CALL unpin_table('merge_pin');

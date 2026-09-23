@@ -7701,6 +7701,16 @@
       "test": "gpu_execution iceberg - deflate compressed manifests"
     },
     {
+      "file": "suites/pin_column_merge/overlapping-columns.slt",
+      "id": "pin_column_merge/overlapping-columns/001",
+      "identity": "971ce3f264b705f3fd6fc45bd2f077888376c5e322a5d71aa2993135d8e98039",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_pin_table_merge_columns.cpp",
+      "suite": "pin_column_merge",
+      "test": "pin_table - same-row-count merge extends cache_info to the column union (single GPU)"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
