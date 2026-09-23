@@ -1,0 +1,79 @@
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/nation.parquet')) TO '__TEST_DIR__/nation.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/nation.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/region.parquet')) TO '__TEST_DIR__/region.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/region.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/customer.parquet')) TO '__TEST_DIR__/customer.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/customer.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/orders.parquet')) TO '__TEST_DIR__/orders.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/orders.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet')) TO '__TEST_DIR__/lineitem.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/lineitem.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/part.parquet')) TO '__TEST_DIR__/part.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/part.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/partsupp.parquet')) TO '__TEST_DIR__/partsupp.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/partsupp.csv');
+
+statement ok
+COPY (SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/supplier.parquet')) TO '__TEST_DIR__/supplier.csv' (HEADER, DELIMITER ',');
+
+statement ok
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_csv('__TEST_DIR__/supplier.csv');

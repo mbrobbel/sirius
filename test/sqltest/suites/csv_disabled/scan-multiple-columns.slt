@@ -1,0 +1,14 @@
+# gpu_execution csv - scan multiple columns
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:396
+# sirius: id = "csv_disabled/scan-multiple-columns"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ??? rowsort
+SELECT
+  n_nationkey,
+  n_regionkey,
+  n_name
+FROM
+  nation;
+----

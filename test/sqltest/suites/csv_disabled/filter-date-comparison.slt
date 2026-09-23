@@ -1,0 +1,15 @@
+# gpu_execution csv - filter date comparison
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:428
+# sirius: id = "csv_disabled/filter-date-comparison"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  o_orderkey,
+  o_totalprice
+FROM
+  orders
+WHERE
+  o_orderdate >= DATE '1995-01-01' AND o_orderdate < DATE '1995-04-01';
+----

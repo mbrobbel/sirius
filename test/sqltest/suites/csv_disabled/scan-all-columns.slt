@@ -1,0 +1,12 @@
+# gpu_execution csv - scan all columns
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:403
+# sirius: id = "csv_disabled/scan-all-columns"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ??? rowsort
+SELECT
+  *
+FROM
+  region;
+----

@@ -1,0 +1,14 @@
+# gpu_execution csv - filter date between
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:438
+# sirius: id = "csv_disabled/filter-date-between"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ? rowsort
+SELECT
+  o_orderkey
+FROM
+  orders
+WHERE
+  o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1995-03-31';
+----

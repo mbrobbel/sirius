@@ -1,0 +1,15 @@
+# gpu_execution csv - order by date column
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:608
+# sirius: id = "csv_disabled/order-by-date-column"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  o_orderkey,
+  o_orderdate
+FROM
+  orders
+WHERE
+  o_orderstatus = 'F' ORDER BY o_orderdate LIMIT 10;
+----

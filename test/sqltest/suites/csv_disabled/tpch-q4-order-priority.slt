@@ -1,0 +1,17 @@
+# gpu_execution csv - tpch q4 order priority
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:542
+# sirius: id = "csv_disabled/tpch-q4-order-priority"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  o_orderpriority,
+  count(*) AS order_count
+FROM
+  orders
+WHERE
+  o_orderdate >= DATE '1996-10-01' AND o_orderdate < DATE '1997-01-01' AND EXISTS (SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate)
+GROUP BY
+  o_orderpriority ORDER BY o_orderpriority;
+----

@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["tpch", "tpcds", "clickbench"]
+exclude_suites = ["csv_disabled", "tpch", "tpcds", "clickbench"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,17 +76,64 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
 suites = "all"
 axes = { gpu = "all", storage = "all", optimizers = "all" }
+
+[fixtures.tpch-parquet-original]
+files = {"customer.parquet" = "tpch-parquet-customer", "lineitem.parquet" = "tpch-parquet-lineitem", "nation.parquet" = "tpch-parquet-nation", "orders.parquet" = "tpch-parquet-orders", "part.parquet" = "tpch-parquet-part", "partsupp.parquet" = "tpch-parquet-partsupp", "region.parquet" = "tpch-parquet-region", "supplier.parquet" = "tpch-parquet-supplier"}
+
+[sources.tpch-parquet-customer]
+kind = "file"
+path = "../cpp/integration/data/parquet/customer.parquet"
+sha256 = "b0e9a65d3cc4c28e18f12ef8c50171cf115eab6d4af62dc350225ae1df4e7c61"
+
+[sources.tpch-parquet-lineitem]
+kind = "file"
+path = "../cpp/integration/data/parquet/lineitem.parquet"
+sha256 = "edce38165297e935631fa4d0c7d88d72a6c20acce9ad594fb76a8b890e987e05"
+
+[sources.tpch-parquet-nation]
+kind = "file"
+path = "../cpp/integration/data/parquet/nation.parquet"
+sha256 = "25ee85f9da121f4e23d11af314bff989d6134cdc1b21d92fc59253bd667cd3e3"
+
+[sources.tpch-parquet-orders]
+kind = "file"
+path = "../cpp/integration/data/parquet/orders.parquet"
+sha256 = "eb1745544b8e0fc6e0578799418c4b8bbd52b5f712a1a318ff8e4f4ca5f80c72"
+
+[sources.tpch-parquet-part]
+kind = "file"
+path = "../cpp/integration/data/parquet/part.parquet"
+sha256 = "2a52c16e9d5f37a406fcd5313d897ca4b7ab65db4ac36de0ba1a5013ec21daae"
+
+[sources.tpch-parquet-partsupp]
+kind = "file"
+path = "../cpp/integration/data/parquet/partsupp.parquet"
+sha256 = "6459afef8776dc97384fce066e8ea4bdff5ea54bf8c8a8392e444eed3d75b127"
+
+[sources.tpch-parquet-region]
+kind = "file"
+path = "../cpp/integration/data/parquet/region.parquet"
+sha256 = "0dec3f557154afd88b3dd29418de8878a6c16a009af4f73cbed827a7c5bc71d6"
+
+[sources.tpch-parquet-supplier]
+kind = "file"
+path = "../cpp/integration/data/parquet/supplier.parquet"
+sha256 = "ecd25c4af4b5d65f4f80012f5dc301ae6b657a8029d0dfb915fc88b43b70c34e"
+
+[runs.previously-disabled]
+suites = ["csv_disabled"]
+axes = { gpu = ["integration-one"], storage = "all", optimizers = ["default"] }
 
 [profiles.integration-one-gpu]
 gpus = 1

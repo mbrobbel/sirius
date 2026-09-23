@@ -1,0 +1,15 @@
+# gpu_execution csv - order by with limit
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:598
+# sirius: id = "csv_disabled/order-by-with-limit"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+# sirius: float_tolerance = { absolute = 0.01, relative = 0.0 }
+query ??? rowsort
+SELECT
+  o_orderkey,
+  o_totalprice,
+  o_orderdate
+FROM
+  orders ORDER BY o_totalprice DESC LIMIT 10;
+----

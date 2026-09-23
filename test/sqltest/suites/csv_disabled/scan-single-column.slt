@@ -1,0 +1,12 @@
+# gpu_execution csv - scan single column
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:389
+# sirius: id = "csv_disabled/scan-single-column"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation;
+----

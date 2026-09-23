@@ -1,0 +1,17 @@
+# gpu_execution csv - multi table join
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:491
+# sirius: id = "csv_disabled/multi-table-join"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  c.c_name,
+  n.n_name
+FROM
+  customer c
+  INNER JOIN nation n ON c.c_nationkey = n.n_nationkey
+  INNER JOIN region r ON n.n_regionkey = r.r_regionkey
+WHERE
+  r.r_name = 'EUROPE' ORDER BY c.c_name LIMIT 10;
+----
