@@ -426,3 +426,231 @@ SQL fixture recipes accept `compression = "snappy"` or `"zstd"`; the default is
 Zstd. The fixed SF1 profile retains the original 2 GiB GPU, 4 GiB host, and
 16 GiB disk capacities. CPU-only validation uses local Parquet files without
 starting MinIO. The retained C++ TPC-H tests verify GPU routing at both scales.
+
+## Generated tests
+
+An external directory of self-contained `.slt` files uses the same runner through `--suite-dir NAME=PATH`. It needs no central registration or `suite.toml`:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --suite-dir generated=/tmp/generated-sql-tests --suite generated \
+  --axis optimizers=all --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/generated-001
+```
+
+Each generated file can create and populate its own tables, then compare query results with DuckDB. Give each query a stable ID, such as `generated/seed-17/query-1`, and preserve the seed in the file. This provides a replay path for a future fuzzer; generation and shrinking are outside the current scope.
+
+Use `__TEST_DIR__` for files created by a script, such as
+`COPY t TO '__TEST_DIR__/t.parquet' (FORMAT PARQUET)`. It expands to a separate
+scratch directory for each worker, preventing the reference and candidate from
+overwriting one another's fixtures. Reproduction SQL records the resolved paths.
+
+For nested layouts, declare `scratch_directories = ["parts", "hive/part=2024"]`
+in `suite.toml`. Each worker creates these relative paths below its own
+`__TEST_DIR__`. Parent traversal and absolute paths are rejected. Saved
+reproductions retain the declarations, and `complete` uses them too.
+
+For fixtures whose metadata contains relative file references, use a
+`fixture_files` map in `suite.toml`:
+
+```toml
+fixture_files = { "test/cpp/integration/data" = "iceberg-original" }
+```
+
+The map names prepared fixtures to copy into each worker's private directory.
+It also declares those fixture dependencies; no duplicate `fixtures` entry is
+needed. Paths must be relative and destinations must not overlap. Every source
+file is verified before copying. Workers can modify their own copies without
+changing the cache or another worker's inputs. Reproductions and `complete`
+retain the same layout.
+
+File fixtures can declare `extensions = ["avro", "iceberg"]` to provision
+reader dependencies during `prepare`, including when reusing cached data.
+Test scripts only `LOAD` extensions; they do not install them. The Iceberg
+suite preserves 174 original data and metadata files, literal expected rows,
+delete-file premises, snapshot IDs, and explicit fallback policies.
+
+The `correctness` run includes migrated integration cases and selects both
+native and Parquet storage. Each suite declares its supported storage modes:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run correctness --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/correctness-001
+```
+
+## Write a regression
+
+```text
+statement ok
+CREATE TABLE t(i INTEGER);
+
+statement ok
+INSERT INTO t VALUES (1), (1), (NULL);
+
+# sirius: id = "regressions/example"
+# sirius: tags = ["aggregate", "null", "duplicates"]
+query I
+SELECT count(i) FROM t;
+----
+```
+
+Stable IDs are required. Metadata is TOML on `# sirius:` lines immediately preceding a query. Supported keys are `id`, `tags`, `snapshot`, `timeout` (seconds, default 120), `execution`, and `tolerances` (zero-based columns). Includes are relative to their containing file, support globs, preserve source locations, and reject cycles.
+
+`float_tolerance = { absolute = 0.0001, relative = 0.0 }` supplies a default for
+FLOAT/DOUBLE columns when supplied datasets may use different numeric types.
+Decimal and integer columns remain exact. Per-column `tolerances` override that
+default and must still name floating columns. The same deterministic alignment
+requirements apply: ordered results or unique exact key columns.
+
+Generate an expected-output snapshot from DuckDB:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest complete \
+  test/sqltest/suites/regressions/example.slt
+```
+
+`complete` only uses CPU, adds `snapshot = true`, and rewrites the requested file after successful execution. It does not rewrite included files or gap expectations. Review the generated output before committing. Snapshots quote text using JSON escaping so whitespace, embedded separators, empty strings, and literal `"NULL"` remain distinguishable from SQL NULL.
+
+Use `rowsort` for unordered multisets and `nosort` for deterministic ordered output. Duplicates count. `valuesort` is rejected because it discards row relationships. Negative tests use native `query error REGEX`/`statement error REGEX` syntax. Retry, shell-command, and query conditions are intentionally rejected rather than silently ignored. Setup statements support the engine conditions described below.
+
+Floating-point comparisons are exact unless a test opts into tolerances:
+
+```text
+# sirius: tolerances = { "1" = { absolute = 1e-8, relative = 1e-9 } }
+```
+
+Approximate comparisons require deterministic row order or unique exact key columns. Ambiguous unordered matching is a harness limitation; the runner does not guess pairings. Decimal values and large integers remain exact. Arrow schema and DuckDB logical types must also match.
+
+## Intentional fallback tests
+
+Queries disable CPU fallback by default (`execution = "no_fallback"`). Tests
+whose purpose is to exercise fallback can opt in explicitly:
+
+```text
+# sirius: id = "regressions/fallback_case"
+# sirius: execution = "allow_fallback"
+query I
+SELECT count(DISTINCT value) FROM values_table;
+----
+```
+
+The policy applies to that query only and is reset before the next query. Both
+engines must still return matching results or the expected error. Reports group
+matches by execution policy: a match with fallback allowed is a correctness
+result, not evidence of GPU support. C++ tests retain counters that verify
+whether fallback happened at plan time or runtime. Reproduction SQL includes
+the execution settings and checkpoints used by the workers.
+
+## Engine-specific setup
+
+Use SQLLogicTest conditions on setup statements for settings or fixtures that
+apply to one engine:
+
+```text
+onlyif sirius
+statement ok
+SET max_sort_partition_bytes = 65536;
+```
+
+`onlyif duckdb`, `skipif duckdb`, and `skipif sirius` are also supported.
+Unknown labels, conditions on includes, dangling conditions, and conditions excluding both engines are errors. Query
+assertions must run on both engines. CPU-only validation treats both workers as
+DuckDB, and snapshot completion runs only DuckDB setup.
+
+## Transactions and named connections
+
+Use native SQLLogicTest `connection NAME` before each statement or query that
+should use a named connection. The directive applies to the next record only;
+other records use the default connection. Connections share the worker's
+database and retain their transaction and session state throughout the file.
+Commands execute sequentially, so these tests cover interleaved transactions;
+concurrent execution and lock timing remain C++ tests.
+
+Transaction suites must own checkpoint timing in `suite.toml`:
+
+```toml
+storage = ["native"]
+checkpoint = "explicit"
+```
+
+This disables the runner's automatic checkpoint before each query. Place SQL
+`CHECKPOINT` statements where the test needs them, such as before pinning a
+table. `complete` uses the suite's checkpoint policy too.
+
+```text
+connection reader
+statement ok
+BEGIN TRANSACTION;
+
+# sirius: id = "mvcc/reader_snapshot"
+connection reader
+query I
+SELECT count(*) FROM t;
+----
+
+connection reader
+statement ok
+ROLLBACK;
+```
+
+Each case saves `repro.slt` with includes expanded and a `suite.toml` preserving
+checkpoint policy and fixture dependencies. Replay through the runner to retain
+connections, expected errors, and execution policies:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --suite-dir replay=/absolute/path/to/case/artifacts --suite replay \
+  --select mvcc/reader_snapshot --axis gpu=one --axis storage=native \
+  --axis optimizers=default --extension /absolute/path/to/sirius.duckdb_extension \
+  --output runs/replay-001
+```
+
+Use the original corpus root, prepared fixtures, and axis choices recorded in
+`configuration.json`. Single-connection cases also save `repro.sql` and
+`reference-repro.sql` with the applicable setup and preceding queries.
+
+## SQL formatting
+
+Pre-commit formats `.slt` files and fixture `.sql` files using the same DuckDB-aware formatter as the runner. The standalone formatter builds in the isolated CPU environment and needs no DuckDB runtime or Sirius artifact:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqlformat
+pixi run --manifest-path tools/sqltest/pixi.toml sqlformat --check
+```
+
+Pass individual files or directories to limit the selection. SQLLogicTest metadata and expected output remain intact. SQL comments, relation placeholders, negative syntax tests, and DuckDB statements the parser does not recognize are preserved verbatim. Generic spelling, quote, whitespace, and line-ending fixers exclude SQL test data so they cannot rewrite literals or expected results. Vendored SQL under `upstream/` is excluded from the hook.
+
+## Reports and known gaps
+
+Each run saves its resolved `plan.json`, discovered `suites.json`, and `sqltest.toml`, plus `report.json`, `summary.md`, `junit.xml`, and per-case SQL, settings, Arrow results, text output, and error details. `worker-logs.txt` points to the reference/Sirius process logs. A worker crash or timeout blocks the remainder of that file and leaves independent files runnable. Reports are saved after each case so interrupted runs retain partial results.
+
+Start with `summary.md` for per-suite/configuration match counts and links to failures. A case's files live under `cases/CONFIGURATION_HASH/ID/`; `configuration.json` records its named axis choices and resolved settings. Compare `reference.txt` and `sirius.txt` for mismatches, or read `result.json` and the worker logs for execution failures. Re-run the case with `--select ID`, the same axis choices, and a fresh output directory.
+
+`gaps.toml` is an explicit baseline, initially empty. Add a gap only after linking a reviewed issue. Infrastructure, reference, and harness failures cannot be accepted as engine gaps. An expected failure remains visible as its raw outcome; a changed failure or unexpected pass fails the baseline check.
+
+```toml
+[[gaps]]
+id = "tpch/q01"
+axes = { gpu = "one", storage = "native", optimizers = "default" }
+outcome = "error"
+issue = "https://github.com/sirius-db/sirius/issues/123"
+error = "specific error pattern"
+```
+
+Gap coordinates must name every axis in the tested configuration; expectations do not automatically extend to new sweep choices. Remove the initial `gaps = []` when adding entries. Do not accept all observed failures automatically: crashes, harness defects, and incorrect results require inspection.
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest report \
+  runs/matrix-002/report.json --previous runs/matrix-001/report.json
+```
+
+History comparisons require a complete prior report and compatible runtime/device/comparison policy. Query, setup, fixture, and configuration changes are identified separately. Exit status is 0 for a passing baseline, 1 for failed/incomplete results, and 2 for invocation/provisioning failures.
+
+## Corpus provenance
+
+All 22 TPC-H, 99 TPC-DS, and 43 ClickBench IDs are imported. `upstream/` retains the original SQL. `provenance.json` records source versions. Ordered or limited benchmark queries append output-column tie breakers before LIMIT/OFFSET; the imported queries are correctness adaptations, not official benchmark submissions.
+
+The maintenance `import --suite NAME` command reads each suite's import definition from its `suite.toml`: schema SQL, extension dependencies, query source, expected count, and provenance. Paths in these definitions are relative to the corpus root. The bundled definitions use `tpch_queries()` and `tpcds_queries()` from the pinned runtime and a pinned ClickBench SQL file. It regenerates benchmark files and fixtures; it is not run during normal tests.
+
+Nightly artifact testing and a published history dashboard are follow-up work. Local JSON reports already support comparison through `--previous`.
