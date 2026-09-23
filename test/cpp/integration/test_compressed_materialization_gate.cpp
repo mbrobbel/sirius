@@ -231,7 +231,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
           // already equal the plan targets, so nothing narrows or restores.
           bool const gpu_tier = std::string_view(tier) == "gpu";
           auto const before   = sirius::test::get_compressed_materialization_stats(con);
-          compare_gpu_vs_cpu(con, kPayloadQuery);
+          require_gpu_query(con, kPayloadQuery);
           auto const after = sirius::test::get_compressed_materialization_stats(con);
           REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
           REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -249,7 +249,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
           // during scan normalization.
           require_ok(con.Query("SET enable_compressed_materialization = false;"), "disable flag");
           auto const off_before = sirius::test::get_compressed_materialization_stats(con);
-          compare_gpu_vs_cpu(con, kPayloadQuery);
+          require_gpu_query(con, kPayloadQuery);
           auto const off_after = sirius::test::get_compressed_materialization_stats(con);
           REQUIRE(off_after.scan_sidecars_installed == off_before.scan_sidecars_installed);
           REQUIRE(off_after.scan_columns_restored > off_before.scan_columns_restored);
@@ -275,7 +275,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
 
       require_ok(con.Query("SET enable_compressed_materialization = true;"), "enable flag");
       auto const before = sirius::test::get_compressed_materialization_stats(con);
-      compare_gpu_vs_cpu(con, kPayloadQuery);
+      require_gpu_query(con, kPayloadQuery);
       auto const after = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(after.scan_sidecars_installed == before.scan_sidecars_installed);
       REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -324,7 +324,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
       // to feature-off — no sidecar, no statistics work, no casts, no restores.
       require_ok(con.Query("SET enable_compressed_materialization = true;"), "enable flag");
       auto const before = sirius::test::get_compressed_materialization_stats(con);
-      compare_gpu_vs_cpu(con, kPayloadQuery);
+      require_gpu_query(con, kPayloadQuery);
       auto const after = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(after.scan_sidecars_installed == before.scan_sidecars_installed);
       REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -341,7 +341,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
       // The pin cannot serve v: empty serve-projection means no sidecar and a
       // fresh native disk read.
       auto const before = sirius::test::get_compressed_materialization_stats(con);
-      compare_gpu_vs_cpu(con, "SELECT k, v FROM t WHERE k <= 150 ORDER BY k, v;");
+      require_gpu_query(con, "SELECT k, v FROM t WHERE k <= 150 ORDER BY k, v;");
       auto const mid = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(mid.scan_sidecars_installed == before.scan_sidecars_installed);
       REQUIRE(mid.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -351,7 +351,7 @@ TEST_CASE("gpu_execution - compressed materialization residency gate states end 
       // ever narrows at serve time. k is filter+order-only on a GPU-tier pin,
       // so the tier policy retracts its target at plan time (no restored
       // assertion: the resident narrow chunks legitimately widen at the scan).
-      compare_gpu_vs_cpu(con, "SELECT k FROM t WHERE k <= 150 ORDER BY k;");
+      require_gpu_query(con, "SELECT k FROM t WHERE k <= 150 ORDER BY k;");
       auto const after = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(after.scan_sidecars_installed > mid.scan_sidecars_installed);
       REQUIRE(after.scan_columns_narrowed == mid.scan_columns_narrowed);
@@ -420,7 +420,7 @@ TEST_CASE("gpu_execution - multi-file pinned-narrow serve installs the residency
         // widens the resident chunks) while HOST-tier serves stay cast-free.
         bool const gpu_tier = std::string_view(tier) == "gpu";
         auto const before   = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, kPayloadQuery);
+        require_gpu_query(con, kPayloadQuery);
         auto const after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
         REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -438,7 +438,7 @@ TEST_CASE("gpu_execution - multi-file pinned-narrow serve installs the residency
         // native during scan normalization.
         require_ok(con.Query("SET enable_compressed_materialization = false;"), "disable flag");
         auto const off_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, kPayloadQuery);
+        require_gpu_query(con, kPayloadQuery);
         auto const off_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(off_after.scan_sidecars_installed == off_before.scan_sidecars_installed);
         REQUIRE(off_after.scan_columns_restored > off_before.scan_columns_restored);
@@ -499,7 +499,7 @@ TEST_CASE("gpu_execution - tier policy retracts restore-only columns on GPU tier
         // restorations run downstream, in the evaluator and at the aggregate boundary.
         bool const gpu_tier = std::string_view(tier) == "gpu";
         auto const before   = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, kQ1ShapeQuery);
+        require_gpu_query(con, kQ1ShapeQuery);
         auto const after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
         REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -569,7 +569,7 @@ TEST_CASE("gpu_execution - zero-benefit pruning stays discriminating on pinned-b
       require_ok(pin, "pin_table");
 
       auto const before = sirius::test::get_compressed_materialization_stats(con);
-      compare_gpu_vs_cpu(con, "SELECT sum(v), sum(d) FROM t;");
+      require_gpu_query(con, "SELECT sum(v), sum(d) FROM t;");
       auto const after = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(after.scan_sidecars_installed > before.scan_sidecars_installed);
       REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -589,7 +589,7 @@ TEST_CASE("gpu_execution - zero-benefit pruning stays discriminating on pinned-b
       require_ok(pin_dim, "pin dim");
 
       auto const before = sirius::test::get_compressed_materialization_stats(con);
-      compare_gpu_vs_cpu(con, "SELECT count(*) FROM t, o WHERE t.k = o.k;");
+      require_gpu_query(con, "SELECT count(*) FROM t, o WHERE t.k = o.k;");
       auto const after = sirius::test::get_compressed_materialization_stats(con);
       REQUIRE(after.scan_sidecars_installed >= before.scan_sidecars_installed + 2);
       REQUIRE(after.scan_columns_narrowed == before.scan_columns_narrowed);
@@ -720,7 +720,7 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // to numeric without converting it to a duration" out of that projection until the
         // carrier conversions learned to tunnel through the int32 representation.
         auto const group_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, "SELECT d1, count(*) AS n FROM t GROUP BY d1 ORDER BY d1;");
+        require_gpu_query(con, "SELECT d1, count(*) AS n FROM t GROUP BY d1 ORDER BY d1;");
         auto const group_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(group_after.scan_sidecars_installed > group_before.scan_sidecars_installed);
         REQUIRE(group_after.scan_columns_narrowed == group_before.scan_columns_narrowed);
@@ -733,9 +733,9 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // still INT16 when the group key crosses the aggregate. k is a value-sensitive aggregate
         // input and restores at its own boundary.
         auto const filter_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con,
-                           "SELECT d1, sum(k) AS sk FROM t WHERE d1 >= DATE '1994-01-01' "
-                           "GROUP BY d1 ORDER BY d1 LIMIT 20;");
+        require_gpu_query(con,
+                          "SELECT d1, sum(k) AS sk FROM t WHERE d1 >= DATE '1994-01-01' "
+                          "GROUP BY d1 ORDER BY d1 LIMIT 20;");
         auto const filter_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(filter_after.scan_sidecars_installed > filter_before.scan_sidecars_installed);
         REQUIRE(filter_after.scan_columns_narrowed == filter_before.scan_columns_narrowed);
@@ -746,8 +746,8 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // instance), so the assertion is the result: a pair evaluated at the wrong width, or one
         // side reinterpreted against the other, changes which rows survive.
         auto const pair_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, "SELECT count(*) AS c FROM t WHERE d1 < d2;");
-        compare_gpu_vs_cpu(con, "SELECT d1, d2 FROM t WHERE d1 < d2 ORDER BY d1, d2 LIMIT 50;");
+        require_gpu_query(con, "SELECT count(*) AS c FROM t WHERE d1 < d2;");
+        require_gpu_query(con, "SELECT d1, d2 FROM t WHERE d1 < d2 ORDER BY d1, d2 LIMIT 50;");
         auto const pair_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(pair_after.scan_sidecars_installed > pair_before.scan_sidecars_installed);
         REQUIRE(pair_after.scan_columns_narrowed == pair_before.scan_columns_narrowed);
@@ -755,11 +755,11 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // Nulls survive the carrier round trip: the predicate keeps the NULL rows, so the answer
         // depends on the validity mask arriving intact through narrowing, the narrow-width
         // comparison, and the restore.
-        compare_gpu_vs_cpu(
+        require_gpu_query(
           con,
           "SELECT count(*) AS c, count(d3) AS cd FROM t WHERE d3 < DATE '1995-01-01' "
           "OR d3 IS NULL;");
-        compare_gpu_vs_cpu(con, "SELECT d3 FROM t ORDER BY d3 NULLS FIRST LIMIT 10;");
+        require_gpu_query(con, "SELECT d3 FROM t ORDER BY d3 NULLS FIRST LIMIT 10;");
 
         // A restore-only DATE column: its single use is an ordering boundary, so the scan emits
         // TIMESTAMP_DAYS and the resident INT16 chunks widen inside normalize_physical_schema —
@@ -769,7 +769,7 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // `prune_immediate_scan_restores` folds the boundary projection's cast back into the
         // scan (not counted as a retraction). The retraction counter is what separates them.
         auto const order_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con, "SELECT d1 FROM t ORDER BY d1 LIMIT 100;");
+        require_gpu_query(con, "SELECT d1 FROM t ORDER BY d1 LIMIT 100;");
         auto const order_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(order_after.scan_sidecars_installed > order_before.scan_sidecars_installed);
         REQUIRE(order_after.scan_columns_narrowed == order_before.scan_columns_narrowed);
@@ -786,9 +786,9 @@ TEST_CASE("gpu_execution - a pinned narrow DATE column round-trips through its r
         // sides restore INT16 back to TIMESTAMP_DAYS below the join; a self-join puts both
         // restores on scans served by the same pinned entry.
         auto const join_before = sirius::test::get_compressed_materialization_stats(con);
-        compare_gpu_vs_cpu(con,
-                           "SELECT a.k AS ak, count(*) AS n FROM t a JOIN t b ON a.d1 = b.d2 "
-                           "WHERE a.k < 5 GROUP BY a.k ORDER BY a.k;");
+        require_gpu_query(con,
+                          "SELECT a.k AS ak, count(*) AS n FROM t a JOIN t b ON a.d1 = b.d2 "
+                          "WHERE a.k < 5 GROUP BY a.k ORDER BY a.k;");
         auto const join_after = sirius::test::get_compressed_materialization_stats(con);
         REQUIRE(join_after.scan_sidecars_installed >= join_before.scan_sidecars_installed + 2);
         REQUIRE(join_after.scan_columns_narrowed == join_before.scan_columns_narrowed);
