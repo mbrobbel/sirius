@@ -268,7 +268,44 @@ class GpuExecutionFixture {
     REQUIRE(gpu_rows == cpu_rows);
   }
 
+  void require_gpu_execution(const std::string& query) { execute_on_gpu(query); }
+
+  /// Assert a plan-time fallback without starting GPU execution.
+  void expect_plan_fallback(const std::string& query)
+  {
+    run_ok("SET gpu_execution = true;");
+    auto const before = sirius::test::get_transparent_execution_stats(*con);
+    auto gpu_result   = con->Query(query);
+    auto const after  = sirius::test::get_transparent_execution_stats(*con);
+    REQUIRE(gpu_result);
+    if (gpu_result->HasError()) { UNSCOPED_INFO("query error: " << gpu_result->GetError()); }
+    REQUIRE_FALSE(gpu_result->HasError());
+    if (after.fallbacks == before.fallbacks) {
+      UNSCOPED_INFO("expected a plan-time fallback to CPU, but none occurred");
+    }
+    REQUIRE(after.fallbacks == before.fallbacks + 1);
+    REQUIRE(after.executions == before.executions);
+  }
+
  private:
+  duckdb::unique_ptr<duckdb::MaterializedQueryResult> execute_on_gpu(const std::string& query)
+  {
+    // Run on GPU (transparent, plain SQL goes through the Sirius optimizer hook).
+    con->Query("SET gpu_execution = true;");
+    auto before_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
+
+    auto gpu_result = con->Query(query);
+    REQUIRE(gpu_result);
+    if (gpu_result->HasError()) {
+      UNSCOPED_INFO("transparent GPU execution error: " << gpu_result->GetError());
+    }
+    REQUIRE_FALSE(gpu_result->HasError());
+    auto after_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
+    // Exactly one GPU execution, no fallback: proves the query ran on the GPU.
+    sirius::test::require_transparent_execution_delta(before_gpu_stats, after_gpu_stats, 1, 0, 1);
+    return gpu_result;
+  }
+
   void compare_gpu_vs_cpu_impl(const std::string& query,
                                bool ordered,
                                const std::set<size_t>& approx_cols = {},
