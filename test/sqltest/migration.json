@@ -8041,6 +8041,56 @@
       "test": "partition memory-space repro - single-GPU OOM-reschedule control"
     },
     {
+      "file": "suites/partition_memory_mgpu/repeated-join.slt",
+      "id": "partition_memory_mgpu/repeated-join/001",
+      "identity": "835a63b1e7fab627d999a116a051635be0331c53c5a43046a73b549756553859",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory_mgpu",
+      "test": "partition memory-space is enforced across OOM reschedule on multi-GPU"
+    },
+    {
+      "file": "suites/partition_memory_mgpu/repeated-join.slt",
+      "id": "partition_memory_mgpu/repeated-join/002",
+      "identity": "0e3c8b71322e7609c3431e497381b8b9d8b8293ecf9e90b414fec9bf6a4d21b4",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory_mgpu",
+      "test": "partition memory-space is enforced across OOM reschedule on multi-GPU"
+    },
+    {
+      "file": "suites/partition_memory_mgpu/repeated-join.slt",
+      "id": "partition_memory_mgpu/repeated-join/003",
+      "identity": "f6f34e9c6be4576be6f0d52787a93a1a41f82bb6b34861f3a493c90d152e44f6",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory_mgpu",
+      "test": "partition memory-space is enforced across OOM reschedule on multi-GPU"
+    },
+    {
+      "file": "suites/partition_memory_mgpu/repeated-join.slt",
+      "id": "partition_memory_mgpu/repeated-join/004",
+      "identity": "9bb24b566cbd96315c717d20256b645a409b5d34e8b5c28309dcf7b59218cb47",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory_mgpu",
+      "test": "partition memory-space is enforced across OOM reschedule on multi-GPU"
+    },
+    {
+      "file": "suites/partition_memory_mgpu/repeated-join.slt",
+      "id": "partition_memory_mgpu/repeated-join/005",
+      "identity": "b8ef5d84fc4047fe0cffb1104d147aaa98a774fc4a1c1edc90b3bd3cda674640",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory_mgpu",
+      "test": "partition memory-space is enforced across OOM reschedule on multi-GPU"
+    },
+    {
       "file": "suites/operator_mgpu_order/large.slt",
       "id": "operator_mgpu_order/large/001",
       "identity": "103dc18e4037d11f5960df45b2c60417c048a4631c640234ffb000e16b885d36",
