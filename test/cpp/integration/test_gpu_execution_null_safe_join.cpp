@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for null-safe joins: a join keyed on IS NOT DISTINCT
+// GPU execution assertions for null-safe joins: a join keyed on IS NOT DISTINCT
 // FROM must match NULL to NULL, unlike a plain '=' join. Previously the GPU hash
 // join hardcoded cudf::null_equality::UNEQUAL for every condition, so NULL keys
 // never matched and IS NOT DISTINCT FROM joins silently undercounted. The fix
@@ -83,8 +83,8 @@ TEST_CASE_METHOD(NullSafeJoinFixture,
 {
   // NULL keys on both sides match each other: (l.k=10↔r.k=10) plus the NULL rows
   // (l ids 2,3) × (r id 101) = 3 matched rows, vs 1 for a plain '=' join.
-  compare_gpu_vs_cpu("SELECT l.id, r.id FROM l JOIN r ON l.k IS NOT DISTINCT FROM r.k");
-  compare_gpu_vs_cpu("SELECT count(*) FROM l JOIN r ON l.k IS NOT DISTINCT FROM r.k");
+  require_gpu_execution("SELECT l.id, r.id FROM l JOIN r ON l.k IS NOT DISTINCT FROM r.k");
+  require_gpu_execution("SELECT count(*) FROM l JOIN r ON l.k IS NOT DISTINCT FROM r.k");
 }
 
 TEST_CASE_METHOD(NullSafeJoinFixture,
@@ -93,8 +93,8 @@ TEST_CASE_METHOD(NullSafeJoinFixture,
 {
   // Regression guard: null-safe handling must not leak into ordinary equality
   // joins, where NULL <> NULL means the NULL-keyed rows do not match.
-  compare_gpu_vs_cpu("SELECT l.id, r.id FROM l JOIN r ON l.k = r.k");
-  compare_gpu_vs_cpu("SELECT count(*) FROM l JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT l.id, r.id FROM l JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT count(*) FROM l JOIN r ON l.k = r.k");
 }
 
 TEST_CASE_METHOD(NullSafeJoinFixture,
@@ -103,7 +103,7 @@ TEST_CASE_METHOD(NullSafeJoinFixture,
 {
   // Every left row is emitted; its NULL key matches r's NULL key, while the
   // unmatched left row (k=20) is NULL-padded on the right.
-  compare_gpu_vs_cpu("SELECT l.id, r.id FROM l LEFT JOIN r ON l.k IS NOT DISTINCT FROM r.k");
+  require_gpu_execution("SELECT l.id, r.id FROM l LEFT JOIN r ON l.k IS NOT DISTINCT FROM r.k");
 }
 
 TEST_CASE_METHOD(NullSafeJoinFixture,
@@ -112,7 +112,8 @@ TEST_CASE_METHOD(NullSafeJoinFixture,
 {
   // FULL OUTER is symmetric, so DuckDB can't rewrite it away -- it genuinely
   // exercises the full-outer path with a null-safe key.
-  compare_gpu_vs_cpu("SELECT l.id, r.id FROM l FULL OUTER JOIN r ON l.k IS NOT DISTINCT FROM r.k");
+  require_gpu_execution(
+    "SELECT l.id, r.id FROM l FULL OUTER JOIN r ON l.k IS NOT DISTINCT FROM r.k");
 }
 
 TEST_CASE_METHOD(NullSafeJoinFixture,
@@ -123,7 +124,7 @@ TEST_CASE_METHOD(NullSafeJoinFixture,
   // hash join's right-family path. Disable the build-side/probe-side optimizer so the
   // RIGHT join type is preserved, forcing that path with a null-safe key.
   disabled_optimizer_guard guard(*con->context, duckdb::OptimizerType::BUILD_SIDE_PROBE_SIDE);
-  compare_gpu_vs_cpu("SELECT l.id, r.id FROM l RIGHT JOIN r ON l.k IS NOT DISTINCT FROM r.k");
+  require_gpu_execution("SELECT l.id, r.id FROM l RIGHT JOIN r ON l.k IS NOT DISTINCT FROM r.k");
 }
 
 TEST_CASE_METHOD(MixedKeyJoinFixture,
@@ -131,9 +132,9 @@ TEST_CASE_METHOD(MixedKeyJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // Keep null-free mixed keys on GPU; rejecting them breaks delim joins.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT ml.a, ml.b FROM ml JOIN mr ON ml.a = mr.a AND ml.b IS NOT DISTINCT FROM mr.b");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM ml JOIN mr ON ml.a = mr.a AND ml.b IS NOT DISTINCT FROM mr.b");
 }
 
@@ -160,10 +161,10 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // Expected matches: one non-NULL pair and two null-safe NULL pairs.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, mnr.id FROM mnl JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM mnl JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
 }
@@ -173,7 +174,7 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // All six left rows are emitted; rows 4, 5, and 6 are NULL-padded on the right.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, mnr.id FROM mnl LEFT JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
 }
@@ -184,10 +185,10 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
 {
   // Preserve left SEMI/ANTI planning; row 6 must not match on its plain NULL key.
   disabled_optimizer_guard guard(*con->context, duckdb::OptimizerType::BUILD_SIDE_PROBE_SIDE);
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id FROM mnl SEMI JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id FROM mnl ANTI JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
 }
@@ -197,7 +198,7 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // FULL OUTER cannot be rewritten to a swapped join.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, mnr.id FROM mnl FULL OUTER JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
 }
@@ -209,7 +210,7 @@ TEST_CASE_METHOD(
 {
   // Preserve RIGHT instead of lowering it to a swapped LEFT join.
   disabled_optimizer_guard guard(*con->context, duckdb::OptimizerType::BUILD_SIDE_PROBE_SIDE);
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, mnr.id FROM mnl RIGHT JOIN mnr "
     "ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b");
 }
@@ -238,10 +239,10 @@ TEST_CASE_METHOD(MixedTypeNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // SMALLINT-to-INTEGER must be materialized while preserving three expected matches.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mtl.id, mtr.id FROM mtl JOIN mtr "
     "ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT count(*) FROM mtl JOIN mtr "
     "ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b");
 }
@@ -251,7 +252,7 @@ TEST_CASE_METHOD(MixedTypeNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // The pre-routing, null-free case must continue to run without fallback.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mtl.id, mtr.id FROM mtl JOIN mtr "
     "ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b "
     "WHERE mtl.b IS NOT NULL AND mtr.b IS NOT NULL");
@@ -262,7 +263,7 @@ TEST_CASE_METHOD(MixedTypeNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // SMALLINT-to-BIGINT remains inline because cuDF AST supports the target type.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mtl.id, mtr.id FROM mtl JOIN mtr "
     "ON mtl.a = mtr.a AND mtl.c IS NOT DISTINCT FROM mtr.c");
 }
@@ -272,9 +273,9 @@ TEST_CASE_METHOD(MixedTypeNullSafeJoinFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // SELECT * catches synthetic key columns leaking into join output.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT * FROM mtl JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT * FROM mtl LEFT JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b");
 }
 
@@ -285,7 +286,7 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
                  "gpu_execution mixed plain + null-safe MARK join falls back at plan time",
                  "[integration][gpu_execution][join][nulls]")
 {
-  expect_plan_fallback_matches_cpu(
+  expect_plan_fallback(
     "SELECT mnl.id, mnl.b IN (SELECT mnr.b FROM mnr WHERE mnr.a = mnl.a) AS in_b FROM mnl");
 }
 
@@ -295,13 +296,13 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
 {
   // Every key null-safe => EQUAL matching and definite marks. mnl rows 2, 3 and 5 have a NULL
   // `b` that must match mnr's NULL `b`.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, EXISTS (SELECT 1 FROM mnr "
     "WHERE mnr.b IS NOT DISTINCT FROM mnl.b) AS has_match "
     "FROM mnl");
   // Both correlated predicates decorrelate to null-safe delim keys, so this is all-null-safe
   // too -- it is the query that was [!mayfail] before.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, EXISTS (SELECT 1 FROM mnr "
     "WHERE mnr.a = mnl.a AND mnr.b IS NOT DISTINCT FROM mnl.b) AS has_match "
     "FROM mnl");
@@ -315,10 +316,10 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
   // into an all-null-safe MARK over a build side pre-filtered to `a IS NOT NULL`. The null-safe
   // key is what makes an unmatched row a definite FALSE, so under the old UNEQUAL pin mnl row 6
   // (a IS NULL, unmatched) came back NULL instead of false.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, EXISTS (SELECT 1 FROM mnr WHERE mnr.a = mnl.a) AS has_match FROM mnl");
   // NOT EXISTS negates the same mark; a stray NULL would surface here as a missing row.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT mnl.id, NOT EXISTS (SELECT 1 FROM mnr WHERE mnr.a = mnl.a) AS no_match FROM mnl");
 }
 
@@ -328,6 +329,6 @@ TEST_CASE_METHOD(MixedKeyNullSafeJoinFixture,
 {
   // Regression guard on the plan-time screen: an uncorrelated MARK, whose only key is a plain
   // '=', keeps running on the GPU.
-  compare_gpu_vs_cpu("SELECT mnl.id, mnl.b IN (SELECT mnr.b FROM mnr) AS in_b FROM mnl");
-  compare_gpu_vs_cpu("SELECT mnl.id, mnl.a IN (SELECT mnr.a FROM mnr) AS in_a FROM mnl");
+  require_gpu_execution("SELECT mnl.id, mnl.b IN (SELECT mnr.b FROM mnr) AS in_b FROM mnl");
+  require_gpu_execution("SELECT mnl.id, mnl.a IN (SELECT mnr.a FROM mnr) AS in_a FROM mnl");
 }
