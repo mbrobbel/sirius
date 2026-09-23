@@ -1,0 +1,50 @@
+include ../../fixtures/migrated/cast_date.slt
+
+onlyif sirius
+statement ok
+SET pin_table_compression = true;
+
+onlyif sirius
+statement ok
+SET pin_table_compression_min_batch_size_bytes = 0;
+
+onlyif sirius
+statement ok
+SET pin_table_compression_max_compressed_fraction = 1000;
+
+onlyif sirius
+statement ok
+SET pin_table_input_compression_plan_dir = '__TEST_DIR__';
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/t_inf.parquet', tier = 'gpu', name = 'p_t_inf');
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:268
+# sirius: id = "cast_date/parquet-pin-t_inf-infinityconstants-01/ids"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "parquet-pin"]
+query ? rowsort
+SELECT
+  id
+FROM
+  p_t_inf
+WHERE
+  d < TIMESTAMP 'infinity';
+----
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:268
+# sirius: id = "cast_date/parquet-pin-t_inf-infinityconstants-01/aggregate"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "parquet-pin"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(id)
+FROM
+  p_t_inf
+WHERE
+  d < TIMESTAMP 'infinity';
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('p_t_inf');
