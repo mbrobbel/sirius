@@ -1,0 +1,59 @@
+statement ok
+CREATE TABLE fixture_source AS SELECT range AS k, range * 7 AS v FROM range(500000);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p1.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p2.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p3.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p4.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p5.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p6.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/left/p7.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE fixture_source;
+
+statement ok
+CREATE TABLE fixture_source AS SELECT range AS k, range * 7 AS v FROM range(500000);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p1.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p2.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p3.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p4.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p5.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p6.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/right/p7.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE fixture_source;

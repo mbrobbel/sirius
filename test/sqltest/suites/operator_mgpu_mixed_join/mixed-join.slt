@@ -1,0 +1,131 @@
+include ../../fixtures/migrated/operator_mgpu/mixed-join.slt
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:257
+# sirius: id = "operator_mgpu_mixed_join/mixed-join/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  l.k,
+  COUNT(*) AS n
+FROM
+  read_parquet('__TEST_DIR__/left/*.parquet') AS l
+  JOIN read_parquet('__TEST_DIR__/right/*.parquet') AS r ON l.k = r.k
+GROUP BY
+  l.k ORDER BY l.k LIMIT 50;
+----
+0	64
+1	64
+2	64
+3	64
+4	64
+5	64
+6	64
+7	64
+8	64
+9	64
+10	64
+11	64
+12	64
+13	64
+14	64
+15	64
+16	64
+17	64
+18	64
+19	64
+20	64
+21	64
+22	64
+23	64
+24	64
+25	64
+26	64
+27	64
+28	64
+29	64
+30	64
+31	64
+32	64
+33	64
+34	64
+35	64
+36	64
+37	64
+38	64
+39	64
+40	64
+41	64
+42	64
+43	64
+44	64
+45	64
+46	64
+47	64
+48	64
+49	64
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:257
+# sirius: id = "operator_mgpu_mixed_join/mixed-join/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  l.k,
+  COUNT(*) AS n
+FROM
+  read_parquet('__TEST_DIR__/left/*.parquet') AS l
+  JOIN read_parquet('__TEST_DIR__/right/*.parquet') AS r ON l.k = r.k
+GROUP BY
+  l.k ORDER BY l.k LIMIT 50;
+----
+0	64
+1	64
+2	64
+3	64
+4	64
+5	64
+6	64
+7	64
+8	64
+9	64
+10	64
+11	64
+12	64
+13	64
+14	64
+15	64
+16	64
+17	64
+18	64
+19	64
+20	64
+21	64
+22	64
+23	64
+24	64
+25	64
+26	64
+27	64
+28	64
+29	64
+30	64
+31	64
+32	64
+33	64
+34	64
+35	64
+36	64
+37	64
+38	64
+39	64
+40	64
+41	64
+42	64
+43	64
+44	64
+45	64
+46	64
+47	64
+48	64
+49	64
