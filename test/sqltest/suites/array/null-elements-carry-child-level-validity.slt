@@ -1,0 +1,29 @@
+# gpu_execution array - NULL elements carry child-level validity
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_elem_null (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_elem_null VALUES
+  (1, [1, NULL, 3]),
+  (2, [NULL, NULL, NULL]),
+  (3, [4, 5, 6]),
+  (4, NULL);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:325
+# sirius: id = "array/null-elements-carry-child-level-validity/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_elem_null;
+----

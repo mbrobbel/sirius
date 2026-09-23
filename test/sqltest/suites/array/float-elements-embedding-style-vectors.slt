@@ -1,0 +1,54 @@
+# gpu_execution array - FLOAT elements (embedding-style vectors)
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_flt (
+  id INTEGER,
+  a FLOAT[4]
+);
+
+statement ok
+INSERT INTO arr_flt VALUES
+  (1, [1.5, 2.25, -3.75, 0.125]),
+  (2, [4.5, -5.0, 6.625, 7.0]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:213
+# sirius: id = "array/float-elements-embedding-style-vectors/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_flt;
+----
+
+statement ok
+CREATE TABLE arr_flt_big (
+  id INTEGER,
+  a FLOAT[3]
+);
+
+statement ok
+INSERT INTO arr_flt_big SELECT
+  i,
+  [i * 0.5, i * 0.25, i * -0.125]::FLOAT[3]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:223
+# sirius: id = "array/float-elements-embedding-style-vectors/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_flt_big;
+----

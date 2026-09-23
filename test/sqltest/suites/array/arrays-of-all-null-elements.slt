@@ -1,0 +1,29 @@
+# gpu_execution array - arrays of all-NULL elements
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_nullelems (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_nullelems SELECT
+  range::INTEGER,
+  [NULL, NULL, NULL]::INTEGER[3]
+FROM
+  range(3000);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:121
+# sirius: id = "array/arrays-of-all-null-elements/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_nullelems ORDER BY id;
+----

@@ -1,0 +1,102 @@
+# gpu_execution array - signed integer element widths 1/2/4/8 bytes
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_i8 (
+  id INTEGER,
+  a TINYINT[3]
+);
+
+statement ok
+INSERT INTO arr_i8 VALUES
+  (1, [1, 2, 3]),
+  (2, [127, -1, 0]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:151
+# sirius: id = "array/signed-integer-element-widths-1-2-4-8-bytes/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_i8;
+----
+
+statement ok
+CREATE TABLE arr_i16 (
+  id INTEGER,
+  a SMALLINT[4]
+);
+
+statement ok
+INSERT INTO arr_i16 VALUES
+  (1, [10, -20, 30, -40]),
+  (2, [32767, -1, 0, -100]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:156
+# sirius: id = "array/signed-integer-element-widths-1-2-4-8-bytes/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_i16;
+----
+
+statement ok
+CREATE TABLE arr_i32 (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_i32 VALUES
+  (1, [100, -200, 300]),
+  (2, [2147483647, -1, 0]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:161
+# sirius: id = "array/signed-integer-element-widths-1-2-4-8-bytes/003"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_i32;
+----
+
+statement ok
+CREATE TABLE arr_i64 (
+  id INTEGER,
+  a BIGINT[2]
+);
+
+statement ok
+INSERT INTO arr_i64 VALUES
+  (1, [9223372036854775807, -1]),
+  (2, [0, -100]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:166
+# sirius: id = "array/signed-integer-element-widths-1-2-4-8-bytes/004"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_i64;
+----

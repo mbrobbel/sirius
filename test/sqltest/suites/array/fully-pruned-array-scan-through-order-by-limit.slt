@@ -1,0 +1,45 @@
+# gpu_execution array - fully pruned ARRAY scan through ORDER BY LIMIT
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_prune (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_prune SELECT
+  i,
+  [i, i + 1, i + 2]
+FROM
+  range(3000) t (i);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation');
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:533
+# sirius: id = "array/fully-pruned-array-scan-through-order-by-limit/001"
+# sirius: tags = ["integration", "array"]
+query ?? nosort
+SELECT
+  id,
+  a
+FROM
+  arr_prune ORDER BY id LIMIT 5;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:534
+# sirius: id = "array/fully-pruned-array-scan-through-order-by-limit/002"
+# sirius: tags = ["integration", "array"]
+query ?? nosort
+SELECT
+  id,
+  a
+FROM
+  arr_prune
+WHERE
+  id >= 1000000 ORDER BY id LIMIT 5;
+----

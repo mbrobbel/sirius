@@ -1,0 +1,81 @@
+# gpu_execution array - multiple ARRAY columns in one table
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_multi (
+  id INTEGER,
+  a INTEGER[3],
+  b BIGINT[2]
+);
+
+statement ok
+INSERT INTO arr_multi VALUES
+  (1, [1, 2, 3], [100, 200]),
+  (2, [4, 5, 6], [300, 400]),
+  (3, [7, 8, 9], [500, 600]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:266
+# sirius: id = "array/multiple-array-columns-in-one-table/001"
+# sirius: tags = ["integration", "array"]
+query ??? rowsort
+SELECT
+  id,
+  a,
+  b
+FROM
+  arr_multi;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:269
+# sirius: id = "array/multiple-array-columns-in-one-table/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  b,
+  a
+FROM
+  arr_multi;
+----
+
+statement ok
+CREATE TABLE arr_multi_big (
+  id INTEGER,
+  a INTEGER[2],
+  b DOUBLE[3]
+);
+
+statement ok
+INSERT INTO arr_multi_big SELECT
+  i,
+  CASE
+    WHEN i % 5 = 0 THEN
+      NULL
+    ELSE
+      [i, i + 1]
+  END,
+  CASE
+    WHEN i % 3 = 0 THEN
+      NULL
+    ELSE
+      [i * 0.5, i * 0.25, i * 0.125]
+  END
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:281
+# sirius: id = "array/multiple-array-columns-in-one-table/003"
+# sirius: tags = ["integration", "array"]
+query ??? rowsort
+SELECT
+  id,
+  a,
+  b
+FROM
+  arr_multi_big;
+----

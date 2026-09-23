@@ -1,0 +1,30 @@
+# gpu_execution array - NULL arrays survive an ORDER BY
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_null_sort (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_null_sort VALUES
+  (1, [1, 2, 3]),
+  (2, NULL),
+  (3, [NULL, 5, NULL]),
+  (4, [7, NULL, 9]),
+  (5, NULL);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:365
+# sirius: id = "array/null-arrays-survive-an-order-by/001"
+# sirius: tags = ["integration", "array"]
+query ?? nosort
+SELECT
+  id,
+  a
+FROM
+  arr_null_sort ORDER BY id DESC;
+----

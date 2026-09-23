@@ -1,0 +1,36 @@
+# gpu_execution array - NULL arrays survive an ORDER BY across scan batches
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_null_sort_big (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_null_sort_big SELECT
+  i,
+  CASE
+    WHEN i BETWEEN 1000 AND 1099 THEN
+      NULL
+    WHEN i % 7 = 0 THEN
+      [NULL, i + 1, NULL]
+    ELSE
+      [i, i + 1, i + 2]
+  END
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:388
+# sirius: id = "array/null-arrays-survive-an-order-by-across-scan-batches/001"
+# sirius: tags = ["integration", "array"]
+query ?? nosort
+SELECT
+  id,
+  a
+FROM
+  arr_null_sort_big ORDER BY id;
+----

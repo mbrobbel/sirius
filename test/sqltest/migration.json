@@ -259,6 +259,386 @@
       "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
       "suite": "allnull_scan",
       "test": "gpu_execution wholly-NULL VARCHAR column"
+    },
+    {
+      "file": "suites/array/scan-integer-3-passthrough.slt",
+      "id": "array/scan-integer-3-passthrough/001",
+      "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",
+      "kind": "query",
+      "line": 92,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - scan INTEGER[3] passthrough"
+    },
+    {
+      "file": "suites/array/scan-integer-3-passthrough.slt",
+      "id": "array/scan-integer-3-passthrough/002",
+      "identity": "077869aae6e8e05f79170bb0b7d4b46f3817f781e7080194707b48ecc6d1d08c",
+      "kind": "query",
+      "line": 94,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - scan INTEGER[3] passthrough"
+    },
+    {
+      "file": "suites/array/fully-null-array-column.slt",
+      "id": "array/fully-null-array-column/001",
+      "identity": "62733cd9f2e25b34ceb6b989a9d0c2f47d913b3c7049e755f82586868c828944",
+      "kind": "query",
+      "line": 106,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - fully NULL array column"
+    },
+    {
+      "file": "suites/array/fully-null-array-column.slt",
+      "id": "array/fully-null-array-column/002",
+      "identity": "0b41385fcb840651c7a1c6754601a9f233fbae7a0d5483288ee9ae0ac351e32e",
+      "kind": "query",
+      "line": 107,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - fully NULL array column"
+    },
+    {
+      "file": "suites/array/arrays-of-all-null-elements.slt",
+      "id": "array/arrays-of-all-null-elements/001",
+      "identity": "6a762370222de4c34f775bce58bfa809fee2067493e744f79e9a08da5662feb6",
+      "kind": "query",
+      "line": 121,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - arrays of all-NULL elements"
+    },
+    {
+      "file": "suites/array/element-types-double-and-bigint.slt",
+      "id": "array/element-types-double-and-bigint/001",
+      "identity": "3d5ddc6af1bc60d240c7387fa4287751a5e62cc9eabb4f9312ee5e5793107445",
+      "kind": "query",
+      "line": 131,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - element types DOUBLE and BIGINT"
+    },
+    {
+      "file": "suites/array/element-types-double-and-bigint.slt",
+      "id": "array/element-types-double-and-bigint/002",
+      "identity": "8461154c74c5635705f12641ecfd11c078e9f74b112b75153177f02715b7deea",
+      "kind": "query",
+      "line": 136,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - element types DOUBLE and BIGINT"
+    },
+    {
+      "file": "suites/array/signed-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/signed-integer-element-widths-1-2-4-8-bytes/001",
+      "identity": "f4d7a207fa8408c00e17ccfdaa6292c67c21b07a095e42a554296e9a18d07a43",
+      "kind": "query",
+      "line": 151,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - signed integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/signed-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/signed-integer-element-widths-1-2-4-8-bytes/002",
+      "identity": "dd97e0f739810893efa49b97401a3c050718ae84bf89743144500a09c2556267",
+      "kind": "query",
+      "line": 156,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - signed integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/signed-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/signed-integer-element-widths-1-2-4-8-bytes/003",
+      "identity": "b5d339e35f7e55dfd1bb08120b31f36f97c093ed0152f9d6b0880a7c21158d55",
+      "kind": "query",
+      "line": 161,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - signed integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/signed-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/signed-integer-element-widths-1-2-4-8-bytes/004",
+      "identity": "1777edfbb06ac0d20cc7e752051c2d87cf2f1fce7f77a024d3ee4a76c5f99e95",
+      "kind": "query",
+      "line": 166,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - signed integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/unsigned-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/unsigned-integer-element-widths-1-2-4-8-bytes/001",
+      "identity": "42c2a9e3bc2649630b6b6a42f9c41c57da5ae4459900e65dfe79716f1c51f862",
+      "kind": "query",
+      "line": 179,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - unsigned integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/unsigned-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/unsigned-integer-element-widths-1-2-4-8-bytes/002",
+      "identity": "48372c0992197f8f4955e9378eae83ba109c9547e6aa7e5fb2b66c3f1256c1c4",
+      "kind": "query",
+      "line": 184,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - unsigned integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/unsigned-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/unsigned-integer-element-widths-1-2-4-8-bytes/003",
+      "identity": "4f3e3b8263b01ca6b6fd86d2d2e61798f89f6e09f70c973f72a252e6f34d28c2",
+      "kind": "query",
+      "line": 189,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - unsigned integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/unsigned-integer-element-widths-1-2-4-8-bytes.slt",
+      "id": "array/unsigned-integer-element-widths-1-2-4-8-bytes/004",
+      "identity": "90a42cd6c12b8f8c2cf591fd6753e5128c47e39078872fa2fcb73daf0fc31e0a",
+      "kind": "query",
+      "line": 196,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - unsigned integer element widths 1/2/4/8 bytes"
+    },
+    {
+      "file": "suites/array/float-elements-embedding-style-vectors.slt",
+      "id": "array/float-elements-embedding-style-vectors/001",
+      "identity": "391c6aba69d1761c24c8ed0930c4e71ccc73185d3abe48107cae42e94bca1ed2",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - FLOAT elements (embedding-style vectors)"
+    },
+    {
+      "file": "suites/array/float-elements-embedding-style-vectors.slt",
+      "id": "array/float-elements-embedding-style-vectors/002",
+      "identity": "f8edc8a2a088fd8691c0c62999969cfd2cdb74d8c7960161dcbba7a903d6972c",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - FLOAT elements (embedding-style vectors)"
+    },
+    {
+      "file": "suites/array/single-element-arrays-array-size-1.slt",
+      "id": "array/single-element-arrays-array-size-1/001",
+      "identity": "e8c4acfb50c7844440a97c85766fd119dbc08d5d9cbc7c0df54794a03ad4ff3f",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - single-element arrays (array_size == 1)"
+    },
+    {
+      "file": "suites/array/single-element-arrays-array-size-1.slt",
+      "id": "array/single-element-arrays-array-size-1/002",
+      "identity": "1b6b9e6191c55816554420a93f3551a8756d493345050ccaabceabe5ab7d7009",
+      "kind": "query",
+      "line": 247,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - single-element arrays (array_size == 1)"
+    },
+    {
+      "file": "suites/array/multiple-array-columns-in-one-table.slt",
+      "id": "array/multiple-array-columns-in-one-table/001",
+      "identity": "49f4b8f8fd24b39db7dc597619d1f1191c1d07de163a3f450fe835617276301c",
+      "kind": "query",
+      "line": 266,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - multiple ARRAY columns in one table"
+    },
+    {
+      "file": "suites/array/multiple-array-columns-in-one-table.slt",
+      "id": "array/multiple-array-columns-in-one-table/002",
+      "identity": "8c529dd02c8e27e3e4c1881677858efafcaa3b81dc9c50182035eae35b27cf4f",
+      "kind": "query",
+      "line": 269,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - multiple ARRAY columns in one table"
+    },
+    {
+      "file": "suites/array/multiple-array-columns-in-one-table.slt",
+      "id": "array/multiple-array-columns-in-one-table/003",
+      "identity": "0ff1645de24656ce5887954005359763362ce6a69acbf6788807f7c2cfc4a1ef",
+      "kind": "query",
+      "line": 281,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - multiple ARRAY columns in one table"
+    },
+    {
+      "file": "suites/array/rowid-projected-alongside-an-array-column.slt",
+      "id": "array/rowid-projected-alongside-an-array-column/001",
+      "identity": "454cdcd20248e32000e48b83cf43e9cabb0eb2adc554f497730c6583185a97d5",
+      "kind": "query",
+      "line": 295,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - rowid projected alongside an ARRAY column"
+    },
+    {
+      "file": "suites/array/null-arrays-carry-list-level-validity.slt",
+      "id": "array/null-arrays-carry-list-level-validity/001",
+      "identity": "7451e44369bb8578fb429d961b4d0497a071619b085a19aa9eb478835eac5d85",
+      "kind": "query",
+      "line": 309,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - NULL arrays carry list-level validity"
+    },
+    {
+      "file": "suites/array/null-elements-carry-child-level-validity.slt",
+      "id": "array/null-elements-carry-child-level-validity/001",
+      "identity": "8e47d0b75b07658b51659e67cd80073ebd824d6b15734ee1b5b10e883e1936c5",
+      "kind": "query",
+      "line": 325,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - NULL elements carry child-level validity"
+    },
+    {
+      "file": "suites/array/null-arrays-and-elements-span-multiple-scan-batches.slt",
+      "id": "array/null-arrays-and-elements-span-multiple-scan-batches/001",
+      "identity": "3fddefc6e3d4c2ccc118013c305a85796d8ee8c4dab34830496fd3365be71912",
+      "kind": "query",
+      "line": 346,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - NULL arrays and elements span multiple scan batches"
+    },
+    {
+      "file": "suites/array/null-arrays-survive-an-order-by.slt",
+      "id": "array/null-arrays-survive-an-order-by/001",
+      "identity": "ee2cd18e2805c885f09f16488ba17064e2f2518d0313dbf1c8f013d0424045ce",
+      "kind": "ordered",
+      "line": 365,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - NULL arrays survive an ORDER BY"
+    },
+    {
+      "file": "suites/array/null-arrays-survive-an-order-by-across-scan-batches.slt",
+      "id": "array/null-arrays-survive-an-order-by-across-scan-batches/001",
+      "identity": "a62dad380f68d5916f284765988c7b581d9524e1967bc1c98bc77b7ba301e09a",
+      "kind": "ordered",
+      "line": 388,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - NULL arrays survive an ORDER BY across scan batches"
+    },
+    {
+      "file": "suites/array/constant-compressed-child-data.slt",
+      "id": "array/constant-compressed-child-data/001",
+      "identity": "ef4a914ce3108481d83bcf9b8303816ae9787ab2d0c0e76f9a6965797d757315",
+      "kind": "query",
+      "line": 420,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - CONSTANT-compressed child data"
+    },
+    {
+      "file": "suites/array/compressed-child-data-codecs-rle-bitpacking-alp.slt",
+      "id": "array/compressed-child-data-codecs-rle-bitpacking-alp/001",
+      "identity": "8e9c22501ad64eb69e4c5b672212149f2131e341d37c5fcec5f9aecb66b98e4f",
+      "kind": "query",
+      "line": 456,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - compressed child data codecs (RLE/BitPacking/ALP)"
+    },
+    {
+      "file": "suites/array/compressed-child-data-codecs-rle-bitpacking-alp.slt",
+      "id": "array/compressed-child-data-codecs-rle-bitpacking-alp/002",
+      "identity": "297cbfe8be19431c8f55471782e66b26fe45521c3a7205c76df7281818212e55",
+      "kind": "query",
+      "line": 468,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - compressed child data codecs (RLE/BitPacking/ALP)"
+    },
+    {
+      "file": "suites/array/compressed-child-data-codecs-rle-bitpacking-alp.slt",
+      "id": "array/compressed-child-data-codecs-rle-bitpacking-alp/003",
+      "identity": "083ffa20ef245f1b961646f21fc2c817ecc77b78abe79a0423dd223a9581423a",
+      "kind": "query",
+      "line": 488,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - compressed child data codecs (RLE/BitPacking/ALP)"
+    },
+    {
+      "file": "suites/array/array-column-survives-a-filter.slt",
+      "id": "array/array-column-survives-a-filter/001",
+      "identity": "d0fe170bffba1d85df8c2fec75548da02555ec4de20ab5d8c8a534fa1ebfed05",
+      "kind": "query",
+      "line": 502,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - array column survives a filter"
+    },
+    {
+      "file": "suites/array/array-projected-while-a-filter-prunes-a-row-group.slt",
+      "id": "array/array-projected-while-a-filter-prunes-a-row-group/001",
+      "identity": "807f7d2ba7eb26bb2c9d38bbd3fa132dad4df21f99ceb3c17e6cc7c2ee29c7e5",
+      "kind": "query",
+      "line": 512,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - array projected while a filter prunes a row group"
+    },
+    {
+      "file": "suites/array/fully-pruned-array-scan-through-order-by-limit.slt",
+      "id": "array/fully-pruned-array-scan-through-order-by-limit/001",
+      "identity": "c0c08f793a088545118c8d56d6361a75b7409d5573166e070f2cf4bb755ee2d6",
+      "kind": "ordered",
+      "line": 533,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - fully pruned ARRAY scan through ORDER BY LIMIT"
+    },
+    {
+      "file": "suites/array/fully-pruned-array-scan-through-order-by-limit.slt",
+      "id": "array/fully-pruned-array-scan-through-order-by-limit/002",
+      "identity": "84b448b3ce29ca7c824c85147cffca64dcaef5c2f5ee4af92478973e9062ab91",
+      "kind": "ordered",
+      "line": 534,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - fully pruned ARRAY scan through ORDER BY LIMIT"
+    },
+    {
+      "file": "suites/array/join-against-a-fully-pruned-array-side.slt",
+      "id": "array/join-against-a-fully-pruned-array-side/001",
+      "identity": "c664173a17b44fb0b7ee438e44f113d9f1424196d7f618fd7429967538356099",
+      "kind": "query",
+      "line": 558,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - join against a fully pruned ARRAY side"
+    },
+    {
+      "file": "suites/array/many-rows-span-multiple-scan-batches.slt",
+      "id": "array/many-rows-span-multiple-scan-batches/001",
+      "identity": "4c2c51223541fd1fdacffef6ed552600578aea29492363a75bdce01381b4a7c4",
+      "kind": "query",
+      "line": 576,
+      "source": "test/cpp/integration/test_gpu_execution_array.cpp",
+      "suite": "array",
+      "test": "gpu_execution array - many rows span multiple scan batches"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",

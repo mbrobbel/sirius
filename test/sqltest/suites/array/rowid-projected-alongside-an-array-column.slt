@@ -1,0 +1,27 @@
+# gpu_execution array - rowid projected alongside an ARRAY column
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_rowid (
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_rowid SELECT
+  [i, i + 1, i + 2]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:295
+# sirius: id = "array/rowid-projected-alongside-an-array-column/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  rowid,
+  a
+FROM
+  arr_rowid;
+----
