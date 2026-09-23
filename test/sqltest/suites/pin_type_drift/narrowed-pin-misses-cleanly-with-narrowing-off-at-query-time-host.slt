@@ -1,0 +1,75 @@
+# pin_table type drift - narrowed pin misses cleanly with narrowing off at query time; tier = host.
+# Pin narrowing and cache-serving counters remain asserted in C++.
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+statement ok
+CREATE TABLE drift_t AS SELECT (10000 + range)::INTEGER AS a FROM range(100);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 'drift_t', tier = 'host');
+
+statement ok
+DROP TABLE drift_t;
+
+statement ok
+CREATE TABLE drift_t AS SELECT DATE '2020-01-01' + range::INTEGER AS a FROM range(100);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original test: test/cpp/integration/test_pin_table_type_drift.cpp:163
+# sirius: id = "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "pin_table", "type_drift", "host"]
+query ? rowsort
+SELECT
+  count(a)
+FROM
+  drift_t;
+----
+100
+
+# Original test: test/cpp/integration/test_pin_table_type_drift.cpp:163
+# sirius: id = "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "pin_table", "type_drift", "host"]
+query ? nosort
+SELECT
+  a
+FROM
+  drift_t ORDER BY a LIMIT 5;
+----
+2020-01-01
+2020-01-02
+2020-01-03
+2020-01-04
+2020-01-05
+
+# Original test: test/cpp/integration/test_pin_table_type_drift.cpp:163
+# sirius: id = "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "pin_table", "type_drift", "host"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  drift_t
+WHERE
+  a >= DATE '2020-02-01';
+----
+69
+
+onlyif sirius
+statement ok
+CALL unpin_table('drift_t');

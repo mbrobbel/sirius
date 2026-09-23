@@ -2031,6 +2031,286 @@
       "test": "gpu_execution array - many rows span multiple scan batches"
     },
     {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-gpu.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/gpu/001",
+      "identity": "aa9e09568c860e53656dbbdd9f1430b0ebd2116799fa1f9d0dd37f44219bb8a3",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-gpu.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/gpu/002",
+      "identity": "637de50e659d332ef32e741597cf12bba27d03b900d070e3d9db48a133bd884e",
+      "kind": "ordered",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-gpu.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/gpu/003",
+      "identity": "ae175266aa13c4941244e0a0789ea49f247421e07dd10ed8e97418b16812128a",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-host.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/host/001",
+      "identity": "ce99aeaaeeb4869d17abb7bf82077db3a1f2efc5b53482618d4f1f13c87ebdb9",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-host.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/host/002",
+      "identity": "dfc5136f68a194e4db0accf39e097ce4bb5e57641ad8597afaa3d1762e28bb5d",
+      "kind": "ordered",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates-host.slt",
+      "id": "pin_type_drift/integer-pin-recreated-as-date-serves-fresh-dates/host/003",
+      "identity": "f57ff4155889967dfe899f459d9ec64e32a62d7ff404877424afe8d553397ede",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - INTEGER pin recreated as DATE serves fresh dates"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/gpu/001",
+      "identity": "a52f207489fdc33a1360f394b1118a9a7a648d553018a98975a7237f90dd4187",
+      "kind": "query",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/gpu/002",
+      "identity": "6b479bc9f2cc8e4acff9fc641c46593091c20c41a770a1bc1aba648c054dc948",
+      "kind": "ordered",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/gpu/003",
+      "identity": "edd8be83769fba29dc7815c9430c98a72afd1cd3e01b27888bb427551345b9c6",
+      "kind": "query",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/host/001",
+      "identity": "aa9b13a546812e7528ce5e82f2517e5d931482360d845288f85adadca06a8daf",
+      "kind": "query",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/host/002",
+      "identity": "dcd409af92cfccf09e15e099a2d6eb33f684f29a44515c2e76353ecd1b4bf966",
+      "kind": "ordered",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/date-pin-recreated-as-integer-serves-fresh-integers/host/003",
+      "identity": "9775a38c133c3352df6c3d7e2425a07139c6f5f88c947767eab8c8b1012e7d35",
+      "kind": "query",
+      "line": 145,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - DATE pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-gpu.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/gpu/001",
+      "identity": "9a2a1aef64bf43273b308cb6441ab72e619d1c9f5ffb1dc8b7ba254f19511aa0",
+      "kind": "query",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-gpu.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/gpu/002",
+      "identity": "4bf942b38dfa9c372c6b2a9d4cbf1995701089c5feec2cf8b65554a2beade377",
+      "kind": "ordered",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-gpu.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/gpu/003",
+      "identity": "ba4f02e11dd1836a19dd36069610c2d429fb088726bbc5bbf21b504e995b8577",
+      "kind": "query",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-host.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/001",
+      "identity": "f7bc1081934f669e0e992b8e39cee11a4ee789687b7a110c59f367b6dc20e4e1",
+      "kind": "query",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-host.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/002",
+      "identity": "f50789973c2fe1f4b67a504833ea30e127509c45204ed96192d9829e697e35bc",
+      "kind": "ordered",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time-host.slt",
+      "id": "pin_type_drift/narrowed-pin-misses-cleanly-with-narrowing-off-at-query-time/host/003",
+      "identity": "2362878fb79d476da8a86295845b829e5c1f526809a7ca78583b5e8d740a9bf4",
+      "kind": "query",
+      "line": 163,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - narrowed pin misses cleanly with narrowing off at query time"
+    },
+    {
+      "file": "suites/pin_type_drift/no-drift-control-matching-natives-still-cache-serve-gpu.slt",
+      "id": "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/gpu/001",
+      "identity": "9e9c887bf5cc2f8a22a23f0060bb90969d52e374a03531c74e0dd02f52181b40",
+      "kind": "query",
+      "line": 185,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - no-drift control: matching natives still cache-serve"
+    },
+    {
+      "file": "suites/pin_type_drift/no-drift-control-matching-natives-still-cache-serve-gpu.slt",
+      "id": "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/gpu/002",
+      "identity": "d67b9e0b34a3bbf3f0a45ee87fe313fbef6f609a54b054852978ba5b79633536",
+      "kind": "query",
+      "line": 185,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - no-drift control: matching natives still cache-serve"
+    },
+    {
+      "file": "suites/pin_type_drift/no-drift-control-matching-natives-still-cache-serve-host.slt",
+      "id": "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/host/001",
+      "identity": "a8fdd2a8b35678776dc4856e85f0fc1c3b04617f9fc1d92bedbd46e2883bb771",
+      "kind": "query",
+      "line": 185,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - no-drift control: matching natives still cache-serve"
+    },
+    {
+      "file": "suites/pin_type_drift/no-drift-control-matching-natives-still-cache-serve-host.slt",
+      "id": "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/host/002",
+      "identity": "1acc87702f6e4969b28212c504471b4a17b3ca674a9e351257ec02f9d824a4fc",
+      "kind": "query",
+      "line": 185,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - no-drift control: matching natives still cache-serve"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/gpu/001",
+      "identity": "8b82d608ad075392652530ca445b33d730e55807593a85672554b878bbd8a99f",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/gpu/002",
+      "identity": "db069a7bec05d3cb90c2f3e54148c7ab6d23160628e3333e9093f0b171896d0e",
+      "kind": "ordered",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-gpu.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/gpu/003",
+      "identity": "d12544f3d50ff235530b474c4151c46f98e612f3cae4813e4643e24424eca4a3",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/host/001",
+      "identity": "ba337c02f90daae2725e6b2d375014035ece32c9a988d0e0ea6f4d11d73081a5",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/host/002",
+      "identity": "cbb3f05a7aef6e317cee122891c270456dbe534e3e1a44082d84ef5b1b29bef0",
+      "kind": "ordered",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
+      "file": "suites/pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers-host.slt",
+      "id": "pin_type_drift/bigint-pin-recreated-as-integer-serves-fresh-integers/host/003",
+      "identity": "5d4dd8af80001726b24d7761259a757754c9c82e1ac6f99ef2965f223f85c05d",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/integration/test_pin_table_type_drift.cpp",
+      "suite": "pin_type_drift",
+      "test": "pin_table type drift - BIGINT pin recreated as INTEGER serves fresh integers"
+    },
+    {
       "file": "suites/dense_count_join/count-col-grouped-by-the-left-join-key.slt",
       "id": "dense_count_join/count-col-grouped-by-the-left-join-key/001",
       "identity": "3d7241dccebc46b26aba67abe2c896d639118d4f8c10c655540299f33aad25a6",
