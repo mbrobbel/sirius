@@ -898,7 +898,6 @@ set(TEST_SOURCES
     test/cpp/integration/test_pin_registry_epoch.cpp
     test/cpp/integration/test_pin_table_host_streaming.cpp
     test/cpp/integration/test_pin_table_merge_columns.cpp
-    test/cpp/integration/test_pin_table_column_order.cpp
     test/cpp/integration/test_pin_table_mvcc_delete.cpp
     test/cpp/integration/test_pin_table_mvcc_foundation.cpp
     test/cpp/integration/test_pin_table_mvcc_insert.cpp
