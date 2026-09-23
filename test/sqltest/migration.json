@@ -3791,6 +3791,16 @@
       "test": "mvcc delete: a self-join of a masked pinned table masks both sides"
     },
     {
+      "file": "suites/pin_mvcc_foundation/gpu-pin-serves-captured-base.slt",
+      "id": "pin_mvcc_foundation/gpu-pin-serves-captured-base",
+      "identity": "3f3c1331d6c137e39a2327626c27c817f85988589670fc6cfe48710bbd3a8112",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_pin_table_mvcc_foundation.cpp",
+      "suite": "pin_mvcc_foundation",
+      "test": "pin_table mvcc - duckdb GPU pin captures v_base and per-chunk counts"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",
