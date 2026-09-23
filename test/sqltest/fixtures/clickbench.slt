@@ -1,0 +1,2 @@
+statement ok
+CREATE __RELATION__ "hits" AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/clickbench/hits.parquet');

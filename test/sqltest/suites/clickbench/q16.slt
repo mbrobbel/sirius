@@ -1,0 +1,15 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q16"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT
+  UserID,
+  COUNT(*)
+FROM
+  hits
+GROUP BY
+  UserID ORDER BY COUNT(*) DESC, 1, 2 LIMIT 10;
+----

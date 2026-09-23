@@ -1,0 +1,21 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q31"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "4" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ????? nosort
+SELECT
+  SearchEngineID,
+  ClientIP,
+  COUNT(*) AS c,
+  SUM(IsRefresh),
+  AVG(ResolutionWidth)
+FROM
+  hits
+WHERE
+  SearchPhrase <> ''
+GROUP BY
+  SearchEngineID, ClientIP ORDER BY c DESC, 1, 2, 3, 4, 5 LIMIT 10;
+----

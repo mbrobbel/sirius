@@ -1,0 +1,14 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q25"
+# sirius: tags = ["clickbench"]
+
+query ? nosort
+SELECT
+  SearchPhrase
+FROM
+  hits
+WHERE
+  SearchPhrase <> '' ORDER BY EventTime, 1 LIMIT 10;
+----

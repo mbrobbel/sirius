@@ -1,0 +1,21 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q28"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "1" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ??? nosort
+SELECT
+  CounterID,
+  AVG(STRLEN(URL)) AS l,
+  COUNT(*) AS c
+FROM
+  hits
+WHERE
+  URL <> ''
+GROUP BY
+  CounterID
+HAVING
+  COUNT(*) > 100000 ORDER BY l DESC, 1, 2, 3 LIMIT 25;
+----

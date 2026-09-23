@@ -1,0 +1,17 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q08"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT
+  AdvEngineID,
+  COUNT(*)
+FROM
+  hits
+WHERE
+  AdvEngineID <> 0
+GROUP BY
+  AdvEngineID ORDER BY COUNT(*) DESC, 1, 2;
+----

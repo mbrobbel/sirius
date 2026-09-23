@@ -1,0 +1,22 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q29"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "1" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ???? nosort
+SELECT
+  REGEXP_REPLACE(Referer, '^https?://(?:www\.)?([^/]+)/.*$', '\1') AS k,
+  AVG(STRLEN(Referer)) AS l,
+  COUNT(*) AS c,
+  MIN(Referer)
+FROM
+  hits
+WHERE
+  Referer <> ''
+GROUP BY
+  k
+HAVING
+  COUNT(*) > 100000 ORDER BY l DESC, 1, 2, 3, 4 LIMIT 25;
+----

@@ -1,0 +1,13 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q04"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "0" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ? rowsort
+SELECT
+  AVG(UserID)
+FROM
+  hits;
+----

@@ -1,0 +1,8 @@
+storage = ["native", "parquet"]
+fixtures = ["clickbench"]
+
+[import]
+schema = ["fixtures/clickbench-schema.sql"]
+expected_queries = 43
+provenance = "ClickHouse/ClickBench@9699b7a36a208a65028394e5f39f40e21bda2d91/duckdb/queries.sql"
+source = { kind = "sql_lines", path = "upstream/clickbench/queries.sql" }
