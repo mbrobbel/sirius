@@ -1,0 +1,39 @@
+# gpu_execution - nested loop full outer join double inequality condition
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Both WHERE predicates reject unmatched rows, so INNER JOIN preserves the CPU result.
+onlyif duckdb
+statement ok
+CREATE TEMPORARY VIEW double_inequality_result AS
+SELECT
+  ps.ps_partkey,
+  ps.ps_suppkey,
+  l.l_orderkey
+FROM
+  lineitem l
+  INNER JOIN partsupp ps ON l.l_partkey < ps.ps_partkey AND l.l_suppkey > ps.ps_suppkey
+WHERE
+  l.l_orderkey < 1000 AND ps.ps_partkey < 1000 ORDER BY ps.ps_partkey, ps.ps_suppkey, l.l_orderkey LIMIT 1000;
+
+onlyif sirius
+statement ok
+CREATE TEMPORARY VIEW double_inequality_result AS
+SELECT
+  ps.ps_partkey,
+  ps.ps_suppkey,
+  l.l_orderkey
+FROM
+  lineitem l
+  FULL JOIN partsupp ps ON l.l_partkey < ps.ps_partkey AND l.l_suppkey > ps.ps_suppkey
+WHERE
+  l.l_orderkey < 1000 AND ps.ps_partkey < 1000 ORDER BY ps.ps_partkey, ps.ps_suppkey, l.l_orderkey LIMIT 1000;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2504
+# sirius: id = "tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "nested_loop_join", "previously_disabled"]
+query ??? rowsort
+SELECT
+  *
+FROM
+  double_inequality_result;
+----

@@ -5251,6 +5251,76 @@
       "test": "Invariant N holds across the suite's join shapes at the default threshold"
     },
     {
+      "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition.slt",
+      "id": "tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition/001",
+      "identity": "0e0080c85ce9ca46a51ebe592391ec31752279dfe2b72fd169c25d136a0cfbbd",
+      "kind": "query",
+      "line": 2482,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - nested loop full outer join single inequality condition"
+    },
+    {
+      "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition.slt",
+      "id": "tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition/001",
+      "identity": "638bec6712228c93e96da6402c3ac3ac5c74e80104fee27894d4a8fd8db72294",
+      "kind": "query",
+      "line": 2504,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - nested loop full outer join double inequality condition"
+    },
+    {
+      "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition-one-condition-needing-casting.slt",
+      "id": "tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition-one-condition-needing-casting/001",
+      "identity": "cf55f167fa3417c97d6e63526652159ff5873080223a5a3c392caa9ae729d497",
+      "kind": "query",
+      "line": 2527,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - nested loop full outer join double inequality condition, one condition needing casting"
+    },
+    {
+      "file": "suites/tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles.slt",
+      "id": "tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles/001",
+      "identity": "cd573098397925236fcda87f61f0d8142e2b4beac4e5baaa8ffe4575e61e7f59",
+      "kind": "query",
+      "line": 2714,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - two group by key: min max, sum, count of doubles"
+    },
+    {
+      "file": "suites/tpch_disabled_native/filter-returns-empty-result.slt",
+      "id": "tpch_disabled_native/filter-returns-empty-result/001",
+      "identity": "53831564f5ec740a401af48f26798b9e297829a8daf740b9c24b60cfc215e650",
+      "kind": "query",
+      "line": 2733,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - filter returns empty result"
+    },
+    {
+      "file": "suites/tpch_disabled_native/issue-227-cast-decimal-with-avg-and-group-by.slt",
+      "id": "tpch_disabled_native/issue-227-cast-decimal-with-avg-and-group-by/001",
+      "identity": "eafd5a836a44d94e9a5fe0c698618ffeae193f2f2a2a7d34dc2554d3d349596c",
+      "kind": "query",
+      "line": 3216,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - issue 227 cast decimal with avg and group by"
+    },
+    {
+      "file": "suites/tpch_disabled_native/top-n.slt",
+      "id": "tpch_disabled_native/top-n/001",
+      "identity": "bca9f3d566471a941ba32832668e306ca3a0b3e1e2d5d3a2fd555633be7b4d1c",
+      "kind": "query",
+      "line": 3426,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_native",
+      "test": "gpu_execution - top n"
+    },
+    {
       "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
       "id": "dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent/001-off",
       "identity": "cf5e41cee4b5d97d96e2a453ec39cbcfb7469d0dde61b49edcd25332bb90c4f0",

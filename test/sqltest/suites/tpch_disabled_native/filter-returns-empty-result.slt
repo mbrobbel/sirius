@@ -1,0 +1,14 @@
+# gpu_execution - filter returns empty result
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2733
+# sirius: id = "tpch_disabled_native/filter-returns-empty-result/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "previously_disabled"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation
+WHERE
+  n_regionkey = 99;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - top n
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3426
+# sirius: id = "tpch_disabled_native/top-n/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "top_n", "previously_disabled"]
+query ?? rowsort
+SELECT
+  n_nationkey,
+  n_regionkey
+FROM
+  nation ORDER BY n_regionkey DESC LIMIT 5;
+----

@@ -1,0 +1,19 @@
+# gpu_execution - nested loop full outer join single inequality condition
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2482
+# sirius: id = "tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "nested_loop_join", "previously_disabled"]
+query ????? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_name,
+  c.c_nationkey,
+  c.c_custkey,
+  c.c_name
+FROM
+  nation n
+  FULL JOIN customer c ON n.n_nationkey < c.c_nationkey
+WHERE
+  c.c_custkey < 100 ORDER BY c.c_custkey, n.n_nationkey LIMIT 1000;
+----

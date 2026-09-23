@@ -1,0 +1,19 @@
+# gpu_execution - two group by key: min max, sum, count of doubles
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2714
+# sirius: id = "tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "aggregate", "previously_disabled"]
+query ?????? rowsort
+SELECT
+  c_nationkey,
+  c_mktsegment,
+  min(C_ACCTBAL),
+  max(C_ACCTBAL),
+  sum(C_ACCTBAL),
+  count(C_ACCTBAL)
+FROM
+  customer
+GROUP BY
+  c_nationkey, c_mktsegment;
+----
