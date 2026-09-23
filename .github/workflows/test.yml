@@ -296,14 +296,136 @@ jobs:
           path: ${{ steps.tpch.outputs.run_dir }}
           retention-days: 14
 
+  sqltest-run:
+    needs: build
+    strategy:
+      matrix:
+        cuda:
+          - version: "13"
+            pixi-environment: default
+            runner: ubuntu-24.04
+            run-on-pr: true
+          - version: "12"
+            pixi-environment: cuda12
+            runner: ubuntu-22.04
+            run-on-pr: false
+        exclude:
+          - cuda:
+              run-on-pr: ${{ case(github.event_name == 'pull_request', false, 'no-match') }}
+      fail-fast: false
+    runs-on: ${{ fromJSON(format('["self-hosted", "{0}", "gpu-2xt4"]', matrix.cuda.runner)) }}
+    timeout-minutes: 60
+    env:
+      CUDA_CACHE_PATH: /home/runner/actions-runner/_work/.cuda-cache
+      SIRIUS_LOG_LEVEL: info
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          cache: false
+          pixi-version: v0.71.1
+          environments: ${{ matrix.cuda.pixi-environment }}
+          activate-environment: ${{ matrix.cuda.pixi-environment }}
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-cuda-${{ matrix.cuda.version }}
+
+      - name: Extract build artifacts
+        run: tar -xf build.tar
+
+      - name: Prepare SQL fixtures
+        id: sql-fixtures
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run correctness
+          pixi run bash setup_test_datasets.sh --tpch-only
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run legacy-tpch
+
+      - name: SQL correctness suites
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --run correctness --output runs/sqltest-gpu \
+            --extension build/release/extension/sirius/sirius.duckdb_extension \
+            --source-commit "$GITHUB_SHA"
+
+      - name: Original TPC-H correctness and goldens
+        if: ${{ !cancelled() && steps.sql-fixtures.outcome == 'success' }}
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --run legacy-tpch --output runs/sqltest-legacy-tpch-gpu \
+            --extension build/release/extension/sirius/sirius.duckdb_extension \
+            --source-commit "$GITHUB_SHA"
+
+      - name: Two-GPU operator correctness
+        if: ${{ !cancelled() && steps.sql-fixtures.outcome == 'success' }}
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --run operators-multi-gpu --output runs/sqltest-operators-mgpu \
+            --extension build/release/extension/sirius/sirius.duckdb_extension \
+            --source-commit "$GITHUB_SHA"
+
+      - name: Two-GPU TPC-H correctness
+        if: ${{ !cancelled() && steps.sql-fixtures.outcome == 'success' }}
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --run tpch-multi-gpu --select tpc-h-query- \
+            --output runs/sqltest-tpch-mgpu \
+            --extension build/release/extension/sirius/sirius.duckdb_extension \
+            --source-commit "$GITHUB_SHA"
+
+      - name: S3 correctness with managed MinIO
+        if: ${{ !cancelled() && steps.sql-fixtures.outcome == 'success' }}
+        run: |
+          status=0
+          for suite in s3 s3-sf1 s3-pagination; do
+            if pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run "$suite"; then
+              pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+                --run "$suite" --output "runs/sqltest-${suite}-gpu" \
+                --extension build/release/extension/sirius/sirius.duckdb_extension \
+                --source-commit "$GITHUB_SHA" || status=1
+            else
+              status=1
+            fi
+          done
+          exit "$status"
+
+      - name: Summarize SQL results
+        if: always()
+        run: |
+          for report in runs/sqltest-*/summary.md; do
+            if [[ -f "$report" ]]; then
+              cat "$report" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload SQL results and reproductions
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sqltest-gpu-cuda-${{ matrix.cuda.version }}-${{ github.run_id }}
+          path: |
+            runs/sqltest-gpu/
+            runs/sqltest-legacy-tpch-gpu/
+            runs/sqltest-operators-mgpu/
+            runs/sqltest-tpch-mgpu/
+            runs/sqltest-s3*-gpu/
+            !runs/sqltest-gpu/work/**/worker.duckdb*
+            !runs/sqltest-legacy-tpch-gpu/work/**/worker.duckdb*
+            !runs/sqltest-operators-mgpu/work/**/worker.duckdb*
+            !runs/sqltest-tpch-mgpu/work/**/worker.duckdb*
+            !runs/sqltest-s3*-gpu/work/**/worker.duckdb*
+          if-no-files-found: ignore
+          retention-days: 14
+
   test:
     runs-on: ubuntu-slim
-    needs: test-run
+    needs: [test-run, sqltest-run]
     if: always()
     steps:
       - name: Test workflow ok
-        if: ${{ needs['test-run'].result == 'success' }}
+        if: ${{ needs['test-run'].result == 'success' && needs['sqltest-run'].result == 'success' }}
         run: exit 0
       - name: Test workflow failed
-        if: ${{ needs['test-run'].result != 'success' }}
+        if: ${{ needs['test-run'].result != 'success' || needs['sqltest-run'].result != 'success' }}
         run: exit 1
