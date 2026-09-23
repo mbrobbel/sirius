@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE test_agg AS SELECT i % 10 AS grp, i AS val FROM range(1000) t (i);
+
+# Original query: test/cpp/integration/test_transparent_execution.cpp:180
+# sirius: id = "transparent/aggregation"
+# sirius: tags = ["integration", "transparent"]
+query ?? nosort
+SELECT
+  grp,
+  SUM(val) AS total
+FROM
+  test_agg
+GROUP BY
+  grp ORDER BY grp;
+----

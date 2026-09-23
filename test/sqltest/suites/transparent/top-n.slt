@@ -1,0 +1,12 @@
+statement ok
+CREATE TABLE test_topn AS SELECT i AS id, i * 7 AS val FROM range(10000) t (i);
+
+# Original query: test/cpp/integration/test_transparent_execution.cpp:212
+# sirius: id = "transparent/top-n"
+# sirius: tags = ["integration", "transparent"]
+query ?? nosort
+SELECT
+  *
+FROM
+  test_topn ORDER BY val DESC LIMIT 5;
+----
