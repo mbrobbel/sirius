@@ -1,0 +1,12 @@
+# gpu_execution - limit on large table parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:759
+# sirius: id = "tpch_disabled_parquet/limit-on-large-table-parquet/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "parquet", "limit", "limit_multi_batch", "previously_disabled"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem LIMIT 100;
+----

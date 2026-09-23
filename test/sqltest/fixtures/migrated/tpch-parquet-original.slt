@@ -1,0 +1,55 @@
+statement ok
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/customer.parquet');
+
+statement ok
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet');
+
+statement ok
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/nation.parquet');
+
+statement ok
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/orders.parquet');
+
+statement ok
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/part.parquet');
+
+statement ok
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/partsupp.parquet');
+
+statement ok
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/region.parquet');
+
+statement ok
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/tpch-parquet-original/supplier.parquet');

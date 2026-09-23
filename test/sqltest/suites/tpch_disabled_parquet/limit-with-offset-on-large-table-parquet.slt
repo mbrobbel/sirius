@@ -1,0 +1,13 @@
+# gpu_execution - limit with offset on large table parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:773
+# sirius: id = "tpch_disabled_parquet/limit-with-offset-on-large-table-parquet/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "parquet", "limit", "limit_multi_batch", "previously_disabled"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  l_partkey
+FROM
+  lineitem LIMIT 50 OFFSET 200;
+----

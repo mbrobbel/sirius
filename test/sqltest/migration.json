@@ -5251,6 +5251,26 @@
       "test": "Invariant N holds across the suite's join shapes at the default threshold"
     },
     {
+      "file": "suites/tpch_disabled_parquet/limit-on-large-table-parquet.slt",
+      "id": "tpch_disabled_parquet/limit-on-large-table-parquet/001",
+      "identity": "626826917883eca79cd10ae6e8e69f3eeef133b6c0a5cdbcd23ebe3d0dc3e84a",
+      "kind": "query",
+      "line": 759,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - limit on large table parquet"
+    },
+    {
+      "file": "suites/tpch_disabled_parquet/limit-with-offset-on-large-table-parquet.slt",
+      "id": "tpch_disabled_parquet/limit-with-offset-on-large-table-parquet/001",
+      "identity": "a6cd1fac293e43cf446b8662f8de7102d598c6d32cbc2d16966fc94c95d08e89",
+      "kind": "query",
+      "line": 773,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - limit with offset on large table parquet"
+    },
+    {
       "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition.slt",
       "id": "tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition/001",
       "identity": "0e0080c85ce9ca46a51ebe592391ec31752279dfe2b72fd169c25d136a0cfbbd",
@@ -5259,6 +5279,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_disabled_native",
       "test": "gpu_execution - nested loop full outer join single inequality condition"
+    },
+    {
+      "file": "suites/tpch_disabled_parquet/nested-loop-full-outer-join-single-inequality-condition-parquet.slt",
+      "id": "tpch_disabled_parquet/nested-loop-full-outer-join-single-inequality-condition-parquet/001",
+      "identity": "91a67db78427f8659ccd49a2a5a0baf35b1ac07c12f81d569bdaa8fa72b39b13",
+      "kind": "query",
+      "line": 2493,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - nested loop full outer join single inequality condition parquet"
     },
     {
       "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition.slt",
@@ -5271,6 +5301,16 @@
       "test": "gpu_execution - nested loop full outer join double inequality condition"
     },
     {
+      "file": "suites/tpch_disabled_parquet/nested-loop-full-outer-join-double-inequality-condition-parquet.slt",
+      "id": "tpch_disabled_parquet/nested-loop-full-outer-join-double-inequality-condition-parquet/001",
+      "identity": "4675b171c8a07c4273a3683f4b0ac7597d15d09e77b8aad85cfce4ca03aae3ef",
+      "kind": "query",
+      "line": 2515,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - nested loop full outer join double inequality condition parquet"
+    },
+    {
       "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition-one-condition-needing-casting.slt",
       "id": "tpch_disabled_native/nested-loop-full-outer-join-double-inequality-condition-one-condition-needing-casting/001",
       "identity": "cf55f167fa3417c97d6e63526652159ff5873080223a5a3c392caa9ae729d497",
@@ -5279,6 +5319,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_disabled_native",
       "test": "gpu_execution - nested loop full outer join double inequality condition, one condition needing casting"
+    },
+    {
+      "file": "suites/tpch_disabled_parquet/nested-loop-full-outer-join-double-inequality-condition-one-parquetcondition-needing-casting.slt",
+      "id": "tpch_disabled_parquet/nested-loop-full-outer-join-double-inequality-condition-one-parquetcondition-needing-casting/001",
+      "identity": "7a9842595b5c9133219ba259f324209bd3556cc0b67791f1d2e1d7455c050a4f",
+      "kind": "query",
+      "line": 2539,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - nested loop full outer join double inequality condition, one  parquetcondition needing casting"
     },
     {
       "file": "suites/tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles.slt",
@@ -5291,6 +5341,16 @@
       "test": "gpu_execution - two group by key: min max, sum, count of doubles"
     },
     {
+      "file": "suites/tpch_disabled_parquet/two-group-by-key-min-max-sum-count-of-doubles-parquet.slt",
+      "id": "tpch_disabled_parquet/two-group-by-key-min-max-sum-count-of-doubles-parquet/001",
+      "identity": "8d1ad28d922d834e45dbe9ba62ab133c47bc5a8e4dccb8e048ca0b704bc90f6b",
+      "kind": "query",
+      "line": 2723,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - two group by key: min max, sum, count of doubles parquet"
+    },
+    {
       "file": "suites/tpch_disabled_native/filter-returns-empty-result.slt",
       "id": "tpch_disabled_native/filter-returns-empty-result/001",
       "identity": "53831564f5ec740a401af48f26798b9e297829a8daf740b9c24b60cfc215e650",
@@ -5299,6 +5359,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_disabled_native",
       "test": "gpu_execution - filter returns empty result"
+    },
+    {
+      "file": "suites/tpch_disabled_parquet/filter-returns-empty-result-parquet.slt",
+      "id": "tpch_disabled_parquet/filter-returns-empty-result-parquet/001",
+      "identity": "6abef74d9752ac8ba1691d98743c15b4703a52c2188fa16ee40ee222257f2932",
+      "kind": "query",
+      "line": 2740,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - filter returns empty result parquet"
     },
     {
       "file": "suites/tpch_disabled_native/issue-227-cast-decimal-with-avg-and-group-by.slt",
@@ -5311,6 +5381,16 @@
       "test": "gpu_execution - issue 227 cast decimal with avg and group by"
     },
     {
+      "file": "suites/tpch_disabled_parquet/issue-227-cast-decimal-with-avg-and-group-by-parquet.slt",
+      "id": "tpch_disabled_parquet/issue-227-cast-decimal-with-avg-and-group-by-parquet/001",
+      "identity": "f29bc4bd825a92555684cf06cc0a1b40486bc8c0a3bf78a1a1a08ce2a72ecde0",
+      "kind": "query",
+      "line": 3226,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - issue 227 cast decimal with avg and group by parquet"
+    },
+    {
       "file": "suites/tpch_disabled_native/top-n.slt",
       "id": "tpch_disabled_native/top-n/001",
       "identity": "bca9f3d566471a941ba32832668e306ca3a0b3e1e2d5d3a2fd555633be7b4d1c",
@@ -5319,6 +5399,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_disabled_native",
       "test": "gpu_execution - top n"
+    },
+    {
+      "file": "suites/tpch_disabled_parquet/top-n-parquet.slt",
+      "id": "tpch_disabled_parquet/top-n-parquet/001",
+      "identity": "0d7af4f01081c037a9f4581a561e4dbd81f40feed4fa3a2b1c4d97b887fbaab4",
+      "kind": "query",
+      "line": 3434,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_disabled_parquet",
+      "test": "gpu_execution - top n parquet"
     },
     {
       "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
