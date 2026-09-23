@@ -1,0 +1,3 @@
+storage = ["parquet"]
+profile = "pin-column-order"
+checkpoint = "explicit"

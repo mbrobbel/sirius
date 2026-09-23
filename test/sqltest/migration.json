@@ -7701,6 +7701,26 @@
       "test": "gpu_execution iceberg - deflate compressed manifests"
     },
     {
+      "file": "suites/pin_column_order/host.slt",
+      "id": "pin_column_order/host/001",
+      "identity": "e18c57aacab6a6e6e9d62606fff893761d64ca57c940d480e2e4aa67c38ea2ca",
+      "kind": "query",
+      "line": 175,
+      "source": "test/cpp/integration/test_pin_table_column_order.cpp",
+      "suite": "pin_column_order",
+      "test": "pin_table - cached scan serves columns in materialized order (column-order regression)"
+    },
+    {
+      "file": "suites/pin_column_order/gpu.slt",
+      "id": "pin_column_order/gpu/001",
+      "identity": "199637c18becc573543edfbe21f69cd0696c834f0f9cddbd70ecd501b660ab1e",
+      "kind": "query",
+      "line": 175,
+      "source": "test/cpp/integration/test_pin_table_column_order.cpp",
+      "suite": "pin_column_order",
+      "test": "pin_table - cached scan serves columns in materialized order (column-order regression)"
+    },
+    {
       "file": "suites/pin_column_merge/overlapping-columns.slt",
       "id": "pin_column_merge/overlapping-columns/001",
       "identity": "971ce3f264b705f3fd6fc45bd2f077888376c5e322a5d71aa2993135d8e98039",
