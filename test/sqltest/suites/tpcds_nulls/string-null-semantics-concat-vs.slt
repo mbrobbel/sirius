@@ -1,0 +1,3272 @@
+# gpu_execution tpcds string NULL semantics (concat vs ||)
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:238
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  c_customer_sk,
+  concat(c_first_name, ' ', c_last_name) AS n
+FROM
+  customer;
+----
+1	"Javier Lewis"
+10	"Albert Brunson"
+100	"Jeannette Johnson"
+1000	"Mark Bailey"
+101	"Jeffrey Bruce"
+102	"Jodi Silva"
+103	"James Porter"
+104	"Benjamin Johnson"
+105	"Frank Strain"
+106	"Anne Massey"
+107	"Charles Robinson"
+108	"Alfred Bryant"
+109	"Alfred Watson"
+11	"Betty Williams"
+110	"David Thornton"
+111	"Allen Merritt"
+112	"Floyd Kelly"
+113	"Karen Roman"
+114	"Richard Chang"
+115	"Freddie Rojas"
+116	"Carolyn Callaway"
+117	"Renee Jones"
+118	"Polly Marlow"
+119	"Jack Spriggs"
+12	"Margaret Farias"
+120	"Dan Layne"
+121	" "
+122	"Christopher Magee"
+123	"Issac Vega"
+124	"Katharine Hope"
+125	"Stephen Bruton"
+126	"Daniel Underwood"
+127	"Tina Clay"
+128	"Michele Benitez"
+129	"Brandi Daniels"
+13	"Rosalinda Grimes"
+130	"Julius Locke"
+131	"Christine Walton"
+132	"Delia Holland"
+133	"David Mcnabb"
+134	"Timothy Mendoza"
+135	"Vivian Elliott"
+136	"Elizabeth Horn"
+137	"Roger Burns"
+138	"Marjorie Smith"
+139	"Catherine Newman"
+14	"Jack Wilcox"
+140	"Debra Ferguson"
+141	"Roberto Johnson"
+142	"Marie Clark"
+143	"Gilberto Bennett"
+144	"Cecil Patterson"
+145	"Lucas Dewey"
+146	"Sue Garner"
+147	"David Bell"
+148	"Timothy Randall"
+149	"Anthony Bell"
+15	"Tonya "
+150	"Carlos Rivers"
+151	"Inez Britt"
+152	"Charles Valdez"
+153	"Oscar Rodriguez"
+154	"Oscar Jolley"
+155	"Robert Bailey"
+156	"Ebony Herrera"
+157	"Timothy Dickey"
+158	"James Smith"
+159	"Lydia Parker"
+16	"Margie Browning"
+160	"Jeanne Fisher"
+161	"Wendy Chiu"
+162	"Pamela Perez"
+163	"Carly Chavez"
+164	"Kathleen Keegan"
+165	"Eleanor Muller"
+166	"Richard Taylor"
+167	"Ricky Lee"
+168	"Walter Clarke"
+169	"Samantha Long"
+17	"Lee Stovall"
+170	"Randy Wilson"
+171	"Rosa Nixon"
+172	" "
+173	"Heather Joseph"
+174	"Linda Murdock"
+175	"Kathryn Boyd"
+176	"Bonnie Cunningham"
+177	"Joshua Parr"
+178	"Gladys Clancy"
+179	"Robert Rand"
+18	"Brad Lynch"
+180	"Robert Larsen"
+181	"Joseph Riley"
+182	"Michael Brown"
+183	"Peter Collins"
+184	"Clifford Flynn"
+185	"Yvette Eastman"
+186	"Marilyn Chapa"
+187	"Florence Foster"
+188	"Vincent Martinez"
+189	"Bruce Betz"
+19	"Andre Moore"
+190	"Romona Woodruff"
+191	"Jack Marino"
+192	"Corey Quinones"
+193	"David Neeley"
+194	"William Faison"
+195	"Deborah Terrell"
+196	"Shawn Cowan"
+197	"Debra Carter"
+198	"Dusty Bryan"
+199	"Edwardo Porter"
+2	"Amy Moses"
+20	"Stanton Dallas"
+200	"Ted Ingalls"
+201	"James Scott"
+202	"Trena Grant"
+203	"Clifford Markham"
+204	"Christine Hebert"
+205	"Heriberto Putnam"
+206	"Brian Serna"
+207	"Floyd Scroggins"
+208	"Karla Rincon"
+209	"Curtis Williams"
+21	"Naomi Barnett"
+210	"Diane Blount"
+211	"Barbara Hernandez"
+212	" Monk"
+213	"Christene Mccullough"
+214	"Archie Mayes"
+215	"Lillian Morgan"
+216	"Jacqueline Russo"
+217	"James Lackey"
+218	"Cody Fowler"
+219	"Roy Aguilar"
+22	"Victor Martinez"
+220	"William Chu"
+221	"Kenny Johnson"
+222	"Omar "
+223	"Rudolph Hutchins"
+224	"Adela Rutherford"
+225	"Roscoe Balderas"
+226	" Lee"
+227	"Angelia Vaughn"
+228	"Daniel Croteau"
+229	" Skinner"
+23	" Garrison"
+230	"Shirlene Guerra"
+231	"Janet Welch"
+232	"David Hudspeth"
+233	"Harry "
+234	"Dustin Perry"
+235	"Salvador Ramirez"
+236	"Becky Downey"
+237	"Sean "
+238	"Sean Sanderson"
+239	"Elizabeth Smith"
+24	"Paul Morris"
+240	"Carrie "
+241	"Scott Ward"
+242	"Lance Redman"
+243	"James Catron"
+244	"Stephen Morgan"
+245	"Russell Donnelly"
+246	"Rosalie Low"
+247	"Earl Holden"
+248	"Leonard Munoz"
+249	"Cindy Jackson"
+25	"Nancy Mccormick"
+250	"Derick Stewart"
+251	"Richard Craig"
+252	"Troy Brewer"
+253	"Robert Walker"
+254	"Tiffanie Holliday"
+255	"Michael Thompson"
+256	"Kevin Garrison"
+257	"Petra Brown"
+258	"Clyde Bernard"
+259	"Carl Motley"
+26	"Monique Baker"
+260	"Steven Deleon"
+261	"Honey Raymond"
+262	"Angela Mauro"
+263	"Rebecca Hermann"
+264	"Claude Stewart"
+265	"Laura Pham"
+266	"Walter Martinez"
+267	"Dessie Simms"
+268	"Ann Siegel"
+269	"William Burns"
+27	"Shawn Prather"
+270	"Diane Molina"
+271	"Ashley Wallace"
+272	"Claudia Butler"
+273	"Everett Jenkins"
+274	"Helen Gray"
+275	"Janice Kirby"
+276	"David Moreau"
+277	"Bernard Bryant"
+278	"Rachel Hernandez"
+279	"William Kaye"
+28	"Edith Hernandez"
+280	"Christopher Randolph"
+281	"Tommy Whitney"
+282	" Neal"
+283	"Joseph Hilton"
+284	"Adam Chambers"
+285	"Stephen Burton"
+286	"Ima Amos"
+287	"Carolyn Wong"
+288	"Ruth Duarte"
+289	"Nancy Jones"
+29	"Margaret Collins"
+290	"Florence Caro"
+291	"Ralph Johnson"
+292	"Billy Coffin"
+293	"Heather Brown"
+294	" "
+295	"Michael Mcguire"
+296	"Christy Hudson"
+297	"Lee Farias"
+298	"Iris Roberts"
+299	"Gerald Stone"
+3	"Latisha Hamilton"
+30	"Pamela Luna"
+300	"Gina Batson"
+301	"Richard Whitaker"
+302	"Concepcion Pugh"
+303	"Luz Ransom"
+304	"James Sherrod"
+305	"Matt Santana"
+306	"Peter Smith"
+307	"Kathy Stone"
+308	"Ashley Thompson"
+309	"John Blair"
+31	"William Craig"
+310	"John Nunes"
+311	"Darrell Yates"
+312	" Lee"
+313	" Foster"
+314	"Anthony White"
+315	"Ross Burgess"
+316	"Benjamin Smith"
+317	"Anthony Silva"
+318	"Rosemary Anderson"
+319	"Evelyn Ritchey"
+32	"Kenneth Wood"
+320	"Brian "
+321	"Jerrie Vickers"
+322	"Sunshine Solomon"
+323	"Benton Hite"
+324	"Monica Holloway"
+325	"Fred Shipley"
+326	"Kenneth Cox"
+327	"Jeffrey Wiles"
+328	"Jose Larson"
+329	"Christopher Rodriguez"
+33	"Donna Betts"
+330	"Johnny Young"
+331	"Agnes Hinton"
+332	"John Mcdonald"
+333	"Veronica Miller"
+334	"Donna Hernandez"
+335	" Williams"
+336	"Belle Day"
+337	"Matthew Lee"
+338	"Kymberly Conway"
+339	"Barbara Knutson"
+34	" Woods"
+340	"Richard Mills"
+341	" Hart"
+342	" Tolbert"
+343	"Catherine Andrews"
+344	"Stuart Spencer"
+345	"Jill Wilkins"
+346	"Fiona Jones"
+347	"Wesley Wallace"
+348	"Pauline Cyr"
+349	"Jeanette Hewitt"
+35	"Marie Peterson"
+350	"Anne Ellison"
+351	"Francisco Hutchinson"
+352	"Steven Moore"
+353	"Michael Littleton"
+354	"Jeanette Huff"
+355	"Bruno Butcher"
+356	"Paul "
+357	"Angie Washington"
+358	"Raymond Gilmore"
+359	"Daniel Campbell"
+36	"Anthony Fisher"
+360	"James Qualls"
+361	"Bonnie Harrison"
+362	"Herbert Snowden"
+363	"Bobby Oneill"
+364	"Hilda Hall"
+365	"Donald May"
+366	"Damaris Lane"
+367	"Aaron Browder"
+368	"Stanford Glover"
+369	"Arnold Lewis"
+37	"Dwight Schneider"
+370	"Freda Becker"
+371	"Beth Gonzalez"
+372	"Maxine Houston"
+373	"Michael Perkins"
+374	"Carla Johnson"
+375	"David Saunders"
+376	"Ronald Wilcox"
+377	"Gloria Davis"
+378	"Gloria Carlton"
+379	"Mark Fields"
+38	"Ha Carpenter"
+380	"Carl Hoover"
+381	"Colby Robinson"
+382	"Rose Sturgill"
+383	"Linda Isaacson"
+384	"Kimberly Allen"
+385	"Susan Hansen"
+386	"Chris King"
+387	"Thomas Brookins"
+388	"Kelly Lee"
+389	"Scott Kerns"
+39	"Neil Cox"
+390	"Daniel Madera"
+391	"Eleanor Bates"
+392	"Amanda Cox"
+393	"Bruce Olvera"
+394	"Brenda Miner"
+395	"Rosemary Alba"
+396	"Jennifer Espinoza"
+397	"Colby King"
+398	"Albert Keller"
+399	"Raymond Mccain"
+4	"Michael White"
+40	"Jacqueline Hatfield"
+400	"Lance Mason"
+401	"Sarah Clemons"
+402	"William Flores"
+403	"Matthew Nugent"
+404	"Ethel Frazier"
+405	"Penelope Wooten"
+406	"Catherine Foster"
+407	"Aaron Taylor"
+408	"Paul Harry"
+409	"Jason Woodson"
+41	"Maxine Carlson"
+410	"Clayton Rogers"
+411	"Cleo Spangler"
+412	"Dorothy Billings"
+413	"Marc Anderson"
+414	"Joseph Moore"
+415	"Teri Anderson"
+416	"Chester Velazquez"
+417	"Kayleen Edwards"
+418	"Maurice Morales"
+419	"Mattie Kelly"
+42	"Deborah Burton"
+420	" Dickson"
+421	"Allison Cosgrove"
+422	"Matthew Leake"
+423	"Craig Sylvester"
+424	"Diane Gallo"
+425	"Danny Donald"
+426	"Bessie Peek"
+427	"Gladys Hernandez"
+428	"Issac Marcum"
+429	"Cynthia Sutton"
+43	"William Warner"
+430	"Darrell Davidson"
+431	"Ronald Dunbar"
+432	"Cedric Walton"
+433	"Robert Leatherman"
+434	"Sammie Clark"
+435	"Doris Ward"
+436	"Anthony Mathis"
+437	"Marie Brown"
+438	"Dennis Thomas"
+439	"Helen Culver"
+44	"Mabel Richmond"
+440	"Julio Barber"
+441	"Lan Thompson"
+442	"Shelley Giordano"
+443	"Jay Johns"
+444	"Ashley Douglas"
+445	"Joseph Norris"
+446	"Ines Taylor"
+447	"Janet Schramm"
+448	"Lynda Lee"
+449	"Kathryn Mcknight"
+45	" Hammonds"
+450	"Jesse Benjamin"
+451	"Richard Mcbride"
+452	"Joel Ferrell"
+453	"Bobby White"
+454	"Carrie Hernandez"
+455	"Eunice Shaw"
+456	"Kristin Hargrove"
+457	"Mariela Hunter"
+458	"Warren Hendrickson"
+459	"Howard Chan"
+46	"Jane Stephenson"
+460	"Veronica Werner"
+461	"Hollie Leonard"
+462	"Lawrence Guevara"
+463	"Charlie Deleon"
+464	"Derek Murphy"
+465	"Jeanette Garcia"
+466	"Dottie Rodriguez"
+467	"Russell Gentry"
+468	"Haywood "
+469	"Ambrose Callahan"
+47	"Luis Young"
+470	"Barbara Lee"
+471	"Brigida Doolittle"
+472	"Brian Lewis"
+473	"Myrtle Bennett"
+474	"Michael Espinoza"
+475	"Fletcher Palmer"
+476	"Brian Miller"
+477	"Sonia Tyler"
+478	"Leonel "
+479	"Jose Coulter"
+48	"Jill Jackson"
+480	"Jean Fuller"
+481	"Shawn Rowe"
+482	"Brandi Littlefield"
+483	"Nancy Berry"
+484	"Amber Hoffman"
+485	"James Jones"
+486	"Michael Harvey"
+487	"Dolores Williams"
+488	"Christina Hoyt"
+489	"Kristin Mack"
+49	"Steven Venable"
+490	"Cheri Alvarez"
+491	"Janice Hopkins"
+492	"Dale Young"
+493	"Machelle Hopson"
+494	"Jason Martin"
+495	"Marina Foster"
+496	"James Talley"
+497	"Joseph Bradford"
+498	"Jeffrey Thompson"
+499	"Jan Hardy"
+5	"Robert Moran"
+50	"Christopher Eller"
+500	"Charles Cromwell"
+501	"Felica Brunner"
+502	"Charles Witte"
+503	"Lisa Zamora"
+504	"Doris Moreno"
+505	"Jennifer Reyes"
+506	"Lena Dominguez"
+507	"Kermit Thompson"
+508	"Carlos Garza"
+509	"Helen Wright"
+51	"David Nieves"
+510	"Tonya Martinez"
+511	"Emanuel Davis"
+512	"Kevin Burns"
+513	"Claudia Sterling"
+514	"Evelyn Burt"
+515	"Pauline Hammond"
+516	"James Burch"
+517	"Laurence Beyer"
+518	"Patti Woods"
+519	"Jose Larson"
+52	"Wendy Colley"
+520	"Minnie Schwartz"
+521	"Kim Evans"
+522	"Gary Lancaster"
+523	"Robert Ruiz"
+524	"Sheldon Hewitt"
+525	"Judith Winkler"
+526	" "
+527	"Kenneth Mitchell"
+528	"Tammara Somerville"
+529	"Michael Herring"
+53	"Paul Higgins"
+530	"Herbert Beach"
+531	"Flor Braun"
+532	" "
+533	"Douglas Scott"
+534	"Jerry Preston"
+535	"Vera Prewitt"
+536	"Jerald Delarosa"
+537	"Kristin Dominguez"
+538	"Margaret Black"
+539	"John Jackson"
+54	"Donna King"
+540	"Christopher Henderson"
+541	"Isela Austin"
+542	"Everett Meyers"
+543	" Ritchie"
+544	"Melissa Brooks"
+545	"Tara Alexander"
+546	" "
+547	"Viola Hammond"
+548	"Martha Motley"
+549	"Darlene Braxton"
+55	"Beryl Thomason"
+550	"Leonard Simmons"
+551	"Joni Contreras"
+552	"Patrick Mcdonough"
+553	"Jennifer Greene"
+554	"Karen Hernandez"
+555	"Valerie Bass"
+556	"Karen Douglas"
+557	"Dionne Rhea"
+558	" White"
+559	"Samuel Thompson"
+56	"Pamela Delgado"
+560	"Robert Clawson"
+561	"Noemi Tiller"
+562	"Will Little"
+563	"Roger Moye"
+564	"John Albert"
+565	"Steven Young"
+566	"Eric Mcgee"
+567	"Carrie Segura"
+568	"Michelle Bruner"
+569	"Robert "
+57	"Travis Melendez"
+570	"James Jones"
+571	"John Floyd"
+572	"Louann Hamel"
+573	"Betty Combs"
+574	"Fred Rowland"
+575	"Barry Hunt"
+576	"Gary Amundson"
+577	"Dewey Miranda"
+578	"Michael Hernandez"
+579	"Betty Day"
+58	"Cecil Peterman"
+580	"Victoria Prieto"
+581	"Katrina Delgadillo"
+582	" "
+583	"Grace Mcdaniel"
+584	"Shawn Martin"
+585	"George Willard"
+586	"Douglas Lloyd"
+587	"Ethelyn Gomez"
+588	"Amy Quillen"
+589	"Julia Williams"
+59	"Melanie Morrison"
+590	"William Newell"
+591	"Eldon Arroyo"
+592	"Virginia Sullivan"
+593	"Jamar Kramer"
+594	"Carrie Kramer"
+595	"Jennifer Pierson"
+596	"Richard Allen"
+597	"Sally Weis"
+598	"Paul Bravo"
+599	"Leroy Roe"
+6	"Brunilda Sharp"
+60	"Dollie Thao"
+600	"Maribel Singleton"
+601	"Bernice Mendez"
+602	"Anderson Katz"
+603	"Sue Ellis"
+604	"Julia Phillips"
+605	"Arthur Marroquin"
+606	"Timothy Grogan"
+607	"Joseph Porter"
+608	"Charlotte Scott"
+609	"Alexander Marshall"
+61	"Joseph White"
+610	"Charles Lane"
+611	"Randall Smith"
+612	"Dana Nelson"
+613	"Charles Boone"
+614	"David Peterson"
+615	"Pauline Hudson"
+616	"Yolonda Muller"
+617	"Jorge Carroll"
+618	"James Mueller"
+619	"Nancy Crawford"
+62	"Matthew Brown"
+620	"Yolanda Haley"
+621	"Denise Hutchings"
+622	" Johnson"
+623	"Mildred Smith"
+624	"Andrew Richards"
+625	"Nellie Utley"
+626	"Eula Blair"
+627	"Lee Cooper"
+628	"Laureen Gulley"
+629	"Melva Booth"
+63	"Frank Morton"
+630	"Stephanie Kilgore"
+631	"Robert Patterson"
+632	"John Hall"
+633	"Bobby Gill"
+634	"Manuel Haynes"
+635	"Etta Marquez"
+636	"Wanda Munoz"
+637	"John Smith"
+638	"Thomas Warren"
+639	"Ethel Black"
+64	"Michael Frye"
+640	"Linda Leeper"
+641	" Caldwell"
+642	"James William"
+643	"John Miller"
+644	" Glaze"
+645	"Charles Taylor"
+646	"Anita "
+647	"Jessica Martinez"
+648	"Sherri Tyler"
+649	"Sheila Campbell"
+65	"Rodney Taft"
+650	"Alexis Marshall"
+651	"Janis Prado"
+652	"Colleen Davis"
+653	"David Lanier"
+654	"Ruth Robbins"
+655	"Patsy Ross"
+656	"Sterling Smith"
+657	"Augusta Field"
+658	"Gavin Ayala"
+659	"Nathan Hall"
+66	"Julie Chester"
+660	"Robert Hamilton"
+661	"Megan Hamilton"
+662	"James Davis"
+663	"Mark Smith"
+664	"Eleanor Nelson"
+665	"Daniel Null"
+666	"Theresa Brown"
+667	"Susan Valdez"
+668	"Tonia Dudley"
+669	"Ella Barnette"
+67	"Gerald Thomas"
+670	"Russell Greer"
+671	"Francis Madison"
+672	"Walter Lee"
+673	"Terrence Albright"
+674	"Robert Paquette"
+675	"Tina Rubio"
+676	"Linda Middleton"
+677	"Martha Weldon"
+678	"Eva Ferrell"
+679	"Kermit Cohn"
+68	"Arthur Troy"
+680	"Joanne Derr"
+681	"Rochel Smith"
+682	"Rebecca Butler"
+683	"Jeanne Langford"
+684	"Glenn Thompson"
+685	"Robert Spencer"
+686	"Charles Martin"
+687	"Eduardo Sandlin"
+688	"Jeff Thompson"
+689	"Jolene Hawkins"
+69	"Steven Mcclellan"
+690	"Jo Lang"
+691	"Natasha Carl"
+692	"Viola Burgess"
+693	"Loren Harrell"
+694	"Julie Johnson"
+695	"David Merritt"
+696	"Joanne Eaton"
+697	"Hazel Chase"
+698	"Herbert Ortega"
+699	"Helen Wise"
+7	"Fonda Wiles"
+70	"James Smith"
+700	"John Mcgee"
+701	"Eddie Moore"
+702	"Booker Jones"
+703	"George Smith"
+704	"Shawn Travers"
+705	"Heather Cady"
+706	"Joseph Caldwell"
+707	"Doris Wise"
+708	"Rose Santana"
+709	"Christopher Smith"
+71	"Roderick Rogers"
+710	"Darrell Matthews"
+711	"Kimberly Anderson"
+712	"Leonard Copley"
+713	"James Hunt"
+714	"Andrea Nelson"
+715	"Richard Chastain"
+716	"Ruby Cole"
+717	"Drew Fuller"
+718	"Lisa Brown"
+719	"Anne Bush"
+72	"Bradley Barry"
+720	"Lawrence Rodriguez"
+721	"Harriet Peterson"
+722	"Malcolm Hudson"
+723	"John Hightower"
+724	"Victor Chappell"
+725	"Jennifer Fitzpatrick"
+726	"Nellie Clay"
+727	"Sandra Brown"
+728	"Toni Orourke"
+729	" Lyles"
+73	"David Vasquez"
+730	"James Grider"
+731	"Kathryn Ponce"
+732	"Viola Brown"
+733	"Richard Wells"
+734	"Helen Madsen"
+735	"Steve Carroll"
+736	"Lisa Andrade"
+737	"Sean Williams"
+738	"Ashlee Davis"
+739	"Joy Baker"
+74	"Eric Woods"
+740	"Pattie Mcmanus"
+741	"Otis Gulley"
+742	"Chris Adams"
+743	"Eugene Aldridge"
+744	"Julio Mcdaniel"
+745	"Angela Johnson"
+746	"Katie Ross"
+747	"Paul May"
+748	"Blair Allen"
+749	"Arthur Waters"
+75	"Annie Grant"
+750	"Edna Wilson"
+751	"Rick Wade"
+752	"Ida Rojas"
+753	"Charles Phillips"
+754	"Robert Sanchez"
+755	"Junior Peeler"
+756	"Rebecca Owens"
+757	"Dawn Wells"
+758	"Miles Stephens"
+759	"Ralph Allison"
+76	"Craig Lowry"
+760	"Glenda Jones"
+761	"Alvin Buchanan"
+762	"Jeffrey Orr"
+763	"James Byrd"
+764	"Joel Miller"
+765	"Juan Smith"
+766	"Sean Saylor"
+767	"Leroy Levi"
+768	"Evelyn Wright"
+769	"Marilyn Johnson"
+77	"Darrin Smith"
+770	" Porter"
+771	"Charles Loveless"
+772	"Robert Brown"
+773	"Paul Martinez"
+774	"Rosie Stephens"
+775	"Althea Young"
+776	"Mark Hinton"
+777	"Jimmy Thompson"
+778	"Pamela Johnson"
+779	"James Edwards"
+78	"Wanda Davis"
+780	"Kenneth Martinez"
+781	"Jennifer Helms"
+782	"Amanda Williams"
+783	"William Pierce"
+784	"Joseph Wilson"
+785	"Danielle Robinson"
+786	"Wilson Rodriquez"
+787	"Harold Martin"
+788	"Dorothy Pearson"
+789	"Tara Rodgers"
+79	"Sandi Tran"
+790	"Irene Torres"
+791	"Ernestina "
+792	"Christine Miller"
+793	"Travis Finch"
+794	"Howard Albert"
+795	"Erma Shelton"
+796	"Donald Adams"
+797	"Benjamin Crawford"
+798	"Theresa Harris"
+799	" Chavis"
+8	"Ollie Shipman"
+80	"Eleanor Evans"
+800	"Aaron Fuller"
+801	"Rita Davis"
+802	"Martha Lynch"
+803	"Scot Harper"
+804	"Betty Gagnon"
+805	"Beverly Lane"
+806	"Bryan Carroll"
+807	" Randolph"
+808	"Kevin Simpson"
+809	" Waldron"
+81	"Jessica Levesque"
+810	"Omar Haggerty"
+811	"Howard Kay"
+812	"Steve Price"
+813	"David Foley"
+814	"Timothy "
+815	"Ella Martinez"
+816	"David Harbin"
+817	"Allen Lacey"
+818	"Rebecca Johnson"
+819	"Jose Sullivan"
+82	"Max Mueller"
+820	"Ryan Jackson"
+821	"Amy Joyce"
+822	"Nadia Shay"
+823	"Danny Lopez"
+824	"Ernesto Higgins"
+825	"Darnell Smith"
+826	"Jennifer Alger"
+827	"Claudia Foster"
+828	"Garland Robinson"
+829	" "
+83	"Daisy Flynn"
+830	"Alfred Sheppard"
+831	"Reginald Garcia"
+832	"Craig Eaves"
+833	"Paul Villanueva"
+834	"Catherine Adams"
+835	"Annie Burke"
+836	"John Young"
+837	"Guy Bray"
+838	"Michael Numbers"
+839	"Cherise Welsh"
+84	"Ami Montgomery"
+840	"Matt Salazar"
+841	"Jose Jones"
+842	"Brandi Miller"
+843	"Peggy Moore"
+844	"Michele Michael"
+845	"Annie Kuhn"
+846	"Theresa Buchanan"
+847	"Aaron Labbe"
+848	"Teresa Riggs"
+849	"Marcela Arias"
+85	"Michele Baldwin"
+850	"Joseph Conyers"
+851	"Jeffrey Baker"
+852	"Heather Dupont"
+853	"Janet Boston"
+854	"Terry Ortiz"
+855	"Stephen Livingston"
+856	" "
+857	"John Brewer"
+858	"Darrick Hankins"
+859	"Kizzie Larson"
+86	"Marvin Matlock"
+860	"Stephen Grimes"
+861	"Angel Casanova"
+862	"Gregory Butler"
+863	"Amanda Simpson"
+864	"Kermit Wiggins"
+865	"Betty Kelly"
+866	"Jerrie Carter"
+867	"Alberto Mccreary"
+868	"Andy Orourke"
+869	"Marcelino Thompson"
+87	"Kevin White"
+870	"Ella Dominguez"
+871	"Carla Beckwith"
+872	"Matilde Adams"
+873	"Stephanie Horn"
+874	"Steven Dawkins"
+875	"Marcus White"
+876	"Gladys Howell"
+877	"Ruth Taylor"
+878	"Robert Lyons"
+879	"Angela Long"
+88	"Phyllis Horner"
+880	"Donald Stout"
+881	"Rose Estes"
+882	"Patrick Hughes"
+883	"Minnie Roberson"
+884	"Richard Todd"
+885	"Jane Morrison"
+886	"Joshua Pierce"
+887	"Eddie Peck"
+888	"Mark Bartley"
+889	"Timothy Farley"
+89	"Helen Macdonald"
+890	"Dorothy Fabian"
+891	"Denise Angel"
+892	"Terrance Saunders"
+893	"Tim Pope"
+894	"Jay Butler"
+895	"Riley Sanchez"
+896	"Penelope Malloy"
+897	"Naida Newton"
+898	"Timothy Williams"
+899	"Scott Mcdonnell"
+9	"Karl Gilbert"
+90	"Nathan Pond"
+900	"Ronald Marsh"
+901	"David Brill"
+902	"Raymond Fenton"
+903	"Wanda Robinson"
+904	"Elois Hunter"
+905	"Issac Jones"
+906	"William Ahrens"
+907	"Hellen Child"
+908	"Daisy Smith"
+909	"Andra Hailey"
+91	"Heather White"
+910	"Marian Schuler"
+911	"Gino Ortiz"
+912	"Zachary Parsons"
+913	"Rob Blanco"
+914	"Chrystal Nielson"
+915	"Emelina Fultz"
+916	"Victoria Soto"
+917	"Alecia Bearden"
+918	"Kerrie Rodgers"
+919	"Deborah Sanders"
+92	"Crystal Ryan"
+920	"Wesley Harris"
+921	"James Hudson"
+922	"Cristy Tillery"
+923	"Elizabeth Harness"
+924	"Brenda Delgado"
+925	"Felicia Chew"
+926	"Jennifer Rasmussen"
+927	"Shea Hardy"
+928	"Debra Casillas"
+929	"Donna Hunter"
+93	"Clyde Williams"
+930	"Roberta Mcdonald"
+931	"Richard Akers"
+932	"Dana Dye"
+933	"Steven Ball"
+934	"Larry Bond"
+935	"Steven Williams"
+936	"Phillip Farmer"
+937	"Jason Haley"
+938	"Emerson Martin"
+939	"Bernard Martinez"
+94	"Craig Byrd"
+940	"Cornelius Moore"
+941	"Karina Irwin"
+942	"Meghan Murray"
+943	"Douglas Johnson"
+944	"Max Stephens"
+945	"Ellamae Carter"
+946	"Barbara Fountain"
+947	"Eduardo Boles"
+948	"Joanne Wynne"
+949	"Margaret Roberts"
+95	"Elizabeth Hollingsworth"
+950	"Etta Phillips"
+951	"Margie Bailey"
+952	"Raymond "
+953	"Nadia Albert"
+954	"Ruth White"
+955	"Rosemary Bryant"
+956	"Lydia Flores"
+957	"Kimberly Simpson"
+958	"David Banks"
+959	"Rose King"
+96	"Shaun Lewis"
+960	"Manuela Thayer"
+961	"Jose Guzman"
+962	"Amy Warren"
+963	"Cameron Godfrey"
+964	"Aline Ramos"
+965	"Joseph Aponte"
+966	"Sherry Bowles"
+967	"Earl Sheehan"
+968	"Andrea Hill"
+969	"Laurie Burrows"
+97	"Stewart Ruffin"
+970	"Alexander White"
+971	"Lemuel Waggoner"
+972	"Felicia Duke"
+973	"Brant Johnson"
+974	"Natalia Rickard"
+975	"Ingrid Cook"
+976	"Marjorie Beatty"
+977	"Camille Slocum"
+978	"Norma Roden"
+979	"Arlene Moore"
+98	"David Lewis"
+980	"Richard Bell"
+981	"Hazel Benson"
+982	"Terry Mcdowell"
+983	"Kevin Palmer"
+984	"Sara Loomis"
+985	"Francis Crowley"
+986	"Jennifer Larson"
+987	"Todd Norris"
+988	"Lori Wall"
+989	"Jack Hoyt"
+99	"Austin Tran"
+990	"John Thames"
+991	"William Aleman"
+992	"Elnora Dabney"
+993	"Joseph Fountain"
+994	"Geneva Archie"
+995	"Richie Smith"
+996	"Chris Davis"
+997	"Harvey "
+998	"Evelyn Joyner"
+999	"Lisa Clark"
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:240
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  c_customer_sk,
+  c_first_name || ' ' || c_last_name AS n
+FROM
+  customer;
+----
+1	"Javier Lewis"
+10	"Albert Brunson"
+100	"Jeannette Johnson"
+1000	"Mark Bailey"
+101	"Jeffrey Bruce"
+102	"Jodi Silva"
+103	"James Porter"
+104	"Benjamin Johnson"
+105	"Frank Strain"
+106	"Anne Massey"
+107	"Charles Robinson"
+108	"Alfred Bryant"
+109	"Alfred Watson"
+11	"Betty Williams"
+110	"David Thornton"
+111	"Allen Merritt"
+112	"Floyd Kelly"
+113	"Karen Roman"
+114	"Richard Chang"
+115	"Freddie Rojas"
+116	"Carolyn Callaway"
+117	"Renee Jones"
+118	"Polly Marlow"
+119	"Jack Spriggs"
+12	"Margaret Farias"
+120	"Dan Layne"
+121	NULL
+122	"Christopher Magee"
+123	"Issac Vega"
+124	"Katharine Hope"
+125	"Stephen Bruton"
+126	"Daniel Underwood"
+127	"Tina Clay"
+128	"Michele Benitez"
+129	"Brandi Daniels"
+13	"Rosalinda Grimes"
+130	"Julius Locke"
+131	"Christine Walton"
+132	"Delia Holland"
+133	"David Mcnabb"
+134	"Timothy Mendoza"
+135	"Vivian Elliott"
+136	"Elizabeth Horn"
+137	"Roger Burns"
+138	"Marjorie Smith"
+139	"Catherine Newman"
+14	"Jack Wilcox"
+140	"Debra Ferguson"
+141	"Roberto Johnson"
+142	"Marie Clark"
+143	"Gilberto Bennett"
+144	"Cecil Patterson"
+145	"Lucas Dewey"
+146	"Sue Garner"
+147	"David Bell"
+148	"Timothy Randall"
+149	"Anthony Bell"
+15	NULL
+150	"Carlos Rivers"
+151	"Inez Britt"
+152	"Charles Valdez"
+153	"Oscar Rodriguez"
+154	"Oscar Jolley"
+155	"Robert Bailey"
+156	"Ebony Herrera"
+157	"Timothy Dickey"
+158	"James Smith"
+159	"Lydia Parker"
+16	"Margie Browning"
+160	"Jeanne Fisher"
+161	"Wendy Chiu"
+162	"Pamela Perez"
+163	"Carly Chavez"
+164	"Kathleen Keegan"
+165	"Eleanor Muller"
+166	"Richard Taylor"
+167	"Ricky Lee"
+168	"Walter Clarke"
+169	"Samantha Long"
+17	"Lee Stovall"
+170	"Randy Wilson"
+171	"Rosa Nixon"
+172	NULL
+173	"Heather Joseph"
+174	"Linda Murdock"
+175	"Kathryn Boyd"
+176	"Bonnie Cunningham"
+177	"Joshua Parr"
+178	"Gladys Clancy"
+179	"Robert Rand"
+18	"Brad Lynch"
+180	"Robert Larsen"
+181	"Joseph Riley"
+182	"Michael Brown"
+183	"Peter Collins"
+184	"Clifford Flynn"
+185	"Yvette Eastman"
+186	"Marilyn Chapa"
+187	"Florence Foster"
+188	"Vincent Martinez"
+189	"Bruce Betz"
+19	"Andre Moore"
+190	"Romona Woodruff"
+191	"Jack Marino"
+192	"Corey Quinones"
+193	"David Neeley"
+194	"William Faison"
+195	"Deborah Terrell"
+196	"Shawn Cowan"
+197	"Debra Carter"
+198	"Dusty Bryan"
+199	"Edwardo Porter"
+2	"Amy Moses"
+20	"Stanton Dallas"
+200	"Ted Ingalls"
+201	"James Scott"
+202	"Trena Grant"
+203	"Clifford Markham"
+204	"Christine Hebert"
+205	"Heriberto Putnam"
+206	"Brian Serna"
+207	"Floyd Scroggins"
+208	"Karla Rincon"
+209	"Curtis Williams"
+21	"Naomi Barnett"
+210	"Diane Blount"
+211	"Barbara Hernandez"
+212	NULL
+213	"Christene Mccullough"
+214	"Archie Mayes"
+215	"Lillian Morgan"
+216	"Jacqueline Russo"
+217	"James Lackey"
+218	"Cody Fowler"
+219	"Roy Aguilar"
+22	"Victor Martinez"
+220	"William Chu"
+221	"Kenny Johnson"
+222	NULL
+223	"Rudolph Hutchins"
+224	"Adela Rutherford"
+225	"Roscoe Balderas"
+226	NULL
+227	"Angelia Vaughn"
+228	"Daniel Croteau"
+229	NULL
+23	NULL
+230	"Shirlene Guerra"
+231	"Janet Welch"
+232	"David Hudspeth"
+233	NULL
+234	"Dustin Perry"
+235	"Salvador Ramirez"
+236	"Becky Downey"
+237	NULL
+238	"Sean Sanderson"
+239	"Elizabeth Smith"
+24	"Paul Morris"
+240	NULL
+241	"Scott Ward"
+242	"Lance Redman"
+243	"James Catron"
+244	"Stephen Morgan"
+245	"Russell Donnelly"
+246	"Rosalie Low"
+247	"Earl Holden"
+248	"Leonard Munoz"
+249	"Cindy Jackson"
+25	"Nancy Mccormick"
+250	"Derick Stewart"
+251	"Richard Craig"
+252	"Troy Brewer"
+253	"Robert Walker"
+254	"Tiffanie Holliday"
+255	"Michael Thompson"
+256	"Kevin Garrison"
+257	"Petra Brown"
+258	"Clyde Bernard"
+259	"Carl Motley"
+26	"Monique Baker"
+260	"Steven Deleon"
+261	"Honey Raymond"
+262	"Angela Mauro"
+263	"Rebecca Hermann"
+264	"Claude Stewart"
+265	"Laura Pham"
+266	"Walter Martinez"
+267	"Dessie Simms"
+268	"Ann Siegel"
+269	"William Burns"
+27	"Shawn Prather"
+270	"Diane Molina"
+271	"Ashley Wallace"
+272	"Claudia Butler"
+273	"Everett Jenkins"
+274	"Helen Gray"
+275	"Janice Kirby"
+276	"David Moreau"
+277	"Bernard Bryant"
+278	"Rachel Hernandez"
+279	"William Kaye"
+28	"Edith Hernandez"
+280	"Christopher Randolph"
+281	"Tommy Whitney"
+282	NULL
+283	"Joseph Hilton"
+284	"Adam Chambers"
+285	"Stephen Burton"
+286	"Ima Amos"
+287	"Carolyn Wong"
+288	"Ruth Duarte"
+289	"Nancy Jones"
+29	"Margaret Collins"
+290	"Florence Caro"
+291	"Ralph Johnson"
+292	"Billy Coffin"
+293	"Heather Brown"
+294	NULL
+295	"Michael Mcguire"
+296	"Christy Hudson"
+297	"Lee Farias"
+298	"Iris Roberts"
+299	"Gerald Stone"
+3	"Latisha Hamilton"
+30	"Pamela Luna"
+300	"Gina Batson"
+301	"Richard Whitaker"
+302	"Concepcion Pugh"
+303	"Luz Ransom"
+304	"James Sherrod"
+305	"Matt Santana"
+306	"Peter Smith"
+307	"Kathy Stone"
+308	"Ashley Thompson"
+309	"John Blair"
+31	"William Craig"
+310	"John Nunes"
+311	"Darrell Yates"
+312	NULL
+313	NULL
+314	"Anthony White"
+315	"Ross Burgess"
+316	"Benjamin Smith"
+317	"Anthony Silva"
+318	"Rosemary Anderson"
+319	"Evelyn Ritchey"
+32	"Kenneth Wood"
+320	NULL
+321	"Jerrie Vickers"
+322	"Sunshine Solomon"
+323	"Benton Hite"
+324	"Monica Holloway"
+325	"Fred Shipley"
+326	"Kenneth Cox"
+327	"Jeffrey Wiles"
+328	"Jose Larson"
+329	"Christopher Rodriguez"
+33	"Donna Betts"
+330	"Johnny Young"
+331	"Agnes Hinton"
+332	"John Mcdonald"
+333	"Veronica Miller"
+334	"Donna Hernandez"
+335	NULL
+336	"Belle Day"
+337	"Matthew Lee"
+338	"Kymberly Conway"
+339	"Barbara Knutson"
+34	NULL
+340	"Richard Mills"
+341	NULL
+342	NULL
+343	"Catherine Andrews"
+344	"Stuart Spencer"
+345	"Jill Wilkins"
+346	"Fiona Jones"
+347	"Wesley Wallace"
+348	"Pauline Cyr"
+349	"Jeanette Hewitt"
+35	"Marie Peterson"
+350	"Anne Ellison"
+351	"Francisco Hutchinson"
+352	"Steven Moore"
+353	"Michael Littleton"
+354	"Jeanette Huff"
+355	"Bruno Butcher"
+356	NULL
+357	"Angie Washington"
+358	"Raymond Gilmore"
+359	"Daniel Campbell"
+36	"Anthony Fisher"
+360	"James Qualls"
+361	"Bonnie Harrison"
+362	"Herbert Snowden"
+363	"Bobby Oneill"
+364	"Hilda Hall"
+365	"Donald May"
+366	"Damaris Lane"
+367	"Aaron Browder"
+368	"Stanford Glover"
+369	"Arnold Lewis"
+37	"Dwight Schneider"
+370	"Freda Becker"
+371	"Beth Gonzalez"
+372	"Maxine Houston"
+373	"Michael Perkins"
+374	"Carla Johnson"
+375	"David Saunders"
+376	"Ronald Wilcox"
+377	"Gloria Davis"
+378	"Gloria Carlton"
+379	"Mark Fields"
+38	"Ha Carpenter"
+380	"Carl Hoover"
+381	"Colby Robinson"
+382	"Rose Sturgill"
+383	"Linda Isaacson"
+384	"Kimberly Allen"
+385	"Susan Hansen"
+386	"Chris King"
+387	"Thomas Brookins"
+388	"Kelly Lee"
+389	"Scott Kerns"
+39	"Neil Cox"
+390	"Daniel Madera"
+391	"Eleanor Bates"
+392	"Amanda Cox"
+393	"Bruce Olvera"
+394	"Brenda Miner"
+395	"Rosemary Alba"
+396	"Jennifer Espinoza"
+397	"Colby King"
+398	"Albert Keller"
+399	"Raymond Mccain"
+4	"Michael White"
+40	"Jacqueline Hatfield"
+400	"Lance Mason"
+401	"Sarah Clemons"
+402	"William Flores"
+403	"Matthew Nugent"
+404	"Ethel Frazier"
+405	"Penelope Wooten"
+406	"Catherine Foster"
+407	"Aaron Taylor"
+408	"Paul Harry"
+409	"Jason Woodson"
+41	"Maxine Carlson"
+410	"Clayton Rogers"
+411	"Cleo Spangler"
+412	"Dorothy Billings"
+413	"Marc Anderson"
+414	"Joseph Moore"
+415	"Teri Anderson"
+416	"Chester Velazquez"
+417	"Kayleen Edwards"
+418	"Maurice Morales"
+419	"Mattie Kelly"
+42	"Deborah Burton"
+420	NULL
+421	"Allison Cosgrove"
+422	"Matthew Leake"
+423	"Craig Sylvester"
+424	"Diane Gallo"
+425	"Danny Donald"
+426	"Bessie Peek"
+427	"Gladys Hernandez"
+428	"Issac Marcum"
+429	"Cynthia Sutton"
+43	"William Warner"
+430	"Darrell Davidson"
+431	"Ronald Dunbar"
+432	"Cedric Walton"
+433	"Robert Leatherman"
+434	"Sammie Clark"
+435	"Doris Ward"
+436	"Anthony Mathis"
+437	"Marie Brown"
+438	"Dennis Thomas"
+439	"Helen Culver"
+44	"Mabel Richmond"
+440	"Julio Barber"
+441	"Lan Thompson"
+442	"Shelley Giordano"
+443	"Jay Johns"
+444	"Ashley Douglas"
+445	"Joseph Norris"
+446	"Ines Taylor"
+447	"Janet Schramm"
+448	"Lynda Lee"
+449	"Kathryn Mcknight"
+45	NULL
+450	"Jesse Benjamin"
+451	"Richard Mcbride"
+452	"Joel Ferrell"
+453	"Bobby White"
+454	"Carrie Hernandez"
+455	"Eunice Shaw"
+456	"Kristin Hargrove"
+457	"Mariela Hunter"
+458	"Warren Hendrickson"
+459	"Howard Chan"
+46	"Jane Stephenson"
+460	"Veronica Werner"
+461	"Hollie Leonard"
+462	"Lawrence Guevara"
+463	"Charlie Deleon"
+464	"Derek Murphy"
+465	"Jeanette Garcia"
+466	"Dottie Rodriguez"
+467	"Russell Gentry"
+468	NULL
+469	"Ambrose Callahan"
+47	"Luis Young"
+470	"Barbara Lee"
+471	"Brigida Doolittle"
+472	"Brian Lewis"
+473	"Myrtle Bennett"
+474	"Michael Espinoza"
+475	"Fletcher Palmer"
+476	"Brian Miller"
+477	"Sonia Tyler"
+478	NULL
+479	"Jose Coulter"
+48	"Jill Jackson"
+480	"Jean Fuller"
+481	"Shawn Rowe"
+482	"Brandi Littlefield"
+483	"Nancy Berry"
+484	"Amber Hoffman"
+485	"James Jones"
+486	"Michael Harvey"
+487	"Dolores Williams"
+488	"Christina Hoyt"
+489	"Kristin Mack"
+49	"Steven Venable"
+490	"Cheri Alvarez"
+491	"Janice Hopkins"
+492	"Dale Young"
+493	"Machelle Hopson"
+494	"Jason Martin"
+495	"Marina Foster"
+496	"James Talley"
+497	"Joseph Bradford"
+498	"Jeffrey Thompson"
+499	"Jan Hardy"
+5	"Robert Moran"
+50	"Christopher Eller"
+500	"Charles Cromwell"
+501	"Felica Brunner"
+502	"Charles Witte"
+503	"Lisa Zamora"
+504	"Doris Moreno"
+505	"Jennifer Reyes"
+506	"Lena Dominguez"
+507	"Kermit Thompson"
+508	"Carlos Garza"
+509	"Helen Wright"
+51	"David Nieves"
+510	"Tonya Martinez"
+511	"Emanuel Davis"
+512	"Kevin Burns"
+513	"Claudia Sterling"
+514	"Evelyn Burt"
+515	"Pauline Hammond"
+516	"James Burch"
+517	"Laurence Beyer"
+518	"Patti Woods"
+519	"Jose Larson"
+52	"Wendy Colley"
+520	"Minnie Schwartz"
+521	"Kim Evans"
+522	"Gary Lancaster"
+523	"Robert Ruiz"
+524	"Sheldon Hewitt"
+525	"Judith Winkler"
+526	NULL
+527	"Kenneth Mitchell"
+528	"Tammara Somerville"
+529	"Michael Herring"
+53	"Paul Higgins"
+530	"Herbert Beach"
+531	"Flor Braun"
+532	NULL
+533	"Douglas Scott"
+534	"Jerry Preston"
+535	"Vera Prewitt"
+536	"Jerald Delarosa"
+537	"Kristin Dominguez"
+538	"Margaret Black"
+539	"John Jackson"
+54	"Donna King"
+540	"Christopher Henderson"
+541	"Isela Austin"
+542	"Everett Meyers"
+543	NULL
+544	"Melissa Brooks"
+545	"Tara Alexander"
+546	NULL
+547	"Viola Hammond"
+548	"Martha Motley"
+549	"Darlene Braxton"
+55	"Beryl Thomason"
+550	"Leonard Simmons"
+551	"Joni Contreras"
+552	"Patrick Mcdonough"
+553	"Jennifer Greene"
+554	"Karen Hernandez"
+555	"Valerie Bass"
+556	"Karen Douglas"
+557	"Dionne Rhea"
+558	NULL
+559	"Samuel Thompson"
+56	"Pamela Delgado"
+560	"Robert Clawson"
+561	"Noemi Tiller"
+562	"Will Little"
+563	"Roger Moye"
+564	"John Albert"
+565	"Steven Young"
+566	"Eric Mcgee"
+567	"Carrie Segura"
+568	"Michelle Bruner"
+569	NULL
+57	"Travis Melendez"
+570	"James Jones"
+571	"John Floyd"
+572	"Louann Hamel"
+573	"Betty Combs"
+574	"Fred Rowland"
+575	"Barry Hunt"
+576	"Gary Amundson"
+577	"Dewey Miranda"
+578	"Michael Hernandez"
+579	"Betty Day"
+58	"Cecil Peterman"
+580	"Victoria Prieto"
+581	"Katrina Delgadillo"
+582	NULL
+583	"Grace Mcdaniel"
+584	"Shawn Martin"
+585	"George Willard"
+586	"Douglas Lloyd"
+587	"Ethelyn Gomez"
+588	"Amy Quillen"
+589	"Julia Williams"
+59	"Melanie Morrison"
+590	"William Newell"
+591	"Eldon Arroyo"
+592	"Virginia Sullivan"
+593	"Jamar Kramer"
+594	"Carrie Kramer"
+595	"Jennifer Pierson"
+596	"Richard Allen"
+597	"Sally Weis"
+598	"Paul Bravo"
+599	"Leroy Roe"
+6	"Brunilda Sharp"
+60	"Dollie Thao"
+600	"Maribel Singleton"
+601	"Bernice Mendez"
+602	"Anderson Katz"
+603	"Sue Ellis"
+604	"Julia Phillips"
+605	"Arthur Marroquin"
+606	"Timothy Grogan"
+607	"Joseph Porter"
+608	"Charlotte Scott"
+609	"Alexander Marshall"
+61	"Joseph White"
+610	"Charles Lane"
+611	"Randall Smith"
+612	"Dana Nelson"
+613	"Charles Boone"
+614	"David Peterson"
+615	"Pauline Hudson"
+616	"Yolonda Muller"
+617	"Jorge Carroll"
+618	"James Mueller"
+619	"Nancy Crawford"
+62	"Matthew Brown"
+620	"Yolanda Haley"
+621	"Denise Hutchings"
+622	NULL
+623	"Mildred Smith"
+624	"Andrew Richards"
+625	"Nellie Utley"
+626	"Eula Blair"
+627	"Lee Cooper"
+628	"Laureen Gulley"
+629	"Melva Booth"
+63	"Frank Morton"
+630	"Stephanie Kilgore"
+631	"Robert Patterson"
+632	"John Hall"
+633	"Bobby Gill"
+634	"Manuel Haynes"
+635	"Etta Marquez"
+636	"Wanda Munoz"
+637	"John Smith"
+638	"Thomas Warren"
+639	"Ethel Black"
+64	"Michael Frye"
+640	"Linda Leeper"
+641	NULL
+642	"James William"
+643	"John Miller"
+644	NULL
+645	"Charles Taylor"
+646	NULL
+647	"Jessica Martinez"
+648	"Sherri Tyler"
+649	"Sheila Campbell"
+65	"Rodney Taft"
+650	"Alexis Marshall"
+651	"Janis Prado"
+652	"Colleen Davis"
+653	"David Lanier"
+654	"Ruth Robbins"
+655	"Patsy Ross"
+656	"Sterling Smith"
+657	"Augusta Field"
+658	"Gavin Ayala"
+659	"Nathan Hall"
+66	"Julie Chester"
+660	"Robert Hamilton"
+661	"Megan Hamilton"
+662	"James Davis"
+663	"Mark Smith"
+664	"Eleanor Nelson"
+665	"Daniel Null"
+666	"Theresa Brown"
+667	"Susan Valdez"
+668	"Tonia Dudley"
+669	"Ella Barnette"
+67	"Gerald Thomas"
+670	"Russell Greer"
+671	"Francis Madison"
+672	"Walter Lee"
+673	"Terrence Albright"
+674	"Robert Paquette"
+675	"Tina Rubio"
+676	"Linda Middleton"
+677	"Martha Weldon"
+678	"Eva Ferrell"
+679	"Kermit Cohn"
+68	"Arthur Troy"
+680	"Joanne Derr"
+681	"Rochel Smith"
+682	"Rebecca Butler"
+683	"Jeanne Langford"
+684	"Glenn Thompson"
+685	"Robert Spencer"
+686	"Charles Martin"
+687	"Eduardo Sandlin"
+688	"Jeff Thompson"
+689	"Jolene Hawkins"
+69	"Steven Mcclellan"
+690	"Jo Lang"
+691	"Natasha Carl"
+692	"Viola Burgess"
+693	"Loren Harrell"
+694	"Julie Johnson"
+695	"David Merritt"
+696	"Joanne Eaton"
+697	"Hazel Chase"
+698	"Herbert Ortega"
+699	"Helen Wise"
+7	"Fonda Wiles"
+70	"James Smith"
+700	"John Mcgee"
+701	"Eddie Moore"
+702	"Booker Jones"
+703	"George Smith"
+704	"Shawn Travers"
+705	"Heather Cady"
+706	"Joseph Caldwell"
+707	"Doris Wise"
+708	"Rose Santana"
+709	"Christopher Smith"
+71	"Roderick Rogers"
+710	"Darrell Matthews"
+711	"Kimberly Anderson"
+712	"Leonard Copley"
+713	"James Hunt"
+714	"Andrea Nelson"
+715	"Richard Chastain"
+716	"Ruby Cole"
+717	"Drew Fuller"
+718	"Lisa Brown"
+719	"Anne Bush"
+72	"Bradley Barry"
+720	"Lawrence Rodriguez"
+721	"Harriet Peterson"
+722	"Malcolm Hudson"
+723	"John Hightower"
+724	"Victor Chappell"
+725	"Jennifer Fitzpatrick"
+726	"Nellie Clay"
+727	"Sandra Brown"
+728	"Toni Orourke"
+729	NULL
+73	"David Vasquez"
+730	"James Grider"
+731	"Kathryn Ponce"
+732	"Viola Brown"
+733	"Richard Wells"
+734	"Helen Madsen"
+735	"Steve Carroll"
+736	"Lisa Andrade"
+737	"Sean Williams"
+738	"Ashlee Davis"
+739	"Joy Baker"
+74	"Eric Woods"
+740	"Pattie Mcmanus"
+741	"Otis Gulley"
+742	"Chris Adams"
+743	"Eugene Aldridge"
+744	"Julio Mcdaniel"
+745	"Angela Johnson"
+746	"Katie Ross"
+747	"Paul May"
+748	"Blair Allen"
+749	"Arthur Waters"
+75	"Annie Grant"
+750	"Edna Wilson"
+751	"Rick Wade"
+752	"Ida Rojas"
+753	"Charles Phillips"
+754	"Robert Sanchez"
+755	"Junior Peeler"
+756	"Rebecca Owens"
+757	"Dawn Wells"
+758	"Miles Stephens"
+759	"Ralph Allison"
+76	"Craig Lowry"
+760	"Glenda Jones"
+761	"Alvin Buchanan"
+762	"Jeffrey Orr"
+763	"James Byrd"
+764	"Joel Miller"
+765	"Juan Smith"
+766	"Sean Saylor"
+767	"Leroy Levi"
+768	"Evelyn Wright"
+769	"Marilyn Johnson"
+77	"Darrin Smith"
+770	NULL
+771	"Charles Loveless"
+772	"Robert Brown"
+773	"Paul Martinez"
+774	"Rosie Stephens"
+775	"Althea Young"
+776	"Mark Hinton"
+777	"Jimmy Thompson"
+778	"Pamela Johnson"
+779	"James Edwards"
+78	"Wanda Davis"
+780	"Kenneth Martinez"
+781	"Jennifer Helms"
+782	"Amanda Williams"
+783	"William Pierce"
+784	"Joseph Wilson"
+785	"Danielle Robinson"
+786	"Wilson Rodriquez"
+787	"Harold Martin"
+788	"Dorothy Pearson"
+789	"Tara Rodgers"
+79	"Sandi Tran"
+790	"Irene Torres"
+791	NULL
+792	"Christine Miller"
+793	"Travis Finch"
+794	"Howard Albert"
+795	"Erma Shelton"
+796	"Donald Adams"
+797	"Benjamin Crawford"
+798	"Theresa Harris"
+799	NULL
+8	"Ollie Shipman"
+80	"Eleanor Evans"
+800	"Aaron Fuller"
+801	"Rita Davis"
+802	"Martha Lynch"
+803	"Scot Harper"
+804	"Betty Gagnon"
+805	"Beverly Lane"
+806	"Bryan Carroll"
+807	NULL
+808	"Kevin Simpson"
+809	NULL
+81	"Jessica Levesque"
+810	"Omar Haggerty"
+811	"Howard Kay"
+812	"Steve Price"
+813	"David Foley"
+814	NULL
+815	"Ella Martinez"
+816	"David Harbin"
+817	"Allen Lacey"
+818	"Rebecca Johnson"
+819	"Jose Sullivan"
+82	"Max Mueller"
+820	"Ryan Jackson"
+821	"Amy Joyce"
+822	"Nadia Shay"
+823	"Danny Lopez"
+824	"Ernesto Higgins"
+825	"Darnell Smith"
+826	"Jennifer Alger"
+827	"Claudia Foster"
+828	"Garland Robinson"
+829	NULL
+83	"Daisy Flynn"
+830	"Alfred Sheppard"
+831	"Reginald Garcia"
+832	"Craig Eaves"
+833	"Paul Villanueva"
+834	"Catherine Adams"
+835	"Annie Burke"
+836	"John Young"
+837	"Guy Bray"
+838	"Michael Numbers"
+839	"Cherise Welsh"
+84	"Ami Montgomery"
+840	"Matt Salazar"
+841	"Jose Jones"
+842	"Brandi Miller"
+843	"Peggy Moore"
+844	"Michele Michael"
+845	"Annie Kuhn"
+846	"Theresa Buchanan"
+847	"Aaron Labbe"
+848	"Teresa Riggs"
+849	"Marcela Arias"
+85	"Michele Baldwin"
+850	"Joseph Conyers"
+851	"Jeffrey Baker"
+852	"Heather Dupont"
+853	"Janet Boston"
+854	"Terry Ortiz"
+855	"Stephen Livingston"
+856	NULL
+857	"John Brewer"
+858	"Darrick Hankins"
+859	"Kizzie Larson"
+86	"Marvin Matlock"
+860	"Stephen Grimes"
+861	"Angel Casanova"
+862	"Gregory Butler"
+863	"Amanda Simpson"
+864	"Kermit Wiggins"
+865	"Betty Kelly"
+866	"Jerrie Carter"
+867	"Alberto Mccreary"
+868	"Andy Orourke"
+869	"Marcelino Thompson"
+87	"Kevin White"
+870	"Ella Dominguez"
+871	"Carla Beckwith"
+872	"Matilde Adams"
+873	"Stephanie Horn"
+874	"Steven Dawkins"
+875	"Marcus White"
+876	"Gladys Howell"
+877	"Ruth Taylor"
+878	"Robert Lyons"
+879	"Angela Long"
+88	"Phyllis Horner"
+880	"Donald Stout"
+881	"Rose Estes"
+882	"Patrick Hughes"
+883	"Minnie Roberson"
+884	"Richard Todd"
+885	"Jane Morrison"
+886	"Joshua Pierce"
+887	"Eddie Peck"
+888	"Mark Bartley"
+889	"Timothy Farley"
+89	"Helen Macdonald"
+890	"Dorothy Fabian"
+891	"Denise Angel"
+892	"Terrance Saunders"
+893	"Tim Pope"
+894	"Jay Butler"
+895	"Riley Sanchez"
+896	"Penelope Malloy"
+897	"Naida Newton"
+898	"Timothy Williams"
+899	"Scott Mcdonnell"
+9	"Karl Gilbert"
+90	"Nathan Pond"
+900	"Ronald Marsh"
+901	"David Brill"
+902	"Raymond Fenton"
+903	"Wanda Robinson"
+904	"Elois Hunter"
+905	"Issac Jones"
+906	"William Ahrens"
+907	"Hellen Child"
+908	"Daisy Smith"
+909	"Andra Hailey"
+91	"Heather White"
+910	"Marian Schuler"
+911	"Gino Ortiz"
+912	"Zachary Parsons"
+913	"Rob Blanco"
+914	"Chrystal Nielson"
+915	"Emelina Fultz"
+916	"Victoria Soto"
+917	"Alecia Bearden"
+918	"Kerrie Rodgers"
+919	"Deborah Sanders"
+92	"Crystal Ryan"
+920	"Wesley Harris"
+921	"James Hudson"
+922	"Cristy Tillery"
+923	"Elizabeth Harness"
+924	"Brenda Delgado"
+925	"Felicia Chew"
+926	"Jennifer Rasmussen"
+927	"Shea Hardy"
+928	"Debra Casillas"
+929	"Donna Hunter"
+93	"Clyde Williams"
+930	"Roberta Mcdonald"
+931	"Richard Akers"
+932	"Dana Dye"
+933	"Steven Ball"
+934	"Larry Bond"
+935	"Steven Williams"
+936	"Phillip Farmer"
+937	"Jason Haley"
+938	"Emerson Martin"
+939	"Bernard Martinez"
+94	"Craig Byrd"
+940	"Cornelius Moore"
+941	"Karina Irwin"
+942	"Meghan Murray"
+943	"Douglas Johnson"
+944	"Max Stephens"
+945	"Ellamae Carter"
+946	"Barbara Fountain"
+947	"Eduardo Boles"
+948	"Joanne Wynne"
+949	"Margaret Roberts"
+95	"Elizabeth Hollingsworth"
+950	"Etta Phillips"
+951	"Margie Bailey"
+952	NULL
+953	"Nadia Albert"
+954	"Ruth White"
+955	"Rosemary Bryant"
+956	"Lydia Flores"
+957	"Kimberly Simpson"
+958	"David Banks"
+959	"Rose King"
+96	"Shaun Lewis"
+960	"Manuela Thayer"
+961	"Jose Guzman"
+962	"Amy Warren"
+963	"Cameron Godfrey"
+964	"Aline Ramos"
+965	"Joseph Aponte"
+966	"Sherry Bowles"
+967	"Earl Sheehan"
+968	"Andrea Hill"
+969	"Laurie Burrows"
+97	"Stewart Ruffin"
+970	"Alexander White"
+971	"Lemuel Waggoner"
+972	"Felicia Duke"
+973	"Brant Johnson"
+974	"Natalia Rickard"
+975	"Ingrid Cook"
+976	"Marjorie Beatty"
+977	"Camille Slocum"
+978	"Norma Roden"
+979	"Arlene Moore"
+98	"David Lewis"
+980	"Richard Bell"
+981	"Hazel Benson"
+982	"Terry Mcdowell"
+983	"Kevin Palmer"
+984	"Sara Loomis"
+985	"Francis Crowley"
+986	"Jennifer Larson"
+987	"Todd Norris"
+988	"Lori Wall"
+989	"Jack Hoyt"
+99	"Austin Tran"
+990	"John Thames"
+991	"William Aleman"
+992	"Elnora Dabney"
+993	"Joseph Fountain"
+994	"Geneva Archie"
+995	"Richie Smith"
+996	"Chris Davis"
+997	NULL
+998	"Evelyn Joyner"
+999	"Lisa Clark"
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:241
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  c_customer_sk,
+  length(c_email_address) AS l
+FROM
+  customer;
+----
+1	28
+10	21
+100	29
+1000	30
+101	22
+102	29
+103	24
+104	30
+105	24
+106	23
+107	35
+108	25
+109	19
+11	36
+110	31
+111	23
+112	25
+113	29
+114	33
+115	32
+116	34
+117	31
+118	35
+119	32
+12	22
+120	25
+121	NULL
+122	32
+123	27
+124	36
+125	29
+126	32
+127	29
+128	24
+129	30
+13	30
+130	19
+131	22
+132	21
+133	33
+134	30
+135	29
+136	30
+137	26
+138	36
+139	37
+14	24
+140	20
+141	27
+142	18
+143	33
+144	36
+145	33
+146	29
+147	27
+148	23
+149	24
+15	NULL
+150	29
+151	24
+152	26
+153	30
+154	27
+155	31
+156	28
+157	37
+158	21
+159	27
+16	29
+160	34
+161	25
+162	32
+163	27
+164	28
+165	34
+166	33
+167	25
+168	28
+169	31
+17	26
+170	19
+171	34
+172	NULL
+173	23
+174	21
+175	28
+176	35
+177	25
+178	27
+179	28
+18	20
+180	20
+181	21
+182	28
+183	28
+184	23
+185	29
+186	31
+187	32
+188	22
+189	23
+19	27
+190	33
+191	26
+192	36
+193	26
+194	20
+195	34
+196	27
+197	28
+198	27
+199	26
+2	22
+20	29
+200	29
+201	30
+202	30
+203	27
+204	31
+205	28
+206	26
+207	33
+208	19
+209	24
+21	35
+210	19
+211	23
+212	NULL
+213	41
+214	29
+215	32
+216	31
+217	23
+218	33
+219	23
+22	22
+220	24
+221	30
+222	30
+223	39
+224	22
+225	33
+226	19
+227	NULL
+228	35
+229	NULL
+23	24
+230	35
+231	27
+232	36
+233	28
+234	NULL
+235	28
+236	22
+237	NULL
+238	37
+239	21
+24	26
+240	NULL
+241	27
+242	23
+243	34
+244	22
+245	37
+246	26
+247	25
+248	28
+249	34
+25	37
+250	27
+251	25
+252	25
+253	31
+254	24
+255	37
+256	22
+257	32
+258	31
+259	26
+26	27
+260	32
+261	32
+262	34
+263	26
+264	26
+265	25
+266	37
+267	21
+268	22
+269	24
+27	28
+270	27
+271	26
+272	26
+273	30
+274	22
+275	19
+276	28
+277	30
+278	32
+279	31
+28	26
+280	39
+281	28
+282	NULL
+283	24
+284	30
+285	26
+286	30
+287	24
+288	29
+289	21
+29	29
+290	27
+291	33
+292	24
+293	19
+294	24
+295	35
+296	33
+297	30
+298	28
+299	27
+3	22
+30	27
+300	23
+301	39
+302	24
+303	27
+304	21
+305	27
+306	18
+307	27
+308	30
+309	27
+31	29
+310	27
+311	22
+312	25
+313	NULL
+314	27
+315	19
+316	32
+317	19
+318	30
+319	32
+32	20
+320	25
+321	22
+322	34
+323	24
+324	32
+325	29
+326	19
+327	34
+328	30
+329	40
+33	21
+330	24
+331	19
+332	31
+333	32
+334	21
+335	NULL
+336	NULL
+337	32
+338	26
+339	33
+34	23
+340	28
+341	NULL
+342	NULL
+343	28
+344	30
+345	29
+346	25
+347	35
+348	29
+349	34
+35	32
+350	34
+351	36
+352	24
+353	34
+354	28
+355	31
+356	21
+357	32
+358	31
+359	33
+36	30
+360	18
+361	32
+362	24
+363	31
+364	18
+365	30
+366	30
+367	29
+368	34
+369	28
+37	33
+370	27
+371	33
+372	27
+373	29
+374	29
+375	28
+376	29
+377	20
+378	26
+379	20
+38	27
+380	29
+381	24
+382	28
+383	24
+384	23
+385	27
+386	30
+387	32
+388	21
+389	21
+39	21
+390	30
+391	24
+392	19
+393	30
+394	19
+395	22
+396	23
+397	26
+398	33
+399	32
+4	19
+40	NULL
+400	25
+401	30
+402	38
+403	27
+404	28
+405	35
+406	24
+407	27
+408	32
+409	20
+41	38
+410	32
+411	21
+412	28
+413	25
+414	25
+415	30
+416	37
+417	29
+418	24
+419	27
+42	21
+420	33
+421	27
+422	27
+423	29
+424	26
+425	23
+426	30
+427	31
+428	24
+429	38
+43	28
+430	36
+431	25
+432	31
+433	24
+434	35
+435	25
+436	38
+437	21
+438	29
+439	32
+44	23
+440	33
+441	26
+442	25
+443	26
+444	30
+445	33
+446	18
+447	29
+448	19
+449	29
+45	NULL
+450	37
+451	26
+452	31
+453	18
+454	34
+455	25
+456	27
+457	29
+458	26
+459	18
+46	32
+460	30
+461	33
+462	31
+463	31
+464	31
+465	23
+466	33
+467	34
+468	NULL
+469	22
+47	19
+470	33
+471	39
+472	29
+473	31
+474	32
+475	29
+476	29
+477	33
+478	25
+479	37
+48	23
+480	31
+481	29
+482	24
+483	27
+484	37
+485	20
+486	26
+487	35
+488	32
+489	28
+49	34
+490	31
+491	32
+492	18
+493	27
+494	30
+495	32
+496	26
+497	31
+498	29
+499	17
+5	19
+50	32
+500	25
+501	37
+502	19
+503	23
+504	27
+505	27
+506	30
+507	30
+508	18
+509	30
+51	22
+510	20
+511	27
+512	18
+513	33
+514	33
+515	30
+516	29
+517	26
+518	20
+519	22
+52	28
+520	23
+521	30
+522	30
+523	27
+524	31
+525	30
+526	NULL
+527	38
+528	28
+529	27
+53	32
+530	26
+531	25
+532	21
+533	27
+534	25
+535	28
+536	21
+537	33
+538	20
+539	27
+54	20
+540	34
+541	32
+542	32
+543	31
+544	24
+545	28
+546	NULL
+547	36
+548	34
+549	34
+55	32
+550	31
+551	32
+552	34
+553	28
+554	32
+555	19
+556	35
+557	27
+558	24
+559	34
+56	35
+560	30
+561	23
+562	29
+563	19
+564	19
+565	24
+566	20
+567	30
+568	21
+569	NULL
+57	27
+570	27
+571	23
+572	31
+573	24
+574	34
+575	32
+576	38
+577	20
+578	38
+579	25
+58	36
+580	32
+581	40
+582	36
+583	32
+584	33
+585	31
+586	28
+587	29
+588	31
+589	28
+59	27
+590	27
+591	21
+592	25
+593	23
+594	22
+595	31
+596	29
+597	16
+598	21
+599	21
+6	30
+60	34
+600	27
+601	25
+602	31
+603	26
+604	23
+605	35
+606	29
+607	28
+608	32
+609	38
+61	27
+610	29
+611	32
+612	26
+613	22
+614	28
+615	29
+616	33
+617	24
+618	20
+619	21
+62	19
+620	36
+621	22
+622	27
+623	19
+624	22
+625	28
+626	22
+627	30
+628	35
+629	32
+63	26
+630	35
+631	24
+632	28
+633	30
+634	22
+635	23
+636	17
+637	25
+638	20
+639	32
+64	32
+640	20
+641	32
+642	22
+643	24
+644	35
+645	31
+646	NULL
+647	40
+648	30
+649	33
+65	18
+650	30
+651	17
+652	30
+653	25
+654	22
+655	31
+656	24
+657	27
+658	27
+659	17
+66	20
+660	31
+661	32
+662	21
+663	19
+664	29
+665	19
+666	33
+667	33
+668	19
+669	31
+67	30
+670	28
+671	28
+672	28
+673	25
+674	31
+675	17
+676	30
+677	32
+678	29
+679	24
+68	29
+680	24
+681	22
+682	29
+683	32
+684	21
+685	29
+686	23
+687	30
+688	24
+689	22
+69	35
+690	28
+691	28
+692	20
+693	31
+694	21
+695	19
+696	20
+697	34
+698	24
+699	22
+7	27
+70	25
+700	26
+701	29
+702	21
+703	34
+704	26
+705	20
+706	24
+707	22
+708	20
+709	33
+71	26
+710	32
+711	32
+712	31
+713	20
+714	33
+715	25
+716	15
+717	24
+718	30
+719	25
+72	34
+720	33
+721	22
+722	30
+723	35
+724	27
+725	37
+726	23
+727	31
+728	31
+729	NULL
+73	19
+730	26
+731	31
+732	24
+733	26
+734	27
+735	23
+736	19
+737	29
+738	18
+739	27
+74	27
+740	26
+741	28
+742	34
+743	24
+744	22
+745	23
+746	17
+747	28
+748	26
+749	29
+75	30
+750	27
+751	28
+752	25
+753	22
+754	32
+755	24
+756	31
+757	25
+758	24
+759	30
+76	27
+760	36
+761	24
+762	21
+763	17
+764	19
+765	28
+766	24
+767	25
+768	29
+769	33
+77	20
+770	NULL
+771	33
+772	23
+773	22
+774	31
+775	32
+776	26
+777	24
+778	29
+779	37
+78	26
+780	25
+781	29
+782	28
+783	34
+784	31
+785	26
+786	29
+787	31
+788	27
+789	18
+79	26
+790	19
+791	NULL
+792	31
+793	29
+794	37
+795	19
+796	28
+797	33
+798	27
+799	22
+8	20
+80	25
+800	23
+801	27
+802	33
+803	34
+804	20
+805	29
+806	33
+807	30
+808	24
+809	NULL
+81	31
+810	29
+811	26
+812	26
+813	30
+814	NULL
+815	21
+816	28
+817	32
+818	24
+819	21
+82	33
+820	27
+821	15
+822	17
+823	28
+824	34
+825	24
+826	25
+827	20
+828	22
+829	39
+83	27
+830	30
+831	28
+832	21
+833	35
+834	32
+835	19
+836	34
+837	30
+838	27
+839	32
+84	31
+840	28
+841	26
+842	35
+843	20
+844	34
+845	31
+846	29
+847	20
+848	30
+849	20
+85	28
+850	24
+851	24
+852	24
+853	35
+854	19
+855	NULL
+856	NULL
+857	18
+858	22
+859	30
+86	25
+860	21
+861	32
+862	36
+863	28
+864	26
+865	26
+866	36
+867	27
+868	29
+869	25
+87	33
+870	27
+871	20
+872	22
+873	28
+874	21
+875	19
+876	28
+877	24
+878	31
+879	18
+88	22
+880	25
+881	21
+882	35
+883	21
+884	19
+885	38
+886	30
+887	33
+888	29
+889	26
+89	23
+890	26
+891	23
+892	34
+893	23
+894	18
+895	32
+896	31
+897	22
+898	24
+899	24
+9	33
+90	29
+900	23
+901	26
+902	32
+903	29
+904	20
+905	32
+906	32
+907	26
+908	26
+909	27
+91	35
+910	34
+911	20
+912	31
+913	29
+914	33
+915	28
+916	32
+917	26
+918	20
+919	34
+92	24
+920	24
+921	21
+922	29
+923	40
+924	20
+925	30
+926	35
+927	25
+928	25
+929	27
+93	21
+930	23
+931	30
+932	20
+933	29
+934	28
+935	36
+936	20
+937	36
+938	27
+939	35
+94	27
+940	27
+941	28
+942	30
+943	28
+944	19
+945	NULL
+946	38
+947	22
+948	26
+949	27
+95	38
+950	23
+951	27
+952	NULL
+953	26
+954	22
+955	30
+956	29
+957	30
+958	23
+959	21
+96	27
+960	25
+961	20
+962	18
+963	35
+964	19
+965	29
+966	33
+967	23
+968	17
+969	20
+97	24
+970	34
+971	23
+972	25
+973	30
+974	34
+975	20
+976	32
+977	34
+978	21
+979	20
+98	21
+980	27
+981	32
+982	38
+983	23
+984	18
+985	32
+986	36
+987	17
+988	25
+989	23
+99	29
+990	21
+991	32
+992	32
+993	34
+994	28
+995	28
+996	21
+997	32
+998	27
+999	25
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:242
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  customer
+WHERE
+  c_email_address IS NULL;
+----
+31
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:243
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  i_item_sk,
+  coalesce(i_size, 'unknown') AS sz
+FROM
+  item;
+----
+1	"N/A"
+10	"N/A"
+100	"N/A"
+101	"medium"
+102	"medium"
+103	"large"
+104	"N/A"
+105	"N/A"
+106	"N/A"
+107	"N/A"
+108	"N/A"
+109	"N/A"
+11	"N/A"
+110	"petite"
+111	"N/A"
+112	"extra large"
+113	"N/A"
+114	"N/A"
+115	"N/A"
+116	"N/A"
+117	"N/A"
+118	"small"
+119	"petite"
+12	"N/A"
+120	"petite"
+121	"N/A"
+122	"N/A"
+123	"N/A"
+124	"economy"
+125	"N/A"
+126	"small"
+127	"N/A"
+128	"N/A"
+129	"N/A"
+13	"N/A"
+130	"N/A"
+131	"N/A"
+132	"large"
+133	"medium"
+134	"large"
+135	"N/A"
+136	"extra large"
+137	"N/A"
+138	"N/A"
+139	"N/A"
+14	"N/A"
+140	"N/A"
+141	"N/A"
+142	"small"
+143	"N/A"
+144	"N/A"
+145	"N/A"
+146	"N/A"
+147	"extra large"
+148	"petite"
+149	"petite"
+15	"N/A"
+150	"small"
+151	"small"
+152	"petite"
+153	"N/A"
+154	"N/A"
+155	"N/A"
+156	"petite"
+157	"N/A"
+158	"N/A"
+159	"medium"
+16	"large"
+160	"N/A"
+161	"large"
+162	"economy"
+163	"medium"
+164	"N/A"
+165	"N/A"
+166	"medium"
+167	"N/A"
+168	"small"
+169	"N/A"
+17	"extra large"
+170	"N/A"
+171	"N/A"
+172	"N/A"
+173	"medium"
+174	"N/A"
+175	"N/A"
+176	"small"
+177	"N/A"
+178	"N/A"
+179	"N/A"
+18	"medium"
+180	"N/A"
+19	"large"
+2	"petite"
+20	"extra large"
+21	"N/A"
+22	"N/A"
+23	"N/A"
+24	"medium"
+25	"large"
+26	"petite"
+27	"N/A"
+28	"medium"
+29	"large"
+3	"N/A"
+30	"N/A"
+31	"N/A"
+32	"N/A"
+33	"medium"
+34	"N/A"
+35	"N/A"
+36	"medium"
+37	"petite"
+38	"medium"
+39	"N/A"
+4	"extra large"
+40	"N/A"
+41	"small"
+42	"N/A"
+43	"N/A"
+44	"N/A"
+45	"N/A"
+46	"N/A"
+47	"economy"
+48	"N/A"
+49	"large"
+5	"petite"
+50	"small"
+51	"extra large"
+52	"medium"
+53	"N/A"
+54	"medium"
+55	"medium"
+56	"N/A"
+57	"medium"
+58	"small"
+59	"medium"
+6	"large"
+60	"N/A"
+61	"N/A"
+62	"N/A"
+63	"medium"
+64	"N/A"
+65	"N/A"
+66	"N/A"
+67	"N/A"
+68	"petite"
+69	"large"
+7	"petite"
+70	"N/A"
+71	"N/A"
+72	"medium"
+73	"petite"
+74	"small"
+75	"N/A"
+76	"N/A"
+77	"small"
+78	"N/A"
+79	"N/A"
+8	"extra large"
+80	"N/A"
+81	"large"
+82	"small"
+83	"N/A"
+84	"large"
+85	"small"
+86	"N/A"
+87	"petite"
+88	"large"
+89	"large"
+9	"medium"
+90	"N/A"
+91	"N/A"
+92	"N/A"
+93	"N/A"
+94	"economy"
+95	"N/A"
+96	"N/A"
+97	"N/A"
+98	"N/A"
+99	"N/A"
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:245
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/006"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  customer
+WHERE
+  c_last_name LIKE 'A%';
+----
+36
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:246
+# sirius: id = "tpcds_nulls/string-null-semantics-concat-vs/007"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  customer
+WHERE
+  c_email_address NOT LIKE '%.com';
+----
+644
