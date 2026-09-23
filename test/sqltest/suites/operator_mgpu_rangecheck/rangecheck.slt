@@ -1,0 +1,33 @@
+include ../../fixtures/migrated/operator_mgpu/order-rangecheck.slt
+
+# Original query: test/cpp/operator/test_physical_order_mgpu.cpp:162
+# sirius: id = "operator_mgpu_rangecheck/rangecheck/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet') ORDER BY k LIMIT 5;
+----
+0	0
+0	0
+0	0
+0	0
+1	241
+
+# Original query: test/cpp/operator/test_physical_order_mgpu.cpp:162
+# sirius: id = "operator_mgpu_rangecheck/rangecheck/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet') ORDER BY k LIMIT 5;
+----
+0	0
+0	0
+0	0
+0	0
+1	241
