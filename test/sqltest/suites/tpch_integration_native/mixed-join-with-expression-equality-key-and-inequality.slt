@@ -1,0 +1,14 @@
+# gpu_execution - mixed join with expression equality key and inequality
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:887
+# sirius: id = "tpch_integration_native/mixed-join-with-expression-equality-key-and-inequality/001"
+# sirius: tags = ["integration", "gpu_execution", "join"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  c.c_custkey
+FROM
+  customer c
+  JOIN nation n ON c.c_custkey = n.n_nationkey * 10 AND c.c_custkey > n.n_nationkey;
+----

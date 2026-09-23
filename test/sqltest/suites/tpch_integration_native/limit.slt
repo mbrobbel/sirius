@@ -1,0 +1,12 @@
+# gpu_execution - limit
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:720
+# sirius: id = "tpch_integration_native/limit/001"
+# sirius: tags = ["integration", "gpu_execution", "limit"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation LIMIT 10;
+----

@@ -1,0 +1,17 @@
+# gpu_execution - join with empty two sides
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3522
+# sirius: id = "tpch_integration_native/join-with-empty-two-sides/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result"]
+query ??? rowsort
+SELECT
+  l.l_orderkey,
+  l.l_linestatus,
+  o.o_custkey AS ockey
+FROM
+  lineitem l
+  INNER JOIN orders o ON l.l_orderkey = o.o_orderkey
+WHERE
+  l_linestatus = 'J' AND o.o_comment = 'Special';
+----

@@ -1,0 +1,12 @@
+# gpu_execution - order by column not in select lineitem
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2925
+# sirius: id = "tpch_integration_native/order-by-column-not-in-select-lineitem/001"
+# sirius: tags = ["integration", "gpu_execution", "order_by", "order_by_proj"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem ORDER BY l_linenumber;
+----

@@ -1,0 +1,18 @@
+# gpu_execution - order by desc
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET max_sort_partition_bytes = 1024;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2978
+# sirius: id = "tpch_integration_native/order-by-desc/001"
+# sirius: tags = ["integration", "tpch"]
+query ??? rowsort
+SELECT
+  l_orderkey,
+  l_partkey,
+  l_suppkey
+FROM
+  lineitem ORDER BY l_partkey DESC;
+----

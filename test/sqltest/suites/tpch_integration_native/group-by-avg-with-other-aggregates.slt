@@ -1,0 +1,17 @@
+# gpu_execution - group by avg with other aggregates
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2797
+# sirius: id = "tpch_integration_native/group-by-avg-with-other-aggregates/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "avg"]
+query ???? rowsort
+SELECT
+  n_regionkey,
+  avg(n_nationkey),
+  sum(n_nationkey),
+  count(*)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

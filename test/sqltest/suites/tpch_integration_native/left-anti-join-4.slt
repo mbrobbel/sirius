@@ -1,0 +1,15 @@
+# gpu_execution - left anti join 4
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1928
+# sirius: id = "tpch_integration_native/left-anti-join-4/001"
+# sirius: tags = ["integration", "gpu_execution", "antijoin"]
+query ??? rowsort
+SELECT
+  c.c_nationkey,
+  c.c_custkey,
+  c.c_name
+FROM
+  customer c
+  ANTI JOIN nation n ON n.n_nationkey = c.c_nationkey;
+----

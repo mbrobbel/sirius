@@ -5251,6 +5251,56 @@
       "test": "Invariant N holds across the suite's join shapes at the default threshold"
     },
     {
+      "file": "suites/tpch_integration_native/scan-single-column.slt",
+      "id": "tpch_integration_native/scan-single-column/001",
+      "identity": "248aef45180044a39877c988edefe1822c8a9f481694e2a972bfb0f83b4c3c87",
+      "kind": "query",
+      "line": 419,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - scan single column"
+    },
+    {
+      "file": "suites/tpch_integration_native/scan-multiple-columns.slt",
+      "id": "tpch_integration_native/scan-multiple-columns/001",
+      "identity": "1bbc275d55e3cfcbc9c4e1b65c056f972ce415cd57ad8cde16d450f8d7ab0019",
+      "kind": "query",
+      "line": 433,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - scan multiple columns"
+    },
+    {
+      "file": "suites/tpch_integration_native/scan-region-table.slt",
+      "id": "tpch_integration_native/scan-region-table/001",
+      "identity": "17420a69f3c650e12e9d96ccb3876a2e04ddcc50f1571891aed16260eb573ba8",
+      "kind": "query",
+      "line": 447,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - scan region table"
+    },
+    {
+      "file": "suites/tpch_integration_native/projection-add.slt",
+      "id": "tpch_integration_native/projection-add/001",
+      "identity": "48c2e10d114ae682af5d162613a746f2ae21dbfe1a8b413efa88cbb5ef718108",
+      "kind": "query",
+      "line": 465,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - projection add"
+    },
+    {
+      "file": "suites/tpch_integration_native/projection-multiply.slt",
+      "id": "tpch_integration_native/projection-multiply/001",
+      "identity": "3c2b8b6afb97b71cb31d47ea2464fb6b091e0df8a9a6d027c6b380ec46d9b010",
+      "kind": "query",
+      "line": 479,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - projection multiply"
+    },
+    {
       "file": "suites/tpch_integration_native/filter-equality.slt",
       "id": "tpch_integration_native/filter-equality/001",
       "identity": "1241f35301281e03fd970e1b2016faed378165b01b999a4b051a76445706beb7",
@@ -5291,6 +5341,56 @@
       "test": "gpu_execution - filter with projection"
     },
     {
+      "file": "suites/tpch_integration_native/single-group-by-key-min-max-sum-count.slt",
+      "id": "tpch_integration_native/single-group-by-key-min-max-sum-count/001",
+      "identity": "6b9e9fbcad977378c1f4b68fc9dca3360eb8588eaaac13fd3a22594bb3b7dc70",
+      "kind": "query",
+      "line": 647,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - single group by key: min max, sum, count(*)"
+    },
+    {
+      "file": "suites/tpch_integration_native/single-group-by-key-min-max-count-string.slt",
+      "id": "tpch_integration_native/single-group-by-key-min-max-count-string/001",
+      "identity": "f260366b0da2269676de8bf86b854d90f48eaca95de0099f602eef13c4576430",
+      "kind": "query",
+      "line": 665,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - single group by key: min max, count string "
+    },
+    {
+      "file": "suites/tpch_integration_native/limit.slt",
+      "id": "tpch_integration_native/limit/001",
+      "identity": "d91ea530b35524519f4e805fca58e0c508f076a9baf597dc8181847323608471",
+      "kind": "query",
+      "line": 720,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - limit"
+    },
+    {
+      "file": "suites/tpch_integration_native/limit-with-filter.slt",
+      "id": "tpch_integration_native/limit-with-filter/001",
+      "identity": "c84705469453a31a6b5e3c83ff4cb4cc0b938535bd8d09b965275496a81cb799",
+      "kind": "query",
+      "line": 734,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - limit with filter"
+    },
+    {
+      "file": "suites/tpch_integration_native/limit-on-large-table.slt",
+      "id": "tpch_integration_native/limit-on-large-table/001",
+      "identity": "a69cdaeee643ca9401862c8942190ce55a9bdd32143efcdfc622ed6f9c01b6de",
+      "kind": "query",
+      "line": 750,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - limit on large table"
+    },
+    {
       "file": "suites/tpch_disabled_parquet/limit-on-large-table-parquet.slt",
       "id": "tpch_disabled_parquet/limit-on-large-table-parquet/001",
       "identity": "626826917883eca79cd10ae6e8e69f3eeef133b6c0a5cdbcd23ebe3d0dc3e84a",
@@ -5299,6 +5399,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_disabled_parquet",
       "test": "gpu_execution - limit on large table parquet"
+    },
+    {
+      "file": "suites/tpch_integration_native/limit-with-offset-on-large-table.slt",
+      "id": "tpch_integration_native/limit-with-offset-on-large-table/001",
+      "identity": "0beff7eb8ea9ce63b7133c6376975da96b3ce69332631cd2992205712cb720c5",
+      "kind": "query",
+      "line": 766,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - limit with offset on large table"
     },
     {
       "file": "suites/tpch_disabled_parquet/limit-with-offset-on-large-table-parquet.slt",
@@ -5349,6 +5459,46 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - basic inner join 3"
+    },
+    {
+      "file": "suites/tpch_integration_native/join-with-expression-key-on-build-side.slt",
+      "id": "tpch_integration_native/join-with-expression-key-on-build-side/001",
+      "identity": "62930794c1e8cb8d2bac7e10bfc25735a82a66e92601a086466cdefdd6b72169",
+      "kind": "query",
+      "line": 860,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with expression key on build side"
+    },
+    {
+      "file": "suites/tpch_integration_native/join-with-expression-key-on-probe-side.slt",
+      "id": "tpch_integration_native/join-with-expression-key-on-probe-side/001",
+      "identity": "f57805f168528ba795387c3ed5e42ed79ec35249b91d4d0d27e81f24cfd005c5",
+      "kind": "query",
+      "line": 869,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with expression key on probe side"
+    },
+    {
+      "file": "suites/tpch_integration_native/join-with-expressions-on-both-sides.slt",
+      "id": "tpch_integration_native/join-with-expressions-on-both-sides/001",
+      "identity": "80180e121b67fbd132eb404d9b3d36df64c9f6f604af096110b9b81796b1cc72",
+      "kind": "query",
+      "line": 878,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with expressions on both sides"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-join-with-expression-equality-key-and-inequality.slt",
+      "id": "tpch_integration_native/mixed-join-with-expression-equality-key-and-inequality/001",
+      "identity": "acafcb723d46fedf9b540524eb1c149554bafac1ad6b0e0a855567e864cd4049",
+      "kind": "query",
+      "line": 887,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed join with expression equality key and inequality"
     },
     {
       "file": "suites/tpch_integration_native/basic-left-join-0.slt",
@@ -5511,6 +5661,176 @@
       "test": "gpu_execution - basic right join 3 making nulls"
     },
     {
+      "file": "suites/tpch_integration_native/swapped-inner-join-0.slt",
+      "id": "tpch_integration_native/swapped-inner-join-0/001",
+      "identity": "f2e3573893b3fb186007054f8bdce35c5b96a2c89f208b861c8bd8e17882a0f2",
+      "kind": "query",
+      "line": 1184,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped inner join 0"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-inner-join-1.slt",
+      "id": "tpch_integration_native/swapped-inner-join-1/001",
+      "identity": "895bbfddf115ed1236ced6742ccd4255137a93526c6f04bd00bf2616a9edca3c",
+      "kind": "query",
+      "line": 1202,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped inner join 1"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-inner-join-2.slt",
+      "id": "tpch_integration_native/swapped-inner-join-2/001",
+      "identity": "22295759d675172cd83baffab5f0d9107caaee17e61cbfa1322693f75e0dd5db",
+      "kind": "query",
+      "line": 1220,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped inner join 2"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-inner-join-3.slt",
+      "id": "tpch_integration_native/swapped-inner-join-3/001",
+      "identity": "c7dd5d74ffc29ff254e1ad5e731df7cfd4bc8c429075ed8884bc961a20523a6b",
+      "kind": "query",
+      "line": 1238,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped inner join 3"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-0.slt",
+      "id": "tpch_integration_native/swapped-left-join-0/001",
+      "identity": "ed03109b54226edb20db2cb4e71eca6895499654ad4b587e0cacd8db3871a766",
+      "kind": "query",
+      "line": 1256,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 0"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-1.slt",
+      "id": "tpch_integration_native/swapped-left-join-1/001",
+      "identity": "7c68de819b674ecf802dfeeb41f4ececf329b9bf16ef423f334c578eee7058ef",
+      "kind": "query",
+      "line": 1274,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 1"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-2.slt",
+      "id": "tpch_integration_native/swapped-left-join-2/001",
+      "identity": "c8582722e3781f8d70979766b58045be60390a466b08e62924b1df2defc8a158",
+      "kind": "query",
+      "line": 1292,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 2"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-3.slt",
+      "id": "tpch_integration_native/swapped-left-join-3/001",
+      "identity": "cc61a71c49ac12bea43f684b994ec1804f34938d6ffac23f76b2ad1807942457",
+      "kind": "query",
+      "line": 1310,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 3"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-0-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-left-join-0-making-nulls/001",
+      "identity": "fd209eb65bc414ab8ef84e0d0951fe35bac5ed5c08e2877a26f706fba126cdff",
+      "kind": "query",
+      "line": 1328,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 0 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-1-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-left-join-1-making-nulls/001",
+      "identity": "0a5fa5b36506f431ed0ee6cae963eea533a6aae99b7bb2611a677e683c882e61",
+      "kind": "query",
+      "line": 1346,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 1 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-2-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-left-join-2-making-nulls/001",
+      "identity": "0efabdc7c3553bae5526da2548d37a05fbcdae8543b12d993a64d29d18f68609",
+      "kind": "query",
+      "line": 1364,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 2 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-left-join-3-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-left-join-3-making-nulls/001",
+      "identity": "aacf78675e6f9bc7253f1f52a51f70d5f01463232d8c4ba82a45c2819dcfaa4f",
+      "kind": "query",
+      "line": 1382,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped left join 3 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-right-join-0.slt",
+      "id": "tpch_integration_native/swapped-right-join-0/001",
+      "identity": "532bb3fd2b53cd1e22a933e9ff8bc0b29df2eb3cff91b188f54a3b56e1ce624e",
+      "kind": "query",
+      "line": 1400,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped right join 0"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-right-join-1.slt",
+      "id": "tpch_integration_native/swapped-right-join-1/001",
+      "identity": "e31ff68ace68162fc3c515c7f11f36905f494be6a42e75a6b75380e406134b27",
+      "kind": "query",
+      "line": 1418,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped right join 1"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-right-join-0-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-right-join-0-making-nulls/001",
+      "identity": "28b0b7cc774dc8939682919891cfddcb4effcd8fff020b5b4fb757ecc319ca4f",
+      "kind": "query",
+      "line": 1472,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped right join 0 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-right-join-1-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-right-join-1-making-nulls/001",
+      "identity": "52922c59a69307d5a6f206c26364fc6aa61b43b235d8bc4a577fcb7ba7ad8324",
+      "kind": "query",
+      "line": 1490,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped right join 1 making nulls"
+    },
+    {
+      "file": "suites/tpch_integration_native/swapped-right-join-2-making-nulls.slt",
+      "id": "tpch_integration_native/swapped-right-join-2-making-nulls/001",
+      "identity": "8ce41d6812cacc9433b94d7dce5d56ec43f258742d6b4a7f3df9d0c7531d921e",
+      "kind": "query",
+      "line": 1508,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - swapped right join 2 making nulls"
+    },
+    {
       "file": "suites/tpch_integration_native/basic-full-outer-join.slt",
       "id": "tpch_integration_native/basic-full-outer-join/001",
       "identity": "244d6025e5edd28be01a56d63b0eda5c6be8dbba71a838be3688bb6a4e82442d",
@@ -5621,6 +5941,106 @@
       "test": "gpu_execution - basic semi join mistit 1"
     },
     {
+      "file": "suites/tpch_integration_native/left-anti-join.slt",
+      "id": "tpch_integration_native/left-anti-join/001",
+      "identity": "4482eae8d08e9885d8ffc3b2e1c365286297a69b5878647889eea689da04e537",
+      "kind": "query",
+      "line": 1878,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join"
+    },
+    {
+      "file": "suites/tpch_integration_native/left-anti-join-2.slt",
+      "id": "tpch_integration_native/left-anti-join-2/001",
+      "identity": "5271b062c66ca3e42c3d72c3a9de6ed81411f6828683e02346e4f3a4956a11b4",
+      "kind": "query",
+      "line": 1894,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join 2"
+    },
+    {
+      "file": "suites/tpch_integration_native/left-anti-join-3.slt",
+      "id": "tpch_integration_native/left-anti-join-3/001",
+      "identity": "73435e585763b4ddee619736369997d0faae068b8def29bb0f15066dc02bebae",
+      "kind": "query",
+      "line": 1910,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join 3"
+    },
+    {
+      "file": "suites/tpch_integration_native/left-anti-join-4.slt",
+      "id": "tpch_integration_native/left-anti-join-4/001",
+      "identity": "37280a763e35a37658608f81762b51b6d263023a9bcbf24376af990381c275bf",
+      "kind": "query",
+      "line": 1928,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join 4"
+    },
+    {
+      "file": "suites/tpch_integration_native/left-anti-join-misfit-0.slt",
+      "id": "tpch_integration_native/left-anti-join-misfit-0/001",
+      "identity": "35ea70a7276fa93e524b40bf87e8a1b76244db3291dfe6ea660b3198d940d7c2",
+      "kind": "query",
+      "line": 1962,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join misfit 0"
+    },
+    {
+      "file": "suites/tpch_integration_native/left-anti-join-misfit-1.slt",
+      "id": "tpch_integration_native/left-anti-join-misfit-1/001",
+      "identity": "f8aece734ac86adf731a84d3f5ff7ec68f64f2eec1d14d9959879627ecec1d96",
+      "kind": "query",
+      "line": 1980,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - left anti join misfit 1"
+    },
+    {
+      "file": "suites/tpch_integration_native/right-anti-join.slt",
+      "id": "tpch_integration_native/right-anti-join/001",
+      "identity": "1c78d277d218f26543e990624360b3b604d4f3bb378376b5207bef741fa26bab",
+      "kind": "query",
+      "line": 2022,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - right anti join"
+    },
+    {
+      "file": "suites/tpch_integration_native/right-anti-join-2.slt",
+      "id": "tpch_integration_native/right-anti-join-2/001",
+      "identity": "16e3d7cec74d2a16b0b59d7791a58057e68d06349b6a8046f4ddace9dc57f4c4",
+      "kind": "query",
+      "line": 2038,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - right anti join 2"
+    },
+    {
+      "file": "suites/tpch_integration_native/right-anti-join-3.slt",
+      "id": "tpch_integration_native/right-anti-join-3/001",
+      "identity": "5e88687b9afa55b08f43600c2ad67fea6f8b82540d486ed02d8aa2e8d58a3fc2",
+      "kind": "query",
+      "line": 2054,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - right anti join 3"
+    },
+    {
+      "file": "suites/tpch_integration_native/right-anti-join-misfit.slt",
+      "id": "tpch_integration_native/right-anti-join-misfit/001",
+      "identity": "6f2805f21b01b0827843864bd267aa80e3f301a3ccfeb8fa137373482d0ad360",
+      "kind": "query",
+      "line": 2072,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - right anti join misfit"
+    },
+    {
       "file": "suites/tpch_integration_native/bigger-inner-join.slt",
       "id": "tpch_integration_native/bigger-inner-join/001",
       "identity": "8e8bdcfe55d89e64de5030fef17635f537e3a5aca8102d00d2a1297016f7f1fa",
@@ -5659,6 +6079,96 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - bigger full outer join"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-single-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-single-inequality-condition/001",
+      "identity": "e1529ed7a46446193276f94960c3e38c4aa1f1692da18da9d724b5d00fe3aaa3",
+      "kind": "query",
+      "line": 2283,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join single inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-double-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-double-inequality-condition/001",
+      "identity": "af7e2785f3af61624e09e454fae55e9632f7f2d1a4b5346fc2764f2c91a3e87f",
+      "kind": "query",
+      "line": 2305,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join double inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-double-inequality-condition-one-condition-needing-casting.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-double-inequality-condition-one-condition-needing-casting/001",
+      "identity": "c9c85a926c03862cb9f48900a9d6a3a513efbc6448f3395bacc4cc54846fc5d2",
+      "kind": "query",
+      "line": 2328,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join double inequality condition, one condition needing casting"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-left-join-single-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-left-join-single-inequality-condition/001",
+      "identity": "047d1fd9fe5222803c4143cae8ae5b8aadbaa7bc01c2e6ea009f07fda6fbcd1f",
+      "kind": "query",
+      "line": 2349,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop left join single inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-left-join-double-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-left-join-double-inequality-condition/001",
+      "identity": "beaab642ad1d5ee9311293a7645d3116bd728810069ce4a3000afe8702ddb42a",
+      "kind": "query",
+      "line": 2371,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop left join double inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-left-join-double-inequality-condition-one-condition-needing-casting.slt",
+      "id": "tpch_integration_native/nested-loop-left-join-double-inequality-condition-one-condition-needing-casting/001",
+      "identity": "4e86d1e006eddaa2721ef63f8bdb1b98bbeccd710c481fa92a769f4679e78db2",
+      "kind": "query",
+      "line": 2394,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop left join double inequality condition, one condition needing casting"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-right-join-single-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-right-join-single-inequality-condition/001",
+      "identity": "95aa3f96df153ace67a604a7a77cf4d63ebb254114a4605ab74f2cacb9bdb46b",
+      "kind": "query",
+      "line": 2416,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop right join single inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-right-join-double-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-right-join-double-inequality-condition/001",
+      "identity": "62bb86b540bd307fb7c463a673afe7362a38b126f2e6396b7669e9349e766882",
+      "kind": "query",
+      "line": 2438,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop right join double inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-right-join-double-inequality-condition-one-condition-needing-casting.slt",
+      "id": "tpch_integration_native/nested-loop-right-join-double-inequality-condition-one-condition-needing-casting/001",
+      "identity": "d7ab0054497cdc90ed929ddd4e1137bf04816c9a54caa3238b0b5b07264faaa3",
+      "kind": "query",
+      "line": 2461,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop right join double inequality condition, one condition needing casting"
     },
     {
       "file": "suites/tpch_disabled_native/nested-loop-full-outer-join-single-inequality-condition.slt",
@@ -5721,6 +6231,126 @@
       "test": "gpu_execution - nested loop full outer join double inequality condition, one  parquetcondition needing casting"
     },
     {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-one-equality-and-one-inequality-condition/001",
+      "identity": "e88e3c70660b6b4a2a764e0a1c1b31104f0db00b4306e9bdbdebffc67114308e",
+      "kind": "query",
+      "line": 2549,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join one equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-two-inequality-condition.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-two-inequality-condition/001",
+      "identity": "edea0eee7c6c47de680218142fbbc07e827280f2214f2b335e228d6c5515d07c",
+      "kind": "query",
+      "line": 2570,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join two inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/nested-loop-inner-join-two-inequality-condition-and-expression-eval.slt",
+      "id": "tpch_integration_native/nested-loop-inner-join-two-inequality-condition-and-expression-eval/001",
+      "identity": "8b40dc01dc4f636e411598375752de3b9dd19d4c338eb93880b531ed1f984879",
+      "kind": "query",
+      "line": 2593,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - nested loop inner join two inequality condition and expression eval"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-inner-join-one-equality-and-one-inequality-condition-but-equality-column-is-shared-triggers-nested-join.slt",
+      "id": "tpch_integration_native/mixed-inner-join-one-equality-and-one-inequality-condition-but-equality-column-is-shared-triggers-nested-join/001",
+      "identity": "d5fddabee645ae95d8748d8f5c5fd3875fe4b787afb267c78e4fdb1ba668486e",
+      "kind": "query",
+      "line": 2605,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed inner join one equality and one inequality condition but equality column is shared (triggers nested join)"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-inner-join-one-equality-and-one-inequality-condition-with-cast-needed.slt",
+      "id": "tpch_integration_native/mixed-inner-join-one-equality-and-one-inequality-condition-with-cast-needed/001",
+      "identity": "bd97267024b514fc908611c515577b14944aaaa95ba85471de1a4749c7ea23aa",
+      "kind": "query",
+      "line": 2621,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed inner join one equality and one inequality condition with cast needed"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-right-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-right-join-one-equality-and-one-inequality-condition/001",
+      "identity": "1f84937653c6526464284d387e9c0f272f3335ffa1a4fd1992258f2d2880f0ec",
+      "kind": "query",
+      "line": 2631,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed right join one equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-left-join-one-equality-and-two-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-left-join-one-equality-and-two-inequality-condition/001",
+      "identity": "6af1f92b22bc1bf8adae294deaa3fe3e811912787ae657070b402a751401e602",
+      "kind": "query",
+      "line": 2642,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed left join one equality and two inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-inner-join-two-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-inner-join-two-equality-and-one-inequality-condition/001",
+      "identity": "848f7c871fa27412c0bd7b8d376e82292852a89d44674dc7db35639062ec5083",
+      "kind": "query",
+      "line": 2654,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed inner join two equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-semi-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-semi-join-one-equality-and-one-inequality-condition/001",
+      "identity": "a9c9311f91c383109793cfec460fbf2a564e23e2071bd2eacb0feb3dcfbfa77d",
+      "kind": "query",
+      "line": 2666,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed semi join one equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-right-semi-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-right-semi-join-one-equality-and-one-inequality-condition/001",
+      "identity": "b6c72c1d1297a483ada9fbb188d467d1bae06b6054655f929dc9edfc1c557c07",
+      "kind": "query",
+      "line": 2677,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed right semi join one equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-anti-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-anti-join-one-equality-and-one-inequality-condition/001",
+      "identity": "edd84bddd58a9a05d24e4ea8fb7a8f1861e60d55232f286ac569617196f18c33",
+      "kind": "query",
+      "line": 2688,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed anti join one equality and one inequality condition"
+    },
+    {
+      "file": "suites/tpch_integration_native/mixed-anti-semi-join-one-equality-and-one-inequality-condition.slt",
+      "id": "tpch_integration_native/mixed-anti-semi-join-one-equality-and-one-inequality-condition/001",
+      "identity": "2c5e672ff78d5a0914d448ea1577980e6d3ce97d20110e77c6dcc10cb3dadacd",
+      "kind": "query",
+      "line": 2699,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - mixed anti semi join one equality and one inequality condition"
+    },
+    {
       "file": "suites/tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles.slt",
       "id": "tpch_disabled_native/two-group-by-key-min-max-sum-count-of-doubles/001",
       "identity": "cd573098397925236fcda87f61f0d8142e2b4beac4e5baaa8ffe4575e61e7f59",
@@ -5761,6 +6391,46 @@
       "test": "gpu_execution - filter returns empty result parquet"
     },
     {
+      "file": "suites/tpch_integration_native/group-by-count.slt",
+      "id": "tpch_integration_native/group-by-count/001",
+      "identity": "341246ece3ed4900c0c2140cf7c1c55971a373439d1412c7a1060c4865330a2a",
+      "kind": "query",
+      "line": 2751,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by count"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-min-max-count.slt",
+      "id": "tpch_integration_native/group-by-min-max-count/001",
+      "identity": "922d1741655529aa7281f1e16946a8bd864d685b24ad034affdb6b89fa9a4d6c",
+      "kind": "query",
+      "line": 2765,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by min max count"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-avg-integer.slt",
+      "id": "tpch_integration_native/group-by-avg-integer/001",
+      "identity": "93e0e9bd37419bbd0de905cc77169baa84cb19ea478910099cd8714d01c11b2f",
+      "kind": "query",
+      "line": 2783,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by avg integer"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-avg-with-other-aggregates.slt",
+      "id": "tpch_integration_native/group-by-avg-with-other-aggregates/001",
+      "identity": "00d523f10d87873dc07a6ea7ada1e369bd26aff5eb62f2dede3b43593a2c98bf",
+      "kind": "query",
+      "line": 2797,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by avg with other aggregates"
+    },
+    {
       "file": "suites/tpch_integration_native/group-by-avg-decimal.slt",
       "id": "tpch_integration_native/group-by-avg-decimal/001",
       "identity": "7a9e6fb39a1ffc04b885ea11134ea0b1e8bae2c397860b3af82ca240bb0f9db6",
@@ -5769,6 +6439,126 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - group by avg decimal"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-sum-avg-on-lineitem.slt",
+      "id": "tpch_integration_native/group-by-sum-avg-on-lineitem/001",
+      "identity": "3b9ed01a8183174caebcb1dab20db733d58ccfc7edbd165fc87474cf9c178abd",
+      "kind": "query",
+      "line": 2833,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by sum avg on lineitem"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-min-max-avg-on-decimal-on-lineitem.slt",
+      "id": "tpch_integration_native/group-by-min-max-avg-on-decimal-on-lineitem/001",
+      "identity": "2761e6a39e958305a6da42565fc13bb5c832344b6352792f264b421d181a5a15",
+      "kind": "approx",
+      "line": 2851,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by min, max, avg on decimal on lineitem"
+    },
+    {
+      "file": "suites/tpch_integration_native/group-by-min-max-avg-sum-on-decimal-on-lineitem.slt",
+      "id": "tpch_integration_native/group-by-min-max-avg-sum-on-decimal-on-lineitem/001",
+      "identity": "7f95a0c949a077349cfeeb9945863d41036e04a35b9a5dd8491c0dad1ff6192c",
+      "kind": "approx",
+      "line": 2871,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - group by min, max, avg, sum on decimal on lineitem"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by.slt",
+      "id": "tpch_integration_native/order-by/001",
+      "identity": "ab93133eaa715ecd0fa7b4a17d0bf23ac7260bc57610553cfbb6c34f6bb1421e",
+      "kind": "query",
+      "line": 2897,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-column-not-in-select.slt",
+      "id": "tpch_integration_native/order-by-column-not-in-select/001",
+      "identity": "b11f368d0cfdb06cba861fa956f7805d0caa2c31b65d21c7a8e4be124362f581",
+      "kind": "query",
+      "line": 2911,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by column not in select"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-column-not-in-select-lineitem.slt",
+      "id": "tpch_integration_native/order-by-column-not-in-select-lineitem/001",
+      "identity": "9b7c6fb25718d2210919d2cf92dc0ebc1eecaca210b0e607bd66855100a8c0a0",
+      "kind": "query",
+      "line": 2925,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by column not in select lineitem"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-with-decimal-column.slt",
+      "id": "tpch_integration_native/order-by-with-decimal-column/001",
+      "identity": "96da7595aee56d50207a8cc6ac755dd2290dcb66213a3d46dedaf5b045a65114",
+      "kind": "query",
+      "line": 3015,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by with decimal column"
+    },
+    {
+      "file": "suites/tpch_integration_native/scan-lineitem-with-varchar-column.slt",
+      "id": "tpch_integration_native/scan-lineitem-with-varchar-column/001",
+      "identity": "587dcfbbfdffb255f29d0a238e5683e1c9a362c3c3fcadfcef75d51923c16f27",
+      "kind": "query",
+      "line": 3029,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - scan lineitem with varchar column"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-lineitem-with-short-varchar-column.slt",
+      "id": "tpch_integration_native/order-by-lineitem-with-short-varchar-column/001",
+      "identity": "f3babbdc84b5f3bad2bf036aea2c2f795e55d1dab2892a7e0f198cf3dca1adaa",
+      "kind": "query",
+      "line": 3043,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by lineitem with short varchar column"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-lineitem-with-long-varchar-column.slt",
+      "id": "tpch_integration_native/order-by-lineitem-with-long-varchar-column/001",
+      "identity": "368ac9713a10e9cbf48b75188ea1f89972c1866a12c84548ab52141e8c1889a6",
+      "kind": "query",
+      "line": 3059,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by lineitem with long varchar column"
+    },
+    {
+      "file": "suites/tpch_integration_native/scan-with-varchar-column.slt",
+      "id": "tpch_integration_native/scan-with-varchar-column/001",
+      "identity": "eab0202781b9ec6923c3304e858fa29a7fe6dd35fe259d4670be3672d9961aa0",
+      "kind": "query",
+      "line": 3075,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - scan with varchar column"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-with-varchar-column.slt",
+      "id": "tpch_integration_native/order-by-with-varchar-column/001",
+      "identity": "5a6cf9a9c14b2546f0067ce857511cbc49f50b5c6485e79d52806ad800e75383",
+      "kind": "query",
+      "line": 3089,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by with varchar column"
     },
     {
       "file": "suites/tpch_integration_native/cast-integer-to-decimal-preserves-scale.slt",
@@ -5921,6 +6711,36 @@
       "test": "gpu_execution - empty aggregation without group by query"
     },
     {
+      "file": "suites/tpch_integration_native/join-with-empty-one-side.slt",
+      "id": "tpch_integration_native/join-with-empty-one-side/001",
+      "identity": "e8de9e4136e46f084f791595945ee8b7540149ccdef142f52cdcb3de9980bc30",
+      "kind": "query",
+      "line": 3504,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with empty one side"
+    },
+    {
+      "file": "suites/tpch_integration_native/join-with-empty-two-sides.slt",
+      "id": "tpch_integration_native/join-with-empty-two-sides/001",
+      "identity": "c4f1ab5c6af49bf9e7fac9a927d51af190ae1d6da6a0bffbd849f4bec80bb1c7",
+      "kind": "query",
+      "line": 3522,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with empty two sides"
+    },
+    {
+      "file": "suites/tpch_integration_native/join-with-empty-output-and-order-by.slt",
+      "id": "tpch_integration_native/join-with-empty-output-and-order-by/001",
+      "identity": "016bd50971fbb561627c4e407b7bb3885d6b11b106daed5d87802fd4250d917b",
+      "kind": "query",
+      "line": 3540,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - join with empty output and order by"
+    },
+    {
       "file": "suites/tpch_integration_native/all-pruned-empty-filter.slt",
       "id": "tpch_integration_native/all-pruned-empty-filter/001",
       "identity": "c89ff2c09d292aee472b2dea91d80702ca566ca47ec012e2e84edfa14b05bf1e",
@@ -6011,6 +6831,86 @@
       "test": "gpu_execution - DECIMAL32, DECIMAL64, and DECIMAL128 values"
     },
     {
+      "file": "suites/tpch_integration_native/partitioned-anti-join-probe-key-not-at-col-0.slt",
+      "id": "tpch_integration_native/partitioned-anti-join-probe-key-not-at-col-0/001",
+      "identity": "cac0c5a1b8135fb868ef758850890abda67a0cb76712a5e6b7a097d708060755",
+      "kind": "query",
+      "line": 2111,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - partitioned anti join (probe key not at col 0)"
+    },
+    {
+      "file": "suites/tpch_integration_native/partitioned-semi-join-probe-key-not-at-col-0.slt",
+      "id": "tpch_integration_native/partitioned-semi-join-probe-key-not-at-col-0/001",
+      "identity": "e42754f5f339776d9f10fa1a21e6868a05bb4addd641503638acbab84920c071",
+      "kind": "query",
+      "line": 2131,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - partitioned semi join (probe key not at col 0)"
+    },
+    {
+      "file": "suites/tpch_integration_native/partitioned-inner-join-key-not-at-col-0.slt",
+      "id": "tpch_integration_native/partitioned-inner-join-key-not-at-col-0/001",
+      "identity": "369d0a8e66df86415d520594c9908e612c951e1ab9c781d9235ac06754faa444",
+      "kind": "query",
+      "line": 2150,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - partitioned inner join (key not at col 0)"
+    },
+    {
+      "file": "suites/tpch_integration_native/partitioned-anti-join-misfit-key.slt",
+      "id": "tpch_integration_native/partitioned-anti-join-misfit-key/001",
+      "identity": "9a9ffa8b3c809299aa855d436dea21998e2b56332de1f511aa9645385163f738",
+      "kind": "query",
+      "line": 2182,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - partitioned anti join (misfit key)"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-multipartition.slt",
+      "id": "tpch_integration_native/order-by-multipartition/001",
+      "identity": "1f201cd00d786b2fcc83e2ad38168b62046bd29cfa6a500aaeb0f24b58f38449",
+      "kind": "query",
+      "line": 2942,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by multipartition"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-multiple-columns.slt",
+      "id": "tpch_integration_native/order-by-multiple-columns/001",
+      "identity": "f37110ed69679b89b31e95a8798565ec0452cea4f1f3c11186582958275ac896",
+      "kind": "query",
+      "line": 2960,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by multiple columns"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-desc.slt",
+      "id": "tpch_integration_native/order-by-desc/001",
+      "identity": "9307acf415b5576098305db48d35147b073cc6282c7c09aeb04cfc6529ff2eaf",
+      "kind": "query",
+      "line": 2978,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by desc"
+    },
+    {
+      "file": "suites/tpch_integration_native/order-by-many-selected-columns.slt",
+      "id": "tpch_integration_native/order-by-many-selected-columns/001",
+      "identity": "d53767b9286bc9891988f02720653cbdaf39f73367ebcb20e562cbd17415ba1c",
+      "kind": "query",
+      "line": 2996,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - order by many selected columns"
+    },
+    {
       "file": "suites/tpch_integration_native/count-distinct-multi-partition-forced-single-group-key.slt",
       "id": "tpch_integration_native/count-distinct-multi-partition-forced-single-group-key/001",
       "identity": "aa918ac53091c9a95dcc92b6442107e29fb910a325ab6c03f9129f0420336f6a",
@@ -6079,6 +6979,26 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - count over projection-pruned values preserves cardinality"
+    },
+    {
+      "file": "suites/tpch_integration_native/pin-table-duckdb-native-gpu-tier-scan-and-aggregate.slt",
+      "id": "tpch_integration_native/pin-table-duckdb-native-gpu-tier-scan-and-aggregate/001",
+      "identity": "4a85e15d71f795429cc2e7e7f13b7a760d810d5d2fddd7ac324e060aec204150",
+      "kind": "query",
+      "line": 4994,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - pin_table duckdb-native gpu tier scan and aggregate"
+    },
+    {
+      "file": "suites/tpch_integration_native/pin-table-duckdb-native-host-tier-scan-and-aggregate.slt",
+      "id": "tpch_integration_native/pin-table-duckdb-native-host-tier-scan-and-aggregate/001",
+      "identity": "3278a13b15557b898c4de39681366c4f3fbe351be98a2961d188c211c989d0d5",
+      "kind": "query",
+      "line": 5015,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - pin_table duckdb-native host tier scan and aggregate"
     },
     {
       "file": "suites/tpch_integration_native/empty-side-join-matrix.slt",
@@ -6309,6 +7229,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - empty-side join matrix"
+    },
+    {
+      "file": "suites/tpch_integration_native/oversized-values-source-falls-back-before-gpu-materialization.slt",
+      "id": "tpch_integration_native/oversized-values-source-falls-back-before-gpu-materialization/001",
+      "identity": "9b661c625295f78c192ef30e2c3d19325be3d971abc7b556dfb8bc37dbc54858",
+      "kind": "query",
+      "line": 4766,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - oversized values source falls back before GPU materialization"
     },
     {
       "file": "suites/tpch_integration_native/duckdb-native-overflow-strings-fall-back-to-cpu.slt",

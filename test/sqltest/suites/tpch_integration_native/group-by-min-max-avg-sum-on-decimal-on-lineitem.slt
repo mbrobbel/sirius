@@ -1,0 +1,20 @@
+# gpu_execution - group by min, max, avg, sum on decimal on lineitem
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2871
+# sirius: id = "tpch_integration_native/group-by-min-max-avg-sum-on-decimal-on-lineitem/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "avg"]
+# sirius: tolerances = { "4" = { absolute = 0.0001, relative = 0.0 } }
+query ?????? rowsort
+SELECT
+  l_discount,
+  min(l_extendedprice),
+  sum(l_extendedprice),
+  max(l_extendedprice),
+  avg(l_extendedprice),
+  sum(l_tax)
+FROM
+  lineitem
+GROUP BY
+  l_discount;
+----

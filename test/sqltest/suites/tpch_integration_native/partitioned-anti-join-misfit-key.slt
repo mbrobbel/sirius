@@ -1,0 +1,18 @@
+# gpu_execution - partitioned anti join (misfit key)
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 1;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2182
+# sirius: id = "tpch_integration_native/partitioned-anti-join-misfit-key/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey
+FROM
+  nation n
+  ANTI JOIN (SELECT c_custkey FROM customer WHERE c_custkey <= 25) c ON n.n_nationkey = c.c_custkey;
+----

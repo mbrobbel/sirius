@@ -1,0 +1,17 @@
+# gpu_execution - group by min max count
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2765
+# sirius: id = "tpch_integration_native/group-by-min-max-count/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by"]
+query ???? rowsort
+SELECT
+  n_regionkey,
+  min(n_nationkey),
+  max(n_nationkey),
+  count(n_nationkey)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - scan lineitem with varchar column
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3029
+# sirius: id = "tpch_integration_native/scan-lineitem-with-varchar-column/001"
+# sirius: tags = ["integration", "gpu_execution", "varchar_scan_lineitem"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  l_shipinstruct
+FROM
+  lineitem;
+----

@@ -1,0 +1,20 @@
+# gpu_execution - order by many selected columns
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET max_sort_partition_bytes = 1024;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2996
+# sirius: id = "tpch_integration_native/order-by-many-selected-columns/001"
+# sirius: tags = ["integration", "tpch"]
+query ????? rowsort
+SELECT
+  l_orderkey,
+  l_partkey,
+  l_suppkey,
+  l_linenumber,
+  l_quantity
+FROM
+  lineitem ORDER BY l_suppkey;
+----

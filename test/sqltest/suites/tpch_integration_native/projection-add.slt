@@ -1,0 +1,12 @@
+# gpu_execution - projection add
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:465
+# sirius: id = "tpch_integration_native/projection-add/001"
+# sirius: tags = ["integration", "gpu_execution", "projection"]
+query ? rowsort
+SELECT
+  n_nationkey + n_regionkey AS total
+FROM
+  nation;
+----

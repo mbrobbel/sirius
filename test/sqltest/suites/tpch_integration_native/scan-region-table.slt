@@ -1,0 +1,12 @@
+# gpu_execution - scan region table
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:447
+# sirius: id = "tpch_integration_native/scan-region-table/001"
+# sirius: tags = ["integration", "gpu_execution", "scan"]
+query ? rowsort
+SELECT
+  r_regionkey
+FROM
+  region;
+----
