@@ -1,0 +1,18 @@
+# gpu_execution - values with varchar and nulls
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4724
+# sirius: id = "tpch_integration_native/values-with-varchar-and-nulls/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ?? rowsort
+SELECT
+  a,
+  b
+FROM
+  (
+    VALUES
+      (1, 'alpha'),
+      (NULL, 'beta'),
+      (3, NULL)
+  ) t (a, b) ORDER BY a NULLS FIRST;
+----
