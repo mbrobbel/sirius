@@ -10051,6 +10051,16 @@
       "test": "transparent S3 glob preserves hive partition columns"
     },
     {
+      "file": "suites/s3_surface_instrumented/footer-probes.slt",
+      "id": "s3_surface_instrumented/footer-probes/001",
+      "identity": "05367b549c01c6e11125e1b4b10fdf2f37c49e876a368a79a14700116032e374",
+      "kind": "query",
+      "line": 2845,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface_instrumented",
+      "test": "transparent S3 glob scans use parquet footer probes"
+    },
+    {
       "file": "suites/s3_surface_footer_straddle/footer-straddle.slt",
       "id": "s3_surface_footer_straddle/footer-straddle/001",
       "identity": "a70f41c41d856e20a0e1fd9ccb8dab34a6e8196c42f3cb31cd4bdbda7f854588",
@@ -10059,6 +10069,26 @@
       "source": "test/cpp/integration/test_s3_sql_surface.cpp",
       "suite": "s3_surface_footer_straddle",
       "test": "transparent S3 glob remains correct with a straddled footer-probe window"
+    },
+    {
+      "file": "suites/s3_surface_instrumented/warm-scan.slt",
+      "id": "s3_surface_instrumented/warm-scan/001",
+      "identity": "87380ad03a2351301e88bec4740fdd31c5f7197c5a379e73e332145ec53dc6bd",
+      "kind": "query",
+      "line": 2888,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface_instrumented",
+      "test": "transparent S3 glob warm scan skips blocking host reads"
+    },
+    {
+      "file": "suites/s3_surface_instrumented/warm-scan.slt",
+      "id": "s3_surface_instrumented/warm-scan/002",
+      "identity": "67d9544be8a8fced93070e7535d012a4da46ef9c4981db664440598dcebd630c",
+      "kind": "query",
+      "line": 2888,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface_instrumented",
+      "test": "transparent S3 glob warm scan skips blocking host reads"
     },
     {
       "file": "suites/s3_surface/matcher.slt",
