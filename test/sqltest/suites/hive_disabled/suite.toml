@@ -1,0 +1,2 @@
+storage = ["parquet"]
+fixtures = ["hive-original"]

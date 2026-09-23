@@ -1,0 +1,14 @@
+# gpu_execution hive partition - filter on partition column
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:2081
+# sirius: id = "hive_disabled/partition-filter"
+# sirius: tags = ["integration", "parquet", "hive_partition", "previously_disabled"]
+query ??? rowsort
+SELECT
+  id,
+  name,
+  year
+FROM
+  read_parquet('__FIXTURE_ROOT__/hive-original/h/year=*/month=*/*.parquet', hive_partitioning = true)
+WHERE
+  year = 2024 ORDER BY id;
+----
