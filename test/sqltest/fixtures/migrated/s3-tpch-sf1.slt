@@ -1,0 +1,135 @@
+onlyif duckdb
+statement ok
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/nation.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW nation AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/nation.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/region.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW region AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/region.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/customer.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW customer AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/customer.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/orders.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW orders AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/orders.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/part.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW part AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/part.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/partsupp.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW partsupp AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/partsupp.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/supplier.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW supplier AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/supplier.parquet');
+
+onlyif duckdb
+statement ok
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/lineitem.parquet');
+
+onlyif sirius
+statement ok
+SET gpu_execution = true;
+CREATE VIEW lineitem AS
+SELECT
+  *
+FROM
+  read_parquet('__OBJECT_ROOT__/lineitem.parquet');
