@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:217
+# gpu_execution || operator propagates NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/operator-propagates-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  s || '_x' AS r
+FROM
+  nt;
+----
+1	"apple_x"
+2	NULL
+3	"apple_x"
+4	NULL
+5	"banana_x"
+6	"_x"
+7	"apple_x"
+8	"cherry_x"

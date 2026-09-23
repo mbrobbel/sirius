@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:198
+# gpu_execution string functions propagate NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/string-functions-propagate-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  length(s) AS r
+FROM
+  nt;
+----
+1	5
+2	NULL
+3	5
+4	NULL
+5	6
+6	0
+7	5
+8	6

@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:189
+# gpu_execution CAST propagates NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/cast-propagates-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  CAST(i AS BIGINT) AS r
+FROM
+  nt;
+----
+1	10
+2	NULL
+3	10
+4	NULL
+5	20
+6	0
+7	10
+8	NULL

@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:226
+# gpu_execution date functions propagate NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/date-functions-propagate-null/002"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  month(dt) AS r
+FROM
+  nt;
+----
+1	1
+2	NULL
+3	6
+4	1
+5	NULL
+6	12
+7	1
+8	3

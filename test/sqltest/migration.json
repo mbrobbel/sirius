@@ -261,6 +261,626 @@
       "test": "gpu_execution wholly-NULL VARCHAR column"
     },
     {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-001.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/001",
+      "identity": "b863f8da8c94892f3bf5d01a1321633e09b67d1d37ceecee8c025abc58d788fb",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-002.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/002",
+      "identity": "d8e05ee83e93f298b678770ec0282ab662e79472404875dcd380b758b3e441a3",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-003.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/003",
+      "identity": "6c23b4b63fcfe1686ee9410c09b85fd4295c3e0048d41fce4b52e4b4cef30c80",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-004.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/004",
+      "identity": "c665178dd4409d18e68a87c638648419f743b513497925987ad1dbbb65758f66",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-005.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/005",
+      "identity": "494f2ce236f911771abe0f44d325c21064197bbb0df8e1ecd5431874c7aac839",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-006.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/006",
+      "identity": "495eb9b0cd2fe9fa32418258cf9b80ac3a9ca62731758495c1e589106ca2ec50",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-007.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/007",
+      "identity": "9368300262d85401573df280b14d9a34cef87f317a23cd6036cc8ae6b6e5b948",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-008.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/008",
+      "identity": "0bc5af1e3f88ab2a348bd273c6ab41ea89df0798b2a29782d098bb8d43e71a82",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-009.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/009",
+      "identity": "e537861c6cb68e073e48a93711e295b5595e41a8fd93d8bf5de827fe49120513",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-010.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/010",
+      "identity": "989467b55bb8b9b7b68790f52988393e5ce2da755855bc6e68c827a646343cc9",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-011.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/011",
+      "identity": "b34b58fb1b5333ea0ede5915c7395aef97d4dd859d0b7d71ec71bc750bdfb65f",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/is-null-is-not-null-per-column-type-012.slt",
+      "id": "filter_nulls/is-null-is-not-null-per-column-type/012",
+      "identity": "1ea696a4076aa5fbf0141411b74aae885f2493fb626f0de194b4af907c09667a",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS NULL / IS NOT NULL per column type"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-001.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/001",
+      "identity": "489d3657e8047c2f8fc3187b70f1eca79966b59df593e8fa3ef48a1e15c7fba6",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-002.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/002",
+      "identity": "9751c166569f10166e11cbc42ace3f886d8973a4e2702c40e9ea3774e700166f",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-003.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/003",
+      "identity": "ff88bd555eaa7aa61b903b6421c8a6d78a805d208d33e5c03713880470ea8f59",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-004.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/004",
+      "identity": "49e49eae133613834afe72c55d7d333dc7612e9079a7dd30e0d448ee90942d53",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-005.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/005",
+      "identity": "fb529f1e93248364898c6740fa6d1ecea9f5bb4636b4efde04b39f75bc953ed3",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-006.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/006",
+      "identity": "87463e888340215bf9db513a21fbb2152cf2c239a826320b18d0602410da7c1f",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-007.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/007",
+      "identity": "e257c8f59942c166a1ad51072478b742121b464d8e626728be252060dd0b3fad",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-008.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/008",
+      "identity": "30123f127abb472181d7fe06a5173d643a8966b89e984432d232636d1bac16f8",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-009.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/009",
+      "identity": "000a7abc5a4c54a6190f92568b4e552cba7e20331dfe1eaeb16b3125a57b4814",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-010.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/010",
+      "identity": "0e31ef613e23bcd57d62a37a779f07a1ee7ed647f1a5af3500570cf1000cc65a",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-011.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/011",
+      "identity": "e3bc05d61632987a98e927005243a2dc46023713614e707615f52c0e7b82f14b",
+      "kind": "query",
+      "line": 98,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/comparison-predicates-filter-null-results-three-valued-012.slt",
+      "id": "filter_nulls/comparison-predicates-filter-null-results-three-valued/012",
+      "identity": "6b4a1b94a443adb38a0f4abb4c0fcb01ee2ed837868d4300049cb7207575d734",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution comparison predicates filter NULL results (three-valued)"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-001.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/001",
+      "identity": "d6e1db1dc84812f09fdb61d65dc04d7d90bb0d0aa7c4f585a737eba3b1bf563e",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-002.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/002",
+      "identity": "cfcd2319c6d32e895e0df1703a149cdadab1d6f8089446efec624df52882a3a3",
+      "kind": "query",
+      "line": 113,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-003.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/003",
+      "identity": "752484df81e245cd506cce809514104d4f8a56daf2687623e7f346be8f4a5d91",
+      "kind": "query",
+      "line": 114,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-004.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/004",
+      "identity": "4addd9106e335b8231ed4b1c2f27784361257dec41ae09b9881ca129e0473fc4",
+      "kind": "query",
+      "line": 115,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-005.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/005",
+      "identity": "7d38f74159ff86e44aaf9336d6d5580ac92acab2b80d6bbe5f82cedc0266c6e3",
+      "kind": "query",
+      "line": 117,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/is-not-distinct-from-treats-null-as-a-value-006.slt",
+      "id": "filter_nulls/is-not-distinct-from-treats-null-as-a-value/006",
+      "identity": "22f1adc9e92b381dfe4dd2f5baa29fbc1948913222afd7bcbe2b9a02fe664d90",
+      "kind": "query",
+      "line": 118,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value"
+    },
+    {
+      "file": "suites/filter_nulls/three-valued-and-not-001.slt",
+      "id": "filter_nulls/three-valued-and-not/001",
+      "identity": "8600a66cb50ea5d381369d81cbedfea5b39a6cef0ad79e9b1ffb7c7271a90170",
+      "kind": "query",
+      "line": 128,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution three-valued AND / NOT"
+    },
+    {
+      "file": "suites/filter_nulls/three-valued-and-not-002.slt",
+      "id": "filter_nulls/three-valued-and-not/002",
+      "identity": "5ce427b5930743764bbc73f4dcaddc255f792e5b9b2693ae996f0595d1df231b",
+      "kind": "query",
+      "line": 129,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution three-valued AND / NOT"
+    },
+    {
+      "file": "suites/filter_nulls/three-valued-or-true-or-null-branch-001.slt",
+      "id": "filter_nulls/three-valued-or-true-or-null-branch/001",
+      "identity": "7e07baab667ba439fe686200854c81f47ac3b5855003a16af38abd27ddd0cd40",
+      "kind": "query",
+      "line": 139,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution three-valued OR, TRUE-OR-NULL branch"
+    },
+    {
+      "file": "suites/filter_nulls/three-valued-or-is-null-or-match-branch-001.slt",
+      "id": "filter_nulls/three-valued-or-is-null-or-match-branch/001",
+      "identity": "5d9cb44c3341c12b72c155b3543fe51178074efc1414db5ff06aa18faab1173b",
+      "kind": "query",
+      "line": 146,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution three-valued OR, IS-NULL-OR-match branch"
+    },
+    {
+      "file": "suites/filter_nulls/between-and-in-with-nulls-001.slt",
+      "id": "filter_nulls/between-and-in-with-nulls/001",
+      "identity": "f16bcbb4a96a4f30992cbdbd41ee1f96939436bda4d2a876bf60d969a716443e",
+      "kind": "query",
+      "line": 153,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution BETWEEN and IN with NULLs"
+    },
+    {
+      "file": "suites/filter_nulls/between-and-in-with-nulls-002.slt",
+      "id": "filter_nulls/between-and-in-with-nulls/002",
+      "identity": "c51410c78c74a86cd6467dbc80c6e38d68a36635926af91f550d8437db6168e0",
+      "kind": "query",
+      "line": 154,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution BETWEEN and IN with NULLs"
+    },
+    {
+      "file": "suites/filter_nulls/between-and-in-with-nulls-003.slt",
+      "id": "filter_nulls/between-and-in-with-nulls/003",
+      "identity": "3f37f087c10479236ace3325ed52eba83039720b724f1c04869e7652437e5286",
+      "kind": "query",
+      "line": 155,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution BETWEEN and IN with NULLs"
+    },
+    {
+      "file": "suites/filter_nulls/between-and-in-with-nulls-004.slt",
+      "id": "filter_nulls/between-and-in-with-nulls/004",
+      "identity": "e938305c2427a385eb9c6815d269b2e2cc31e2fb3f6d53a9ba95731391e78c09",
+      "kind": "query",
+      "line": 156,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution BETWEEN and IN with NULLs"
+    },
+    {
+      "file": "suites/filter_nulls/between-and-in-with-nulls-005.slt",
+      "id": "filter_nulls/between-and-in-with-nulls/005",
+      "identity": "d445401550242f28c9116a12ee4e9a11dde1fcba3fc604dc20b392d3a587bf63",
+      "kind": "query",
+      "line": 157,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution BETWEEN and IN with NULLs"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-001.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/001",
+      "identity": "8044d457d0d4cbb0359ef5e94ae39b3816485c30d6c9efc29060851196b4898b",
+      "kind": "query",
+      "line": 164,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-002.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/002",
+      "identity": "62b71428839b58e27cc2dd40901ba487b93ddf0e9751c222f61f71a48603b3fb",
+      "kind": "query",
+      "line": 165,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-003.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/003",
+      "identity": "392ac76601613d3959bef836b3316ae8f0c24d71ea48d6e50395f1ff2c8f2c35",
+      "kind": "query",
+      "line": 166,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-004.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/004",
+      "identity": "774e8e68d1ab8924b6259e119f5e13a578bfa0644f362d329c2ad8851f420558",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-005.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/005",
+      "identity": "573585d2db1dea766ebc16810bda7ef17b0cea3d5d92a608acbf2e87113bab25",
+      "kind": "query",
+      "line": 168,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/coalesce-nullif-case-projections-propagate-null-006.slt",
+      "id": "filter_nulls/coalesce-nullif-case-projections-propagate-null/006",
+      "identity": "8b3780ef1396b3cd3cfd3654bd5c5bb160755134b7bef9a5860418349f4469fe",
+      "kind": "query",
+      "line": 171,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/arithmetic-propagates-null-001.slt",
+      "id": "filter_nulls/arithmetic-propagates-null/001",
+      "identity": "388b0d6aafc5a43c0e00f697bbfb0204886cdb940d94a4e0a5730259d19c0af2",
+      "kind": "query",
+      "line": 178,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution arithmetic propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/arithmetic-propagates-null-002.slt",
+      "id": "filter_nulls/arithmetic-propagates-null/002",
+      "identity": "2841686847f5cb54106c4a64115c72afac59d5eb028c2a730c805897e5c4900e",
+      "kind": "query",
+      "line": 179,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution arithmetic propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/arithmetic-propagates-null-003.slt",
+      "id": "filter_nulls/arithmetic-propagates-null/003",
+      "identity": "80f6c99123bd71e6d09e9fd24f5d5b988a938efd32156d5119656158ca0d7f0d",
+      "kind": "query",
+      "line": 180,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution arithmetic propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/arithmetic-propagates-null-004.slt",
+      "id": "filter_nulls/arithmetic-propagates-null/004",
+      "identity": "b7a527f1384efbe34446b66978063df44a428fdd161d185284f1bb3ec491b163",
+      "kind": "query",
+      "line": 181,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution arithmetic propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/arithmetic-propagates-null-005.slt",
+      "id": "filter_nulls/arithmetic-propagates-null/005",
+      "identity": "8c5b6328c4fe57d6a6fc4124e385722085b7bc9867d4f4f3c55bd6b5b557043e",
+      "kind": "query",
+      "line": 182,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution arithmetic propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/cast-propagates-null-001.slt",
+      "id": "filter_nulls/cast-propagates-null/001",
+      "identity": "f60368b221244760cdc86ed696bd5e21adf6d760da52c48cf2fc862e3dfb770b",
+      "kind": "query",
+      "line": 189,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution CAST propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/cast-propagates-null-002.slt",
+      "id": "filter_nulls/cast-propagates-null/002",
+      "identity": "a629fabd0bd390ef83871d03e01a747120939dcde9da3e43db1990c2578c1b05",
+      "kind": "query",
+      "line": 190,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution CAST propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/cast-propagates-null-003.slt",
+      "id": "filter_nulls/cast-propagates-null/003",
+      "identity": "0e34c2f3d9b1026a616a63fe0e7971471b7940c357241e1892f1e05d2f4c877a",
+      "kind": "query",
+      "line": 191,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution CAST propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/string-functions-propagate-null-001.slt",
+      "id": "filter_nulls/string-functions-propagate-null/001",
+      "identity": "3ce7ddf4466cc0f188fac44ae018bfadefc70c10c476d83b8a9197c47861b09e",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution string functions propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/string-functions-propagate-null-002.slt",
+      "id": "filter_nulls/string-functions-propagate-null/002",
+      "identity": "e09775979f899615b4a2fbaa9c198bff544413fc0a40448c34e56ff1a1930463",
+      "kind": "query",
+      "line": 199,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution string functions propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/concat-ignores-null-arguments-001.slt",
+      "id": "filter_nulls/concat-ignores-null-arguments/001",
+      "identity": "94e86d9d282cc1de0ba66949973f23a8323bbf47d47dab4e35e32af81e936a2a",
+      "kind": "query",
+      "line": 209,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution concat() ignores NULL arguments"
+    },
+    {
+      "file": "suites/filter_nulls/concat-ignores-null-arguments-002.slt",
+      "id": "filter_nulls/concat-ignores-null-arguments/002",
+      "identity": "70190fe9cf05b1648cda8531ba170d5bbec4a48a123ff25cb19a27266a58ef83",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution concat() ignores NULL arguments"
+    },
+    {
+      "file": "suites/filter_nulls/operator-propagates-null-001.slt",
+      "id": "filter_nulls/operator-propagates-null/001",
+      "identity": "b3dc74afc0a65005e3f2b7ec94558f39cc6cf86d260312e1fd1fc7998cb05d13",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution || operator propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/operator-propagates-null-002.slt",
+      "id": "filter_nulls/operator-propagates-null/002",
+      "identity": "18905f35a5f0e4993d05283a6b0c82560c6ce8ebce8621debce4281ee0614fe6",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution || operator propagates NULL"
+    },
+    {
+      "file": "suites/filter_nulls/date-functions-propagate-null-001.slt",
+      "id": "filter_nulls/date-functions-propagate-null/001",
+      "identity": "7abcae55d1d1b9967e4118b79cc1b30c64edd96116a31968c145d269fe96b5a4",
+      "kind": "query",
+      "line": 225,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution date functions propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/date-functions-propagate-null-002.slt",
+      "id": "filter_nulls/date-functions-propagate-null/002",
+      "identity": "2ea118bd7f5c5ddeeb57867e266ea2e9397d5b8640ac28c82183ea1b2b96c0f0",
+      "kind": "query",
+      "line": 226,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution date functions propagate NULL"
+    },
+    {
+      "file": "suites/filter_nulls/date-functions-propagate-null-003.slt",
+      "id": "filter_nulls/date-functions-propagate-null/003",
+      "identity": "444df16c0bdbd7db3d4c8dbce08b3fb38a454d4790b14b96371de573e8a0520e",
+      "kind": "query",
+      "line": 227,
+      "source": "test/cpp/integration/test_gpu_execution_filter_nulls.cpp",
+      "suite": "filter_nulls",
+      "test": "gpu_execution date functions propagate NULL"
+    },
+    {
       "file": "suites/array/scan-integer-3-passthrough.slt",
       "id": "array/scan-integer-3-passthrough/001",
       "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",

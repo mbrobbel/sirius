@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE nt (
+  id INTEGER,
+  i INTEGER,
+  b BIGINT,
+  dec DECIMAL(10,2),
+  dbl DOUBLE,
+  s VARCHAR,
+  dt DATE
+);
+
+statement ok
+INSERT INTO nt VALUES
+  (1, 10, 100, 10.50, 1.5, 'apple', DATE '2021-01-15'),
+  (2, NULL, NULL, NULL, NULL, NULL, NULL),
+  (3, 10, NULL, 20.00, NULL, 'apple', DATE '2022-06-30'),
+  (4, NULL, 100, NULL, 2.5, NULL, DATE '2021-01-15'),
+  (5, 20, 200, 30.25, 3.5, 'banana', NULL),
+  (6, 0, -50, -5.00, 0.0, '', DATE '2020-12-31'),
+  (7, 10, 100, 10.50, 1.5, 'apple', DATE '2021-01-15'),
+  (8, NULL, NULL, 40.00, 4.5, 'cherry', DATE '2023-03-03');
+
+statement ok
+CHECKPOINT;

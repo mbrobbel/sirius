@@ -1,0 +1,19 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:98
+# gpu_execution comparison predicates filter NULL results (three-valued)
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/comparison-predicates-filter-null-results-three-valued/011"
+# sirius: snapshot = true
+# sirius: tags = ["filter", "gpu_execution", "integration", "nulls"]
+query ? rowsort
+SELECT
+  id
+FROM
+  nt
+WHERE
+  i >= 10;
+----
+1
+3
+5
+7
