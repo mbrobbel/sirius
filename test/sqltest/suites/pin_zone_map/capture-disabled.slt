@@ -1,0 +1,122 @@
+statement ok
+COPY (SELECT range AS k, range * 2 AS v FROM range(4000000) ORDER BY k) TO '__TEST_DIR__/clustered.parquet' (FORMAT PARQUET);
+
+statement ok
+CREATE VIEW t AS
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/clustered.parquet');
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = false;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/clustered.parquet', tier = 'gpu', name = 't');
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = true;
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:274
+# sirius: id = "pin_zone_map/capture-disabled/001"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  count(*),
+  sum(v)
+FROM
+  t
+WHERE
+  k >= 3500000;
+----
+500000	3749999500000
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/clustered.parquet', tier = 'gpu', name = 't');
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:187
+# sirius: id = "pin_zone_map/capture-disabled/002"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  count(*),
+  sum(v)
+FROM
+  t
+WHERE
+  k >= 3500000;
+----
+500000	3749999500000
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:192
+# sirius: id = "pin_zone_map/capture-disabled/003"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  t;
+----
+4000000
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:198
+# sirius: id = "pin_zone_map/capture-disabled/004"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  t
+WHERE
+  k >= 40000000;
+----
+0
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:203
+# sirius: id = "pin_zone_map/capture-disabled/005"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  k
+FROM
+  t
+WHERE
+  k < 0;
+----
+
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = false;
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:208
+# sirius: id = "pin_zone_map/capture-disabled/006"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  count(*),
+  sum(v)
+FROM
+  t
+WHERE
+  k >= 3500000;
+----
+500000	3749999500000
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = true;
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

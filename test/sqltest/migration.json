@@ -8731,6 +8731,166 @@
       "test": "gpu_execution - pin_table host tier streams without fitting the whole table in GPU"
     },
     {
+      "file": "suites/pin_zone_map/host.slt",
+      "id": "pin_zone_map/host/001",
+      "identity": "030a7816c6e53d0451e38147f2846737b85afa65e925c3063ee7bb26ab373f75",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/host.slt",
+      "id": "pin_zone_map/host/002",
+      "identity": "3e11dbe073a26fc3cd9a2ef3f31ae667004c19715e73fbcd4ec32ab3ea3ce615",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/host.slt",
+      "id": "pin_zone_map/host/003",
+      "identity": "064f27f0f7bcfac2ea909e89c0b70db7adee4904880045c82c9b47b845427e06",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/host.slt",
+      "id": "pin_zone_map/host/004",
+      "identity": "7bb19c922ffea0f21bcd3e38777382120bae64105bfc4474f368123df8a620cb",
+      "kind": "query",
+      "line": 203,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/host.slt",
+      "id": "pin_zone_map/host/005",
+      "identity": "ab3cc0d3a19ed4871202ad9fe30a8b425fa9e2dd14ce986f0c1f233eee367519",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/gpu.slt",
+      "id": "pin_zone_map/gpu/001",
+      "identity": "3e3fdbfe08c41ab106925e376ce5a7322861b94650f037c5f2a118e2b5b358e7",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/gpu.slt",
+      "id": "pin_zone_map/gpu/002",
+      "identity": "4bd9a8658ee60af79aa22ac994c42899045ad7cd8181cfe043e5b159568f7138",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/gpu.slt",
+      "id": "pin_zone_map/gpu/003",
+      "identity": "bb6059dd3b3abd7f9db6394411597e6025a40c516248cf3813e627fa468895a8",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/gpu.slt",
+      "id": "pin_zone_map/gpu/004",
+      "identity": "fbd83f6cd3f599408435b21966bd60585e863800229bc0e54958c84a5424bbc5",
+      "kind": "query",
+      "line": 203,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/gpu.slt",
+      "id": "pin_zone_map/gpu/005",
+      "identity": "2ecdbd4d7f599f9780f593690f7791e4959a7d6a2e10512ee6b2b69c926e2699",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/001",
+      "identity": "76f33dc2e938ca842a0b85fcf5f1d592217fd600f766e456dc92bb4e950f441b",
+      "kind": "query",
+      "line": 274,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/002",
+      "identity": "ac2602bd1877d677be948f87da53612875fd57449fa562153017ee7a5e984e6a",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/003",
+      "identity": "23872c6ac5ba16a2090569d3a3decdaf7e4dcc8dcd6b3db6587bc1c7dd7ad2f3",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/004",
+      "identity": "2995121c967ddc78edd10b7b62af3b8c181192f5790db5bcc9744aca97534141",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/005",
+      "identity": "606cab2a0c598a58252a62fc886c0d89a75814c5f204a334310dcf95de26d82b",
+      "kind": "query",
+      "line": 203,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map/capture-disabled.slt",
+      "id": "pin_zone_map/capture-disabled/006",
+      "identity": "346789d2213deabcd079fc8707ce7edaf7570f9e20b68cf332b5e2f8c597974d",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map",
+      "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
