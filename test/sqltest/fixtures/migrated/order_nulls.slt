@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE ord_n AS SELECT CASE WHEN i % 7 = 0 THEN NULL ELSE CAST(i % 100 AS INTEGER) END AS k, CAST(i AS INTEGER) AS id FROM range(30000) AS t (i);
+
+statement ok
+CHECKPOINT;

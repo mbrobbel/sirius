@@ -1,0 +1,11 @@
+# Original query: test/cpp/integration/test_gpu_execution_order_nulls.cpp:133
+include ../../fixtures/migrated/order_nulls.slt
+
+# sirius: id = "order_nulls/top_n_single/desc_nulls_first"
+# sirius: tags = ["integration", "nulls", "top_n_single"]
+query I nosort
+SELECT
+  k
+FROM
+  ord_n ORDER BY k DESC NULLS FIRST LIMIT 50;
+----

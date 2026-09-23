@@ -1,0 +1,16 @@
+# Original query: test/cpp/integration/test_gpu_execution_order_nulls.cpp:112
+include ../../fixtures/migrated/order_nulls.slt
+
+onlyif sirius
+statement ok
+SET max_sort_partition_bytes = 65536;
+
+# sirius: id = "order_nulls/sort/desc_nulls_last"
+# sirius: tags = ["integration", "nulls", "sort"]
+query II nosort
+SELECT
+  k,
+  id
+FROM
+  ord_n ORDER BY k DESC NULLS LAST, id ASC;
+----
