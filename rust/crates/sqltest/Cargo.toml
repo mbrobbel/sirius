@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 license = "Apache-2.0"
 publish = false
+default-run = "sirius-sqltest"
+
+[[bin]]
+name = "sirius-sqltest-host"
+path = "src/host.rs"
 
 [dependencies]
 anyhow = "1"
