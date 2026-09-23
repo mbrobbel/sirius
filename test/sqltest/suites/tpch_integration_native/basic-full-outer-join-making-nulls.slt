@@ -1,0 +1,14 @@
+# gpu_execution - basic full outer join making nulls
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1562
+# sirius: id = "tpch_integration_native/basic-full-outer-join-making-nulls/001"
+# sirius: tags = ["integration", "gpu_execution", "join"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  nation n
+  FULL JOIN region r ON n.n_nationkey = r.r_regionkey;
+----

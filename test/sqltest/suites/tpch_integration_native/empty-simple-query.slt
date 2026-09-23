@@ -1,0 +1,17 @@
+# gpu_execution - empty simple query
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3446
+# sirius: id = "tpch_integration_native/empty-simple-query/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result"]
+query ???? rowsort
+SELECT
+  l_linestatus,
+  l_orderkey,
+  l_comment,
+  l_receiptdate
+FROM
+  lineitem
+WHERE
+  l_linestatus = 'J' AND l_orderkey = 1;
+----

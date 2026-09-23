@@ -1,0 +1,19 @@
+# gpu_execution - count distinct: multi-column struct, multi-partition forced parquet
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 5;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3414
+# sirius: id = "tpch_integration_native/count-distinct-multi-column-struct-multi-partition-forced-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(DISTINCT (n_nationkey, n_name))
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

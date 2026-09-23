@@ -1,0 +1,20 @@
+# gpu_execution - all-pruned ungrouped aggregates identity and nulls
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4049
+# sirius: id = "tpch_integration_native/all-pruned-ungrouped-aggregates-identity-and-nulls/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result", "all_pruned"]
+query ??????? rowsort
+SELECT
+  count(*) AS c_all,
+  count(n_name) AS c_name,
+  sum(n_nationkey) AS sum_key,
+  min(n_name) AS min_name,
+  max(n_name) AS max_name,
+  avg(n_nationkey) AS avg_key,
+  first(n_name) AS first_name
+FROM
+  nation
+WHERE
+  n_regionkey = 99;
+----

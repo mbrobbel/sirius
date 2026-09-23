@@ -1,0 +1,21 @@
+# gpu_execution - empty aggregation without group by query
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3484
+# sirius: id = "tpch_integration_native/empty-aggregation-without-group-by-query/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result"]
+query ???????? rowsort
+SELECT
+  count(*),
+  min(l_orderkey),
+  sum(l_orderkey) AS sumo,
+  count(l_orderkey),
+  count(l_receiptdate),
+  min(l_receiptdate),
+  count(l_comment),
+  min(l_comment)
+FROM
+  lineitem
+WHERE
+  l_linestatus = 'J';
+----

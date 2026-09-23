@@ -1,0 +1,16 @@
+# gpu_execution - group by avg decimal
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2815
+# sirius: id = "tpch_integration_native/group-by-avg-decimal/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "avg"]
+query ??? rowsort
+SELECT
+  l_returnflag,
+  avg(l_quantity),
+  avg(l_discount)
+FROM
+  lineitem
+GROUP BY
+  l_returnflag;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - basic right semi join
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1612
+# sirius: id = "tpch_integration_native/basic-right-semi-join/001"
+# sirius: tags = ["integration", "gpu_execution", "semijoin"]
+query ? rowsort
+SELECT
+  r.r_regionkey
+FROM
+  region r
+  SEMI JOIN nation n ON r.r_regionkey = n.n_regionkey;
+----

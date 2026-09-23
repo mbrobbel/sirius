@@ -1,0 +1,15 @@
+# gpu_execution - count distinct: single group key
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3242
+# sirius: id = "tpch_integration_native/count-distinct-single-group-key/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "count_distinct"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(DISTINCT n_nationkey)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

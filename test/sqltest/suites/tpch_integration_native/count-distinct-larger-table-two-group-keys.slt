@@ -1,0 +1,15 @@
+# gpu_execution - count distinct: larger table two group keys
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3295
+# sirius: id = "tpch_integration_native/count-distinct-larger-table-two-group-keys/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "count_distinct"]
+query ?? rowsort
+SELECT
+  c_nationkey,
+  count(DISTINCT c_mktsegment)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----

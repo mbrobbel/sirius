@@ -1,0 +1,14 @@
+# gpu_execution - all-pruned ungrouped count identity
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4035
+# sirius: id = "tpch_integration_native/all-pruned-ungrouped-count-identity/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  count(*) AS c
+FROM
+  nation
+WHERE
+  n_regionkey = 99;
+----

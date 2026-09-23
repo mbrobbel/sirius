@@ -1,0 +1,47 @@
+# gpu_execution - duckdb-native overflow strings fall back to CPU
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+ATTACH '__TEST_DIR__/overflow.duckdb' AS ovf;
+
+statement ok
+CREATE TABLE ovf.main.bigstr AS SELECT range AS id, CASE WHEN range = 7 THEN repeat('x', 5000) ELSE 'short_' || range END AS s FROM range(0, 1000);
+
+statement ok
+CHECKPOINT ovf;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:5027
+# sirius: id = "tpch_integration_native/duckdb-native-overflow-strings-fall-back-to-cpu/001"
+# sirius: tags = ["integration", "tpch", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query II nosort
+SELECT
+  max(length(s)),
+  count(*)
+FROM
+  ovf.main.bigstr;
+----
+5000	1000
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:5027
+# sirius: id = "tpch_integration_native/duckdb-native-overflow-strings-fall-back-to-cpu/002"
+# sirius: tags = ["integration", "tpch", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query I nosort
+SELECT
+  s = repeat('x', 5000)
+FROM
+  ovf.main.bigstr
+WHERE
+  id = 7;
+----
+true
+
+onlyif sirius
+statement error overflow
+CALL pin_table(format='duckdb', name='ovf.main.bigstr', tier='gpu');
+
+statement ok
+DETACH ovf;

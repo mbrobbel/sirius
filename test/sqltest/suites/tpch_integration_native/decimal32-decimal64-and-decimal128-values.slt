@@ -1,0 +1,18 @@
+# gpu_execution - DECIMAL32, DECIMAL64, and DECIMAL128 values
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4711
+# sirius: id = "tpch_integration_native/decimal32-decimal64-and-decimal128-values/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values", "types", "decimal"]
+query ??? rowsort
+SELECT
+  d32,
+  d64,
+  d128
+FROM
+  (
+    VALUES
+      (CAST('1234567.89' AS DECIMAL(9,2)), CAST('12345678901234.5678' AS DECIMAL(18,4)), CAST('12345678901234567890123456789012.345678' AS DECIMAL(38,6))),
+      (NULL::DECIMAL(9,2), NULL::DECIMAL(18,4), NULL::DECIMAL(38,6))
+  ) t (d32, d64, d128);
+----

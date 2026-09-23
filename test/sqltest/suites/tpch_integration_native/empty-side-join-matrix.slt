@@ -1,0 +1,365 @@
+# gpu_execution - empty-side join matrix
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# hash inner dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-inner-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  INNER JOIN region r ON n.n_regionkey = r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# hash inner dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-inner-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  nation n
+  INNER JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey = r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# hash left dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-left-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  LEFT JOIN region r ON n.n_regionkey = r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# hash left dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-left-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  nation n
+  LEFT JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey = r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# hash right dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-right-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  RIGHT JOIN region r ON n.n_regionkey = r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# hash right dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-right-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  nation n
+  RIGHT JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey = r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# hash full outer dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-full-outer-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  FULL JOIN region r ON n.n_regionkey = r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# hash full outer dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-full-outer-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  nation n
+  FULL JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey = r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# hash not exists dead inner
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-not-exists-dead-inner"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  n.n_nationkey
+FROM
+  nation n
+WHERE
+  NOT EXISTS (SELECT 1 FROM (SELECT * FROM region WHERE r_regionkey = 99) r WHERE r.r_regionkey = n.n_regionkey) ORDER BY n.n_nationkey;
+----
+
+# hash in mark dead inner
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-in-mark-dead-inner"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey IN (SELECT r_regionkey FROM (SELECT * FROM region WHERE r_regionkey = 99)) AS in_pruned
+FROM
+  nation n ORDER BY n.n_nationkey;
+----
+
+# hash exists dead inner
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-exists-dead-inner"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  n.n_nationkey
+FROM
+  nation n
+WHERE
+  EXISTS (SELECT 1 FROM (SELECT * FROM region WHERE r_regionkey = 99) r WHERE r.r_regionkey = n.n_regionkey) ORDER BY n.n_nationkey;
+----
+
+# hash count over zero-side join
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-count-over-zero-side-join"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  INNER JOIN region r ON n.n_regionkey = r.r_regionkey;
+----
+
+# hash both sides pruned
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/hash-both-sides-pruned"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_name
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  INNER JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey = r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# nlj left dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-left-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  nation n
+  LEFT JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey < r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# nlj right dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-right-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  RIGHT JOIN region r ON n.n_regionkey < r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# nlj full outer dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-full-outer-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  FULL JOIN region r ON n.n_regionkey < r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# nlj full outer dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-full-outer-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  nation n
+  FULL JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey < r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# nlj anti dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-anti-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  n.n_nationkey
+FROM
+  nation n
+  ANTI JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey < r.r_regionkey ORDER BY n.n_nationkey;
+----
+
+# nlj inner dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-inner-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n
+  INNER JOIN region r ON n.n_regionkey < r.r_regionkey ORDER BY r.r_regionkey, n.n_nationkey;
+----
+
+# nlj inner dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-inner-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  nation n
+  INNER JOIN (SELECT * FROM region WHERE r_regionkey = 99) r ON n.n_regionkey < r.r_regionkey ORDER BY n.n_nationkey, r.r_regionkey;
+----
+
+# nlj mark both alive
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-mark-both-alive"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey < ANY(SELECT r_regionkey FROM region) AS lt_any_region
+FROM
+  nation n ORDER BY n.n_nationkey;
+----
+
+# nlj mark dead right
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-mark-dead-right"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey < ANY(SELECT r_regionkey FROM (SELECT * FROM region WHERE r_regionkey = 99)) AS lt_any_region
+FROM
+  nation n ORDER BY n.n_nationkey;
+----
+
+# nlj mark dead left
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4084
+# sirius: id = "tpch_integration_native/empty-side-join-matrix/nlj-mark-dead-left"
+# sirius: tags = ["integration", "tpch", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey < ANY(SELECT r_regionkey FROM region) AS lt_any_region
+FROM
+  (
+    SELECT
+      *
+    FROM
+      nation
+    WHERE
+      n_regionkey = 99
+  ) n ORDER BY n.n_nationkey;
+----

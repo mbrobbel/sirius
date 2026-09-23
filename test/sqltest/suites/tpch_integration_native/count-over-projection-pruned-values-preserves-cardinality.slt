@@ -1,0 +1,20 @@
+# gpu_execution - count over projection-pruned values preserves cardinality
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation');
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4686
+# sirius: id = "tpch_integration_native/count-over-projection-pruned-values-preserves-cardinality/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  (
+    VALUES
+      (1),
+      (2),
+      (3)
+  ) t (i);
+----
