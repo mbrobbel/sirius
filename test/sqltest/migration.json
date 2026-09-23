@@ -6711,6 +6711,26 @@
       "test": "grouped_aggregate_merge - count(*)-only aggregate across two GPUs"
     },
     {
+      "file": "suites/operator_mgpu_broadcast/replicate.slt",
+      "id": "operator_mgpu_broadcast/replicate/001",
+      "identity": "f477652c850baa25879678ec92c7c90cc8e375b1d28ad3bf537b861b0622acbc",
+      "kind": "query",
+      "line": 711,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_broadcast",
+      "test": "physical_hash_join - broadcast small-build BUILD_PROBE replicates across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_broadcast/dynamic-filter.slt",
+      "id": "operator_mgpu_broadcast/dynamic-filter/001",
+      "identity": "2525dda2799be9a62a69c2908ba1f2cee6910c6b54d2a1f8becad9140e05d6d2",
+      "kind": "query",
+      "line": 783,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_broadcast",
+      "test": "physical_hash_join - broadcast BUILD_PROBE publishes dynamic filters across two GPUs"
+    },
+    {
       "file": "suites/csv_disabled/scan-single-column.slt",
       "id": "csv_disabled/scan-single-column",
       "identity": "4d783c167d2aa2db68361526bd9ed70a5d38fe77c35e91023200d5ab6cd2e14d",
