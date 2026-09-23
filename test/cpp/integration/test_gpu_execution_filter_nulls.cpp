@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for NULL semantics in filters and scalar projections
+// GPU execution coverage for NULL semantics in filters and scalar projections
 // (issue #1095): three-valued predicate logic, IS [NOT] NULL, IS [NOT] DISTINCT
 // FROM, BETWEEN / IN with NULLs, and NULL propagation through COALESCE, NULLIF,
 // CASE, CAST, arithmetic, string, and date expressions.
 //
-// Every query goes through the shared file-backed GpuExecutionFixture, which
-// runs it once on the GPU (asserting a real GPU execution with no fallback) and
-// once on DuckDB CPU, then compares the results.
+// Every query verifies GPU execution without fallback. Result comparisons live
+// in test/sqltest/suites/filter_nulls/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -76,11 +75,11 @@ TEST_CASE_METHOD(NullDataFixture,
   for (const auto& col : kNullableColumns) {
     DYNAMIC_SECTION(col << " IS NULL")
     {
-      compare_gpu_vs_cpu("SELECT id FROM nt WHERE " + col + " IS NULL");
+      require_gpu_execution("SELECT id FROM nt WHERE " + col + " IS NULL");
     }
     DYNAMIC_SECTION(col << " IS NOT NULL")
     {
-      compare_gpu_vs_cpu("SELECT id FROM nt WHERE " + col + " IS NOT NULL");
+      require_gpu_execution("SELECT id FROM nt WHERE " + col + " IS NOT NULL");
     }
   }
 }
@@ -95,11 +94,11 @@ TEST_CASE_METHOD(NullDataFixture,
   for (const auto& op : ops) {
     DYNAMIC_SECTION("i " << op << " 10")
     {
-      compare_gpu_vs_cpu("SELECT id FROM nt WHERE i " + op + " 10");
+      require_gpu_execution("SELECT id FROM nt WHERE i " + op + " 10");
     }
     DYNAMIC_SECTION("dec " << op << " 10.50")
     {
-      compare_gpu_vs_cpu("SELECT id FROM nt WHERE dec " + op + " 10.50");
+      require_gpu_execution("SELECT id FROM nt WHERE dec " + op + " 10.50");
     }
   }
 }
@@ -109,13 +108,13 @@ TEST_CASE_METHOD(NullDataFixture,
                  "[integration][gpu_execution][filter][nulls]")
 {
   // vs a constant
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM 10");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IS DISTINCT FROM 10");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM NULL");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE s IS NOT DISTINCT FROM NULL");
+  require_gpu_execution("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM 10");
+  require_gpu_execution("SELECT id FROM nt WHERE i IS DISTINCT FROM 10");
+  require_gpu_execution("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM NULL");
+  require_gpu_execution("SELECT id FROM nt WHERE s IS NOT DISTINCT FROM NULL");
   // column vs column (NULL vs NULL must be "not distinct")
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM b");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IS DISTINCT FROM b");
+  require_gpu_execution("SELECT id FROM nt WHERE i IS NOT DISTINCT FROM b");
+  require_gpu_execution("SELECT id FROM nt WHERE i IS DISTINCT FROM b");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
@@ -125,8 +124,8 @@ TEST_CASE_METHOD(NullDataFixture,
   // Project the boolean result rather than filtering on it: a WHERE clause
   // collapses FALSE and UNKNOWN together, so it cannot tell whether TRUE AND NULL
   // yields NULL (correct) or FALSE. These rows span TRUE / FALSE / NULL outcomes.
-  compare_gpu_vs_cpu("SELECT id, (i = 10 AND b = 100) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, (NOT (i = 10)) AS r FROM nt");
+  require_gpu_execution("SELECT id, (i = 10 AND b = 100) AS r FROM nt");
+  require_gpu_execution("SELECT id, (NOT (i = 10)) AS r FROM nt");
 }
 
 // SQL three-valued logic: TRUE OR UNKNOWN = TRUE, so a row where one branch is
@@ -136,67 +135,67 @@ TEST_CASE_METHOD(NullDataFixture,
                  "[integration][gpu_execution][filter][nulls]")
 {
   // Row (i=10, b=NULL) satisfies `i = 10`, so it is kept even though `b = 200` is NULL.
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i = 10 OR b = 200");
+  require_gpu_execution("SELECT id FROM nt WHERE i = 10 OR b = 200");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution three-valued OR, IS-NULL-OR-match branch",
                  "[integration][gpu_execution][filter][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE (i IS NULL) OR (b = 100)");
+  require_gpu_execution("SELECT id FROM nt WHERE (i IS NULL) OR (b = 100)");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution BETWEEN and IN with NULLs",
                  "[integration][gpu_execution][filter][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i BETWEEN 0 AND 15");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE dec BETWEEN 0.00 AND 25.00");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i IN (10, 20)");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE i NOT IN (10, 20)");
-  compare_gpu_vs_cpu("SELECT id FROM nt WHERE s IN ('apple', 'cherry')");
+  require_gpu_execution("SELECT id FROM nt WHERE i BETWEEN 0 AND 15");
+  require_gpu_execution("SELECT id FROM nt WHERE dec BETWEEN 0.00 AND 25.00");
+  require_gpu_execution("SELECT id FROM nt WHERE i IN (10, 20)");
+  require_gpu_execution("SELECT id FROM nt WHERE i NOT IN (10, 20)");
+  require_gpu_execution("SELECT id FROM nt WHERE s IN ('apple', 'cherry')");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution COALESCE / NULLIF / CASE projections propagate NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, COALESCE(i, -1) AS c FROM nt");
-  compare_gpu_vs_cpu("SELECT id, COALESCE(i, b, 0) AS c FROM nt");
-  compare_gpu_vs_cpu("SELECT id, COALESCE(s, 'none') AS c FROM nt");
-  compare_gpu_vs_cpu("SELECT id, NULLIF(i, 10) AS c FROM nt");
-  compare_gpu_vs_cpu(
+  require_gpu_execution("SELECT id, COALESCE(i, -1) AS c FROM nt");
+  require_gpu_execution("SELECT id, COALESCE(i, b, 0) AS c FROM nt");
+  require_gpu_execution("SELECT id, COALESCE(s, 'none') AS c FROM nt");
+  require_gpu_execution("SELECT id, NULLIF(i, 10) AS c FROM nt");
+  require_gpu_execution(
     "SELECT id, CASE WHEN i IS NULL THEN 'na' WHEN i = 10 THEN 'ten' ELSE 'other' END AS c "
     "FROM nt");
-  compare_gpu_vs_cpu("SELECT id, CASE WHEN b > 0 THEN b ELSE NULL END AS c FROM nt");
+  require_gpu_execution("SELECT id, CASE WHEN b > 0 THEN b ELSE NULL END AS c FROM nt");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution arithmetic propagates NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, i + b AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, i - 5 AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, dec * 2 AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, dbl / 2 AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, i + b + dec AS r FROM nt");
+  require_gpu_execution("SELECT id, i + b AS r FROM nt");
+  require_gpu_execution("SELECT id, i - 5 AS r FROM nt");
+  require_gpu_execution("SELECT id, dec * 2 AS r FROM nt");
+  require_gpu_execution("SELECT id, dbl / 2 AS r FROM nt");
+  require_gpu_execution("SELECT id, i + b + dec AS r FROM nt");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution CAST propagates NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, CAST(i AS BIGINT) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, CAST(dec AS DOUBLE) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, CAST(b AS DOUBLE) AS r FROM nt");
+  require_gpu_execution("SELECT id, CAST(i AS BIGINT) AS r FROM nt");
+  require_gpu_execution("SELECT id, CAST(dec AS DOUBLE) AS r FROM nt");
+  require_gpu_execution("SELECT id, CAST(b AS DOUBLE) AS r FROM nt");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution string functions propagate NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, length(s) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, substring(s, 1, 2) AS r FROM nt");
+  require_gpu_execution("SELECT id, length(s) AS r FROM nt");
+  require_gpu_execution("SELECT id, substring(s, 1, 2) AS r FROM nt");
 }
 
 // DuckDB's concat() ignores NULL arguments (concat(NULL, '_x') = '_x'), whereas
@@ -206,23 +205,23 @@ TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution concat() ignores NULL arguments",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, concat(s, '_x') AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, concat(s, s) AS r FROM nt");
+  require_gpu_execution("SELECT id, concat(s, '_x') AS r FROM nt");
+  require_gpu_execution("SELECT id, concat(s, s) AS r FROM nt");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution || operator propagates NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, s || '_x' AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, s || s AS r FROM nt");
+  require_gpu_execution("SELECT id, s || '_x' AS r FROM nt");
+  require_gpu_execution("SELECT id, s || s AS r FROM nt");
 }
 
 TEST_CASE_METHOD(NullDataFixture,
                  "gpu_execution date functions propagate NULL",
                  "[integration][gpu_execution][projection][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT id, year(dt) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, month(dt) AS r FROM nt");
-  compare_gpu_vs_cpu("SELECT id, day(dt) AS r FROM nt");
+  require_gpu_execution("SELECT id, year(dt) AS r FROM nt");
+  require_gpu_execution("SELECT id, month(dt) AS r FROM nt");
+  require_gpu_execution("SELECT id, day(dt) AS r FROM nt");
 }
