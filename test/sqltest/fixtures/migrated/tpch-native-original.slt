@@ -1,0 +1,5 @@
+statement ok
+ATTACH '__FIXTURE_ROOT__/tpch-native-original/integration.duckdb' AS tpch (READ_ONLY);
+
+statement ok
+USE tpch;

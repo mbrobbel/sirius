@@ -1001,6 +1001,106 @@
       "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
     },
     {
+      "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
+      "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
+      "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",
+      "kind": "query",
+      "line": 110,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "selective membership filter on the probe scan"
+    },
+    {
+      "file": "suites/dynamic_filter_native/membership-filter-composed-with-a-probe-side-static-filter.slt",
+      "id": "dynamic_filter_native/membership-filter-composed-with-a-probe-side-static-filter/001",
+      "identity": "cc04db6a139d9f30f356a951284b12d089039e580a7f23ce001b993fe167bd4f",
+      "kind": "query",
+      "line": 120,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "membership filter composed with a probe-side static filter"
+    },
+    {
+      "file": "suites/dynamic_filter_native/opt-in-zone-map-rides-the-post-decode-ast-row-mask-path.slt",
+      "id": "dynamic_filter_native/opt-in-zone-map-rides-the-post-decode-ast-row-mask-path/001",
+      "identity": "1b3f107b56b2581d63091d8253bc2560aa350545e54c8737ccfd2f6f90991a65",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "opt-in zone map rides the post-decode AST row-mask path"
+    },
+    {
+      "file": "suites/dynamic_filter_native/a-domain-covering-build-publishes-nothing.slt",
+      "id": "dynamic_filter_native/a-domain-covering-build-publishes-nothing/001",
+      "identity": "c5557c73da7f16521aeb52e2ed57055a4b0403b111458396bd01ec29a2a87dcb",
+      "kind": "query",
+      "line": 171,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "a domain-covering build publishes nothing"
+    },
+    {
+      "file": "suites/dynamic_filter_native/a-selective-build-publishes-normally.slt",
+      "id": "dynamic_filter_native/a-selective-build-publishes-normally/001",
+      "identity": "1a36ea5e4197352914006d8d62ad84e45478e0c4c5d13d4b1b9de86f5e1c9ae6",
+      "kind": "query",
+      "line": 184,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "a selective build publishes normally"
+    },
+    {
+      "file": "suites/dynamic_filter_native/threshold-2-0-disables-the-gate-and-restores-publish-always-behavior.slt",
+      "id": "dynamic_filter_native/threshold-2-0-disables-the-gate-and-restores-publish-always-behavior/001",
+      "identity": "cde83f7ff6dffe6dce76b6180005019619aa1f45998b6e52c59337769393a9a4",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "threshold 2.0 disables the gate and restores publish-always behavior"
+    },
+    {
+      "file": "suites/dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold.slt",
+      "id": "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/001",
+      "identity": "73d27b42fadb31db32e50ca0f7269080eb0c22d5eb3769955752663da7dbd89b",
+      "kind": "query",
+      "line": 209,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "Invariant N holds across the suite's join shapes at the default threshold"
+    },
+    {
+      "file": "suites/dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold.slt",
+      "id": "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/002",
+      "identity": "0834fe61d1ea42037b549025f6245bc8a0f96455fdc3d7fe2c30740015492c4d",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "Invariant N holds across the suite's join shapes at the default threshold"
+    },
+    {
+      "file": "suites/dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold.slt",
+      "id": "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/003",
+      "identity": "6d4a2aa18f02c6b695b4d2a6a834ee8fd2d18b5e98eaf43030feda4615eba6a7",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "Invariant N holds across the suite's join shapes at the default threshold"
+    },
+    {
+      "file": "suites/dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold.slt",
+      "id": "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/004",
+      "identity": "635c8445d0161b4b3374d4a318a09786ce146246526edf58f250c50cb3a681f1",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp",
+      "suite": "dynamic_filter_native",
+      "test": "Invariant N holds across the suite's join shapes at the default threshold"
+    },
+    {
       "file": "suites/cast_date/plain-t-foldedpredicates-01.slt",
       "id": "cast_date/plain-t-foldedpredicates-01/ids",
       "identity": "6c91bed61687babf31e49d86b09a2c1a31d23e29b8e6d9687b77b1e1c21b1048",
