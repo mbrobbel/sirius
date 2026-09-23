@@ -1101,6 +1101,266 @@
       "test": "Invariant N holds across the suite's join shapes at the default threshold"
     },
     {
+      "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
+      "id": "dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent/001-off",
+      "identity": "cf5e41cee4b5d97d96e2a453ec39cbcfb7469d0dde61b49edcd25332bb90c4f0",
+      "kind": "query",
+      "line": 147,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a key on the inner join's build side, reached by build-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
+      "id": "dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent/001-on",
+      "identity": "a434f93f1855d33d6082903149e3662156b442f8cfa708d802e276363fe7bfea",
+      "kind": "query",
+      "line": 147,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a key on the inner join's build side, reached by build-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-left-join-in-the-query-keeps-results-identical-while-sip-is-active.slt",
+      "id": "dynamic_filter_sip/a-left-join-in-the-query-keeps-results-identical-while-sip-is-active/001-off",
+      "identity": "224cac711367dab22bef188204c1564a86fb3c2b8cc5729685b2e834c115a573",
+      "kind": "query",
+      "line": 168,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a LEFT join in the query keeps results identical while SIP is active"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-left-join-in-the-query-keeps-results-identical-while-sip-is-active.slt",
+      "id": "dynamic_filter_sip/a-left-join-in-the-query-keeps-results-identical-while-sip-is-active/001-on",
+      "identity": "0a6d3d1362c8c98eaa789bc44a4b52a5fc13574b2bfd71a60e6b61d3b7f37dba",
+      "kind": "query",
+      "line": 168,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a LEFT join in the query keeps results identical while SIP is active"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-right-join-admits-build-block-descent.slt",
+      "id": "dynamic_filter_sip/a-right-join-admits-build-block-descent/001-off",
+      "identity": "a98226677a7bdb4f699a1e83dab6e2cc861971b332baffa69193ff0c71c12d09",
+      "kind": "query",
+      "line": 188,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a RIGHT join admits build-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-right-join-admits-build-block-descent.slt",
+      "id": "dynamic_filter_sip/a-right-join-admits-build-block-descent/001-on",
+      "identity": "153b6f9f5f08eaa7349f2f1bfc667e4d918fff0a16c1ac838935cb8cead4a72b",
+      "kind": "query",
+      "line": 188,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a RIGHT join admits build-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics.slt",
+      "id": "dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics/001-off",
+      "identity": "ded3d6bd9bd371f8aa5a26f76e88f844d10d8a8f17678f1a1d274b02edde9fec",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a FULL OUTER join admits build-block descent under equality semantics"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics.slt",
+      "id": "dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics/001-on",
+      "identity": "a76d457c6e8ffc62d23bb5f2805506138d2895fb310b653bb11ea633b614b4ca",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a FULL OUTER join admits build-block descent under equality semantics"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/001-off",
+      "identity": "51c3a6a4205c6c723d9259f96c321e0336529662506405b0150e892d7c7d48ab",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/001-on",
+      "identity": "9a025d972d532371d5daa64af887a0dd5602b0fe876856edd448a7fc610cbdcb",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/002-off",
+      "identity": "98a2c64873d7aff14acae659eea0a7f058d7b7512e68a86d034348faea5d7229",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/002-on",
+      "identity": "7a343efcfbe7dc06e6b80ade396ebdbef659f28c1514ce6b2ff664c015dea7b9",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/003-off",
+      "identity": "7b6abb886b3b463497a9cb1a8096af5be58be8969eaf52364afcc256a2fe1210",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent.slt",
+      "id": "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/003-on",
+      "identity": "b473f694d6370f3186cf48000c59a38301aea03c7fe3286f6a1726c34fe4871a",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / RIGHT, FULL OUTER, and ANTI joins admit probe-block descent"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results.slt",
+      "id": "dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results/001-off",
+      "identity": "a7102b951fba49249a702a537a537e6990f6ff4078417cd51acec981f04b6101",
+      "kind": "query",
+      "line": 265,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a null-equal producing condition still returns identical results"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results.slt",
+      "id": "dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results/001-on",
+      "identity": "4d04efae01707e412a829eddb728cc2d7cb69c38154c7533b0fc76898f9887a0",
+      "kind": "query",
+      "line": 265,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a null-equal producing condition still returns identical results"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through.slt",
+      "id": "dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through/001-off",
+      "identity": "86ddd0c698660d42bb078b26fc12595f4a454110168e6e18445dacd7fd9cc29c",
+      "kind": "query",
+      "line": 279,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / an endpoint whose channel receives no filter passes rows through"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through.slt",
+      "id": "dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through/001-on",
+      "identity": "2cdb5199ba51827b90678f8eaffdcd3ecde13df340852d4d241b1542b91f9cb1",
+      "kind": "query",
+      "line": 279,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / an endpoint whose channel receives no filter passes rows through"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold.slt",
+      "id": "dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold/001-off",
+      "identity": "cde96d1557a3f202d3c9622f391bde53abebd45f8f7de96e56f7c4443a6eb1db",
+      "kind": "query",
+      "line": 291,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a single-partition MIXED_JOIN publishes through the partition fold"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold.slt",
+      "id": "dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold/001-on",
+      "identity": "94e5e698c787135d6f83b104e52d45a4ea07c0a4cf050a8455a9e3990efab45d",
+      "kind": "query",
+      "line": 291,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a single-partition MIXED_JOIN publishes through the partition fold"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-multi-partition-build-publishes-nothing.slt",
+      "id": "dynamic_filter_sip/a-multi-partition-build-publishes-nothing/001-off",
+      "identity": "65d493fd23d5891b715785100a0d8557f36dd2ef39f6a597584264e1bd2ec03a",
+      "kind": "query",
+      "line": 308,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a multi-partition build publishes nothing"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/a-multi-partition-build-publishes-nothing.slt",
+      "id": "dynamic_filter_sip/a-multi-partition-build-publishes-nothing/001-on",
+      "identity": "0be57734f9ca54ed8d8f1ed850dec3402d1092dc18b29643197fce23c20ebed8",
+      "kind": "query",
+      "line": 308,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / a multi-partition build publishes nothing"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence.slt",
+      "id": "dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence/001-off",
+      "identity": "b309e77938b82c0548af242f91d694bec59425c27251e793a9fc3c5b0e3d1ad8",
+      "kind": "query",
+      "line": 335,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / an unfiltered aggregate build supplies no publication evidence"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence.slt",
+      "id": "dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence/001-on",
+      "identity": "7fe0e1c6a9346e39fafb30fc49028e45f82613ff4f12fb5bc8eb856177eba0df",
+      "kind": "query",
+      "line": 335,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / an unfiltered aggregate build supplies no publication evidence"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/tpc-h-q17-a-delim-scan-build-wires-only-through-opaque-build-evidence.slt",
+      "id": "dynamic_filter_sip/tpc-h-q17-a-delim-scan-build-wires-only-through-opaque-build-evidence/001-off",
+      "identity": "20acaafbc9dd6d982783e4e57bbf90bd3bd9ce907c0babc8fdc09425ce8f6e18",
+      "kind": "query",
+      "line": 351,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / TPC-H q17: a delim-scan build wires only through opaque-build evidence"
+    },
+    {
+      "file": "suites/dynamic_filter_sip/tpc-h-q17-a-delim-scan-build-wires-only-through-opaque-build-evidence.slt",
+      "id": "dynamic_filter_sip/tpc-h-q17-a-delim-scan-build-wires-only-through-opaque-build-evidence/001-on",
+      "identity": "986b4692e6ee5950061465f35f939b560544a0bf5ffaf9e9a5d0640710494046",
+      "kind": "query",
+      "line": 351,
+      "source": "test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp",
+      "suite": "dynamic_filter_sip",
+      "test": "gpu_execution - opaque-build and build-block routes preserve results / TPC-H q17: a delim-scan build wires only through opaque-build evidence"
+    },
+    {
       "file": "suites/cast_date/plain-t-foldedpredicates-01.slt",
       "id": "cast_date/plain-t-foldedpredicates-01/ids",
       "identity": "6c91bed61687babf31e49d86b09a2c1a31d23e29b8e6d9687b77b1e1c21b1048",

@@ -1,0 +1,47 @@
+# a RIGHT join admits build-block descent
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation,join_order,build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:188
+# sirius: id = "dynamic_filter_sip/a-right-join-admits-build-block-descent/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(o.o_orderkey)
+FROM
+  orders o
+  RIGHT JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN nation n ON c.c_nationkey = n.n_nationkey
+WHERE
+  n.n_regionkey = 3;
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:188
+# sirius: id = "dynamic_filter_sip/a-right-join-admits-build-block-descent/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(o.o_orderkey)
+FROM
+  orders o
+  RIGHT JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN nation n ON c.c_nationkey = n.n_nationkey
+WHERE
+  n.n_regionkey = 3;
+----

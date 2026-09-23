@@ -1,0 +1,3 @@
+storage = ["native"]
+checkpoint = "explicit"
+fixtures = ["tpch-native-original"]

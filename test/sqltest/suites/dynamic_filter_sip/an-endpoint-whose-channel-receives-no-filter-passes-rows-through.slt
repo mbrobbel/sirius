@@ -1,0 +1,40 @@
+# an endpoint whose channel receives no filter passes rows through
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:279
+# sirius: id = "dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_custkey)
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey
+  JOIN customer c ON o.o_custkey = c.c_custkey
+WHERE
+  c.c_phone = '25-000-000-0000';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:279
+# sirius: id = "dynamic_filter_sip/an-endpoint-whose-channel-receives-no-filter-passes-rows-through/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_custkey)
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey
+  JOIN customer c ON o.o_custkey = c.c_custkey
+WHERE
+  c.c_phone = '25-000-000-0000';
+----
