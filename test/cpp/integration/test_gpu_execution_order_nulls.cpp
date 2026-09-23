@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for ORDER BY / TOP-N with NULLs in the sort key,
+// GPU execution assertions for ORDER BY / TOP-N with NULLs in the sort key,
 // across every (ASC|DESC) x (NULLS FIRST|LAST) combination (issue #1095).
 //
-// Uses the shared file-backed GpuExecutionFixture so the source table is read
-// through the real GPU DuckDB-native scan, and compares position-sensitively
-// (compare_gpu_vs_cpu_ordered) so NULL placement is actually verified rather
-// than sorted away.
+// Uses the shared file-backed GpuExecutionFixture to assert GPU execution.
+// Positional result comparisons live in test/sqltest/suites/order_nulls/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -108,7 +106,7 @@ TEST_CASE_METHOD(OrderNullsGPUExecutionFixture,
   for (const auto& order_case : kNullOrderCases) {
     DYNAMIC_SECTION(case_name(order_case))
     {
-      compare_gpu_vs_cpu_ordered(
+      require_gpu_execution(
         "SELECT k, id "
         "FROM ord_n "
         "ORDER BY k " +
@@ -127,7 +125,7 @@ TEST_CASE_METHOD(OrderNullsGPUExecutionFixture,
       // Single sort key only (no tie-break): with LIMIT 50 the boundary
       // k-value has far more than 50 ties, so the emitted k-values are
       // deterministic even though which rows fill the ties is not.
-      compare_gpu_vs_cpu_ordered(
+      require_gpu_execution(
         "SELECT k "
         "FROM ord_n "
         "ORDER BY k " +
@@ -145,7 +143,7 @@ TEST_CASE_METHOD(OrderNullsGPUExecutionFixture,
   for (const auto& order_case : kNullOrderCases) {
     DYNAMIC_SECTION(case_name(order_case))
     {
-      compare_gpu_vs_cpu_ordered(
+      require_gpu_execution(
         "SELECT k, id "
         "FROM ord_n "
         "ORDER BY k " +
