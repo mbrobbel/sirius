@@ -20,21 +20,19 @@
 // (test_compressed_materialization_gate.cpp and
 // test_compressed_materialization_partition.cpp). Each test file keeps its own value recipes,
 // fixture constants, and configuration values; this header holds only the mechanics they share:
-// result checking, parquet generation, YAML configuration, shared-env pausing, and GPU-vs-CPU
-// result comparison. Everything is defined inline in a named namespace because two translation
-// units include this header.
+// query execution checks, parquet generation, YAML configuration, and shared-env pausing.
+// Everything is defined inline in a named namespace because two translation units include this
+// header.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
 #include <utils/parquet_fixture_utils.hpp>
 #include <utils/sirius_test_env.hpp>
 
-#include <algorithm>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <vector>
 
 namespace sirius::test::compmat {
 
@@ -126,48 +124,6 @@ inline void pause_shared_envs()
   }
   if (sirius::test::g_integration_env_2gpu && sirius::test::g_integration_env_2gpu->is_active()) {
     sirius::test::g_integration_env_2gpu->pause();
-  }
-}
-
-/// Run @p query on the GPU (a failure surfaces loudly: duckdb fallback is disabled by every
-/// caller), then on the CPU, and compare the two result sets as sorted stringified rows (robust
-/// to result-order ties).
-inline void compare_gpu_vs_cpu(duckdb::Connection& con, std::string const& query)
-{
-  auto gpu_result = con.Query(query);
-  require_ok(gpu_result, "gpu query");
-
-  require_ok(con.Query("SET gpu_execution = false;"), "disable gpu");
-  auto cpu_result = con.Query(query);
-  require_ok(cpu_result, "cpu query");
-  require_ok(con.Query("SET gpu_execution = true;"), "re-enable gpu");
-
-  REQUIRE(gpu_result->ColumnCount() == cpu_result->ColumnCount());
-  REQUIRE(gpu_result->RowCount() == cpu_result->RowCount());
-
-  auto collect_rows = [](duckdb::MaterializedQueryResult& result) {
-    std::vector<std::vector<std::string>> rows;
-    for (duckdb::idx_t r = 0; r < result.RowCount(); r++) {
-      std::vector<std::string> row;
-      row.reserve(result.ColumnCount());
-      for (duckdb::idx_t c = 0; c < result.ColumnCount(); c++) {
-        row.push_back(result.GetValue(c, r).ToString());
-      }
-      rows.push_back(std::move(row));
-    }
-    std::sort(rows.begin(), rows.end());
-    return rows;
-  };
-  auto gpu_rows = collect_rows(*gpu_result);
-  auto cpu_rows = collect_rows(*cpu_result);
-  for (std::size_t r = 0; r < gpu_rows.size(); r++) {
-    for (std::size_t c = 0; c < gpu_rows[r].size(); c++) {
-      if (gpu_rows[r][c] != cpu_rows[r][c]) {
-        UNSCOPED_INFO("Row " << r << " Col " << c << " mismatch: GPU=[" << gpu_rows[r][c]
-                             << "] CPU=[" << cpu_rows[r][c] << "]");
-      }
-      REQUIRE(gpu_rows[r][c] == cpu_rows[r][c]);
-    }
   }
 }
 

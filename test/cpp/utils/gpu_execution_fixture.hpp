@@ -18,8 +18,8 @@
 
 /**
  * @file gpu_execution_fixture.hpp
- * @brief Shared Catch2 fixture for end-to-end "run plain SQL on GPU, compare to
- *        DuckDB CPU" integration tests over the GPU DuckDB-native scan path.
+ * @brief Shared Catch2 fixture for GPU execution and fallback assertions
+ *        over the DuckDB-native scan path.
  *
  * The native scan reads raw on-disk blocks through a SingleFileBlockManager, so
  * tables under test must live in a single-file (on-disk) database. The shared
@@ -37,12 +37,9 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -77,7 +74,7 @@ struct sirius_config_env_guard {
 };
 
 /**
- * @brief File-backed DuckDB connection plus a GPU-vs-CPU result comparator.
+ * @brief File-backed DuckDB connection with GPU execution and fallback assertions.
  *
  * When a shared integration SiriusContext is active we borrow its connection;
  * otherwise we spin up a private in-memory host DB pointed at integration.yaml.
@@ -153,68 +150,9 @@ class GpuExecutionFixture {
     return sirius::test::collect_rows(result, sort);
   }
 
-  /// Cell equality used by the comparator. Exact string match by default; when
-  /// `rel_tol > 0` and both cells parse fully as numbers, they match within a
-  /// relative tolerance (with an absolute floor near zero), so floating-point
-  /// aggregation-order differences don't register as mismatches. A partial
-  /// numeric parse ("12abc") or a non-number ("NULL") is never approximate.
-  /// Exposed as a static so it can be unit-tested directly.
-  static bool cells_equal(const std::string& a, const std::string& b, double rel_tol)
-  {
-    if (a == b) { return true; }
-    if (rel_tol <= 0.0) { return false; }
-    // std::stod is C-locale sensitive; correct under CI's default C locale (DuckDB
-    // prints numerics with '.'). Use std::from_chars if that assumption changes.
-    try {
-      std::size_t pa  = 0;
-      std::size_t pb  = 0;
-      double const da = std::stod(a, &pa);
-      double const db = std::stod(b, &pb);
-      // Reject partial parses ("12abc", "NULL") so only fully-numeric cells are
-      // compared approximately.
-      if (pa != a.size() || pb != b.size()) { return false; }
-      // Non-finite values (inf / -inf / NaN) only match via exact string equality
-      // (already handled above). The tolerance test below would otherwise treat
-      // inf vs a finite or opposite-sign value as equal, since inf <= rel_tol*inf.
-      if (!std::isfinite(da) || !std::isfinite(db)) { return false; }
-      double const diff  = std::fabs(da - db);
-      double const scale = std::max(std::fabs(da), std::fabs(db));
-      return diff <= rel_tol * scale || diff <= rel_tol;
-    } catch (...) {
-      return false;
-    }
-  }
-
-  /// GPU-vs-CPU comparison that ignores row order (rows are sorted first). Use
-  /// for filters, joins, aggregates, and any query without an ORDER BY.
-  void compare_gpu_vs_cpu(const std::string& query) { compare_gpu_vs_cpu_impl(query, false); }
-
-  /// GPU-vs-CPU comparison that preserves row order. Use for queries with a
-  /// deterministic output order (ORDER BY / LIMIT) so NULLS FIRST|LAST placement
-  /// is actually verified rather than sorted away.
-  void compare_gpu_vs_cpu_ordered(const std::string& query)
-  {
-    compare_gpu_vs_cpu_impl(query, true);
-  }
-
-  /// GPU-vs-CPU comparison with a relative tolerance applied ONLY to the columns
-  /// named in `approx_cols` (0-based). Those columns match within `rel_tol` (with
-  /// an absolute floor near zero); every other column -- keys, counts, strings,
-  /// NULLs -- still compares exactly. Use for floating-point aggregation (SUM/AVG
-  /// over DECIMAL/DOUBLE), where GPU parallel reduction and CPU serial summation
-  /// legitimately differ in the low bits. Rows are matched order-insensitively by
-  /// sorting stringified rows, which is only valid when the leading column(s) form
-  /// an exact, unique key -- so `approx_cols` must NOT include column 0 of a
-  /// multi-row result (enforced at runtime). NOTE: not
-  /// for aggregates prone to catastrophic cancellation (e.g. sums of signed values
-  /// that nearly cancel) -- there the two summation orders can diverge beyond any
-  /// meaningful tolerance.
-  void compare_gpu_vs_cpu_approx(const std::string& query,
-                                 const std::set<size_t>& approx_cols,
-                                 double rel_tol = 1e-6)
-  {
-    compare_gpu_vs_cpu_impl(query, false, approx_cols, rel_tol);
-  }
+  /// Assert one GPU execution without plan-time or runtime fallback.
+  /// Result correctness is checked by the corresponding SQL suite.
+  void require_gpu_execution(const std::string& query) { execute_on_gpu(query); }
 
   /// Asserts the query does NOT run purely on the GPU: it triggers a runtime
   /// fallback to DuckDB CPU (which still produces the correct result). Use for
@@ -235,40 +173,6 @@ class GpuExecutionFixture {
     }
     REQUIRE(after.runtime_fallbacks > before.runtime_fallbacks);
   }
-
-  /// Asserts the query is rejected during GPU plan generation and completes via DuckDB's CPU
-  /// plan, returning exactly the CPU results. Distinct from expect_gpu_fallback, which asserts a
-  /// fallback *after* GPU execution started: a plan-time rejection moves `fallbacks` and never
-  /// increments `executions`. Use for shapes Sirius screens out at plan time on purpose.
-  void expect_plan_fallback_matches_cpu(const std::string& query)
-  {
-    run_ok("SET gpu_execution = true;");
-    auto const before = sirius::test::get_transparent_execution_stats(*con);
-    auto gpu_result   = con->Query(query);
-    auto const after  = sirius::test::get_transparent_execution_stats(*con);
-    REQUIRE(gpu_result);
-    if (gpu_result->HasError()) { UNSCOPED_INFO("query error: " << gpu_result->GetError()); }
-    REQUIRE_FALSE(gpu_result->HasError());
-    if (after.fallbacks == before.fallbacks) {
-      UNSCOPED_INFO("expected a plan-time fallback to CPU, but none occurred");
-    }
-    REQUIRE(after.fallbacks == before.fallbacks + 1);
-    REQUIRE(after.executions == before.executions);
-
-    run_ok("SET gpu_execution = false;");
-    auto cpu_result = con->Query(query);
-    run_ok("SET gpu_execution = true;");
-    REQUIRE(cpu_result);
-    REQUIRE_FALSE(cpu_result->HasError());
-
-    REQUIRE(gpu_result->ColumnCount() == cpu_result->ColumnCount());
-    REQUIRE(gpu_result->RowCount() == cpu_result->RowCount());
-    auto gpu_rows = collect_rows(gpu_result->Cast<duckdb::MaterializedQueryResult>(), true);
-    auto cpu_rows = collect_rows(cpu_result->Cast<duckdb::MaterializedQueryResult>(), true);
-    REQUIRE(gpu_rows == cpu_rows);
-  }
-
-  void require_gpu_execution(const std::string& query) { execute_on_gpu(query); }
 
   /// Assert a plan-time fallback without starting GPU execution.
   void expect_plan_fallback(const std::string& query)
@@ -304,64 +208,6 @@ class GpuExecutionFixture {
     // Exactly one GPU execution, no fallback: proves the query ran on the GPU.
     sirius::test::require_transparent_execution_delta(before_gpu_stats, after_gpu_stats, 1, 0, 1);
     return gpu_result;
-  }
-
-  void compare_gpu_vs_cpu_impl(const std::string& query,
-                               bool ordered,
-                               const std::set<size_t>& approx_cols = {},
-                               double rel_tol                      = 0.0)
-  {
-    // Run on GPU (transparent, plain SQL goes through the Sirius optimizer hook).
-    con->Query("SET gpu_execution = true;");
-    auto before_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
-
-    auto gpu_result = con->Query(query);
-    REQUIRE(gpu_result);
-    if (gpu_result->HasError()) {
-      UNSCOPED_INFO("transparent GPU execution error: " << gpu_result->GetError());
-    }
-    REQUIRE_FALSE(gpu_result->HasError());
-    auto after_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
-    // Exactly one GPU execution, no fallback: proves the query ran on the GPU.
-    sirius::test::require_transparent_execution_delta(before_gpu_stats, after_gpu_stats, 1, 0, 1);
-
-    // Run on CPU.
-    con->Query("SET gpu_execution = false;");
-    auto cpu_result = con->Query(query);
-    con->Query("SET gpu_execution = true;");
-    REQUIRE(cpu_result);
-    REQUIRE_FALSE(cpu_result->HasError());
-
-    REQUIRE(gpu_result->ColumnCount() == cpu_result->ColumnCount());
-    REQUIRE(gpu_result->RowCount() == cpu_result->RowCount());
-
-    auto& gpu_mat = gpu_result->Cast<duckdb::MaterializedQueryResult>();
-    auto& cpu_mat = cpu_result->Cast<duckdb::MaterializedQueryResult>();
-    // For ordered queries, keep emitted order so NULLS FIRST|LAST is verified;
-    // otherwise sort both sides for an order-insensitive multiset comparison.
-    auto gpu_rows = collect_rows(gpu_mat, !ordered);
-    auto cpu_rows = collect_rows(cpu_mat, !ordered);
-
-    // Order-insensitive approx matching pairs rows by their sorted stringified
-    // values, so an approximate *leading* key (col 0) could misalign rows. Guard
-    // that misuse: with multiple rows, col 0 must be compared exactly.
-    if (!ordered && !approx_cols.empty() && gpu_rows.size() > 1) {
-      REQUIRE(approx_cols.count(0) == 0);
-    }
-
-    for (size_t r = 0; r < gpu_rows.size(); r++) {
-      for (size_t c = 0; c < gpu_rows[r].size(); c++) {
-        // Only explicitly-approximate columns get the tolerance; keys, counts,
-        // and everything else compare exactly (tol = 0).
-        double const tol = approx_cols.count(c) != 0 ? rel_tol : 0.0;
-        bool const match = cells_equal(gpu_rows[r][c], cpu_rows[r][c], tol);
-        if (!match) {
-          UNSCOPED_INFO("Row " << r << " Col " << c << " mismatch: GPU=[" << gpu_rows[r][c]
-                               << "] CPU=[" << cpu_rows[r][c] << "]");
-        }
-        REQUIRE(match);
-      }
-    }
   }
 
  public:
