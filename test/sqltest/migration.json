@@ -7991,6 +7991,56 @@
       "test": "S3 mix: filter-above-join"
     },
     {
+      "file": "suites/partition_memory/repeated-join.slt",
+      "id": "partition_memory/repeated-join/001",
+      "identity": "cd6b72aff389da621161f34ccb51c80dae62f341241dd9265e891494a667560b",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory",
+      "test": "partition memory-space repro - single-GPU OOM-reschedule control"
+    },
+    {
+      "file": "suites/partition_memory/repeated-join.slt",
+      "id": "partition_memory/repeated-join/002",
+      "identity": "0592fdc7fd3d3f5341b2a126a97731fea807595a76d60d8edfbc4a791004dfed",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory",
+      "test": "partition memory-space repro - single-GPU OOM-reschedule control"
+    },
+    {
+      "file": "suites/partition_memory/repeated-join.slt",
+      "id": "partition_memory/repeated-join/003",
+      "identity": "90c676f3ff4d43efd2f39b4924f2e64aa5add75d68dc9e1d4fe700dd3108217c",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory",
+      "test": "partition memory-space repro - single-GPU OOM-reschedule control"
+    },
+    {
+      "file": "suites/partition_memory/repeated-join.slt",
+      "id": "partition_memory/repeated-join/004",
+      "identity": "3a0bfa9a521a2664d1661c30fe8fb8e88b0ef51391d99c238a8352fa3df8cccd",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory",
+      "test": "partition memory-space repro - single-GPU OOM-reschedule control"
+    },
+    {
+      "file": "suites/partition_memory/repeated-join.slt",
+      "id": "partition_memory/repeated-join/005",
+      "identity": "c7339c9103e3f0fc4b5dc5ce374b7de9d936dd4977a30cbf9694485047d769e0",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/operator/test_partition_memspace_mgpu.cpp",
+      "suite": "partition_memory",
+      "test": "partition memory-space repro - single-GPU OOM-reschedule control"
+    },
+    {
       "file": "suites/operator_mgpu_order/large.slt",
       "id": "operator_mgpu_order/large/001",
       "identity": "103dc18e4037d11f5960df45b2c60417c048a4631c640234ffb000e16b885d36",

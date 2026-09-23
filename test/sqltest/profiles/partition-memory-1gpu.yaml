@@ -1,0 +1,28 @@
+sirius:
+  topology:
+    num_gpus: 1
+  memory:
+    gpu:
+      usage_limit_bytes: 536870912
+      reservation_limit_fraction: 1.0
+    host:
+      capacity_bytes: 32000000000
+      initial_number_pools: 10
+      pool_size: 512
+      block_size: 1048576
+  executor:
+    scan_manager:
+      use_sirius_datasource: true
+    pipeline:
+      num_threads: 4
+    task_creator:
+      num_threads: 4
+    downgrade:
+      num_threads: 1
+      monitor_period: 10ms
+  operator_params:
+    scan_task_batch_size: 20000000
+    max_sort_partition_bytes: 0
+    hash_partition_bytes: 10000000
+    concat_batch_bytes: 50000000
+    max_build_hash_table_bytes: 256000000
