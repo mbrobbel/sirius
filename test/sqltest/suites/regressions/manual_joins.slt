@@ -1,0 +1,121 @@
+statement ok
+CREATE TABLE crossfit (
+  exercise TEXT,
+  difficulty_level INTEGER
+);
+
+statement ok
+INSERT INTO crossfit VALUES
+  ('Push Ups', 3),
+  ('Pull Ups', 5),
+  ('Push Jerk', 5),
+  ('Bar Muscle Up', 10),
+  ('a', 10),
+  ('b', 13),
+  ('c', 15),
+  ('d', 16);
+
+statement ok
+CREATE TABLE equipment (
+  equip TEXT,
+  difficulty_level INTEGER
+);
+
+statement ok
+INSERT INTO equipment VALUES
+  ('Board', 3),
+  ('Weight', 5),
+  ('Trampoline', 3),
+  ('Horse', 12);
+
+# sirius: id = "regressions/manual-joins/001"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ???? rowsort
+SELECT
+  *
+FROM
+  crossfit
+  LEFT OUTER JOIN equipment ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Bar Muscle Up"	10	NULL	NULL
+"Pull Ups"	5	"Weight"	5
+"Push Jerk"	5	"Weight"	5
+"Push Ups"	3	"Board"	3
+"Push Ups"	3	"Trampoline"	3
+"a"	10	NULL	NULL
+"b"	13	NULL	NULL
+"c"	15	NULL	NULL
+"d"	16	NULL	NULL
+
+# sirius: id = "regressions/manual-joins/002"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ???? rowsort
+SELECT
+  *
+FROM
+  crossfit
+  RIGHT OUTER JOIN equipment ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Pull Ups"	5	"Weight"	5
+"Push Jerk"	5	"Weight"	5
+"Push Ups"	3	"Board"	3
+"Push Ups"	3	"Trampoline"	3
+NULL	NULL	"Horse"	12
+
+# sirius: id = "regressions/manual-joins/003"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ?? rowsort
+SELECT
+  *
+FROM
+  crossfit
+  SEMI JOIN equipment ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Pull Ups"	5
+"Push Jerk"	5
+"Push Ups"	3
+
+# sirius: id = "regressions/manual-joins/004"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ?? rowsort
+SELECT
+  *
+FROM
+  equipment
+  SEMI JOIN crossfit ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Board"	3
+"Trampoline"	3
+"Weight"	5
+
+# sirius: id = "regressions/manual-joins/005"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ?? rowsort
+SELECT
+  *
+FROM
+  crossfit
+  ANTI JOIN equipment ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Bar Muscle Up"	10
+"a"	10
+"b"	13
+"c"	15
+"d"	16
+
+# sirius: id = "regressions/manual-joins/006"
+# sirius: snapshot = true
+# sirius: tags = ["join", "migration"]
+query ?? rowsort
+SELECT
+  *
+FROM
+  equipment
+  ANTI JOIN crossfit ON crossfit.difficulty_level = equipment.difficulty_level;
+----
+"Horse"	12
