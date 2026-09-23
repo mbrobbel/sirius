@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for the unique-build-key (distinct_hash_join) fast path,
+// GPU execution coverage for the unique-build-key (distinct_hash_join) fast path,
 // including the DELIM_GET structural uniqueness proof (the TPC-H q2/q22 shape).
-// A wrong uniqueness proof drops matches, so the GPU result diverges from CPU.
+// Result comparisons live in test/sqltest/suites/unique_join/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
+#include <utils/dynamic_filter_test_utils.hpp>
 #include <utils/gpu_execution_fixture.hpp>
 
+#include <optional>
 #include <string>
 
 namespace {
@@ -33,8 +35,10 @@ class UniqueJoinFixture : public sirius::test::GpuExecutionFixture {
     // On toy tables the deliminator rewrites the delim join away, and
     // compressed_materialization wraps GROUP BY keys in __internal_compress_integral_*
     // calls the GPU translator rejects. Disabling both preserves the plan shape under
-    // test; it applies to the GPU and CPU passes alike, so comparisons stay fair.
-    run_ok("SET disabled_optimizers='deliminator,compressed_materialization';");
+    // test. The SQL fixture uses the same optimizer settings.
+    optimizer_guard.emplace(*con,
+                            "deliminator,compressed_materialization",
+                            sirius::test::disabled_optimizers_guard::mode::replace);
 
     run_ok("CREATE TABLE dim (id INTEGER PRIMARY KEY, name VARCHAR);");
     run_ok("INSERT INTO dim VALUES (1,'a'),(2,'b'),(3,'c'),(4,'d');");
@@ -61,12 +65,8 @@ class UniqueJoinFixture : public sirius::test::GpuExecutionFixture {
     run_ok("CHECKPOINT;");
   }
 
-  ~UniqueJoinFixture()
-  {
-    // The connection is shared across tests, so restore the optimizer set. Plain Query
-    // (not run_ok) — never assert during unwinding.
-    if (con) { con->Query("SET disabled_optimizers='';"); }
-  }
+ private:
+  std::optional<sirius::test::disabled_optimizers_guard> optimizer_guard;
 };
 
 }  // namespace
@@ -75,7 +75,7 @@ TEST_CASE_METHOD(UniqueJoinFixture,
                  "gpu_execution unique-build INNER join on a PK build side",
                  "[integration][gpu_execution][join][unique_build_keys]")
 {
-  compare_gpu_vs_cpu("SELECT f.k, f.v, d.name FROM fact f JOIN dim d ON f.k = d.id");
+  require_gpu_execution("SELECT f.k, f.v, d.name FROM fact f JOIN dim d ON f.k = d.id");
 }
 
 TEST_CASE_METHOD(UniqueJoinFixture,
@@ -83,14 +83,14 @@ TEST_CASE_METHOD(UniqueJoinFixture,
                  "[integration][gpu_execution][join][unique_build_keys]")
 {
   // Takes distinct_hash_join::left_join; NULL-key and unmatched probe rows must NULL-pad.
-  compare_gpu_vs_cpu("SELECT f.k, f.v, d.name FROM fact f LEFT JOIN dim d ON f.k = d.id");
+  require_gpu_execution("SELECT f.k, f.v, d.name FROM fact f LEFT JOIN dim d ON f.k = d.id");
 }
 
 TEST_CASE_METHOD(UniqueJoinFixture,
                  "gpu_execution unique-build join with an empty probe side",
                  "[integration][gpu_execution][join][unique_build_keys]")
 {
-  compare_gpu_vs_cpu("SELECT f.k, d.name FROM empty_fact f JOIN dim d ON f.k = d.id");
+  require_gpu_execution("SELECT f.k, d.name FROM empty_fact f JOIN dim d ON f.k = d.id");
 }
 
 TEST_CASE_METHOD(UniqueJoinFixture,
@@ -99,7 +99,7 @@ TEST_CASE_METHOD(UniqueJoinFixture,
 {
   // Decorrelates into a DELIM_JOIN whose inner re-join probes big against a DELIM_GET
   // of dedup'd fact.k keys (one of them NULL) — the proof this change adds.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT f.k, f.grp, f.v FROM fact f "
     "WHERE f.v > 3 AND NOT EXISTS (SELECT 1 FROM big o WHERE o.k = f.k)");
 }
@@ -108,7 +108,7 @@ TEST_CASE_METHOD(UniqueJoinFixture,
                  "gpu_execution delim-shaped NOT EXISTS over an empty table",
                  "[integration][gpu_execution][join][unique_build_keys]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT f.k, f.grp, f.v FROM empty_fact f "
     "WHERE f.v > 3 AND NOT EXISTS (SELECT 1 FROM big o WHERE o.k = f.k)");
 }
@@ -119,7 +119,7 @@ TEST_CASE_METHOD(UniqueJoinFixture,
 {
   // dup_build has two k=1 rows: every k=1 probe row must appear twice. Had the gate
   // wrongly claimed this build, the distinct path would drop one of the two matches.
-  compare_gpu_vs_cpu("SELECT f.k, f.v, b.tag FROM fact f JOIN dup_build b ON f.k = b.k");
+  require_gpu_execution("SELECT f.k, f.v, b.tag FROM fact f JOIN dup_build b ON f.k = b.k");
 }
 
 TEST_CASE_METHOD(UniqueJoinFixture,
@@ -127,7 +127,7 @@ TEST_CASE_METHOD(UniqueJoinFixture,
                  "[integration][gpu_execution][join][unique_build_keys]")
 {
   // Aggregate output is unique on its group keys — the pre-existing proof.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT f.k, f.v, agg.cnt FROM fact f "
     "JOIN (SELECT grp, COUNT(*) AS cnt FROM fact GROUP BY grp) agg ON f.k = agg.grp");
 }
