@@ -1,0 +1,16 @@
+include ../../fixtures/migrated/semantic_cast.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:162
+# sirius: execution = "allow_fallback"
+# sirius: id = "semantic_cast/try_cast_filter/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "try_cast_filter"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  cast_t
+WHERE
+  TRY_CAST(d AS SMALLINT) IS NULL;
+----
+3

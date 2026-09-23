@@ -1651,6 +1651,126 @@
       "test": "gpu_execution null-safe MARK rejection does not spill onto plain IN/EXISTS"
     },
     {
+      "file": "suites/semantic_cast/try_date_smallint.slt",
+      "id": "semantic_cast/try_date_smallint/001",
+      "identity": "f68db947c66aadb055ffde049f308f989ab58a575efc11d383cbe93fc5122df7",
+      "kind": "fallback",
+      "line": 95,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "try_date_smallint"
+    },
+    {
+      "file": "suites/semantic_cast/try_smallint_date.slt",
+      "id": "semantic_cast/try_smallint_date/001",
+      "identity": "6e095fe603986d182557509fc2dd109ca5b70d2418c34166a3edb3f721d5cbac",
+      "kind": "fallback",
+      "line": 104,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "try_smallint_date"
+    },
+    {
+      "file": "suites/semantic_cast/cast_smallint_date.slt",
+      "id": "semantic_cast/cast_smallint_date/001",
+      "identity": "92993ec5794c95089c1bef7a01b899dde02574e1d0f8865423299371c07e233d",
+      "kind": "fallback_error",
+      "line": 116,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "cast_smallint_date"
+    },
+    {
+      "file": "suites/semantic_cast/cast_date_smallint.slt",
+      "id": "semantic_cast/cast_date_smallint/001",
+      "identity": "92286ddda9c610787657ec9ba7198f984e0e96da5d7618ac4b70e8b6528054ef",
+      "kind": "fallback_error",
+      "line": 139,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "cast_date_smallint"
+    },
+    {
+      "file": "suites/semantic_cast/try_cast_filter.slt",
+      "id": "semantic_cast/try_cast_filter/001",
+      "identity": "9e3472200983813c2d2d4b10b2d26b10c93f3f3e7a4f9b398a22874178f6b2bc",
+      "kind": "fallback",
+      "line": 162,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "try_cast_filter"
+    },
+    {
+      "file": "suites/semantic_cast/positive_control.slt",
+      "id": "semantic_cast/positive_control/001",
+      "identity": "7b6c33b13b9b15172170871164be3b07df5175181ec84bddf29feae489b6f514",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "positive_control"
+    },
+    {
+      "file": "suites/semantic_cast/positive_control.slt",
+      "id": "semantic_cast/positive_control/002",
+      "identity": "b319fbc1b81f5bef037bb8c2650885a473a5cf1cd541cc5915b7a040fb94cee6",
+      "kind": "query",
+      "line": 189,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "positive_control"
+    },
+    {
+      "file": "suites/semantic_cast/date_varchar.slt",
+      "id": "semantic_cast/date_varchar/001",
+      "identity": "4da9a2fef0b8f7898df24b872cde66fa923f5aa015deded3436d1a34fa8da531",
+      "kind": "fallback",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "date_varchar"
+    },
+    {
+      "file": "suites/semantic_cast/sum_rewriter.slt",
+      "id": "semantic_cast/sum_rewriter/001",
+      "identity": "884eebd5a2d9469c0f6d8a4699963da634b15e92319ba10f26017500e20c5bef",
+      "kind": "query",
+      "line": 251,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "sum_rewriter"
+    },
+    {
+      "file": "suites/semantic_cast/sum_rewriter.slt",
+      "id": "semantic_cast/sum_rewriter/002",
+      "identity": "1116b1aeac60892fd63992f38bd3610ca8ba542b129372bdf2a456cc73d255db",
+      "kind": "query",
+      "line": 252,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "sum_rewriter"
+    },
+    {
+      "file": "suites/semantic_cast/sum_rewriter.slt",
+      "id": "semantic_cast/sum_rewriter/003",
+      "identity": "ce4bdfffbe636b4e04f12f33d0b22bdb06b3ff0e3dcdb9092eccc48ebec00300",
+      "kind": "query",
+      "line": 253,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "sum_rewriter"
+    },
+    {
+      "file": "suites/semantic_cast/sum_rewriter.slt",
+      "id": "semantic_cast/sum_rewriter/004",
+      "identity": "f93929fadf2719913a923429a15e22a1cab88d4031278ecae69b95829d86374f",
+      "kind": "query",
+      "line": 254,
+      "source": "test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp",
+      "suite": "semantic_cast",
+      "test": "sum_rewriter"
+    },
+    {
       "file": "suites/array/scan-integer-3-passthrough.slt",
       "id": "array/scan-integer-3-passthrough/001",
       "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",
