@@ -1,0 +1,21 @@
+# Migrated from test/cpp/integration/test_gpu_execution_join_nulls.cpp:64
+# gpu_execution LEFT join NULL-pads unmatched (including NULL-key) rows
+include ../../fixtures/migrated/join_nulls/596278c1b896b669.slt
+
+# sirius: id = "join_nulls/left-join-null-pads-unmatched-including-null-key-rows/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "nulls"]
+query ?? rowsort
+SELECT
+  l.id AS lid,
+  r.id AS rid
+FROM
+  l
+  LEFT JOIN r ON l.k = r.k;
+----
+1	1
+2	2
+2	3
+3	NULL
+4	NULL
+5	1

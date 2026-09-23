@@ -881,6 +881,96 @@
       "test": "gpu_execution date functions propagate NULL"
     },
     {
+      "file": "suites/join_nulls/inner-join-does-not-match-null-keys-001.slt",
+      "id": "join_nulls/inner-join-does-not-match-null-keys/001",
+      "identity": "a1b780fcf2954dcdbe4ad5de8842404b732a99c191510ab51d4c314d3ce3795c",
+      "kind": "query",
+      "line": 55,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution INNER join does not match NULL keys"
+    },
+    {
+      "file": "suites/join_nulls/inner-join-does-not-match-null-keys-002.slt",
+      "id": "join_nulls/inner-join-does-not-match-null-keys/002",
+      "identity": "c176ef11804f24ac75f3a182ca0aa09ef9ad01f23339106e85a845392710683a",
+      "kind": "query",
+      "line": 57,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution INNER join does not match NULL keys"
+    },
+    {
+      "file": "suites/join_nulls/left-join-null-pads-unmatched-including-null-key-rows-001.slt",
+      "id": "join_nulls/left-join-null-pads-unmatched-including-null-key-rows/001",
+      "identity": "41c73f58da501eb448431af29c115d4ebfa0ff609cdb5a3405a6bd3c953169dc",
+      "kind": "query",
+      "line": 64,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution LEFT join NULL-pads unmatched (including NULL-key) rows"
+    },
+    {
+      "file": "suites/join_nulls/right-join-null-pads-unmatched-including-null-key-rows-001.slt",
+      "id": "join_nulls/right-join-null-pads-unmatched-including-null-key-rows/001",
+      "identity": "60f2cef2978e6087c7d38c8d5a6a3ec69470fa730847c3c7a7ddfb56e7775714",
+      "kind": "query",
+      "line": 71,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution RIGHT join NULL-pads unmatched (including NULL-key) rows"
+    },
+    {
+      "file": "suites/join_nulls/full-outer-join-null-pads-both-sides-001.slt",
+      "id": "join_nulls/full-outer-join-null-pads-both-sides/001",
+      "identity": "1c83864e5180fd27474b78e8993a54578e36363b5642a32e347e521e497a1b7f",
+      "kind": "query",
+      "line": 78,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution FULL OUTER join NULL-pads both sides"
+    },
+    {
+      "file": "suites/join_nulls/semi-anti-join-exists-not-exists-with-null-keys-001.slt",
+      "id": "join_nulls/semi-anti-join-exists-not-exists-with-null-keys/001",
+      "identity": "35e33c8656aa76b0c5293fd44f9efab0d12b3d48d98902d54cc556339edb87e9",
+      "kind": "query",
+      "line": 87,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution SEMI / ANTI join (EXISTS / NOT EXISTS) with NULL keys"
+    },
+    {
+      "file": "suites/join_nulls/semi-anti-join-exists-not-exists-with-null-keys-002.slt",
+      "id": "join_nulls/semi-anti-join-exists-not-exists-with-null-keys/002",
+      "identity": "ec3ca81f20e707bb1bd51f1340dcc68641f92ad42fbf4e0bf8d9aff7b9b66536",
+      "kind": "query",
+      "line": 88,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution SEMI / ANTI join (EXISTS / NOT EXISTS) with NULL keys"
+    },
+    {
+      "file": "suites/join_nulls/mark-join-in-emits-true-false-null-001.slt",
+      "id": "join_nulls/mark-join-in-emits-true-false-null/001",
+      "identity": "9f39e3f8d060b7e100b168c10f780ae098027e89a7690febab688d50d3454a2c",
+      "kind": "query",
+      "line": 100,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution MARK join (IN) emits TRUE/FALSE/NULL"
+    },
+    {
+      "file": "suites/join_nulls/mark-join-in-emits-true-false-null-002.slt",
+      "id": "join_nulls/mark-join-in-emits-true-false-null/002",
+      "identity": "b4b5e35f38891d9a55a13eb0318f747986aa308e61541fbd7ce79d2514ebf68d",
+      "kind": "query",
+      "line": 104,
+      "source": "test/cpp/integration/test_gpu_execution_join_nulls.cpp",
+      "suite": "join_nulls",
+      "test": "gpu_execution MARK join (IN) emits TRUE/FALSE/NULL"
+    },
+    {
       "file": "suites/array/scan-integer-3-passthrough.slt",
       "id": "array/scan-integer-3-passthrough/001",
       "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",
