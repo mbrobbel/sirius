@@ -1,0 +1,80 @@
+version = 1
+default_run = "local"
+suite_roots = ["suites"]
+
+[storage.native]
+relation = "table"
+
+[storage.parquet]
+relation = "view"
+
+[profiles.one-gpu]
+gpus = 1
+config = "profiles/one-gpu.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[profiles.two-gpu]
+gpus = 2
+config = "profiles/two-gpu.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[axes.gpu.one]
+profile = "one-gpu"
+
+[axes.gpu.two]
+profile = "two-gpu"
+
+[axes.storage.native]
+storage = "native"
+
+[axes.storage.parquet]
+storage = "parquet"
+
+[axes.optimizers.default]
+
+[axes.optimizers.fixed-joins]
+settings = { disabled_optimizers = "join_order,build_side_probe_side" }
+
+[runs.local]
+suites = "all"
+exclude_suites = []
+axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
+
+[runs.smoke]
+suites = ["regressions"]
+axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
+
+[runs.correctness]
+suites = "all"
+exclude_suites = []
+profile = "integration-one-gpu"
+
+[runs.matrix]
+suites = "all"
+exclude_suites = []
+axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
+
+[runs.optimizer-sweep]
+suites = "all"
+exclude_suites = []
+axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
+
+[runs.full-sweep]
+suites = "all"
+axes = { gpu = "all", storage = "all", optimizers = "all" }
+
+[profiles.integration-one-gpu]
+gpus = 1
+config = "profiles/integration-one-gpu.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1", SIRIUS_EXP_FUSED_SCAN_FILTER = "1", SIRIUS_EXP_FUSED_SCAN_MAX_SEL = "1", SIRIUS_EXP_FUSED_SCAN_TIERB_MAX_SEL = "1" }
+
+[axes.gpu.integration-one]
+profile = "integration-one-gpu"
+
+[profiles.integration-two-gpu]
+gpus = 2
+config = "profiles/integration-two-gpu.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1", SIRIUS_EXP_FUSED_SCAN_FILTER = "1", SIRIUS_EXP_FUSED_SCAN_MAX_SEL = "1", SIRIUS_EXP_FUSED_SCAN_TIERB_MAX_SEL = "1" }
+
+[axes.gpu.integration-two]
+profile = "integration-two-gpu"

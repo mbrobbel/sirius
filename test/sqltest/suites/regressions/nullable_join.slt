@@ -1,0 +1,17 @@
+include ../../fixtures/nullable.slt
+
+# sirius: id = "regressions/nullable_join"
+# sirius: tags = ["join", "left_join", "null", "duplicates", "strings"]
+# sirius: snapshot = true
+query IT rowsort
+SELECT
+  l.id,
+  r.value
+FROM
+  l
+  LEFT JOIN r ON l.id = r.id;
+----
+1	NULL
+2	"NULL"
+2	"NULL"
+3	""
