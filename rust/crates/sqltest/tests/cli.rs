@@ -1193,3 +1193,353 @@ fn declared_sources_preserve_checksums_for_files_and_downloads() {
         assert!(!output.join("manifest.json").exists());
     }
 }
+
+#[test]
+fn managed_services_are_declarative_and_cpu_runs_do_not_need_docker() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    let mut config = fs::read_to_string(&manifest).unwrap();
+    config.push_str(
+        r#"
+[services.local-s3]
+kind = "minio"
+image_tag = "RELEASE.2025-09-07T16-13-09Z-cpuv1"
+bucket = "sirius-test"
+objects = {}
+"#,
+    );
+    fs::write(&manifest, config).unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "storage = [\"cached\"]\nobject_store = \"local-s3\"\n",
+    )
+    .unwrap();
+    fs::write(root.join("suites/regressions/service.slt"), "onlyif sirius\nstatement ok\nCREATE VIEW t AS SELECT * FROM read_parquet('s3://__S3_BUCKET__/fixture.parquet');\n\nonlyif duckdb\nstatement ok\nCREATE VIEW t AS SELECT 42 AS n;\n\n# sirius: id = \"service/query\"\nquery I\nSELECT * FROM t;\n----\n").unwrap();
+    let output = root.join("result");
+    let status = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .env("DOCKER_HOST", "unix:///nonexistent-sqltest-docker.sock")
+        .args(["run", "--cpu-only", "--root"])
+        .arg(root)
+        .arg("--output")
+        .arg(&output)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let report: Value =
+        serde_json::from_slice(&fs::read(output.join("report.json")).unwrap()).unwrap();
+    let artifacts = output.join(report["cases"][0]["artifacts"].as_str().unwrap());
+    let service: Value =
+        serde_json::from_slice(&fs::read(artifacts.join("service.json")).unwrap()).unwrap();
+    assert_eq!(service["recipe"]["kind"], "minio");
+    assert!(service["runtime"].is_null());
+    assert!(
+        fs::read_to_string(artifacts.join("suite.toml"))
+            .unwrap()
+            .contains("object_store = \"local-s3\"")
+    );
+    let original = report["cases"][0]["fingerprint"].clone();
+    let changed = fs::read_to_string(&manifest).unwrap().replace(
+        "bucket = \"sirius-test\"",
+        "bucket = \"sirius-alternative\"",
+    );
+    fs::write(&manifest, changed).unwrap();
+    let (passed, changed_report) = run(root, "changed-service", &[]);
+    assert!(passed);
+    assert_ne!(original, changed_report["cases"][0]["fingerprint"]);
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "object_store = \"missing\"\n",
+    )
+    .unwrap();
+    let invalid = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["run", "--dry-run", "--root"])
+        .arg(root)
+        .output()
+        .unwrap();
+    assert!(!invalid.status.success());
+    assert!(
+        String::from_utf8_lossy(&invalid.stderr).contains("unknown object store service missing")
+    );
+}
+
+#[test]
+fn suite_substitutions_complete_run_and_replay_as_literals() {
+    let dir = corpus();
+    let root = dir.path();
+    let suite = root.join("suites/regressions/suite.toml");
+    let manifest = r#"storage = ["cached"]
+[substitutions.ROOT]
+duckdb = "__TEST_DIR__/it's data"
+sirius = "unavailable-for-cpu"
+"#;
+    fs::write(&suite, manifest).unwrap();
+    let file = root.join("suites/regressions/literals.slt");
+    fs::write(&file, "statement ok\nCOPY (SELECT 42 AS n) TO '__ROOT__.parquet' (FORMAT PARQUET);\n\n# sirius: id = \"substitutions/literal\"\nquery I\nSELECT n FROM read_parquet('__ROOT__.parquet');\n----\n").unwrap();
+    let complete = |path: &Path| {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .arg("complete")
+            .arg(path)
+            .arg("--root")
+            .arg(root)
+            .output()
+            .unwrap()
+    };
+    let completed = complete(&file);
+    assert!(
+        completed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&completed.stderr)
+    );
+    let text = fs::read_to_string(&file).unwrap();
+    assert!(text.contains("42\n"));
+    assert!(text.contains("__ROOT__"));
+    let (passed, report) = run(root, "substitutions", &[]);
+    assert!(passed, "{report}");
+    let case = &report["cases"][0];
+    let artifacts = root
+        .join("substitutions")
+        .join(case["artifacts"].as_str().unwrap());
+    let saved: toml::Value =
+        toml::from_str(&fs::read_to_string(artifacts.join("suite.toml")).unwrap()).unwrap();
+    assert_eq!(
+        saved["substitutions"]["ROOT"]["duckdb"].as_str(),
+        Some("__TEST_DIR__/it's data")
+    );
+    for name in ["repro.sql", "reference-repro.sql"] {
+        let sql = fs::read_to_string(artifacts.join(name)).unwrap();
+        assert!(sql.contains("/it''s data.parquet'"));
+        assert!(!sql.contains("__ROOT__"));
+        assert!(!sql.contains("unavailable-for-cpu"));
+    }
+    assert!(complete(&artifacts.join("repro.slt")).status.success());
+    let binding = format!("replay={}", artifacts.display());
+    let (passed, replay) = run(
+        root,
+        "replayed",
+        &["--suite-dir", &binding, "--suite", "replay"],
+    );
+    assert!(passed, "{replay}");
+    fs::write(
+        &suite,
+        manifest.replace("unavailable-for-cpu", "different-sirius-root"),
+    )
+    .unwrap();
+    let (passed, changed) = run(root, "changed-substitutions", &[]);
+    assert!(passed);
+    assert_ne!(case["fingerprint"], changed["cases"][0]["fingerprint"]);
+}
+
+#[test]
+fn invalid_substitutions_fail_before_execution() {
+    let dir = corpus();
+    let root = dir.path();
+    let suite = root.join("suites/regressions/suite.toml");
+    let file = root.join("suites/regressions/literals.slt");
+    fs::write(
+        &file,
+        "# sirius: id = \"unknown-token\"\nquery T\nSELECT '__UNKNOWN__';\n----\n",
+    )
+    .unwrap();
+    for (manifest, expected) in [
+        ("", "unknown SQL substitution __UNKNOWN__"),
+        (
+            "[substitutions.TEST_DIR]\nduckdb='a'\nsirius='b'",
+            "reserved substitution name",
+        ),
+        (
+            "[substitutions.ROOT]\nduckdb='__ROOT__'\nsirius='b'",
+            "may only reference",
+        ),
+        (
+            "[substitutions.ROOT]\nduckdb='a'\nsirius='__S3_BUCKET__'",
+            "requires a suite object_store",
+        ),
+        ("[substitutions.ROOT]\nduckdb='a'", "missing field `sirius`"),
+    ] {
+        fs::write(&suite, manifest).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(root)
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[test]
+fn fixture_compression_preserves_requested_parquet_encoding() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[fixtures.standard]\nsql = ['fixture.sql']\ntables = ['numbers']\n[fixtures.snappy]\nsql = ['fixture.sql']\ntables = ['numbers']\ncompression = 'snappy'\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    fs::write(
+        root.join("fixture.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(20);",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "fixtures = ['standard', 'snappy']\n",
+    )
+    .unwrap();
+    let data = root.join("data");
+    let prepared = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["prepare", "--root"])
+        .arg(root)
+        .arg("--output")
+        .arg(&data)
+        .output()
+        .unwrap();
+    assert!(
+        prepared.status.success(),
+        "{}",
+        String::from_utf8_lossy(&prepared.stderr)
+    );
+    let connection = duckdb::Connection::open_in_memory().unwrap();
+    for (fixture, expected) in [("standard", "ZSTD"), ("snappy", "SNAPPY")] {
+        let path = data.join(fixture).join("numbers.parquet");
+        let compression: String = connection
+            .query_row(
+                "SELECT DISTINCT compression FROM parquet_metadata(?)",
+                [path.to_str().unwrap()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(compression, expected);
+    }
+    fs::write(root.join("suites/regressions/encoding.slt"), "# sirius: id = \"encoding\"\nquery I\nSELECT count(*) FROM read_parquet('__FIXTURE_ROOT__/snappy/numbers.parquet');\n----\n").unwrap();
+    let (passed, _) = run(root, "encoded", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed);
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest)
+            .unwrap()
+            .replace("compression = 'snappy'", "compression = 'zstd'"),
+    )
+    .unwrap();
+    let (passed, report) = run(
+        root,
+        "changed-encoding",
+        &["--fixtures", data.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert!(
+        report["cases"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("recipe changed")
+    );
+}
+
+#[test]
+fn counted_service_objects_are_available_to_cpu_completion_and_replay() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    fs::write(
+        &manifest,
+        format!(
+            r#"{}
+[fixtures.numbers]
+sql = ["fixture.sql"]
+tables = ["numbers"]
+[services.copies]
+kind = "minio"
+image_tag = "RELEASE.2025-09-07T16-13-09Z-cpuv1"
+bucket = "sirius-test"
+[[services.copies.copies]]
+source = {{ fixture = "numbers", path = "numbers.parquet" }}
+key_prefix = "pages/part_"
+key_suffix = ".parquet"
+count = 3
+"#,
+            fs::read_to_string(&manifest).unwrap()
+        ),
+    )
+    .unwrap();
+    fs::write(
+        root.join("fixture.sql"),
+        "CREATE TABLE numbers AS SELECT 7 AS n;",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        r#"object_store = "copies"
+[substitutions.ROOT]
+duckdb = "__TEST_DIR__/.sqltest-objects"
+sirius = "s3://__S3_BUCKET__"
+"#,
+    )
+    .unwrap();
+    let file = root.join("suites/regressions/copies.slt");
+    fs::write(&file, "# sirius: id = \"copies/aggregate\"\nquery II\nSELECT count(*), sum(n) FROM read_parquet('__ROOT__/pages/part_*.parquet');\n----\n").unwrap();
+    let data = root.join("data");
+    assert!(
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["prepare", "--root"])
+            .arg(root)
+            .arg("--output")
+            .arg(&data)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let complete = |file: &Path| {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .arg("complete")
+            .arg(file)
+            .arg("--root")
+            .arg(root)
+            .arg("--fixtures")
+            .arg(&data)
+            .status()
+            .unwrap()
+            .success()
+    };
+    assert!(complete(&file));
+    assert!(fs::read_to_string(&file).unwrap().contains("3\t21"));
+    let (passed, report) = run(root, "copies", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed, "{report}");
+    let artifacts = root
+        .join("copies")
+        .join(report["cases"][0]["artifacts"].as_str().unwrap());
+    assert!(complete(&artifacts.join("repro.slt")));
+    let binding = format!("replay={}", artifacts.display());
+    let (passed, report) = run(
+        root,
+        "copies-replay",
+        &[
+            "--suite-dir",
+            &binding,
+            "--suite",
+            "replay",
+            "--fixtures",
+            data.to_str().unwrap(),
+        ],
+    );
+    assert!(passed, "{report}");
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest)
+            .unwrap()
+            .replace("count = 3", "count = 2"),
+    )
+    .unwrap();
+    let (passed, changed) = run(
+        root,
+        "fewer-copies",
+        &["--fixtures", data.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert_eq!(changed["cases"][0]["outcome"], "reference_failure");
+    assert_ne!(
+        report["cases"][0]["fingerprint"],
+        changed["cases"][0]["fingerprint"]
+    );
+}
