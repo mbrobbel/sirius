@@ -1,0 +1,124 @@
+statement ok
+CREATE TABLE call_center AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/call_center.parquet');
+
+statement ok
+CREATE TABLE catalog_page AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/catalog_page.parquet');
+
+statement ok
+CREATE TABLE catalog_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/catalog_returns.parquet');
+
+statement ok
+CREATE TABLE catalog_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/catalog_sales.parquet');
+
+statement ok
+CREATE TABLE customer AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/customer.parquet');
+
+statement ok
+CREATE TABLE customer_address AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/customer_address.parquet');
+
+statement ok
+CREATE TABLE customer_demographics AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/customer_demographics.parquet');
+
+statement ok
+CREATE TABLE date_dim AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/date_dim.parquet');
+
+statement ok
+CREATE TABLE household_demographics AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/household_demographics.parquet');
+
+statement ok
+CREATE TABLE income_band AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/income_band.parquet');
+
+statement ok
+CREATE TABLE inventory AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/inventory.parquet');
+
+statement ok
+CREATE TABLE item AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/item.parquet');
+
+statement ok
+CREATE TABLE promotion AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/promotion.parquet');
+
+statement ok
+CREATE TABLE reason AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/reason.parquet');
+
+statement ok
+CREATE TABLE ship_mode AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/ship_mode.parquet');
+
+statement ok
+CREATE TABLE store AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/store.parquet');
+
+statement ok
+CREATE TABLE store_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/store_returns.parquet');
+
+statement ok
+CREATE TABLE store_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/store_sales.parquet');
+
+statement ok
+CREATE TABLE time_dim AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/time_dim.parquet');
+
+statement ok
+CREATE TABLE warehouse AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/warehouse.parquet');
+
+statement ok
+CREATE TABLE web_page AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/web_page.parquet');
+
+statement ok
+CREATE TABLE web_returns AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/web_returns.parquet');
+
+statement ok
+CREATE TABLE web_sales AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/web_sales.parquet');
+
+statement ok
+CREATE TABLE web_site AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tpcds-original/web_site.parquet');
+
+# Fail fixture setup if NULL or unmatched-row coverage disappears.
+statement ok
+CREATE TEMPORARY TABLE fixture_checks (
+  present BOOLEAN NOT NULL CHECK (present)
+);
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales WHERE ss_addr_sk IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales WHERE ss_store_sk IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales WHERE ss_customer_sk IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales WHERE ss_net_profit IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales WHERE ss_sales_price IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM customer WHERE c_last_name IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM customer WHERE c_email_address IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM web_sales WHERE ws_ship_date_sk IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_returns WHERE sr_customer_sk IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_returns WHERE sr_return_amt IS NULL) > 0;
+
+statement count 1
+INSERT INTO fixture_checks SELECT
+  (SELECT count(*) FROM store_sales ss LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk WHERE c.c_customer_sk IS NULL) > 0;
+
+statement ok
+DROP TABLE fixture_checks;

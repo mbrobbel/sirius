@@ -1,0 +1,15 @@
+# gpu_execution tpcds null-safe join (IS NOT DISTINCT FROM)
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:317
+# sirius: id = "tpcds_nulls/null-safe-join-is-not-distinct-from/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales ss
+  JOIN store_returns sr ON ss.ss_addr_sk IS NOT DISTINCT FROM sr.sr_addr_sk;
+----
+280213

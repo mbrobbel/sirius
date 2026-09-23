@@ -1,0 +1,74 @@
+# gpu_execution tpcds nullable columns across web_sales / catalog_sales
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:177
+# sirius: id = "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  count(*),
+  count(ws_ship_date_sk),
+  count(ws_ship_addr_sk)
+FROM
+  web_sales;
+----
+7212	7208	7209
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:179
+# sirius: id = "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  web_sales
+WHERE
+  ws_ship_date_sk IS NULL;
+----
+4
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:180
+# sirius: id = "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  sum(ws_quantity),
+  min(ws_sales_price),
+  max(ws_sales_price)
+FROM
+  web_sales;
+----
+364407	0.00	285.59
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:182
+# sirius: id = "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(cs_ship_date_sk)
+FROM
+  catalog_sales;
+----
+14313	14235
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:183
+# sirius: id = "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  cs_warehouse_sk,
+  count(*),
+  sum(cs_quantity)
+FROM
+  catalog_sales
+GROUP BY
+  cs_warehouse_sk;
+----
+1	14233	720266
+NULL	80	2532

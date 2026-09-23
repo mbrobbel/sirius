@@ -1,0 +1,66 @@
+# gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:277
+# sirius: id = "tpcds_nulls/order-by-nulls-first-last-and-top-n/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? nosort
+SELECT
+  ss_store_sk,
+  count(*)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk ORDER BY ss_store_sk NULLS FIRST;
+----
+NULL	1242
+1	27568
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:280
+# sirius: id = "tpcds_nulls/order-by-nulls-first-last-and-top-n/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? nosort
+SELECT
+  ss_store_sk,
+  count(*)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk ORDER BY ss_store_sk NULLS LAST;
+----
+1	27568
+NULL	1242
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:283
+# sirius: id = "tpcds_nulls/order-by-nulls-first-last-and-top-n/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? nosort
+SELECT
+  ss_store_sk,
+  count(*)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk ORDER BY ss_store_sk DESC NULLS FIRST;
+----
+NULL	1242
+1	27568
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:287
+# sirius: id = "tpcds_nulls/order-by-nulls-first-last-and-top-n/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? nosort
+SELECT
+  ss_store_sk,
+  count(*)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk ORDER BY ss_store_sk NULLS LAST LIMIT 5;
+----
+1	27568
+NULL	1242

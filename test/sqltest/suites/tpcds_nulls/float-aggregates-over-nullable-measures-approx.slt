@@ -1,0 +1,102 @@
+# gpu_execution tpcds float aggregates over nullable measures (approx)
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:157
+# sirius: id = "tpcds_nulls/float-aggregates-over-nullable-measures-approx/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+# sirius:
+# sirius: [tolerances.1]
+# sirius: absolute = 0.000001
+# sirius: relative = 0.000001
+query ?? nosort
+SELECT
+  sum(ss_sales_price),
+  avg(ss_sales_price)
+FROM
+  store_sales;
+----
+1037544.58	37.67272720670999
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:159
+# sirius: id = "tpcds_nulls/float-aggregates-over-nullable-measures-approx/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+# sirius:
+# sirius: [tolerances.1]
+# sirius: absolute = 0.000001
+# sirius: relative = 0.000001
+query ?? nosort
+SELECT
+  sum(ws_sales_price),
+  avg(ws_sales_price)
+FROM
+  web_sales;
+----
+360983.03	50.06699445214979
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:162
+# sirius: id = "tpcds_nulls/float-aggregates-over-nullable-measures-approx/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+# sirius:
+# sirius: [tolerances.1]
+# sirius: absolute = 0.000001
+# sirius: relative = 0.000001
+query ?? rowsort
+SELECT
+  ss_store_sk,
+  avg(ss_sales_price)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk;
+----
+1	37.64696665924111
+NULL	38.81578253706755
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:164
+# sirius: id = "tpcds_nulls/float-aggregates-over-nullable-measures-approx/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+# sirius:
+# sirius: [tolerances.1]
+# sirius: absolute = 0.000001
+# sirius: relative = 0.000001
+query ?? rowsort
+SELECT
+  i.i_category,
+  avg(ss.ss_sales_price)
+FROM
+  store_sales ss
+  JOIN item i ON ss.ss_item_sk = i.i_item_sk
+GROUP BY
+  i.i_category;
+----
+"Books"	36.7702808676307
+"Children"	37.843152746425886
+"Electronics"	37.733672099712365
+"Home"	37.39291243347847
+"Jewelry"	38.84735094339623
+"Men"	37.414418045915646
+"Music"	38.01469907407407
+"Shoes"	37.99585244267198
+"Sports"	37.840784210526316
+"Women"	37.41650922740069
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:169
+# sirius: id = "tpcds_nulls/float-aggregates-over-nullable-measures-approx/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+# sirius:
+# sirius: [tolerances.1]
+# sirius: absolute = 0.000001
+# sirius: relative = 0.000001
+query ?? nosort
+SELECT
+  sum(sr_return_amt),
+  avg(sr_return_amt)
+FROM
+  store_returns;
+----
+2554018.40	943.8353288987436

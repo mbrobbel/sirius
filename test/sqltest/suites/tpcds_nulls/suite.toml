@@ -1,0 +1,2 @@
+storage = ["native"]
+fixtures = ["tpcds-original"]

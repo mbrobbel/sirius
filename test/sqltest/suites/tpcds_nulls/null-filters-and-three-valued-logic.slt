@@ -1,0 +1,114 @@
+# gpu_execution tpcds NULL filters and three-valued logic
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:112
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_addr_sk IS NULL;
+----
+1259
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:113
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_addr_sk IS NOT NULL;
+----
+27551
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:114
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_cdemo_sk IS NULL OR ss_hdemo_sk IS NULL;
+----
+1893
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:117
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_addr_sk = 5 OR ss_promo_sk = 1;
+----
+9253
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:118
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_quantity IS NULL AND ss_sales_price IS NULL;
+----
+661
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:120
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/006"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_addr_sk IS NOT DISTINCT FROM ss_cdemo_sk;
+----
+643
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:122
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/007"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_quantity BETWEEN 1 AND 20;
+----
+5454
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:123
+# sirius: id = "tpcds_nulls/null-filters-and-three-valued-logic/008"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_store_sk IN (1, 2, 4);
+----
+27568
