@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for NULL handling in aggregates (issue #1095):
+// GPU execution coverage for NULL handling in aggregates (issue #1095):
 // COUNT(*) vs COUNT(col), NULL-skipping SUM/AVG/MIN/MAX, all-NULL inputs and
 // groups, GROUP BY on a NULL key, and COUNT(DISTINCT) with NULLs.
 //
-// Every query goes through the shared file-backed GpuExecutionFixture, which
-// runs it once on the GPU (asserting a real GPU execution with no fallback) and
-// once on DuckDB CPU, then compares the results. The comparator is order-
-// insensitive, which suits GROUP BY output.
+// Every query verifies GPU execution without fallback. Result comparisons live
+// in test/sqltest/suites/aggregate_nulls/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -71,16 +69,16 @@ TEST_CASE_METHOD(AggNullFixture,
                  "[integration][gpu_execution][aggregate][nulls]")
 {
   // COUNT(*) counts rows; COUNT(col) skips NULLs.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(v), COUNT(d), COUNT(f) FROM agg_n");
+  require_gpu_execution("SELECT COUNT(*), COUNT(v), COUNT(d), COUNT(f) FROM agg_n");
 }
 
 TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution ungrouped SUM/MIN/MAX skip NULLs",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT SUM(v), MIN(v), MAX(v) FROM agg_n");
-  compare_gpu_vs_cpu("SELECT SUM(d), MIN(d), MAX(d) FROM agg_n");
-  compare_gpu_vs_cpu("SELECT SUM(f), MIN(f), MAX(f) FROM agg_n");
+  require_gpu_execution("SELECT SUM(v), MIN(v), MAX(v) FROM agg_n");
+  require_gpu_execution("SELECT SUM(d), MIN(d), MAX(d) FROM agg_n");
+  require_gpu_execution("SELECT SUM(f), MIN(f), MAX(f) FROM agg_n");
 }
 
 TEST_CASE_METHOD(AggNullFixture,
@@ -89,7 +87,7 @@ TEST_CASE_METHOD(AggNullFixture,
 {
   // The NULL group key forms its own group; the all-NULL group (g=3) yields
   // COUNT(v)=0 and SUM/AVG/MIN/MAX = NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT g, COUNT(*), COUNT(v), SUM(v), AVG(v), MIN(v), MAX(v) FROM agg_n GROUP BY g");
 }
 
@@ -97,7 +95,7 @@ TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution grouped SUM/AVG over NULL values",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT g, SUM(d), AVG(d) FROM agg_n GROUP BY g");
+  require_gpu_execution("SELECT g, SUM(d), AVG(d) FROM agg_n GROUP BY g");
 }
 
 TEST_CASE_METHOD(AggNullFixture,
@@ -106,13 +104,13 @@ TEST_CASE_METHOD(AggNullFixture,
 {
   // Grouped COUNT(DISTINCT) runs on the GPU and skips NULLs correctly (the
   // ungrouped form falls back to CPU -- see the next case).
-  compare_gpu_vs_cpu("SELECT g, COUNT(DISTINCT v) FROM agg_n GROUP BY g");
+  require_gpu_execution("SELECT g, COUNT(DISTINCT v) FROM agg_n GROUP BY g");
 }
 
 // Not a result divergence: ungrouped COUNT(DISTINCT) is unsupported on the GPU
 // and forces a runtime fallback to DuckDB CPU (the result is still correct).
-// Asserted with expect_gpu_fallback rather than abusing [!shouldfail] on the
-// no-fallback comparator. Tracked in issue #1218.
+// The execution test asserts runtime fallback; the SQL suite checks results.
+// Tracked in issue #1218.
 TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution ungrouped COUNT(DISTINCT) falls back to CPU",
                  "[integration][gpu_execution][aggregate][nulls]")
@@ -126,7 +124,7 @@ TEST_CASE_METHOD(AggNullFixture,
 {
   // AVG divides SUM by the count of non-null values, not the row count, so AVG
   // over a NULL-containing column matches DuckDB: AVG(v) = 335/5 = 67.
-  compare_gpu_vs_cpu("SELECT AVG(v), AVG(d), AVG(f) FROM agg_n");
+  require_gpu_execution("SELECT AVG(v), AVG(d), AVG(f) FROM agg_n");
 }
 
 // A wholly-NULL column checkpoints to CONSTANT all-null validity; the native
@@ -138,7 +136,7 @@ TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution ungrouped aggregates over a wholly-NULL column",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT SUM(allnull), AVG(allnull), MIN(allnull), MAX(allnull), COUNT(allnull) FROM agg_n");
 }
 
@@ -146,5 +144,5 @@ TEST_CASE_METHOD(AggNullFixture,
                  "gpu_execution grouped aggregates over a wholly-NULL column",
                  "[integration][gpu_execution][aggregate][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT g, SUM(allnull), COUNT(allnull) FROM agg_n GROUP BY g");
+  require_gpu_execution("SELECT g, SUM(allnull), COUNT(allnull) FROM agg_n GROUP BY g");
 }
