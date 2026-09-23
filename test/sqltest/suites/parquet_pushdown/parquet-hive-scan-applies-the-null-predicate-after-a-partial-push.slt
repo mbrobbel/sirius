@@ -1,0 +1,27 @@
+# parquet hive scan applies the null predicate after a partial push
+include ../../fixtures/migrated/parquet_pushdown/ParquetHiveNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:212
+# sirius: id = "parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NULL AND id > 3000;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:213
+# sirius: id = "parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  v
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NULL AND id > 5940 ORDER BY id;
+----

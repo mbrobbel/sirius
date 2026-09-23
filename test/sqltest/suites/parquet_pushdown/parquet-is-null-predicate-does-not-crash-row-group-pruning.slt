@@ -1,0 +1,38 @@
+# parquet IS NULL predicate does not crash row-group pruning
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:129
+# sirius: id = "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:130
+# sirius: id = "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NOT NULL;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:131
+# sirius: id = "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/003"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  s IS NULL;
+----

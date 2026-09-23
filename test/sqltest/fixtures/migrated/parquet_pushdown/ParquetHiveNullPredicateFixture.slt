@@ -1,0 +1,52 @@
+# Original fixture: ParquetHiveNullPredicateFixture
+
+statement ok
+CREATE TABLE hp (
+  id INTEGER,
+  v INTEGER,
+  part INTEGER
+);
+
+statement ok
+INSERT INTO hp SELECT
+  i,
+  CASE
+    WHEN i % 3 = 0 THEN
+      NULL
+    ELSE
+      i
+  END,
+  i % 4
+FROM
+  range(1, 6001) AS t (i);
+
+statement ok
+COPY hp TO '__TEST_DIR__/hive' (FORMAT PARQUET, PARTITION_BY (part));
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 6000 AND count(v) = 4000
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  list(n ORDER BY part) = [1500, 1500, 1500, 1500]
+FROM
+  (
+    SELECT
+      part,
+      count(*) AS n
+    FROM
+      read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+    GROUP BY
+      part
+  );
+
+statement ok
+DROP TABLE fixture_check;

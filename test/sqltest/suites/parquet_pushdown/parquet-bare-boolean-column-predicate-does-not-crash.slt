@@ -1,0 +1,39 @@
+# parquet bare boolean column predicate does not crash
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:253
+# sirius: id = "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  flag;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:254
+# sirius: id = "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  flag_dense;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:255
+# sirius: id = "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/003"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  flag
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  flag AND id > 5900 ORDER BY id;
+----

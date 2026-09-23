@@ -1,0 +1,50 @@
+# parquet predicate shapes that remain pushable
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:266
+# sirius: id = "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  flag AND v > 5000;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:267
+# sirius: id = "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  NOT flag;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:268
+# sirius: id = "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/003"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IN (1, 2, 3);
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:269
+# sirius: id = "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/004"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v BETWEEN 10 AND 20;
+----

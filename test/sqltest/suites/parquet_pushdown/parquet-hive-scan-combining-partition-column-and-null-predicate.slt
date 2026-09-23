@@ -1,0 +1,31 @@
+# parquet hive scan combining partition column and null predicate
+include ../../fixtures/migrated/parquet_pushdown/ParquetHiveNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:233
+# sirius: id = "parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? rowsort
+SELECT
+  part,
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NULL
+GROUP BY
+  part;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:234
+# sirius: id = "parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ??? nosort
+SELECT
+  id,
+  v,
+  part
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NULL AND part = 2 AND id > 5900 ORDER BY id;
+----

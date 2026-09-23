@@ -1,0 +1,65 @@
+# parquet partially-pushed conjunction still applies the null predicate
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:146
+# sirius: id = "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL AND id > 3000;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:147
+# sirius: id = "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  id < 100 AND v IS NULL;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:148
+# sirius: id = "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/003"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  v
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL AND id > 5940 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:150
+# sirius: id = "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/004"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ??? nosort
+SELECT
+  id,
+  v,
+  s
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  s IS NULL AND id BETWEEN 40 AND 80 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:153
+# sirius: id = "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/005"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? nosort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL AND s IS NULL AND id < 100 ORDER BY id;
+----
