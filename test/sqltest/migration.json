@@ -6651,6 +6651,66 @@
       "test": "S3 mix: filter-above-join"
     },
     {
+      "file": "suites/operator_mgpu_order/large.slt",
+      "id": "operator_mgpu_order/large/001",
+      "identity": "103dc18e4037d11f5960df45b2c60417c048a4631c640234ffb000e16b885d36",
+      "kind": "query",
+      "line": 106,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - large sort distributes across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_order/large.slt",
+      "id": "operator_mgpu_order/large/002",
+      "identity": "9a80bd21120bbdad9995c2621b983d2a532d9bb933e632da7c3416f462683da3",
+      "kind": "query",
+      "line": 106,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - large sort distributes across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_order/small.slt",
+      "id": "operator_mgpu_order/small/001",
+      "identity": "35e50571213f05d667b8a16a22881f1976c17d09492acea4bc6fdcf7f8a52673",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - small sort stays single-GPU"
+    },
+    {
+      "file": "suites/operator_mgpu_order/small.slt",
+      "id": "operator_mgpu_order/small/002",
+      "identity": "115e0e250cfa1dfde608a1832abd0aee2d571437b8a5174eb6eaf6f9bac30e34",
+      "kind": "query",
+      "line": 197,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - small sort stays single-GPU"
+    },
+    {
+      "file": "suites/operator_mgpu_order/topn.slt",
+      "id": "operator_mgpu_order/topn/001",
+      "identity": "fd03a2d2eac93c45ebbd8fd4d78500cd44e8d1512638b1cf9e53e7344b2172d4",
+      "kind": "query",
+      "line": 233,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - order by with limit over large input"
+    },
+    {
+      "file": "suites/operator_mgpu_order/topn.slt",
+      "id": "operator_mgpu_order/topn/002",
+      "identity": "b1d3ae6fcf415cef0c9b9026f44a9b43cf63a55ff36255109049de442d1dc054",
+      "kind": "query",
+      "line": 233,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_order",
+      "test": "physical_order - order by with limit over large input"
+    },
+    {
       "file": "suites/operator_mgpu_aggregate/high-cardinality.slt",
       "id": "operator_mgpu_aggregate/high-cardinality/001",
       "identity": "b0c1b1e73fc7447631bbfadd2ba30f76772a48f5b64f00397d0209ca0edc45f5",

@@ -1,0 +1,4 @@
+storage = ["parquet"]
+profile = "operator-mgpu-order"
+checkpoint = "explicit"
+scratch_directories = ["input"]
