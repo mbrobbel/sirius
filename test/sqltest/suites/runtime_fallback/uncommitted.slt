@@ -1,0 +1,49 @@
+statement ok
+CREATE TABLE rf_mvcc AS SELECT i AS id FROM range(100) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SET sirius_test_inject_transparent_gpu_error = 'injected boom';
+
+statement ok
+BEGIN TRANSACTION;
+
+statement ok
+INSERT INTO rf_mvcc VALUES
+  (100);
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:334
+# sirius: id = "runtime_fallback/uncommitted/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  rf_mvcc;
+----
+101
+
+statement ok
+ROLLBACK;
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:338
+# sirius: id = "runtime_fallback/uncommitted/002"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  rf_mvcc;
+----
+100
+
+onlyif sirius
+statement ok
+SET sirius_test_inject_transparent_gpu_error = '';

@@ -1,0 +1,40 @@
+statement ok
+CREATE TABLE rf_basic AS SELECT i AS id, i * 2 AS val FROM range(1000) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SET sirius_test_inject_transparent_gpu_error = 'injected boom';
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:297
+# sirius: id = "runtime_fallback/basic/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ?? rowsort
+SELECT
+  count(*) AS n,
+  sum(val) AS s
+FROM
+  rf_basic
+WHERE
+  val > 100;
+----
+
+onlyif sirius
+statement ok
+SET sirius_test_inject_transparent_gpu_error = '';
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:307
+# sirius: id = "runtime_fallback/basic/002"
+# sirius: tags = ["integration", "fallback"]
+query ?? rowsort
+SELECT
+  count(*) AS n,
+  sum(val) AS s
+FROM
+  rf_basic
+WHERE
+  val > 100;
+----
