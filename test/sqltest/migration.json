@@ -8891,6 +8891,106 @@
       "test": "gpu_execution - pinned zone maps prune clustered parquet chunks end to end"
     },
     {
+      "file": "suites/pin_zone_map_native/host.slt",
+      "id": "pin_zone_map_native/host/001",
+      "identity": "09e1092cd263ea99e8c42d7a5ca23f49ea57b806df1c686edf323244fe19c236",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/host.slt",
+      "id": "pin_zone_map_native/host/002",
+      "identity": "036ad595bccd05acada8a209917539c5c8438ac5aac658a21525b9691d85c837",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/host.slt",
+      "id": "pin_zone_map_native/host/003",
+      "identity": "f6ce8c8b0a1262f70336337380b9871025f2dd4ac36f54356b726e0fe8e04940",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/host.slt",
+      "id": "pin_zone_map_native/host/004",
+      "identity": "9257ceae5a758db1674fd7deeaf4f510912420198afb9881166187012e3cb2a9",
+      "kind": "query",
+      "line": 203,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/host.slt",
+      "id": "pin_zone_map_native/host/005",
+      "identity": "b43958db2fd5eab3ed4ce4bbe42b8bc3c502595bf390da1b4d6228000041e9a2",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/gpu.slt",
+      "id": "pin_zone_map_native/gpu/001",
+      "identity": "984e5a92ae9cd5576bdb5b8d5df9ab18a947e3d0f1a03b3f01adfa3a30d07c0e",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/gpu.slt",
+      "id": "pin_zone_map_native/gpu/002",
+      "identity": "3120dd0d440770ef7884ea7133dc462373efd0cda0b702ea825395498e8aa293",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/gpu.slt",
+      "id": "pin_zone_map_native/gpu/003",
+      "identity": "ef33fcdcfa6515fc46eaf0381d8a96f1b09b3148b962ea8ed5f29702a0439c46",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/gpu.slt",
+      "id": "pin_zone_map_native/gpu/004",
+      "identity": "a7e525ead90500ec0790aaaca45b8b23c39f0847eb0c7f43129b217c761c3f06",
+      "kind": "query",
+      "line": 203,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
+      "file": "suites/pin_zone_map_native/gpu.slt",
+      "id": "pin_zone_map_native/gpu/005",
+      "identity": "05b1c1dded74acb2f557df928ed9af19cefffaf4c9ccac95a7ea4ba8138e3b2c",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_zone_map_pruning.cpp",
+      "suite": "pin_zone_map_native",
+      "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",

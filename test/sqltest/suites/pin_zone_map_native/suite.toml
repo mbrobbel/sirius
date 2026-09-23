@@ -1,0 +1,3 @@
+storage = ["native"]
+profile = "pin-zone-map"
+checkpoint = "explicit"
