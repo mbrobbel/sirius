@@ -15299,6 +15299,226 @@
       "test": "sirius_create_ann_index - error handling and default n_lists"
     },
     {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q01",
+      "identity": "9115d211868fdf547de7ac63190a31fa05c974e7cb58338f9e70c4f0bf823f79",
+      "kind": "query",
+      "line": 154,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q1"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q02",
+      "identity": "f1dd7236e482358168933b807f92f9449dc8327fa8aedf1971e1d0d9bd352bda",
+      "kind": "query",
+      "line": 180,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q2"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q03",
+      "identity": "d99a4121116d7e95c2fcc21b66df5d3e06c23fc46c63b1e36bfcc6fed88bf7b7",
+      "kind": "query",
+      "line": 228,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q3"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q04",
+      "identity": "e544fc28ec218428ee63efd00046e4615639852fad5b59b639f0a25a199bb6c3",
+      "kind": "query",
+      "line": 255,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q4"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q05",
+      "identity": "263d0ec81a3abc59045fde9a01bb70f3d576bc8f62484d8c243732c4f57d59b9",
+      "kind": "query",
+      "line": 282,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q5"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q06",
+      "identity": "5d07239efa2cee7d58d100d2b0c0af80c21d75b191f4a3793694583fafa3a55e",
+      "kind": "query",
+      "line": 311,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q6"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q07",
+      "identity": "f2bae9aa63456e1f18b82a09874681a410d25d401f3b02b6757fbd23d6973795",
+      "kind": "query",
+      "line": 326,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q7"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q08",
+      "identity": "47e7fb6dcdb99b90ef1a12c8eef4626c46932eb34aaefd172d56adeb2419b230",
+      "kind": "query",
+      "line": 370,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q8"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q09",
+      "identity": "8a770ff2a8f84ce08064bc6052881e0b40e5739dcd47839068d10aaba2e4bae2",
+      "kind": "query",
+      "line": 412,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q9"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q10",
+      "identity": "959d949f539c2cd2d8c127af15335e9262463d7665935cb47c3e041b56b4a1c1",
+      "kind": "query",
+      "line": 449,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q10"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q11",
+      "identity": "5b8d17d4920723977e1993fa630ddcfd597ffdc5c14bf62adcb04c1cea35a52c",
+      "kind": "query",
+      "line": 486,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q11"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q12",
+      "identity": "3cc431fbf6079b2fde0a54117d330573ed2fc8a199f1b929ca0bd97dec4c2025",
+      "kind": "query",
+      "line": 519,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q12"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q13",
+      "identity": "6135e1ffa22b207502574d31d1e02bf197ffa0b90a8c5ecf376ae618d85edc5b",
+      "kind": "query",
+      "line": 552,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q13"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q14",
+      "identity": "ce4ddf114fe50c079aa5841669e0589e1458be98d8e0896007abdce0d4f0a013",
+      "kind": "query",
+      "line": 578,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q14"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q15",
+      "identity": "bdfa878da5196f2220845fafb2fddc572f1f69e2b0192b3ef9b26a149cfb6fb6",
+      "kind": "query",
+      "line": 596,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q15"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q16",
+      "identity": "7bf33c3ac39cbb01c503c82a932a6cb26bc51bb4bdcb40a666e9536b85542afd",
+      "kind": "query",
+      "line": 632,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q16"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q17",
+      "identity": "d7eed499c9e04d5a9ff126123af4b5434d070ce0f94a946fd85e9cd5071bb2ee",
+      "kind": "query",
+      "line": 667,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q17"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q18",
+      "identity": "08acc96b5986b9daaa6b663de25083fefb022136ce78d6ceac84527812afdefd",
+      "kind": "query",
+      "line": 689,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q18"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q19",
+      "identity": "6e3bc0d60e67f8958ad933a161f03aaaf7ffaba4f7a7107836e7d081af73068c",
+      "kind": "query",
+      "line": 727,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q19"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q20",
+      "identity": "41558a86d80a2eadb90c551e84e69366c957f904d321dce6f4e676432c7b20c7",
+      "kind": "query",
+      "line": 767,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q20"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q21",
+      "identity": "32f088acdd198aed0dc06405f08b220d14aec4f4f4e5b96e6d998b54930a9554",
+      "kind": "query",
+      "line": 809,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q21"
+    },
+    {
+      "file": "suites/tpch_legacy/queries.slt",
+      "id": "tpch_legacy/q22",
+      "identity": "1d977a5b1806a3d312caa54ce976d107c71e9f51945d2445c29d25ecbe01e205",
+      "kind": "query",
+      "line": 853,
+      "source": "test/sql/tpch-sirius.test",
+      "suite": "tpch_legacy",
+      "test": "Q22"
+    },
+    {
       "file": "suites/partition_memory/repeated-join.slt",
       "id": "partition_memory/repeated-join/001",
       "identity": "cd6b72aff389da621161f34ccb51c80dae62f341241dd9265e891494a667560b",

@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "tpch_legacy", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch", "tpcds", "clickbench", "tpch_disabled_native", "tpch_disabled_parquet", "hive_disabled", "tpch_sf10", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch", "tpcds", "clickbench", "tpch_disabled_native", "tpch_disabled_parquet", "hive_disabled", "tpch_sf10", "tpch_legacy", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "tpch_legacy", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "s3_tpch_sf1", "csv_disabled", "s3_tpch", "s3_surface", "s3_surface_instrumented", "s3_surface_footer_straddle", "s3_surface_datasource_off", "tpch_disabled_native", "tpch_disabled_parquet", "tpch_sf10", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "tpch_legacy", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -1334,6 +1334,189 @@ config = "profiles/pin-host-streaming.yaml"
 gpus = 1
 config = "profiles/pin-zone-map.yaml"
 environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[sources.legacy-tpch-customer]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/customer.tbl"
+sha256 = "4483680548a965833877c911ed43e795f4d3543c7a3f7d1dba9ccb24ea5989d6"
+
+[sources.legacy-tpch-lineitem]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/lineitem.tbl"
+sha256 = "96d555e07a1ae8cf5196387d9edd9427f9af70c56fa5f4b18affee5555ddb184"
+
+[sources.legacy-tpch-nation]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/nation.tbl"
+sha256 = "66f96949939fa8fdf1c4ffed1e5f6c2842fe11a14b51fdc6ed1e17460031e8c5"
+
+[sources.legacy-tpch-orders]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/orders.tbl"
+sha256 = "8709061d7bbc81932356fdfc664f8d582252747c2d7e204ae6d3cde624586357"
+
+[sources.legacy-tpch-part]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/part.tbl"
+sha256 = "f0e4ccdfb5f6d19428ce54f9c84b17037d20f00ac8d2b2272c8d43b18a0b4880"
+
+[sources.legacy-tpch-partsupp]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/partsupp.tbl"
+sha256 = "43c37f99918f06d4de6b99b05c0a28d5c46f71d66424cffcc595cb059a499254"
+
+[sources.legacy-tpch-region]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/region.tbl"
+sha256 = "6022658d673924389b54dcb70fa8c3d6da1b0d7afa3c1c017bab62a019df404f"
+
+[sources.legacy-tpch-supplier]
+kind = "file"
+path = "../../test_datasets/tpch-dbgen/s1/supplier.tbl"
+sha256 = "9b99cf155974e6db8773970b40746bfccfa64fa078169574165f3e19e2158391"
+
+[fixtures.legacy-tpch]
+sources = ["legacy-tpch-customer", "legacy-tpch-lineitem", "legacy-tpch-nation", "legacy-tpch-orders", "legacy-tpch-part", "legacy-tpch-partsupp", "legacy-tpch-region", "legacy-tpch-supplier"]
+sql = ["fixtures/prepare/legacy-tpch.sql"]
+tables = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "region", "supplier"]
+
+[runs.legacy-tpch]
+suites = ["tpch_legacy"]
+profile = "integration-one-gpu"
+
+[sources.legacy-tpch-golden-01]
+kind = "file"
+path = "fixtures/goldens/tpch/q01.csv"
+sha256 = "02b016b9d6bc856512417a38297c624903f62759222e2e35e29cd531bc5b8145"
+
+[sources.legacy-tpch-golden-02]
+kind = "file"
+path = "fixtures/goldens/tpch/q02.csv"
+sha256 = "5fc5d2f488cb2977ed66b24fcc07a0c474bf45d44c60f55984b468bb3634e192"
+
+[sources.legacy-tpch-golden-03]
+kind = "file"
+path = "fixtures/goldens/tpch/q03.csv"
+sha256 = "901a8407f50dfad3e957e91e9ba97d63ba27818f1eb91eda8ac399a9dd710d6c"
+
+[sources.legacy-tpch-golden-04]
+kind = "file"
+path = "fixtures/goldens/tpch/q04.csv"
+sha256 = "62421220a1a17dc7ff657b686f1909a5432473475abac74412c81893d722c6fa"
+
+[sources.legacy-tpch-golden-05]
+kind = "file"
+path = "fixtures/goldens/tpch/q05.csv"
+sha256 = "33254abdf645f446f05fb8fe1662486a25b40260c5aad062a2521802da557052"
+
+[sources.legacy-tpch-golden-06]
+kind = "file"
+path = "fixtures/goldens/tpch/q06.csv"
+sha256 = "365f07fc4e439d07253937450b25814bb94eef224999d98cffec85b83941532a"
+
+[sources.legacy-tpch-golden-07]
+kind = "file"
+path = "fixtures/goldens/tpch/q07.csv"
+sha256 = "5434ed035c617f58ba582839e09f628520adfdd0e86f3fa3ccdecf84409c0324"
+
+[sources.legacy-tpch-golden-08]
+kind = "file"
+path = "fixtures/goldens/tpch/q08.csv"
+sha256 = "45ec0c4783c308f5b82419eface766dad123e28fb90cd7ec9320851c3ede55de"
+
+[sources.legacy-tpch-golden-09]
+kind = "file"
+path = "fixtures/goldens/tpch/q09.csv"
+sha256 = "4879762d45919aafd9a659d79246d39c6529dbcf61233117d54e8188a18dc49d"
+
+[sources.legacy-tpch-golden-10]
+kind = "file"
+path = "fixtures/goldens/tpch/q10.csv"
+sha256 = "9b268870443b618574fb07a42522286c48f17ce797c0c5084742c56ef9c4f3bb"
+
+[sources.legacy-tpch-golden-11]
+kind = "file"
+path = "fixtures/goldens/tpch/q11.csv"
+sha256 = "454c7ccf17ed400306ec170ad65d78d5da5daac129746f34bea9e9684320e691"
+
+[sources.legacy-tpch-golden-12]
+kind = "file"
+path = "fixtures/goldens/tpch/q12.csv"
+sha256 = "94b8c893211f6a0a7453a908cb7855dc95cd7e1ab832accd87b5052f8d4783d0"
+
+[sources.legacy-tpch-golden-13]
+kind = "file"
+path = "fixtures/goldens/tpch/q13.csv"
+sha256 = "d67e52eb3e3f0fb3d2d881bddb299716420a16ced36d5e2076e5194f18c0d122"
+
+[sources.legacy-tpch-golden-14]
+kind = "file"
+path = "fixtures/goldens/tpch/q14.csv"
+sha256 = "b32d56d88cdd7f222044dba0e162337e17a33bbd109ec5db5cf0a839e0dd59b9"
+
+[sources.legacy-tpch-golden-15]
+kind = "file"
+path = "fixtures/goldens/tpch/q15.csv"
+sha256 = "6441208132bfe1db3eaa3c89543619398768dd79084d4c11553dc6f182795091"
+
+[sources.legacy-tpch-golden-16]
+kind = "file"
+path = "fixtures/goldens/tpch/q16.csv"
+sha256 = "c887fed0be3f1ac925de585ba7e75e2969af7cd7b0835538b4c0285605ff7cb2"
+
+[sources.legacy-tpch-golden-17]
+kind = "file"
+path = "fixtures/goldens/tpch/q17.csv"
+sha256 = "59132be13facb0401f71ec380ac0569a7bc3b1c3aa4926cfccb7924338b279de"
+
+[sources.legacy-tpch-golden-18]
+kind = "file"
+path = "fixtures/goldens/tpch/q18.csv"
+sha256 = "ff7a0b4138d9010be427ef6aa45294132f137413cb59dfb05db43a46a9b2ef05"
+
+[sources.legacy-tpch-golden-19]
+kind = "file"
+path = "fixtures/goldens/tpch/q19.csv"
+sha256 = "91bd7235309d4a8ca0b0833aa23242b1671e04af161a8fe8a1cbd39a04ca6533"
+
+[sources.legacy-tpch-golden-20]
+kind = "file"
+path = "fixtures/goldens/tpch/q20.csv"
+sha256 = "7311cb6024bb005be4274079133b289e7003115c1413c1148e8722c7a00466a8"
+
+[sources.legacy-tpch-golden-21]
+kind = "file"
+path = "fixtures/goldens/tpch/q21.csv"
+sha256 = "61dec1084fc40a89688775d847b65a4f9884ab70f27a9f6fb8a585bd3521b203"
+
+[sources.legacy-tpch-golden-22]
+kind = "file"
+path = "fixtures/goldens/tpch/q22.csv"
+sha256 = "f607b914a0f03db1a355d4c1697a96a4e67cb43f5faa5394cc283ffc1aa8988b"
+
+[fixtures.legacy-tpch-goldens.files]
+"q01.csv" = "legacy-tpch-golden-01"
+"q02.csv" = "legacy-tpch-golden-02"
+"q03.csv" = "legacy-tpch-golden-03"
+"q04.csv" = "legacy-tpch-golden-04"
+"q05.csv" = "legacy-tpch-golden-05"
+"q06.csv" = "legacy-tpch-golden-06"
+"q07.csv" = "legacy-tpch-golden-07"
+"q08.csv" = "legacy-tpch-golden-08"
+"q09.csv" = "legacy-tpch-golden-09"
+"q10.csv" = "legacy-tpch-golden-10"
+"q11.csv" = "legacy-tpch-golden-11"
+"q12.csv" = "legacy-tpch-golden-12"
+"q13.csv" = "legacy-tpch-golden-13"
+"q14.csv" = "legacy-tpch-golden-14"
+"q15.csv" = "legacy-tpch-golden-15"
+"q16.csv" = "legacy-tpch-golden-16"
+"q17.csv" = "legacy-tpch-golden-17"
+"q18.csv" = "legacy-tpch-golden-18"
+"q19.csv" = "legacy-tpch-golden-19"
+"q20.csv" = "legacy-tpch-golden-20"
+"q21.csv" = "legacy-tpch-golden-21"
+"q22.csv" = "legacy-tpch-golden-22"
 
 [profiles.partition-memory-1gpu]
 gpus = 1
