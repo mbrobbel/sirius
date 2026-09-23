@@ -5181,6 +5181,76 @@
       "test": "gpu_execution - narrow group keys cross the aggregate exchange"
     },
     {
+      "file": "suites/hive_escaped/space.slt",
+      "id": "hive_escaped/space",
+      "identity": "5bd15ecd8fc7b1a73c684d6bdaa9aca1e08bb3d70eac045adc509b46697d1f64",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/space-with-data.slt",
+      "id": "hive_escaped/space-with-data",
+      "identity": "c5c4e978591edaec745992cc9c2de5038a3abdd1fe85fc2e9f0cada74dea0b76",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/slash.slt",
+      "id": "hive_escaped/slash",
+      "identity": "38507e858a11df542a4a8beec11108cc4bf12e28636fc8b80d2ddde96e70e02f",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/percent.slt",
+      "id": "hive_escaped/percent",
+      "identity": "c36a894c5d4c9ed54cc9fb222c4ae84f6ebcdefd798ec12e0acb167fb4ae966c",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/multiple.slt",
+      "id": "hive_escaped/multiple",
+      "identity": "f0910fbf44b92ac022d6b1a2f82c85b71a3886bc6bd81b8f474e4bb85c4816ca",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/two-columns.slt",
+      "id": "hive_escaped/two-columns",
+      "identity": "6b2d1dcd0ea2523646a01d609a6ca17dddd61f72e6e4d44e1e65f0e5fb3284a2",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
+      "file": "suites/hive_escaped/plain.slt",
+      "id": "hive_escaped/plain",
+      "identity": "8047ae90a4ff54ad5256f4af883e6bdd1474c7b5655f9ee3db264575d33a00c5",
+      "kind": "query",
+      "line": 2016,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_escaped",
+      "test": "gpu_execution hive partition - unescapes varchar partition values"
+    },
+    {
       "file": "suites/hive_disabled/basic.slt",
       "id": "hive_disabled/basic",
       "identity": "e29536efb78cb22decc29fc185a7682f11901368a293487fa851e796b5547dee",

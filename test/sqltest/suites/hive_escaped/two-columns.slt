@@ -1,0 +1,12 @@
+# gpu_execution hive partition - unescapes varchar partition values
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:2016
+# sirius: id = "hive_escaped/two-columns"
+# sirius: tags = ["integration", "parquet", "hive_partition"]
+query ??? rowsort
+SELECT
+  id,
+  city,
+  dept
+FROM
+  read_parquet('__FIXTURE_ROOT__/hive-original/two_columns/city=*/dept=*/*.parquet', hive_partitioning = true);
+----
