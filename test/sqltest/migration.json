@@ -3409,6 +3409,326 @@
       "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
       "suite": "cast_date",
       "test": "cast-shaped DATE predicates on dates beyond TIMESTAMP range"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/pinned-narrow-gpu.slt",
+      "id": "compressed_materialization_gate/pinned-narrow-gpu/001",
+      "identity": "8df6b0b1eaaeac996ce257ff424b59da86545343eda49abe71b6eaf537129ed7",
+      "kind": "query",
+      "line": 234,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/pinned-narrow-gpu.slt",
+      "id": "compressed_materialization_gate/pinned-narrow-gpu/002",
+      "identity": "00322f9e36282fe84b0283fccfa890c0d5802b87be153670277e547bd705cd5a",
+      "kind": "query",
+      "line": 252,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/multi-file-gpu.slt",
+      "id": "compressed_materialization_gate/multi-file-gpu/001",
+      "identity": "6a54ff01d50d2ce0fa21ce4ab5a5289d775fd27eb68c5897f5c6aac4a2432680",
+      "kind": "query",
+      "line": 423,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - multi-file pinned-narrow serve installs the residency sidecar"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/multi-file-gpu.slt",
+      "id": "compressed_materialization_gate/multi-file-gpu/002",
+      "identity": "9558e3c9eb0d0ad1354f9f66da61e438a7215b44dc345973d3a705f9ad4b284a",
+      "kind": "query",
+      "line": 441,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - multi-file pinned-narrow serve installs the residency sidecar"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/restore-only-gpu.slt",
+      "id": "compressed_materialization_gate/restore-only-gpu/001",
+      "identity": "4c403ca18e76fdb252e55e88b274e7a2ed443ef07338b5a62e492a337981a517",
+      "kind": "query",
+      "line": 502,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - tier policy retracts restore-only columns on GPU tier only"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/pinned-narrow-host.slt",
+      "id": "compressed_materialization_gate/pinned-narrow-host/001",
+      "identity": "7c2b2d3051810887605db6978ed84fe318fddc3993b4666302830be156c259a0",
+      "kind": "query",
+      "line": 234,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/pinned-narrow-host.slt",
+      "id": "compressed_materialization_gate/pinned-narrow-host/002",
+      "identity": "d4b34e6cebea569ea345c4a51a813320684d6c7c6507b4fbb851cb657317cb71",
+      "kind": "query",
+      "line": 252,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/multi-file-host.slt",
+      "id": "compressed_materialization_gate/multi-file-host/001",
+      "identity": "efc6d80ee6c19045c12489a4366c92e1eba54e618364bd54a100d7a3c0753ac5",
+      "kind": "query",
+      "line": 423,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - multi-file pinned-narrow serve installs the residency sidecar"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/multi-file-host.slt",
+      "id": "compressed_materialization_gate/multi-file-host/002",
+      "identity": "f9de53c78f752b60ea499c247195c333d8ba984ef526b877f80af4fa2ed8519c",
+      "kind": "query",
+      "line": 441,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - multi-file pinned-narrow serve installs the residency sidecar"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/restore-only-host.slt",
+      "id": "compressed_materialization_gate/restore-only-host/001",
+      "identity": "7307c61950326ea40caba392f989d8e6defb3ef780b9bce5401bb1d00c3e112e",
+      "kind": "query",
+      "line": 502,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - tier policy retracts restore-only columns on GPU tier only"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/pinned-native.slt",
+      "id": "compressed_materialization_gate/pinned-native/001",
+      "identity": "9d51247af9e5aa0f71500bb173a2ef21c76baf3e2e9410be2c05c07cf58c47ec",
+      "kind": "query",
+      "line": 278,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/unpinned.slt",
+      "id": "compressed_materialization_gate/unpinned/001",
+      "identity": "a68094ef2b5bfbb7764e5a7980be4de81d8c5b07f9c60b3ad993b8f72e128c9b",
+      "kind": "query",
+      "line": 327,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/column-subset.slt",
+      "id": "compressed_materialization_gate/column-subset/001",
+      "identity": "174f1531b6d2da664e5842c467ded51a86e9c4284a6ce89ec6d8e5f1e04a043b",
+      "kind": "query",
+      "line": 344,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/column-subset.slt",
+      "id": "compressed_materialization_gate/column-subset/002",
+      "identity": "d88367d9268218d88e6a374d5e20a75c8e3763d420c85f9dceefdb0281ea04de",
+      "kind": "query",
+      "line": 354,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - compressed materialization residency gate states end to end"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/aggregate-pruning.slt",
+      "id": "compressed_materialization_gate/aggregate-pruning/001",
+      "identity": "fbdd406b2af5f0d719fec7acfe0b498164fad22fbfb81b54ec91a1c351b73128",
+      "kind": "query",
+      "line": 572,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - zero-benefit pruning stays discriminating on pinned-backed sidecars"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/join-key-pruning.slt",
+      "id": "compressed_materialization_gate/join-key-pruning/001",
+      "identity": "feff5648c659578db103a672ca770564ee2077ad2d1da8677731fd683c983cf4",
+      "kind": "query",
+      "line": 592,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - zero-benefit pruning stays discriminating on pinned-backed sidecars"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/001",
+      "identity": "b83e51ae23e3bfe802d4f985b9f036ff0ec1375de2b29bc429e3bd27812d7c99",
+      "kind": "query",
+      "line": 723,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/002",
+      "identity": "c15b498eac9570741e568f4a9f6dd8da43663dbfa2f448e6debb945f6bbd74c4",
+      "kind": "query",
+      "line": 736,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/003",
+      "identity": "4758581a45dfbe949b09350f279d7b5b9f479fc9aaf1bebe84546e1d2e3d7be2",
+      "kind": "query",
+      "line": 749,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/004",
+      "identity": "da5a7049a276ea3c16441c509028286e0c0d035b12cbc97c850683f1927f646a",
+      "kind": "query",
+      "line": 750,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/005",
+      "identity": "0d38d9a35eb4be8599add30db4dc1fe20fcbdf3b9590d8b0a41acd106d5cf8bb",
+      "kind": "query",
+      "line": 758,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/006",
+      "identity": "c70981cf8efe4eb42c3943ab9e54d33492deb509243a910b5dfffb222ed59602",
+      "kind": "query",
+      "line": 762,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/007",
+      "identity": "aed46cbadaae112237f9b51bc198d72df4dda95db4bfe1297d18a5968794dee0",
+      "kind": "query",
+      "line": 772,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-gpu.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-gpu/008",
+      "identity": "7d139e998ca3fc86a6d2bd005e047b587c0163568d3d415e58e20fc32c5e7ddd",
+      "kind": "query",
+      "line": 789,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/001",
+      "identity": "10d2eb086997aa4b739071a6968d66d100a9e4fa0eb7e43b0538e3788838c2ca",
+      "kind": "query",
+      "line": 723,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/002",
+      "identity": "0090a6fbdcca388a0998d8bcdbea5117b5528c7473133ee6cc89ed927e42547b",
+      "kind": "query",
+      "line": 736,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/003",
+      "identity": "2f542eb63b6b665dcea92d51c104594a3066932861d737f0e45a2ba6750e754b",
+      "kind": "query",
+      "line": 749,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/004",
+      "identity": "006346ff1c8160417649356dc9fa0cecda70bfe92445ee70eb3ab2bec1b5fe89",
+      "kind": "query",
+      "line": 750,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/005",
+      "identity": "9ff64cc01831091adec1f24a028b7dd954e209ff86bbc5d29fb1f31d24a919cb",
+      "kind": "query",
+      "line": 758,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/006",
+      "identity": "608b40b6bd2614ba664e34992b782cfaff4878472ed2158c1f7cd75f33e4b394",
+      "kind": "query",
+      "line": 762,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/007",
+      "identity": "4d8058d8b3c5b2343b63c2913bd78f67f4a2cbe6bc0bb730ba011c7a90d9316e",
+      "kind": "query",
+      "line": 772,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_gate/date-roundtrip-host.slt",
+      "id": "compressed_materialization_gate/date-roundtrip-host/008",
+      "identity": "2685570bf4263fa5c67458f9a9ec9a2c32097a2043d76dd9fcae6f6d249d9b38",
+      "kind": "query",
+      "line": 789,
+      "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
+      "suite": "compressed_materialization_gate",
+      "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",

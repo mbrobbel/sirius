@@ -1,0 +1,35 @@
+include ../../fixtures/migrated/compressed_materialization_gate/fact.slt
+include ../../fixtures/migrated/compressed_materialization_gate/dimension.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/gate.parquet', tier = 'host', name = 't');
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/gate_dim.parquet', tier = 'host', name = 'o');
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:592
+# sirius: id = "compressed_materialization_gate/join-key-pruning/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  t,
+  o
+WHERE
+  t.k = o.k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('o');
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

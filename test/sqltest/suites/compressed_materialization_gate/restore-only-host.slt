@@ -1,0 +1,27 @@
+include ../../fixtures/migrated/compressed_materialization_gate/fact.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/gate.parquet', tier = 'host', name = 't');
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:502
+# sirius: id = "compressed_materialization_gate/restore-only-host/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ??? rowsort
+SELECT
+  sum(v * 2) AS sv,
+  avg(v) AS av,
+  sum(d) AS sd
+FROM
+  t
+WHERE
+  (k % 2) = 0;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

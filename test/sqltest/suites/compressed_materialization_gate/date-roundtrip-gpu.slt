@@ -1,0 +1,115 @@
+include ../../fixtures/migrated/compressed_materialization_gate/date.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/date.parquet', tier = 'gpu', name = 't');
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:723
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ?? rowsort
+SELECT
+  d1,
+  count(*) AS n
+FROM
+  t
+GROUP BY
+  d1 ORDER BY d1;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:736
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/002"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ?? rowsort
+SELECT
+  d1,
+  sum(k) AS sk
+FROM
+  t
+WHERE
+  d1 >= DATE '1994-01-01'
+GROUP BY
+  d1 ORDER BY d1 LIMIT 20;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:749
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/003"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ? rowsort
+SELECT
+  count(*) AS c
+FROM
+  t
+WHERE
+  d1 < d2;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:750
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/004"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ?? rowsort
+SELECT
+  d1,
+  d2
+FROM
+  t
+WHERE
+  d1 < d2 ORDER BY d1, d2 LIMIT 50;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:758
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/005"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ?? rowsort
+SELECT
+  count(*) AS c,
+  count(d3) AS cd
+FROM
+  t
+WHERE
+  d3 < DATE '1995-01-01' OR d3 IS NULL;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:762
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/006"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ? rowsort
+SELECT
+  d3
+FROM
+  t ORDER BY d3 NULLS FIRST LIMIT 10;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:772
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/007"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ? rowsort
+SELECT
+  d1
+FROM
+  t ORDER BY d1 LIMIT 100;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:789
+# sirius: id = "compressed_materialization_gate/date-roundtrip-gpu/008"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ?? rowsort
+SELECT
+  a.k AS ak,
+  count(*) AS n
+FROM
+  t a
+  JOIN t b ON a.d1 = b.d2
+WHERE
+  a.k < 5
+GROUP BY
+  a.k ORDER BY a.k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
