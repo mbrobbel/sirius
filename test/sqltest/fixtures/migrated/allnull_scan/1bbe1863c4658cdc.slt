@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE ans_str (
+  id INTEGER,
+  s VARCHAR
+);
+
+statement ok
+INSERT INTO ans_str SELECT
+  i,
+  NULL
+FROM
+  range(1, 9) AS t (i);
+
+statement ok
+CHECKPOINT;

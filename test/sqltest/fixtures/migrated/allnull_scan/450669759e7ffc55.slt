@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE mix (
+  id INTEGER,
+  c INTEGER
+);
+
+statement ok
+INSERT INTO mix SELECT
+  i,
+  CASE
+    WHEN i < 500 THEN
+      7
+    ELSE
+      NULL
+  END
+FROM
+  range(1000) AS t (i);
+
+statement ok
+CHECKPOINT;

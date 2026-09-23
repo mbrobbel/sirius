@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_allnull_scan.cpp:87
+# gpu_execution partially-NULL column keeps its valid rows
+include ../../fixtures/migrated/allnull_scan/8f09309befc2edf2.slt
+
+# sirius: id = "allnull_scan/partially-null-column-keeps-its-valid-rows/001"
+# sirius: snapshot = true
+# sirius: tags = ["allnull", "gpu_execution", "integration", "nulls", "scan"]
+query ?? rowsort
+SELECT
+  id,
+  part
+FROM
+  ans;
+----
+1	NULL
+2	2
+3	NULL
+4	4
+5	NULL
+6	6
+7	NULL
+8	8

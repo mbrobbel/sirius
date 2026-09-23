@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_allnull_scan.cpp:185
+# gpu_execution wholly-NULL VARCHAR column
+include ../../fixtures/migrated/allnull_scan/1bbe1863c4658cdc.slt
+
+# sirius: id = "allnull_scan/wholly-null-varchar-column/001"
+# sirius: snapshot = true
+# sirius: tags = ["allnull", "gpu_execution", "integration", "nulls", "scan"]
+query ?? rowsort
+SELECT
+  id,
+  s
+FROM
+  ans_str;
+----
+1	NULL
+2	NULL
+3	NULL
+4	NULL
+5	NULL
+6	NULL
+7	NULL
+8	NULL

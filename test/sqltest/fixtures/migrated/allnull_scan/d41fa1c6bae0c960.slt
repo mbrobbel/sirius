@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE big_null AS SELECT i AS id, CAST(NULL AS INTEGER) AS n FROM range(130001) AS t (i);
+
+statement ok
+CHECKPOINT;

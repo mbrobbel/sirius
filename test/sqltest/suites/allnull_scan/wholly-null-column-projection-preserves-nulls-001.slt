@@ -1,0 +1,26 @@
+# Migrated from test/cpp/integration/test_gpu_execution_allnull_scan.cpp:69
+# gpu_execution wholly-NULL column projection preserves NULLs
+include ../../fixtures/migrated/allnull_scan/8f09309befc2edf2.slt
+
+# sirius: id = "allnull_scan/wholly-null-column-projection-preserves-nulls/001"
+# sirius: snapshot = true
+# sirius: tags = ["allnull", "gpu_execution", "integration", "nulls", "scan"]
+query ?????? rowsort
+SELECT
+  id,
+  n_int,
+  n_big,
+  n_dbl,
+  n_dec,
+  n_date
+FROM
+  ans;
+----
+1	NULL	NULL	NULL	NULL	NULL
+2	NULL	NULL	NULL	NULL	NULL
+3	NULL	NULL	NULL	NULL	NULL
+4	NULL	NULL	NULL	NULL	NULL
+5	NULL	NULL	NULL	NULL	NULL
+6	NULL	NULL	NULL	NULL	NULL
+7	NULL	NULL	NULL	NULL	NULL
+8	NULL	NULL	NULL	NULL	NULL
