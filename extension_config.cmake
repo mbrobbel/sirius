@@ -18,5 +18,5 @@
 # to load
 
 # Extension from this repo
-duckdb_extension_load(sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR} LOAD_TESTS
+duckdb_extension_load(sirius SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
                       EXTENSION_VERSION dev)

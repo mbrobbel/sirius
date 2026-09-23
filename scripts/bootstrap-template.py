@@ -49,7 +49,6 @@ def replace(file_name, to_find, to_replace):
 
 files_to_search = []
 files_to_search.extend(Path("./.github").rglob("./**/*.yml"))
-files_to_search.extend(Path("./test").rglob("./**/*.test"))
 files_to_search.extend(Path("./src").rglob("./**/*.hpp"))
 files_to_search.extend(Path("./src").rglob("./**/*.cpp"))
 files_to_search.extend(Path("./src").rglob("./**/*.txt"))
@@ -78,7 +77,6 @@ string_to_replace = name_extension
 string_to_find = "quack"
 
 # rename files
-os.rename(f"test/sql/{string_to_find}.test", f"test/sql/{string_to_replace}.test")
 os.rename(
     f"src/{string_to_find}_extension.cpp", f"src/{string_to_replace}_extension.cpp"
 )

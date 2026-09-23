@@ -112,18 +112,3 @@ To load the dataset to duckdb:
 ./build/release/duckdb {DATABASE_NAME}.duckdb
 .read scripts/clickbench_load_duckdb.sql
 ```
-
-## Testing
-
-`gpu_processing` uses SQLLogic tests that compare Sirius results against DuckDB for correctness. These are end-to-end tests that run SQL queries and compare against expected results.
-
-Generate the datasets using the method described [above](#generating-and-loading-test-datasets), then run:
-```
-make test
-```
-
-To run a specific test from the root directory:
-```
-CMAKE_BUILD_PARALLEL_LEVEL=$(nproc) make
-build/release/test/unittest --test-dir . test/sql/tpch-sirius.test
-```
