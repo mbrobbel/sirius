@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for NULL materialization through the parquet reader.
+// GPU execution and storage premises for NULL materialization through the parquet reader.
 //
 // The parquet reader encodes nullability via definition levels, not a simple
 // validity bitmap. Each nullable encoding path needs its own exercise:
@@ -38,15 +38,15 @@
 // <= 18 -> INT64, > 18 -> FIXED_LEN_BYTE_ARRAY. Precision <= 4 is deliberately
 // avoided -- DuckDB stores it as INT16 and Sirius throws for that case
 // (cudf_utils.hpp get_cudf_type), forcing a CPU fallback that would make
-// compare_gpu_vs_cpu fail for reasons unrelated to NULLs.
+// the execution assertion fail for reasons unrelated to NULLs.
 //
 // Fixtures that depend on a specific on-disk encoding assert it via
 // parquet_schema() / parquet_metadata() at construction time, so the tests fail
 // loudly rather than silently exercising a different decode path if DuckDB's
 // writer choices change.
 //
-// Every query goes through compare_gpu_vs_cpu: run on GPU (asserting no
-// fallback), run on DuckDB CPU, compare.
+// Every query asserts GPU execution without fallback. Result comparisons and
+// equivalent storage premises live in test/sqltest/suites/parquet_nulls/.
 
 //
 // KNOWN GAPS -- both need a fixture from a non-DuckDB writer (e.g. pyarrow),
@@ -759,7 +759,7 @@ TEST_CASE_METHOD(ParquetNullFixture,
 {
   // Every typed NULL column must come back as NULL on the GPU, not as
   // sentinel / garbage values.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT id, n_int, n_big, n_dbl, n_flt, n_dec32, n_dec64, n_date, n_ts, n_bool, n_str "
     "FROM " +
     scan_);
@@ -770,7 +770,7 @@ TEST_CASE_METHOD(ParquetNullFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // COUNT(*) == 16; every COUNT(n_*) == 0 because all values are NULL.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT COUNT(*), COUNT(n_int), COUNT(n_big), COUNT(n_dbl), COUNT(n_flt), COUNT(n_dec32), "
     "COUNT(n_dec64), "
     "COUNT(n_date), COUNT(n_ts), COUNT(n_bool), COUNT(n_str) FROM " +
@@ -782,10 +782,10 @@ TEST_CASE_METHOD(ParquetNullFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // SUM/MIN/MAX over a wholly-NULL column must return NULL, not 0 or a sentinel.
-  compare_gpu_vs_cpu("SELECT SUM(n_int), MIN(n_int), MAX(n_int) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT SUM(n_dec32), MIN(n_dec32), MAX(n_dec32) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT SUM(n_dec64), MIN(n_dec64), MAX(n_dec64) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT MIN(n_date), MAX(n_date), MIN(n_ts), MAX(n_ts) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(n_int), MIN(n_int), MAX(n_int) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(n_dec32), MIN(n_dec32), MAX(n_dec32) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(n_dec64), MIN(n_dec64), MAX(n_dec64) FROM " + scan_);
+  require_gpu_execution("SELECT MIN(n_date), MAX(n_date), MIN(n_ts), MAX(n_ts) FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetNullFixture,
@@ -793,11 +793,11 @@ TEST_CASE_METHOD(ParquetNullFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // Every row is NULL: IS NULL keeps all 16 rows, IS NOT NULL keeps none.
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NOT NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_date IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_bool IS NULL");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE n_str IS NULL ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_date IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_bool IS NULL");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE n_str IS NULL ORDER BY id");
 }
 
 // A wholly-NULL column selected ON ITS OWN. Every other case keeps `id` or
@@ -808,21 +808,21 @@ TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — column-pruned scan projecting only a wholly-NULL column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT n_int FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_str FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_dec32 FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_dec64 FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_bool FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_ts FROM " + scan_);
+  require_gpu_execution("SELECT n_int FROM " + scan_);
+  require_gpu_execution("SELECT n_str FROM " + scan_);
+  require_gpu_execution("SELECT n_dec32 FROM " + scan_);
+  require_gpu_execution("SELECT n_dec64 FROM " + scan_);
+  require_gpu_execution("SELECT n_bool FROM " + scan_);
+  require_gpu_execution("SELECT n_ts FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — column-pruned scan projecting only a partially-NULL column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT p_int FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT p_str FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT p_bool FROM " + scan_);
+  require_gpu_execution("SELECT p_int FROM " + scan_);
+  require_gpu_execution("SELECT p_str FROM " + scan_);
+  require_gpu_execution("SELECT p_bool FROM " + scan_);
 }
 
 // ===========================================================================
@@ -835,7 +835,7 @@ TEST_CASE_METHOD(ParquetNullFixture,
 {
   // Each p_* column is valid only on even ids. A definition-level decode bug
   // for any one type shows up as a wrong value or a wrongly-placed NULL here.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT id, p_int, p_big, p_dbl, p_flt, p_dec32, p_dec64, p_date, p_ts, p_bool, p_str "
     "FROM " +
     scan_);
@@ -846,59 +846,60 @@ TEST_CASE_METHOD(ParquetNullFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // COUNT must be 8 (even ids in [1,16]) for every partially-NULL column.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT COUNT(p_int), COUNT(p_big), COUNT(p_dbl), COUNT(p_flt), COUNT(p_dec32), "
     "COUNT(p_dec64), "
     "COUNT(p_date), COUNT(p_ts), COUNT(p_bool), COUNT(p_str) FROM " +
     scan_);
-  compare_gpu_vs_cpu("SELECT SUM(p_int), MIN(p_int), MAX(p_int) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT SUM(p_big), MIN(p_big), MAX(p_big) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT SUM(p_dec32), MIN(p_dec32), MAX(p_dec32) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT SUM(p_dec64), MIN(p_dec64), MAX(p_dec64) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT MIN(p_date), MAX(p_date), MIN(p_ts), MAX(p_ts) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT MIN(p_str), MAX(p_str) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(p_int), MIN(p_int), MAX(p_int) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(p_big), MIN(p_big), MAX(p_big) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(p_dec32), MIN(p_dec32), MAX(p_dec32) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(p_dec64), MIN(p_dec64), MAX(p_dec64) FROM " + scan_);
+  require_gpu_execution("SELECT MIN(p_date), MAX(p_date), MIN(p_ts), MAX(p_ts) FROM " + scan_);
+  require_gpu_execution("SELECT MIN(p_str), MAX(p_str) FROM " + scan_);
 }
 
-// Floating point aggregation order differs between GPU reduction and CPU serial
-// summation, so DOUBLE/FLOAT sums compare with a relative tolerance.
+// The SQL comparison allows a relative tolerance for floating-point sums.
 TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — floating-point aggregates over partially-NULL columns",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu_approx("SELECT SUM(p_dbl), SUM(p_flt) FROM " + scan_, {0, 1});
-  compare_gpu_vs_cpu("SELECT MIN(p_dbl), MAX(p_dbl), MIN(p_flt), MAX(p_flt) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(p_dbl), SUM(p_flt) FROM " + scan_);
+  require_gpu_execution("SELECT MIN(p_dbl), MAX(p_dbl), MIN(p_flt), MAX(p_flt) FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — IS NULL / IS NOT NULL across partially-NULL types",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_int IS NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_int IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_dec32 IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_dec64 IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_date IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_ts IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_str IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_int IS NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_int IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_dec32 IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_dec64 IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_date IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_ts IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_str IS NOT NULL ORDER BY id");
   // BOOLEAN is bit-packed: a validity/value bit misalignment shows up as rows
   // shifting between the NULL and non-NULL sets.
-  compare_gpu_vs_cpu("SELECT id, p_bool FROM " + scan_ + " WHERE p_bool IS NOT NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE p_bool ORDER BY id");
+  require_gpu_execution("SELECT id, p_bool FROM " + scan_ +
+                        " WHERE p_bool IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE p_bool ORDER BY id");
 }
 
 TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — COALESCE on partially-NULL column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, COALESCE(p_int, -1) AS v FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT id, COALESCE(p_str, 'none') AS v FROM " + scan_);
+  require_gpu_execution("SELECT id, COALESCE(p_int, -1) AS v FROM " + scan_);
+  require_gpu_execution("SELECT id, COALESCE(p_str, 'none') AS v FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetNullFixture,
                  "parquet nulls — CASE expression over partially-NULL column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, CASE WHEN p_int IS NULL THEN 0 ELSE p_int END AS v FROM " + scan_);
+  require_gpu_execution("SELECT id, CASE WHEN p_int IS NULL THEN 0 ELSE p_int END AS v FROM " +
+                        scan_);
 }
 
 // ===========================================================================
@@ -909,15 +910,15 @@ TEST_CASE_METHOD(ParquetDictNullFixture,
                  "parquet nulls — dictionary-encoded string column with nulls projection",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, cat FROM " + scan_);
+  require_gpu_execution("SELECT id, cat FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetDictNullFixture,
                  "parquet nulls — IS NULL on dictionary-encoded column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE cat IS NULL");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE cat IS NULL ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE cat IS NULL");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE cat IS NULL ORDER BY id");
 }
 
 TEST_CASE_METHOD(ParquetDictNullFixture,
@@ -925,24 +926,24 @@ TEST_CASE_METHOD(ParquetDictNullFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // NULL group key must form its own group (SQL NULL semantics for GROUP BY).
-  compare_gpu_vs_cpu("SELECT cat, COUNT(*), SUM(val) FROM " + scan_ + " GROUP BY cat");
+  require_gpu_execution("SELECT cat, COUNT(*), SUM(val) FROM " + scan_ + " GROUP BY cat");
 }
 
 TEST_CASE_METHOD(ParquetDictNullFixture,
                  "parquet nulls — numeric column with nulls aggregates",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(val), SUM(val), MIN(val), MAX(val) FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(*), COUNT(val), SUM(val), MIN(val), MAX(val) FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetDictNullFixture,
                  "parquet nulls — filter on nullable numeric column",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, val FROM " + scan_ + " WHERE val > 50 ORDER BY id");
+  require_gpu_execution("SELECT id, val FROM " + scan_ + " WHERE val > 50 ORDER BY id");
   // Comparison with NULL in predicate: val = NULL must return false, not true.
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ +
-                     " WHERE val IS NOT DISTINCT FROM NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ +
+                        " WHERE val IS NOT DISTINCT FROM NULL ORDER BY id");
 }
 
 // ===========================================================================
@@ -954,12 +955,12 @@ TEST_CASE_METHOD(ParquetMultiRowGroupFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // COUNT(n_int) must be 0 across every row group; SUM must be NULL.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(n_int), SUM(n_int) FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(*), COUNT(n_int), SUM(n_int) FROM " + scan_);
   // Aggregated rather than row-by-row: the fixture is deliberately large
   // (8395 rows) to force multiple row groups, and a full row comparison here
   // would be slow without testing anything the counts do not already pin.
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_int IS NOT NULL");
 }
 
 TEST_CASE_METHOD(ParquetMultiRowGroupFixture,
@@ -968,20 +969,20 @@ TEST_CASE_METHOD(ParquetMultiRowGroupFixture,
 {
   // `part` is null for id % 7 == 0 rows; row group boundaries must not
   // corrupt the validity bitmask of adjacent rows.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(part), SUM(part) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE part IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE part IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*), COUNT(part), SUM(part) FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE part IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE part IS NOT NULL");
   // Row-level, at every group boundary. The aggregates above cannot see a
   // validity mask shifted across a boundary: the null count stays 1199 and the
   // SUM can be preserved by a shift that swaps which ids are masked. Only
   // comparing (id, value) pairs in order catches that, and it has to be done at
   // each of 2048 / 4096 / 6144 as well as the ragged tail.
   for (auto const boundary : {2048, 4096, 6144}) {
-    compare_gpu_vs_cpu_ordered("SELECT id, part FROM " + scan_ + " WHERE id BETWEEN " +
-                               std::to_string(boundary - 8) + " AND " +
-                               std::to_string(boundary + 8) + " ORDER BY id");
+    require_gpu_execution("SELECT id, part FROM " + scan_ + " WHERE id BETWEEN " +
+                          std::to_string(boundary - 8) + " AND " + std::to_string(boundary + 8) +
+                          " ORDER BY id");
   }
-  compare_gpu_vs_cpu_ordered("SELECT id, part FROM " + scan_ + " WHERE id > 8192 ORDER BY id");
+  require_gpu_execution("SELECT id, part FROM " + scan_ + " WHERE id > 8192 ORDER BY id");
 }
 
 // ===========================================================================
@@ -993,11 +994,11 @@ TEST_CASE_METHOD(ParquetDenseColFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // Every definition level is 1; the reader must not synthesize any NULLs.
-  compare_gpu_vs_cpu("SELECT id, val, s FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(val), COUNT(s) FROM " + scan_);
+  require_gpu_execution("SELECT id, val, s FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(*), COUNT(val), COUNT(s) FROM " + scan_);
   // IS NULL must return no rows.
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE val IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE s IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE val IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE s IS NULL");
 }
 
 // ===========================================================================
@@ -1010,18 +1011,18 @@ TEST_CASE_METHOD(ParquetNullRunFixture,
 {
   // c_run is 7 for ids [0,500) and NULL after. If the constant valid run were
   // wrongly masked, COUNT(c_run)/SUM(c_run) would drop below 500/3500.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(c_run), SUM(c_run), MIN(c_run), MAX(c_run) FROM " +
-                     scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE c_run IS NOT NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE c_run IS NULL");
+  require_gpu_execution("SELECT COUNT(*), COUNT(c_run), SUM(c_run), MIN(c_run), MAX(c_run) FROM " +
+                        scan_);
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE c_run IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE c_run IS NULL");
   // c_run is the CONSTANT 7, so ANY equal-count corruption of its validity mask
   // preserves COUNT, SUM, MIN and MAX. A window around the transition would
   // only catch a shift at that one point, so compare every row: 8000 ordered
   // pairs is cheap next to being unable to see the corruption at all.
-  compare_gpu_vs_cpu_ordered("SELECT id, c_run FROM " + scan_ + " ORDER BY id");
+  require_gpu_execution("SELECT id, c_run FROM " + scan_ + " ORDER BY id");
   // The valid set stated outright, so a corruption that happened to be
   // symmetric across the comparison still fails.
-  compare_gpu_vs_cpu_ordered("SELECT id FROM " + scan_ + " WHERE c_run IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE c_run IS NOT NULL ORDER BY id");
 }
 
 TEST_CASE_METHOD(ParquetNullRunFixture,
@@ -1030,13 +1031,13 @@ TEST_CASE_METHOD(ParquetNullRunFixture,
 {
   // c_pre is NULL for ids [0,7000) and valid after. COUNT(c_pre)=1000 and the
   // SUM over [7000,8000) only hold if the trailing valid rows were not masked.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(c_pre), SUM(c_pre), MIN(c_pre), MAX(c_pre) FROM " +
-                     scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE c_pre IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*), COUNT(c_pre), SUM(c_pre), MIN(c_pre), MAX(c_pre) FROM " +
+                        scan_);
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE c_pre IS NOT NULL");
   // Same reasoning as c_run, though c_pre's payload varies so SUM would catch
   // some shifts; compare every row regardless.
-  compare_gpu_vs_cpu_ordered("SELECT id, c_pre FROM " + scan_ + " ORDER BY id");
-  compare_gpu_vs_cpu_ordered("SELECT id FROM " + scan_ + " WHERE c_pre IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id, c_pre FROM " + scan_ + " ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE c_pre IS NOT NULL ORDER BY id");
 }
 
 TEST_CASE_METHOD(ParquetNullRunFixture,
@@ -1044,8 +1045,8 @@ TEST_CASE_METHOD(ParquetNullRunFixture,
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
   // Column-pruned: the run column is the only projected column.
-  compare_gpu_vs_cpu("SELECT COUNT(c_run) FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(c_pre) FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(c_run) FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(c_pre) FROM " + scan_);
 }
 
 // ===========================================================================
@@ -1056,17 +1057,17 @@ TEST_CASE_METHOD(ParquetFlbaDecimalNullFixture,
                  "parquet nulls — FLBA decimal projection preserves NULLs",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, big_dec, n_big_dec FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(big_dec), COUNT(n_big_dec) FROM " + scan_);
+  require_gpu_execution("SELECT id, big_dec, n_big_dec FROM " + scan_);
+  require_gpu_execution("SELECT COUNT(*), COUNT(big_dec), COUNT(n_big_dec) FROM " + scan_);
 }
 
 TEST_CASE_METHOD(ParquetFlbaDecimalNullFixture,
                  "parquet nulls — FLBA decimal aggregates skip NULLs",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT SUM(big_dec), MIN(big_dec), MAX(big_dec) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(big_dec), MIN(big_dec), MAX(big_dec) FROM " + scan_);
   // Wholly-NULL FLBA decimal: SUM/MIN/MAX must all be NULL.
-  compare_gpu_vs_cpu("SELECT SUM(n_big_dec), MIN(n_big_dec), MAX(n_big_dec) FROM " + scan_);
+  require_gpu_execution("SELECT SUM(n_big_dec), MIN(n_big_dec), MAX(n_big_dec) FROM " + scan_);
 }
 
 // Filters over an FLBA decimal take the post-decode path, because Sirius
@@ -1077,17 +1078,17 @@ TEST_CASE_METHOD(ParquetFlbaDecimalNullFixture,
                  "parquet nulls — filter on FLBA decimal with NULLs (post-decode path)",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT id, big_dec FROM " + scan_ + " WHERE big_dec > 20 ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE big_dec IS NULL ORDER BY id");
-  compare_gpu_vs_cpu("SELECT id FROM " + scan_ + " WHERE big_dec IS NOT NULL ORDER BY id");
+  require_gpu_execution("SELECT id, big_dec FROM " + scan_ + " WHERE big_dec > 20 ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE big_dec IS NULL ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ + " WHERE big_dec IS NOT NULL ORDER BY id");
   // A comparison against NULL rows must yield no match, not a sentinel hit.
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE n_big_dec > 0");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE n_big_dec > 0");
 }
 
 TEST_CASE_METHOD(ParquetFlbaDecimalNullFixture,
                  "parquet nulls — FLBA decimal projected alone",
                  "[integration][gpu_execution][scan][nulls][parquet]")
 {
-  compare_gpu_vs_cpu("SELECT big_dec FROM " + scan_);
-  compare_gpu_vs_cpu("SELECT n_big_dec FROM " + scan_);
+  require_gpu_execution("SELECT big_dec FROM " + scan_);
+  require_gpu_execution("SELECT n_big_dec FROM " + scan_);
 }
