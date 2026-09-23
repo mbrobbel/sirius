@@ -24,10 +24,8 @@
  *   - the read-back path that copies the cuDF LIST column into a DuckDB ARRAY
  *     vector (host_table_chunk_reader::copy_array).
  *
- * Each test runs the same query through transparent GPU execution and through
- * DuckDB CPU, then compares results. compare_gpu_vs_cpu() also asserts the
- * query genuinely ran on the GPU (exactly one execution, zero fallbacks), so a
- * silent CPU fallback for ARRAY columns will fail the test rather than pass it.
+ * Each query must execute on the GPU exactly once with zero fallbacks.
+ * The SQL array suite compares results with DuckDB and preserves the codec premises.
  */
 
 #include <catch.hpp>
@@ -36,8 +34,7 @@
 
 #include <string>
 
-// The file-backed native-scan fixture + GPU-vs-CPU comparator are shared with
-// the other gpu_execution integration suites; keep the historical name locally.
+// Share the file-backed native-scan fixture and execution assertions.
 using ArrayFixture = sirius::test::GpuExecutionFixture;
 
 namespace {
@@ -89,9 +86,9 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CHECKPOINT;");  // Persist data to disk for native GPU scan
 
   // Project both the scalar key and the array column.
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_int;");
+  require_gpu_execution("SELECT id, a FROM arr_int;");
   // Project the array column alone.
-  compare_gpu_vs_cpu("SELECT a FROM arr_int;");
+  require_gpu_execution("SELECT a FROM arr_int;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -103,8 +100,8 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_allnull (id INTEGER, a INTEGER[3]);");
   run_ok("INSERT INTO arr_allnull SELECT range::INTEGER, NULL::INTEGER[3] FROM range(3000);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_allnull ORDER BY id;");
-  compare_gpu_vs_cpu("SELECT count(*), count(a) FROM arr_allnull;");
+  require_gpu_execution("SELECT id, a FROM arr_allnull ORDER BY id;");
+  require_gpu_execution("SELECT count(*), count(a) FROM arr_allnull;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -118,7 +115,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "INSERT INTO arr_nullelems SELECT range::INTEGER, "
     "[NULL, NULL, NULL]::INTEGER[3] FROM range(3000);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_nullelems ORDER BY id;");
+  require_gpu_execution("SELECT id, a FROM arr_nullelems ORDER BY id;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -128,12 +125,12 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_dbl (id INTEGER, a DOUBLE[2]);");
   run_ok("INSERT INTO arr_dbl VALUES (1, [1.5, 2.5]), (2, [3.25, 4.75]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_dbl;");
+  require_gpu_execution("SELECT id, a FROM arr_dbl;");
 
   run_ok("CREATE TABLE arr_big (id INTEGER, a BIGINT[4]);");
   run_ok("INSERT INTO arr_big VALUES (1, [100, 200, 300, 400]), (2, [500, 600, 700, 800]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_big;");
+  require_gpu_execution("SELECT id, a FROM arr_big;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -148,22 +145,22 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_i8 (id INTEGER, a TINYINT[3]);");
   run_ok("INSERT INTO arr_i8 VALUES (1, [1, 2, 3]), (2, [127, -1, 0]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_i8;");
+  require_gpu_execution("SELECT id, a FROM arr_i8;");
 
   run_ok("CREATE TABLE arr_i16 (id INTEGER, a SMALLINT[4]);");
   run_ok("INSERT INTO arr_i16 VALUES (1, [10, -20, 30, -40]), (2, [32767, -1, 0, -100]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_i16;");
+  require_gpu_execution("SELECT id, a FROM arr_i16;");
 
   run_ok("CREATE TABLE arr_i32 (id INTEGER, a INTEGER[3]);");
   run_ok("INSERT INTO arr_i32 VALUES (1, [100, -200, 300]), (2, [2147483647, -1, 0]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_i32;");
+  require_gpu_execution("SELECT id, a FROM arr_i32;");
 
   run_ok("CREATE TABLE arr_i64 (id INTEGER, a BIGINT[2]);");
   run_ok("INSERT INTO arr_i64 VALUES (1, [9223372036854775807, -1]), (2, [0, -100]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_i64;");
+  require_gpu_execution("SELECT id, a FROM arr_i64;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -172,28 +169,28 @@ TEST_CASE_METHOD(ArrayFixture,
 {
   // Unsigned children take a distinct readback path (cuDF UINT8/16/32/64 mapped
   // back to DuckDB U* types). The type max sets the high bit, so a signed misread
-  // would surface as a negative value and fail the GPU-vs-CPU comparison.
+  // would surface as a negative value in the SQL result comparison.
   run_ok("CREATE TABLE arr_u8 (id INTEGER, a UTINYINT[3]);");
   run_ok("INSERT INTO arr_u8 VALUES (1, [0, 1, 255]), (2, [128, 200, 254]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_u8;");
+  require_gpu_execution("SELECT id, a FROM arr_u8;");
 
   run_ok("CREATE TABLE arr_u16 (id INTEGER, a USMALLINT[2]);");
   run_ok("INSERT INTO arr_u16 VALUES (1, [0, 65535]), (2, [32768, 40000]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_u16;");
+  require_gpu_execution("SELECT id, a FROM arr_u16;");
 
   run_ok("CREATE TABLE arr_u32 (id INTEGER, a UINTEGER[2]);");
   run_ok("INSERT INTO arr_u32 VALUES (1, [0, 4294967295]), (2, [2147483648, 3000000000]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_u32;");
+  require_gpu_execution("SELECT id, a FROM arr_u32;");
 
   run_ok("CREATE TABLE arr_u64 (id INTEGER, a UBIGINT[2]);");
   run_ok(
     "INSERT INTO arr_u64 VALUES "
     "(1, [0, 18446744073709551615]), (2, [9223372036854775808, 10000000000000000000]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_u64;");
+  require_gpu_execution("SELECT id, a FROM arr_u64;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -202,15 +199,14 @@ TEST_CASE_METHOD(ArrayFixture,
 {
   // FLOAT (4-byte single precision) is the element type for vector-search
   // embeddings, so it gets dedicated coverage. Use exactly-representable binary
-  // fractions (multiples of 1/2, 1/4, 1/8) so GPU and CPU stringify identically
-  // and the comparison can't fail on float-formatting skew rather than on a real
-  // decode bug.
+  // fractions (multiples of 1/2, 1/4, 1/8) so the SQL suite can compare
+  // decoded arrays exactly.
   run_ok("CREATE TABLE arr_flt (id INTEGER, a FLOAT[4]);");
   run_ok(
     "INSERT INTO arr_flt VALUES "
     "(1, [1.5, 2.25, -3.75, 0.125]), (2, [4.5, -5.0, 6.625, 7.0]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_flt;");
+  require_gpu_execution("SELECT id, a FROM arr_flt;");
 
   // Many-row FLOAT vectors crossing batch boundaries, the closest shape to the
   // embedding columns vector search will scan. Values stay exact multiples of
@@ -220,7 +216,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "INSERT INTO arr_flt_big SELECT i, [i * 0.5, i * 0.25, i * -0.125]::FLOAT[3] "
     "FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_flt_big;");
+  require_gpu_execution("SELECT id, a FROM arr_flt_big;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -237,14 +233,14 @@ TEST_CASE_METHOD(ArrayFixture,
   // validity levels are exercised at the minimum stride.
   run_ok("INSERT INTO arr_one VALUES (1, [10]), (2, NULL), (3, [30]), (4, [NULL]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_one;");
+  require_gpu_execution("SELECT id, a FROM arr_one;");
 
   // Many single-element arrays crossing batch boundaries exercise the cumulative
   // offset bookkeeping at the minimum stride.
   run_ok("CREATE TABLE arr_one_big (id INTEGER, a INTEGER[1]);");
   run_ok("INSERT INTO arr_one_big SELECT i, [i] FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_one_big;");
+  require_gpu_execution("SELECT id, a FROM arr_one_big;");
 }
 
 //===----------------------------------------------------------------------===//
@@ -263,10 +259,10 @@ TEST_CASE_METHOD(ArrayFixture,
     "INSERT INTO arr_multi VALUES "
     "(1, [1, 2, 3], [100, 200]), (2, [4, 5, 6], [300, 400]), (3, [7, 8, 9], [500, 600]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a, b FROM arr_multi;");
+  require_gpu_execution("SELECT id, a, b FROM arr_multi;");
   // Project the two array columns in the opposite order and without the scalar,
   // so column-position bookkeeping can't lean on a fixed projection layout.
-  compare_gpu_vs_cpu("SELECT b, a FROM arr_multi;");
+  require_gpu_execution("SELECT b, a FROM arr_multi;");
 
   // Independent nulls across batches: a and b carry whole-array NULLs on
   // different rows (i % 5 vs i % 3), so per-column validity and child cursors
@@ -278,7 +274,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "CASE WHEN i % 3 = 0 THEN NULL ELSE [i * 0.5, i * 0.25, i * 0.125] END "
     "FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a, b FROM arr_multi_big;");
+  require_gpu_execution("SELECT id, a, b FROM arr_multi_big;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -292,7 +288,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_rowid (a INTEGER[3]);");
   run_ok("INSERT INTO arr_rowid SELECT [i, i + 1, i + 2] FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT rowid, a FROM arr_rowid;");
+  require_gpu_execution("SELECT rowid, a FROM arr_rowid;");
 }
 
 //===----------------------------------------------------------------------===//
@@ -306,7 +302,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_null (id INTEGER, a INTEGER[3]);");
   run_ok("INSERT INTO arr_null VALUES (1, [1, 2, 3]), (2, NULL), (3, [7, 8, 9]), (4, NULL);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_null;");
+  require_gpu_execution("SELECT id, a FROM arr_null;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -322,7 +318,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "INSERT INTO arr_elem_null VALUES "
     "(1, [1, NULL, 3]), (2, [NULL, NULL, NULL]), (3, [4, 5, 6]), (4, NULL);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_elem_null;");
+  require_gpu_execution("SELECT id, a FROM arr_elem_null;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -343,7 +339,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "ELSE [i, i + 1, i + 2] END "
     "FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_null_big;");
+  require_gpu_execution("SELECT id, a FROM arr_null_big;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -362,7 +358,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "(1, [1, 2, 3]), (2, NULL), (3, [NULL, 5, NULL]), (4, [7, NULL, 9]), (5, NULL);");
   run_ok("CHECKPOINT;");
   // DESC so the sort's gather actually permutes the null rows out of input order.
-  compare_gpu_vs_cpu_ordered("SELECT id, a FROM arr_null_sort ORDER BY id DESC;");
+  require_gpu_execution("SELECT id, a FROM arr_null_sort ORDER BY id DESC;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -385,7 +381,7 @@ TEST_CASE_METHOD(ArrayFixture,
     "ELSE [i, i + 1, i + 2] END "
     "FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu_ordered("SELECT id, a FROM arr_null_sort_big ORDER BY id;");
+  require_gpu_execution("SELECT id, a FROM arr_null_sort_big ORDER BY id;");
 }
 
 //===----------------------------------------------------------------------===//
@@ -417,7 +413,7 @@ TEST_CASE_METHOD(ArrayFixture,
   REQUIRE_FALSE(storage->HasError());
   REQUIRE(storage->GetValue(0, 0).GetValue<int64_t>() > 0);
 
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_const;");
+  require_gpu_execution("SELECT id, a FROM arr_const;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -453,7 +449,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CHECKPOINT;");
   run_ok("RESET force_compression;");
   require_child_codec("arr_rle", "RLE");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_rle;");
+  require_gpu_execution("SELECT id, a FROM arr_rle;");
 
   // BitPacking: small-magnitude varied child values (< 1000, ~10 bits) that the
   // bit-packer can narrow below the full 32-bit width.
@@ -465,7 +461,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CHECKPOINT;");
   run_ok("RESET force_compression;");
   require_child_codec("arr_bp", "BitPacking");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_bp;");
+  require_gpu_execution("SELECT id, a FROM arr_bp;");
 
   // ALP: DuckDB's default float codec, so a FLOAT array child lands on it
   // naturally, no force needed. This is the codec a real embedding column hits,
@@ -485,7 +481,7 @@ TEST_CASE_METHOD(ArrayFixture,
   REQUIRE(alp_seg);
   REQUIRE_FALSE(alp_seg->HasError());
   REQUIRE(alp_seg->GetValue(0, 0).GetValue<int64_t>() > 0);
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_alp;");
+  require_gpu_execution("SELECT id, a FROM arr_alp;");
 }
 
 //===----------------------------------------------------------------------===//
@@ -499,7 +495,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_filter (id INTEGER, a INTEGER[2]);");
   run_ok("INSERT INTO arr_filter VALUES (1, [1, 1]), (2, [2, 2]), (3, [3, 3]), (4, [4, 4]);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_filter WHERE id >= 3;");
+  require_gpu_execution("SELECT id, a FROM arr_filter WHERE id >= 3;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -509,7 +505,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("CREATE TABLE arr_prune (id INTEGER, a INTEGER[3]);");
   run_ok("INSERT INTO arr_prune SELECT i, [i, i + 1, i + 2] FROM range(200000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_prune WHERE id >= 150000;");
+  require_gpu_execution("SELECT id, a FROM arr_prune WHERE id >= 150000;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -530,9 +526,8 @@ TEST_CASE_METHOD(ArrayFixture,
   disabled_optimizers_guard const guard(*con, "statistics_propagation");
   // Non-empty control first: proves the non-empty ARRAY top-n path, so a failure below isolates
   // to emptiness rather than to ARRAY-through-TOP-N support.
-  compare_gpu_vs_cpu_ordered("SELECT id, a FROM arr_prune ORDER BY id LIMIT 5;");
-  compare_gpu_vs_cpu_ordered(
-    "SELECT id, a FROM arr_prune WHERE id >= 1000000 ORDER BY id LIMIT 5;");
+  require_gpu_execution("SELECT id, a FROM arr_prune ORDER BY id LIMIT 5;");
+  require_gpu_execution("SELECT id, a FROM arr_prune WHERE id >= 1000000 ORDER BY id LIMIT 5;");
 }
 
 TEST_CASE_METHOD(ArrayFixture,
@@ -555,7 +550,7 @@ TEST_CASE_METHOD(ArrayFixture,
   run_ok("INSERT INTO dim SELECT i FROM range(100) t(i);");
   run_ok("CHECKPOINT;");
   disabled_optimizers_guard const guard(*con, "statistics_propagation");
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT d.id, t.a FROM dim d LEFT JOIN "
     "(SELECT * FROM arr_prune WHERE id >= 1000000) t USING (id);");
 }
@@ -573,5 +568,5 @@ TEST_CASE_METHOD(ArrayFixture,
   // multiple batches and exercising cumulative offset bookkeeping.
   run_ok("INSERT INTO arr_big_n SELECT i, [i, i + 1, i + 2] FROM range(5000) t(i);");
   run_ok("CHECKPOINT;");
-  compare_gpu_vs_cpu("SELECT id, a FROM arr_big_n;");
+  require_gpu_execution("SELECT id, a FROM arr_big_n;");
 }
