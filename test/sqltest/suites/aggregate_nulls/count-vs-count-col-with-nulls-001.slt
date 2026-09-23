@@ -1,0 +1,17 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:74
+# gpu_execution COUNT(*) vs COUNT(col) with NULLs
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/count-vs-count-col-with-nulls/001"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ???? rowsort
+SELECT
+  COUNT(*),
+  COUNT(v),
+  COUNT(d),
+  COUNT(f)
+FROM
+  agg_n;
+----
+8	5	4	4

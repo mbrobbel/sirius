@@ -1,5 +1,116 @@
 {
-  "cases": [],
+  "cases": [
+    {
+      "file": "suites/aggregate_nulls/count-vs-count-col-with-nulls-001.slt",
+      "id": "aggregate_nulls/count-vs-count-col-with-nulls/001",
+      "identity": "4f3c1509a7ee17138820fb6b3eb7832a1606b09bf990dcfe3bb6b8675c325a18",
+      "kind": "query",
+      "line": 74,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution COUNT(*) vs COUNT(col) with NULLs"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-sum-min-max-skip-nulls-001.slt",
+      "id": "aggregate_nulls/ungrouped-sum-min-max-skip-nulls/001",
+      "identity": "3705ad8dd20305c44a77748f45c22911f8a3e88297cd1f9509da79950118ce4a",
+      "kind": "query",
+      "line": 81,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped SUM/MIN/MAX skip NULLs"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-sum-min-max-skip-nulls-002.slt",
+      "id": "aggregate_nulls/ungrouped-sum-min-max-skip-nulls/002",
+      "identity": "36729b8acb8d4b030b1b47bf7791e5eb577c0c85ae93c458be01fca6cc8f3528",
+      "kind": "query",
+      "line": 82,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped SUM/MIN/MAX skip NULLs"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-sum-min-max-skip-nulls-003.slt",
+      "id": "aggregate_nulls/ungrouped-sum-min-max-skip-nulls/003",
+      "identity": "231ffb906a9c96dfaafd0df6aaa0db4b3de09e38827a68c7e91bee4fa8add25f",
+      "kind": "query",
+      "line": 83,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped SUM/MIN/MAX skip NULLs"
+    },
+    {
+      "file": "suites/aggregate_nulls/group-by-groups-null-keys-together-001.slt",
+      "id": "aggregate_nulls/group-by-groups-null-keys-together/001",
+      "identity": "3546904300f3f4ea16f058001ac8602e76f51e682509c0cff36c9121e3247ed6",
+      "kind": "query",
+      "line": 92,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution GROUP BY groups NULL keys together"
+    },
+    {
+      "file": "suites/aggregate_nulls/grouped-sum-avg-over-null-values-001.slt",
+      "id": "aggregate_nulls/grouped-sum-avg-over-null-values/001",
+      "identity": "0384a720ca889ecc3a27bd1a8d7aa8af7bcdc2a3ad27ee309e480aa8c99a795e",
+      "kind": "query",
+      "line": 100,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution grouped SUM/AVG over NULL values"
+    },
+    {
+      "file": "suites/aggregate_nulls/grouped-count-distinct-ignores-nulls-001.slt",
+      "id": "aggregate_nulls/grouped-count-distinct-ignores-nulls/001",
+      "identity": "b86f0a83987e3d9ab3c3ac3262497b53fac59ef57961849d53ac7fd2c91d85cf",
+      "kind": "query",
+      "line": 109,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution grouped COUNT(DISTINCT) ignores NULLs"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-count-distinct-falls-back-to-cpu-001.slt",
+      "id": "aggregate_nulls/ungrouped-count-distinct-falls-back-to-cpu/001",
+      "identity": "c7f636a518dc7d916ebbe68fe14b4d61e667ffdc7f8256b9e0afe685e5da3160",
+      "kind": "fallback",
+      "line": 116,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped COUNT(DISTINCT) falls back to CPU"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-avg-skips-nulls-non-null-denominator-001.slt",
+      "id": "aggregate_nulls/ungrouped-avg-skips-nulls-non-null-denominator/001",
+      "identity": "4a36dcf9f37e7fa14567a9b422441514d89377b47c88266cda354e842a2e3fdf",
+      "kind": "query",
+      "line": 129,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped AVG skips NULLs (non-null denominator)"
+    },
+    {
+      "file": "suites/aggregate_nulls/ungrouped-aggregates-over-a-wholly-null-column-001.slt",
+      "id": "aggregate_nulls/ungrouped-aggregates-over-a-wholly-null-column/001",
+      "identity": "b2e1c23ad203495cc56a552f9e7e956a49476a9b88610d4519971630b1dd5c59",
+      "kind": "query",
+      "line": 141,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution ungrouped aggregates over a wholly-NULL column"
+    },
+    {
+      "file": "suites/aggregate_nulls/grouped-aggregates-over-a-wholly-null-column-001.slt",
+      "id": "aggregate_nulls/grouped-aggregates-over-a-wholly-null-column/001",
+      "identity": "9424e855bd16b1691341b6d7299b4ab3e95623ee291fade7677ead2aee7b6330",
+      "kind": "query",
+      "line": 149,
+      "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
+      "suite": "aggregate_nulls",
+      "test": "gpu_execution grouped aggregates over a wholly-NULL column"
+    }
+  ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",
   "version": 1
 }

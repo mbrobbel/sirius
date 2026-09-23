@@ -1,0 +1,16 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:82
+# gpu_execution ungrouped SUM/MIN/MAX skip NULLs
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/ungrouped-sum-min-max-skip-nulls/002"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ??? rowsort
+SELECT
+  SUM(d),
+  MIN(d),
+  MAX(d)
+FROM
+  agg_n;
+----
+18.00	1.00	10.00
