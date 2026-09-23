@@ -1,0 +1,58 @@
+# mvcc insert: bulk all-NULL inserts keep their NULLs
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, NULL::INTEGER AS v FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 20000,
+  NULL::INTEGER
+FROM
+  range(130000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:241
+# sirius: id = "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ??? rowsort
+SELECT
+  count(*),
+  count(v),
+  sum(k)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:242
+# sirius: id = "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  v
+FROM
+  t
+WHERE
+  k >= 149995 ORDER BY k;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:244
+# sirius: id = "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ? rowsort
+SELECT
+  count(v)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

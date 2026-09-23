@@ -1,0 +1,31 @@
+# mvcc guards: rowid-only scans keep declining with a delta present
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(30000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (30000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:430
+# sirius: id = "pin_mvcc_insert/guards-rowid-only-scans-keep-declining-with-a-delta-present/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

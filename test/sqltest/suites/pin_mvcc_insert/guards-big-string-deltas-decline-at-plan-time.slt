@@ -1,0 +1,33 @@
+# mvcc guards: big-string deltas decline at plan time
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, 'short_' || range AS s FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (20000, repeat('x', 5000));
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:415
+# sirius: id = "pin_mvcc_insert/guards-big-string-deltas-decline-at-plan-time/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+# sirius: execution = "allow_fallback"
+query ??? rowsort
+SELECT
+  count(*),
+  max(k),
+  max(strlen(s))
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

@@ -1,0 +1,53 @@
+# mvcc insert: bulk ARRAY inserts ride the persistent delta lane
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3]) AS a FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 20000,
+  CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3])
+FROM
+  range(130000);
+
+statement ok
+INSERT INTO t VALUES
+  (200000, CAST([1, 2, 3] AS INTEGER[3]));
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:610
+# sirius: id = "pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  a
+FROM
+  t
+WHERE
+  k >= 149997 AND k < 150000 ORDER BY k;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:612
+# sirius: id = "pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  a
+FROM
+  t
+WHERE
+  k >= 200000 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

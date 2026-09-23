@@ -1,0 +1,35 @@
+# mvcc insert: ARRAY delta preserves array-level and child NULLs
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3]) AS a FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (20000, NULL::INTEGER[3]),
+  (20001, CAST([NULL, 5, NULL] AS INTEGER[3])),
+  (20002, CAST([7, NULL, 9] AS INTEGER[3]));
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:634
+# sirius: id = "pin_mvcc_insert/insert-array-delta-preserves-array-level-and-child-nulls/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  a
+FROM
+  t
+WHERE
+  k >= 19999 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

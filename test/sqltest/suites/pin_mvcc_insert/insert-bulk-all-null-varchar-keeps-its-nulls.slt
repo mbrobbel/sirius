@@ -1,0 +1,47 @@
+# mvcc insert: bulk all-NULL varchar keeps its NULLs
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, NULL::VARCHAR AS s FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 20000,
+  NULL::VARCHAR
+FROM
+  range(130000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:261
+# sirius: id = "pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(s)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:262
+# sirius: id = "pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  s
+FROM
+  t
+WHERE
+  k >= 149995 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

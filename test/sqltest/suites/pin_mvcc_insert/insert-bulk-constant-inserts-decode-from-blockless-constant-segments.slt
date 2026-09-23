@@ -1,0 +1,62 @@
+# mvcc insert: bulk constant inserts decode from blockless CONSTANT segments
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, range::INTEGER AS v FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 20000,
+  7
+FROM
+  range(130000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:198
+# sirius: id = "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ????? rowsort
+SELECT
+  count(*),
+  sum(k),
+  sum(v),
+  min(v),
+  max(v)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:199
+# sirius: id = "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  v
+FROM
+  t
+WHERE
+  k >= 149995 ORDER BY k;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:202
+# sirius: id = "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ??? rowsort
+SELECT
+  sum(v),
+  min(v),
+  max(v)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

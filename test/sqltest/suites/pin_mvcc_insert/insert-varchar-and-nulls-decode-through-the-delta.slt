@@ -1,0 +1,61 @@
+# mvcc insert: varchar and NULLs decode through the delta
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, 'base_' || range AS s, CASE WHEN range % 3 = 0 THEN NULL ELSE range::INTEGER END AS opt FROM range(50000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 50000,
+  CASE
+    WHEN range % 97 = 0 THEN
+      ''
+    ELSE
+      'delta_' || range
+  END,
+  CASE
+    WHEN range % 5 = 0 THEN
+      NULL
+    ELSE
+      range::INTEGER
+  END
+FROM
+  range(2000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:301
+# sirius: id = "pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ???? rowsort
+SELECT
+  count(*),
+  count(opt),
+  min(s),
+  max(s)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:302
+# sirius: id = "pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ??? rowsort
+SELECT
+  k,
+  s,
+  opt
+FROM
+  t
+WHERE
+  k >= 49995 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
