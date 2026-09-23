@@ -1,0 +1,77 @@
+include ../../fixtures/migrated/operator_mgpu/q11.slt
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:472
+# sirius: id = "operator_mgpu_q11/bisect-2/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  ps_partkey,
+  SUM(ps_supplycost * ps_availqty) AS value
+FROM
+  read_parquet('__TEST_DIR__/partsupp/*.parquet') ps
+  JOIN read_parquet('__TEST_DIR__/supplier/*.parquet') sup ON ps.ps_suppkey = sup.s_suppkey
+  JOIN read_parquet('__TEST_DIR__/nation/*.parquet') n ON sup.s_nationkey = n.n_nationkey
+WHERE
+  n.n_name = 'GERMANY'
+GROUP BY
+  ps_partkey ORDER BY value DESC LIMIT 20;
+----
+1999982	63999424.0
+1999957	63998624.0
+1999932	63997824.0
+1999907	63997024.0
+1999882	63996224.0
+1999857	63995424.0
+1999832	63994624.0
+1999807	63993824.0
+1999782	63993024.0
+1999757	63992224.0
+1999732	63991424.0
+1999707	63990624.0
+1999682	63989824.0
+1999657	63989024.0
+1999632	63988224.0
+1999607	63987424.0
+1999582	63986624.0
+1999557	63985824.0
+1999532	63985024.0
+1999507	63984224.0
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:472
+# sirius: id = "operator_mgpu_q11/bisect-2/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  ps_partkey,
+  SUM(ps_supplycost * ps_availqty) AS value
+FROM
+  read_parquet('__TEST_DIR__/partsupp/*.parquet') ps
+  JOIN read_parquet('__TEST_DIR__/supplier/*.parquet') sup ON ps.ps_suppkey = sup.s_suppkey
+  JOIN read_parquet('__TEST_DIR__/nation/*.parquet') n ON sup.s_nationkey = n.n_nationkey
+WHERE
+  n.n_name = 'GERMANY'
+GROUP BY
+  ps_partkey ORDER BY value DESC LIMIT 20;
+----
+1999982	63999424.0
+1999957	63998624.0
+1999932	63997824.0
+1999907	63997024.0
+1999882	63996224.0
+1999857	63995424.0
+1999832	63994624.0
+1999807	63993824.0
+1999782	63993024.0
+1999757	63992224.0
+1999732	63991424.0
+1999707	63990624.0
+1999682	63989824.0
+1999657	63989024.0
+1999632	63988224.0
+1999607	63987424.0
+1999582	63986624.0
+1999557	63985824.0
+1999532	63985024.0
+1999507	63984224.0

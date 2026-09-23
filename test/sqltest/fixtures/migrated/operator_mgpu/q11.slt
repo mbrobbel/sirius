@@ -1,0 +1,56 @@
+statement ok
+CREATE TABLE fixture_source AS SELECT range AS ps_partkey, (range % 50000) AS ps_suppkey, CAST(range AS DOUBLE) AS ps_supplycost, CAST(1 AS DOUBLE) AS ps_availqty FROM range(2000000);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p1.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p2.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p3.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p4.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p5.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p6.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/partsupp/p7.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE fixture_source;
+
+statement ok
+CREATE TABLE fixture_source AS SELECT range AS s_suppkey, (range % 25) AS s_nationkey FROM range(50000);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/supplier/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/supplier/p1.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/supplier/p2.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/supplier/p3.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE fixture_source;
+
+statement ok
+CREATE TABLE fixture_source AS SELECT range AS n_nationkey, CASE WHEN range = 7 THEN 'GERMANY' ELSE concat('N', CAST(range AS VARCHAR)) END AS n_name FROM range(25);
+
+statement ok
+COPY fixture_source TO '__TEST_DIR__/nation/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE fixture_source;
