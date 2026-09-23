@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -211,3 +211,15 @@ sha256 = "332aae6daced910888b0e8f41eca3097af01b016f70910dcf3bff52da145fc49"
 "multiple/city=Los%20Angeles%2FWest/data.parquet" = "hive-2024-01"
 "two_columns/city=New%20York/dept=R%26D/data.parquet" = "hive-2024-01"
 "plain/city=Boston/data.parquet" = "hive-2024-01"
+
+[profiles.hive-watchdog]
+gpus = 1
+config = "profiles/hive-watchdog.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[axes.gpu.hive-watchdog]
+profile = "hive-watchdog"
+
+[runs.hive-watchdog]
+suites = ["hive_watchdog"]
+profile = "hive-watchdog"
