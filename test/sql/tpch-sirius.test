@@ -174,7 +174,7 @@ order by
     l_returnflag,
     l_linestatus;");
 ----
-<FILE>:test/answers/tpch/q1.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q01.csv
 
 #Q2
 query I
@@ -222,7 +222,7 @@ order by
   s.s_name,
   p.p_partkey;");
 ----
-<FILE>:test/answers/tpch/q2.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q02.csv
 
 #Q3
 query I
@@ -249,7 +249,7 @@ order by
   revenue desc,
   o.o_orderdate;");
 ----
-<FILE>:test/answers/tpch/q3.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q03.csv
 
 #Q4
 query I
@@ -276,7 +276,7 @@ group by
 order by
   o.o_orderpriority;");
 ----
-<FILE>:test/answers/tpch/q4.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q04.csv
 
 #Q5
 query I
@@ -305,7 +305,7 @@ group by
 order by
   revenue desc;");
 ----
-<FILE>:test/answers/tpch/q5.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q05.csv
 
 #Q6
 query I
@@ -320,7 +320,7 @@ where
   l_discount between 0.03 - 0.01 and 0.03 + 0.01
   and l_quantity < 24;");
 ----
-<FILE>:test/answers/tpch/q6.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q06.csv
 
 #Q7
 query I
@@ -364,7 +364,7 @@ order by
   cust_nation,
   l_year;");
 ----
-<FILE>:test/answers/tpch/q7.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q07.csv
 
 #Q8
 query I
@@ -406,7 +406,7 @@ group by
 order by
   o_year;");
 ----
-<FILE>:test/answers/tpch/q8.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q08.csv
 
 #Q9
 query I
@@ -443,7 +443,7 @@ order by
   nation,
   o_year desc;");
 ----
-<FILE>:test/answers/tpch/q9.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q09.csv
 
 #Q10
 query I
@@ -480,7 +480,7 @@ order by
   c.c_custkey,
   revenue desc;");
 ----
-<FILE>:test/answers/tpch/q10.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q10.csv
 
 #Q11
 query I
@@ -513,7 +513,7 @@ order by
   value desc,
   ps.ps_partkey;");
 ----
-<FILE>:test/answers/tpch/q11.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q11.csv
 
 #Q12
 query I
@@ -546,7 +546,7 @@ group by
 order by
   l.l_shipmode;");
 ----
-<FILE>:test/answers/tpch/q12.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q12.csv
 
 #Q13
 query I
@@ -572,7 +572,7 @@ order by
   custdist desc,
   c_count desc;");
 ----
-<FILE>:test/answers/tpch/q13.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q13.csv
 
 #Q14
 query I
@@ -590,7 +590,7 @@ where
   and l.l_shipdate >= date '1994-08-01'
   and l.l_shipdate < date '1994-09-01';");
 ----
-<FILE>:test/answers/tpch/q14.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q14.csv
 
 #Q15
 query I
@@ -626,7 +626,7 @@ where
 order by
   s.s_suppkey;");
 ----
-<FILE>:test/answers/tpch/q15.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q15.csv
 
 #Q16
 query I
@@ -661,7 +661,7 @@ order by
   p.p_type,
   p.p_size;");
 ----
-<FILE>:test/answers/tpch/q16.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q16.csv
 
 #Q17
 query I
@@ -683,7 +683,7 @@ where
       l2.l_partkey = p.p_partkey
   );");
 ----
-<FILE>:test/answers/tpch/q17.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q17.csv
 
 #Q18
 query I
@@ -721,7 +721,7 @@ order by
   o.o_orderdate,
   o.o_orderkey;");
 ----
-<FILE>:test/answers/tpch/q18.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q18.csv
 
 #Q19
 query I
@@ -761,7 +761,7 @@ where
     and l.l_shipinstruct = 'DELIVER IN PERSON'
   );");
 ----
-<FILE>:test/answers/tpch/q19.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q19.csv
 
 #Q20
 query I
@@ -803,7 +803,7 @@ where
 order by
   s.s_name;");
 ----
-<FILE>:test/answers/tpch/q20.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q20.csv
 
 #Q21
 query I
@@ -847,7 +847,7 @@ order by
   numwait desc,
   s.s_name;");
 ----
-<FILE>:test/answers/tpch/q21.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q21.csv
 
 #Q22
 query I
@@ -889,4 +889,4 @@ group by
 order by
   cntrycode;");
 ----
-<FILE>:test/answers/tpch/q22.csv
+<FILE>:test/sqltest/fixtures/goldens/tpch/q22.csv
