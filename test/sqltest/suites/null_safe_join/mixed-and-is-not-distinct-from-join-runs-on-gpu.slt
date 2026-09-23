@@ -1,0 +1,30 @@
+# gpu_execution mixed '=' and IS NOT DISTINCT FROM join runs on GPU
+include ../../fixtures/migrated/null_safe_join/MixedKeyJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:134
+# sirius: id = "null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  ml.a,
+  ml.b
+FROM
+  ml
+  JOIN mr ON ml.a = mr.a AND ml.b IS NOT DISTINCT FROM mr.b;
+----
+10	100
+20	100
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:136
+# sirius: id = "null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  ml
+  JOIN mr ON ml.a = mr.a AND ml.b IS NOT DISTINCT FROM mr.b;
+----
+2

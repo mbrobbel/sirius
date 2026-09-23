@@ -1,0 +1,26 @@
+statement ok
+CREATE TABLE ml (
+  a INTEGER,
+  b INTEGER
+);
+
+statement ok
+CREATE TABLE mr (
+  a INTEGER,
+  b INTEGER
+);
+
+statement ok
+INSERT INTO ml VALUES
+  (10, 100),
+  (10, 200),
+  (20, 100);
+
+statement ok
+INSERT INTO mr VALUES
+  (10, 100),
+  (10, 999),
+  (20, 100);
+
+statement ok
+CHECKPOINT;

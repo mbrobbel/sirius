@@ -1,0 +1,18 @@
+# gpu_execution mixed '=' + null-safe join with a cast and no NULLs
+include ../../fixtures/migrated/null_safe_join/MixedTypeNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:254
+# sirius: id = "null_safe_join/mixed-null-safe-join-with-a-cast-and-no-nulls/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mtl.id,
+  mtr.id
+FROM
+  mtl
+  JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b
+WHERE
+  mtl.b IS NOT NULL AND mtr.b IS NOT NULL;
+----
+1	100

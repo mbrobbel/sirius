@@ -1,0 +1,19 @@
+# gpu_execution null-safe LEFT join matches NULL and pads unmatched
+include ../../fixtures/migrated/null_safe_join/NullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:106
+# sirius: id = "null_safe_join/null-safe-left-join-matches-null-and-pads-unmatched/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  l.id,
+  r.id
+FROM
+  l
+  LEFT JOIN r ON l.k IS NOT DISTINCT FROM r.k;
+----
+1	100
+2	101
+3	101
+4	NULL

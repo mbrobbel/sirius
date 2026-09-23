@@ -1,0 +1,31 @@
+# gpu_execution mixed '=' + null-safe INNER join matches NULL to NULL
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:163
+# sirius: id = "null_safe_join/mixed-null-safe-inner-join-matches-null-to-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  mnr.id
+FROM
+  mnl
+  JOIN mnr ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b;
+----
+1	100
+2	101
+3	102
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:166
+# sirius: id = "null_safe_join/mixed-null-safe-inner-join-matches-null-to-null/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  mnl
+  JOIN mnr ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b;
+----
+3

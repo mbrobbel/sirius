@@ -1,0 +1,23 @@
+# gpu_execution mixed '=' + null-safe FULL OUTER join matches NULL to NULL
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:200
+# sirius: id = "null_safe_join/mixed-null-safe-full-outer-join-matches-null-to-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  mnr.id
+FROM
+  mnl
+  FULL JOIN mnr ON mnl.a = mnr.a AND mnl.b IS NOT DISTINCT FROM mnr.b;
+----
+1	100
+2	101
+3	102
+4	NULL
+5	NULL
+6	NULL
+NULL	103
+NULL	104

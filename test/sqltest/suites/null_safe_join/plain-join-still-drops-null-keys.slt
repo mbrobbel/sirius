@@ -1,0 +1,29 @@
+# gpu_execution plain '=' join still drops NULL keys
+include ../../fixtures/migrated/null_safe_join/NullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:96
+# sirius: id = "null_safe_join/plain-join-still-drops-null-keys/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  l.id,
+  r.id
+FROM
+  l
+  JOIN r ON l.k = r.k;
+----
+1	100
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:97
+# sirius: id = "null_safe_join/plain-join-still-drops-null-keys/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  l
+  JOIN r ON l.k = r.k;
+----
+1
