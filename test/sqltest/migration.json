@@ -9861,6 +9861,16 @@
       "test": "transparent read_parquet over S3 scans through Sirius REST"
     },
     {
+      "file": "suites/s3_surface_datasource_off/datasource-off.slt",
+      "id": "s3_surface_datasource_off/datasource-off/001",
+      "identity": "929f0d369957aa9a2c9bf83d6be9ff9c247eee28babca6ca0753ed4a0d6342ca",
+      "kind": "query",
+      "line": 2520,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface_datasource_off",
+      "test": "transparent read_parquet over S3 keeps REST routing when local Sirius datasource is off"
+    },
+    {
       "file": "suites/s3_surface/expand.slt",
       "id": "s3_surface/expand/001",
       "identity": "42493f8f19d685a24dd45f319d9cf6f4d76e915ec7e85f8cb47615739020bf2f",
