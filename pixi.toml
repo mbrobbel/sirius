@@ -7,8 +7,22 @@ version = "0.0.0"
 [tasks]
 
 [dependencies]
+black = "*"
+cmake-format = "*"
+make = "*"
+python = "3.*"
+
+[feature.tidy.dependencies]
+clang = "*"
+clang-tools = "*"
 cmake = "4.4.*"
 cxx-compiler = "*"
-make = "*"
 ninja = "*"
 sccache = "0.18.*"
+
+[feature.format.pypi-dependencies]
+clang-format = ">=11,<12"
+
+[environments]
+default = ["tidy"]
+format = ["format"]
