@@ -5411,6 +5411,66 @@
       "test": "gpu_execution - top n parquet"
     },
     {
+      "file": "suites/tpch_empty/empty-native-table-count-identity.slt",
+      "id": "tpch_empty/empty-native-table-count-identity",
+      "identity": "060e0b4760ecc3dc8eebd4e4f10203a2c7074cf9e5088b0aa7e2240cfe3b2962",
+      "kind": "ordered",
+      "line": 3909,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty native table count identity"
+    },
+    {
+      "file": "suites/tpch_empty/empty-native-table-scan-preserves-schema.slt",
+      "id": "tpch_empty/empty-native-table-scan-preserves-schema",
+      "identity": "4ead1f666cad26665362c29877fb219f30c50b81d061456cc1fe4c83e7006cfe",
+      "kind": "ordered",
+      "line": 3922,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty native table scan preserves schema"
+    },
+    {
+      "file": "suites/tpch_empty/empty-native-table-left-join-pads-survivor-rows.slt",
+      "id": "tpch_empty/empty-native-table-left-join-pads-survivor-rows",
+      "identity": "9b1587e9ee4f2418b470f24a55bfd865d11da6e45233e60d4470bee8a6b54208",
+      "kind": "ordered",
+      "line": 3936,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty native table left join pads survivor rows"
+    },
+    {
+      "file": "suites/tpch_empty/empty-native-table-full-outer-join-pads-survivor-rows-empty-build.slt",
+      "id": "tpch_empty/empty-native-table-full-outer-join-pads-survivor-rows-empty-build",
+      "identity": "bc355bd2b2a7d8bb70f5b22403076d0a58f74897891e009f9eba70615710356d",
+      "kind": "ordered",
+      "line": 3955,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty native table full outer join pads survivor rows (empty build)"
+    },
+    {
+      "file": "suites/tpch_empty/empty-native-table-full-outer-join-pads-survivor-rows-empty-probe.slt",
+      "id": "tpch_empty/empty-native-table-full-outer-join-pads-survivor-rows-empty-probe",
+      "identity": "398006d706d5a4217f60efb08a3c5d529d676619285ec28e43b9eaaffd25e93b",
+      "kind": "ordered",
+      "line": 3969,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty native table full outer join pads survivor rows (empty probe)"
+    },
+    {
+      "file": "suites/tpch_empty/empty-parquet-count-identity.slt",
+      "id": "tpch_empty/empty-parquet-count-identity",
+      "identity": "a2ca5b1c41a9cd7db82440dc51b3c7285c0aee8abc942790e9400d8d908d8c89",
+      "kind": "ordered",
+      "line": 3983,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_empty",
+      "test": "gpu_execution - empty parquet count identity"
+    },
+    {
       "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
       "id": "dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent/001-off",
       "identity": "cf5e41cee4b5d97d96e2a453ec39cbcfb7469d0dde61b49edcd25332bb90c4f0",
