@@ -1,0 +1,20 @@
+# gpu_execution - bigger inner join parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2209
+# sirius: id = "tpch_integration_parquet/bigger-inner-join-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "bigger_join"]
+query ???????? rowsort
+SELECT
+  l.l_orderkey,
+  l.l_linenumber,
+  l.l_quantity,
+  l.l_partkey,
+  o.o_orderkey,
+  o.o_totalprice,
+  o.o_custkey,
+  o_comment
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey ORDER BY l.l_orderkey, l.l_linenumber LIMIT 5000;
+----

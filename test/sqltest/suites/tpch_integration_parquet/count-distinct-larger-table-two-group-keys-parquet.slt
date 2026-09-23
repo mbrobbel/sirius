@@ -1,0 +1,15 @@
+# gpu_execution - count distinct: larger table two group keys parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3303
+# sirius: id = "tpch_integration_parquet/count-distinct-larger-table-two-group-keys-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "group_by", "count_distinct"]
+query ?? rowsort
+SELECT
+  c_nationkey,
+  count(DISTINCT c_mktsegment)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----

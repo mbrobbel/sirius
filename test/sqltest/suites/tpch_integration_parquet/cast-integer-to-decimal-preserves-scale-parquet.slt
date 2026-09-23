@@ -1,0 +1,13 @@
+# gpu_execution - cast integer to decimal preserves scale parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3172
+# sirius: id = "tpch_integration_parquet/cast-integer-to-decimal-preserves-scale-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "cast", "decimal"]
+query ?? rowsort
+SELECT
+  n_nationkey,
+  CAST(n_nationkey AS DECIMAL(18,2)) AS d
+FROM
+  nation;
+----

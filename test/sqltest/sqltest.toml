@@ -170,7 +170,7 @@ environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1", SIRIUS_EXP_FUSED_SCAN_FILTER =
 profile = "integration-two-gpu"
 
 [runs.tpch-multi-gpu]
-suites = ["tpch_integration_native"]
+suites = ["tpch_integration_native", "tpch_integration_parquet"]
 axes = { gpu = ["integration-two"], storage = "all", optimizers = ["default"] }
 
 [profiles.compressed-materialization-gate]

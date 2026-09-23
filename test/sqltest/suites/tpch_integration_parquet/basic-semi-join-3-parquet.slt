@@ -1,0 +1,14 @@
+# gpu_execution - basic semi join 3 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1653
+# sirius: id = "tpch_integration_parquet/basic-semi-join-3-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "semijoin"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey
+FROM
+  nation n
+  SEMI JOIN customer c ON n.n_nationkey = c.c_nationkey;
+----

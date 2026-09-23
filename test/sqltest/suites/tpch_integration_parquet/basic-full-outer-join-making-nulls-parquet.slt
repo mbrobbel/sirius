@@ -1,0 +1,14 @@
+# gpu_execution - basic full outer join making nulls parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1571
+# sirius: id = "tpch_integration_parquet/basic-full-outer-join-making-nulls-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "join"]
+query ?? rowsort
+SELECT
+  n.n_nationkey,
+  r.r_regionkey
+FROM
+  nation n
+  FULL JOIN region r ON n.n_nationkey = r.r_regionkey;
+----

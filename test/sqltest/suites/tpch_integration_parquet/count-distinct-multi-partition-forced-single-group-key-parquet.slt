@@ -1,0 +1,19 @@
+# gpu_execution - count distinct: multi-partition forced, single group key parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 5;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3331
+# sirius: id = "tpch_integration_parquet/count-distinct-multi-partition-forced-single-group-key-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(DISTINCT n_nationkey)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

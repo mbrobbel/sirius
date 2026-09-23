@@ -1,0 +1,17 @@
+# gpu_execution - join with empty one side parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3513
+# sirius: id = "tpch_integration_parquet/join-with-empty-one-side-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "empty_result"]
+query ??? rowsort
+SELECT
+  l.l_orderkey AS lokey,
+  l.l_linestatus,
+  o.o_custkey
+FROM
+  lineitem l
+  INNER JOIN orders o ON l.l_orderkey = o.o_orderkey
+WHERE
+  l_linestatus = 'J';
+----

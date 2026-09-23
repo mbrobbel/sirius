@@ -1,0 +1,14 @@
+# gpu_execution - filter not equal parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:532
+# sirius: id = "tpch_integration_parquet/filter-not-equal-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "filter"]
+query ? rowsort
+SELECT
+  r_regionkey
+FROM
+  region
+WHERE
+  r_regionkey <> 3;
+----

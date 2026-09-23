@@ -1,0 +1,18 @@
+# gpu_execution - group by min, max, avg on decimal on lineitem parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2861
+# sirius: id = "tpch_integration_parquet/group-by-min-max-avg-on-decimal-on-lineitem-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "group_by", "avg"]
+# sirius: tolerances = { "3" = { absolute = 0.0001, relative = 0.0 } }
+query ???? rowsort
+SELECT
+  l_tax,
+  min(l_extendedprice),
+  max(l_extendedprice),
+  avg(l_extendedprice)
+FROM
+  lineitem
+GROUP BY
+  l_tax;
+----

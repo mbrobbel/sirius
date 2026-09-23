@@ -1,0 +1,17 @@
+# gpu_execution - all-pruned grouped aggregate emits no groups parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4078
+# sirius: id = "tpch_integration_parquet/all-pruned-grouped-aggregate-emits-no-groups-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(*) AS c
+FROM
+  nation
+WHERE
+  n_regionkey = 99
+GROUP BY
+  n_regionkey ORDER BY n_regionkey;
+----
