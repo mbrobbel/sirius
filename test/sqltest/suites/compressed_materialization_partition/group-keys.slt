@@ -1,0 +1,58 @@
+include ../../fixtures/migrated/compressed_materialization_partition/fact.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/fact.parquet', tier = 'gpu', name = 't');
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:554
+# sirius: id = "compressed_materialization_partition/group-keys/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  k,
+  COUNT(*) AS c,
+  SUM(v) AS sv
+FROM
+  t
+GROUP BY
+  k ORDER BY k LIMIT 10;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:564
+# sirius: id = "compressed_materialization_partition/group-keys/002"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ?? rowsort
+SELECT
+  k,
+  COUNT(k) AS c
+FROM
+  t
+GROUP BY
+  k ORDER BY k LIMIT 10;
+----
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:574
+# sirius: id = "compressed_materialization_partition/group-keys/003"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  k,
+  COUNT(*) AS c,
+  SUM(v) AS sv
+FROM
+  t
+GROUP BY
+  k ORDER BY k LIMIT 10;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

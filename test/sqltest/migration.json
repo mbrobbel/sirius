@@ -3729,6 +3729,116 @@
       "source": "test/cpp/integration/test_compressed_materialization_gate.cpp",
       "suite": "compressed_materialization_gate",
       "test": "gpu_execution - a pinned narrow DATE column round-trips through its restore boundaries"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/join-gpu.slt",
+      "id": "compressed_materialization_partition/join-gpu/001",
+      "identity": "d9522759a125173029e236f21fd4dfef45e4e3660af0324b2746667fcfb15a27",
+      "kind": "query",
+      "line": 313,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow payloads cross a partitioned exchange with a wired dynamic filter"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/join-gpu.slt",
+      "id": "compressed_materialization_partition/join-gpu/002",
+      "identity": "b215dce0e2c6244c94b158747baf3992c3f7b173754cb47f78f7324479dec51b",
+      "kind": "query",
+      "line": 329,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow payloads cross a partitioned exchange with a wired dynamic filter"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/join-host.slt",
+      "id": "compressed_materialization_partition/join-host/001",
+      "identity": "fbc019b634a112a80d0b8f31a3e428894e9170915dd505e4da60e61a7b5f4b19",
+      "kind": "query",
+      "line": 313,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow payloads cross a partitioned exchange with a wired dynamic filter"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/join-host.slt",
+      "id": "compressed_materialization_partition/join-host/002",
+      "identity": "5746dd8f382a1c7eb45c142c35f243861046fa3b527d533b7e246510572ef776",
+      "kind": "query",
+      "line": 329,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow payloads cross a partitioned exchange with a wired dynamic filter"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/empty-side-outer-joins.slt",
+      "id": "compressed_materialization_partition/empty-side-outer-joins/001",
+      "identity": "37c9835cba9fc1b895d1b6e29907eff88d540937a6ac6c29bc4da75363ef9dae",
+      "kind": "query",
+      "line": 420,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - outer joins over narrow carriers match the CPU"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/empty-side-outer-joins.slt",
+      "id": "compressed_materialization_partition/empty-side-outer-joins/002",
+      "identity": "31b61fd0c47efb08e023876a037b90ff850d08d07fe8168845919a7dda812d93",
+      "kind": "query",
+      "line": 420,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - outer joins over narrow carriers match the CPU"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/empty-side-outer-joins.slt",
+      "id": "compressed_materialization_partition/empty-side-outer-joins/003",
+      "identity": "1c923697564a718e13f07391aeaddfe379260a80e1abe4d091550416abacf214",
+      "kind": "query",
+      "line": 420,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - outer joins over narrow carriers match the CPU"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/empty-side-outer-joins.slt",
+      "id": "compressed_materialization_partition/empty-side-outer-joins/004",
+      "identity": "a7a6d3ce6734b2a139701aeebb7719ab8de63b716a8a73f213a75b9d0e6a0b93",
+      "kind": "query",
+      "line": 420,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - outer joins over narrow carriers match the CPU"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/group-keys.slt",
+      "id": "compressed_materialization_partition/group-keys/001",
+      "identity": "9db8dd70782ef2fd71c296f489ac69c8eccaefbe84405885343545817be12113",
+      "kind": "query",
+      "line": 554,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow group keys cross the aggregate exchange"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/group-keys.slt",
+      "id": "compressed_materialization_partition/group-keys/002",
+      "identity": "f4009111c7197785d89ee87f068776752a013e67a5f0cb111d855f145f8f318a",
+      "kind": "query",
+      "line": 564,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow group keys cross the aggregate exchange"
+    },
+    {
+      "file": "suites/compressed_materialization_partition/group-keys.slt",
+      "id": "compressed_materialization_partition/group-keys/003",
+      "identity": "2e5d18173d4f70cecfc4287ec79e87a8074f780c764575d50632f4b606799ff4",
+      "kind": "query",
+      "line": 574,
+      "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
+      "suite": "compressed_materialization_partition",
+      "test": "gpu_execution - narrow group keys cross the aggregate exchange"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",
