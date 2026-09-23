@@ -1,0 +1,24 @@
+# Migrated from test/cpp/integration/test_gpu_execution_unique_join.cpp:102
+# gpu_execution delim-shaped NOT EXISTS (q22 DELIM_GET build)
+include ../../fixtures/migrated/unique_join/e72633960a41581b.slt
+
+# sirius: id = "unique_join/delim-shaped-not-exists-q22-delim-get-build/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "unique_build_keys"]
+query ??? rowsort
+SELECT
+  f.k,
+  f.grp,
+  f.v
+FROM
+  fact f
+WHERE
+  f.v > 3 AND NOT EXISTS (SELECT 1 FROM big o WHERE o.k = f.k);
+----
+4	1	8
+4	2	9
+5	3	100
+5	NULL	60
+NULL	2	7
+NULL	3	4
+NULL	NULL	70

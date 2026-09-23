@@ -1,0 +1,29 @@
+# Migrated from test/cpp/integration/test_gpu_execution_unique_join.cpp:78
+# gpu_execution unique-build INNER join on a PK build side
+include ../../fixtures/migrated/unique_join/e72633960a41581b.slt
+
+# sirius: id = "unique_join/unique-build-inner-join-on-a-pk-build-side/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "unique_build_keys"]
+query ??? rowsort
+SELECT
+  f.k,
+  f.v,
+  d.name
+FROM
+  fact f
+  JOIN dim d ON f.k = d.id;
+----
+1	1	"a"
+1	10	"a"
+1	11	"a"
+1	30	"a"
+2	12	"b"
+2	2	"b"
+2	20	"b"
+2	5	"b"
+3	13	"c"
+3	3	"c"
+3	50	"c"
+4	8	"d"
+4	9	"d"
