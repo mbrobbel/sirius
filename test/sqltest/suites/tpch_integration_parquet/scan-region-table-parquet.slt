@@ -1,0 +1,12 @@
+# gpu_execution - scan region table parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:454
+# sirius: id = "tpch_integration_parquet/scan-region-table-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "scan"]
+query ? rowsort
+SELECT
+  r_regionkey
+FROM
+  region;
+----

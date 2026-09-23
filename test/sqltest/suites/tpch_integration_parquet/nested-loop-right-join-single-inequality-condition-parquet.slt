@@ -1,0 +1,19 @@
+# gpu_execution - nested loop right join single inequality condition parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2427
+# sirius: id = "tpch_integration_parquet/nested-loop-right-join-single-inequality-condition-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "nested_loop_join"]
+query ????? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_name,
+  c.c_nationkey,
+  c.c_custkey,
+  c.c_name
+FROM
+  nation n
+  RIGHT JOIN customer c ON n.n_nationkey < c.c_nationkey
+WHERE
+  c.c_custkey < 100 ORDER BY c.c_custkey, n.n_nationkey LIMIT 1000;
+----

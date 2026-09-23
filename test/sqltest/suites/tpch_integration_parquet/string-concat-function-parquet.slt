@@ -1,0 +1,13 @@
+# gpu_execution - string concat() function parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3116
+# sirius: id = "tpch_integration_parquet/string-concat-function-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "string_concat"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  concat(l_returnflag, l_linestatus)
+FROM
+  lineitem ORDER BY l_orderkey LIMIT 100;
+----

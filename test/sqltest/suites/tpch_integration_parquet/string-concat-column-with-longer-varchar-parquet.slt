@@ -1,0 +1,13 @@
+# gpu_execution - string concat column with longer varchar parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3125
+# sirius: id = "tpch_integration_parquet/string-concat-column-with-longer-varchar-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "string_concat"]
+query ?? rowsort
+SELECT
+  p_partkey,
+  p_brand || ': ' || p_type
+FROM
+  part ORDER BY p_partkey LIMIT 100;
+----

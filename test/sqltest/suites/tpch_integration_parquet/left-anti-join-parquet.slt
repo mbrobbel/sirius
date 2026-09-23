@@ -1,0 +1,13 @@
+# gpu_execution - left anti join parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1886
+# sirius: id = "tpch_integration_parquet/left-anti-join-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "antijoin"]
+query ? rowsort
+SELECT
+  n.n_nationkey
+FROM
+  nation n
+  ANTI JOIN region r ON n.n_regionkey = r.r_regionkey;
+----

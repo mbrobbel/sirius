@@ -1,0 +1,25 @@
+# gpu_execution - pin_table column subset serves a subset query
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+onlyif sirius
+statement ok
+CALL pin_table('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet', tier = 'gpu', name = 'lineitem_subset', cols = ['l_orderkey', 'l_returnflag', 'l_linestatus', 'l_quantity']);
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:5103
+# sirius: id = "tpch_integration_parquet/pin-table-column-subset-serves-a-subset-query/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  count(*),
+  sum(l_quantity)
+FROM
+  lineitem
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('lineitem_subset');

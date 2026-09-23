@@ -1,0 +1,13 @@
+# gpu_execution - scan lineitem with varchar column parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3036
+# sirius: id = "tpch_integration_parquet/scan-lineitem-with-varchar-column-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "varchar_scan_lineitem"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  l_shipinstruct
+FROM
+  lineitem;
+----

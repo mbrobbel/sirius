@@ -1,0 +1,14 @@
+# gpu_execution - string concat in WHERE clause parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3133
+# sirius: id = "tpch_integration_parquet/string-concat-in-where-clause-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "string_concat"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem
+WHERE
+  l_returnflag || l_linestatus = 'NF' ORDER BY l_orderkey LIMIT 100;
+----

@@ -1,0 +1,25 @@
+# gpu_execution - pin_table host tier scan and aggregate
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+onlyif sirius
+statement ok
+CALL pin_table('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet', tier = 'host', name = 'lineitem');
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4950
+# sirius: id = "tpch_integration_parquet/pin-table-host-tier-scan-and-aggregate/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  count(*),
+  sum(l_quantity)
+FROM
+  lineitem
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('lineitem');

@@ -1,0 +1,15 @@
+# gpu_execution - mark join via projected IN subquery parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1739
+# sirius: id = "tpch_integration_parquet/mark-join-via-projected-in-subquery-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "markjoin"]
+query ?? rowsort
+SELECT
+  (o_custkey IN (SELECT c_custkey FROM customer WHERE c_nationkey < 3)) AS is_member,
+  count(*) AS n
+FROM
+  orders
+GROUP BY
+  1 ORDER BY 1;
+----

@@ -1,0 +1,18 @@
+# gpu_execution - single group by key: min max, sum, count(*) parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:656
+# sirius: id = "tpch_integration_parquet/single-group-by-key-min-max-sum-count-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "grouped_aggregate"]
+query ????? rowsort
+SELECT
+  c_nationkey,
+  min(c_custkey),
+  max(c_custkey),
+  sum(c_custkey),
+  count(*)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----

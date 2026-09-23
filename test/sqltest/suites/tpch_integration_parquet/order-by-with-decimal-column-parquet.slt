@@ -1,0 +1,13 @@
+# gpu_execution - order by with decimal column parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3022
+# sirius: id = "tpch_integration_parquet/order-by-with-decimal-column-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "order_by", "order_by_types"]
+query ?? rowsort
+SELECT
+  o_orderkey,
+  o_totalprice
+FROM
+  orders ORDER BY o_orderkey;
+----

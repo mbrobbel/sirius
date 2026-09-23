@@ -1,0 +1,12 @@
+# gpu_execution - limit parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:727
+# sirius: id = "tpch_integration_parquet/limit-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "limit"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation LIMIT 10;
+----

@@ -1,0 +1,31 @@
+# gpu_execution - standalone filter drops pure-filter column via projection map
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:5123
+# sirius: id = "tpch_integration_parquet/standalone-filter-drops-pure-filter-column-via-projection-map/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "filter", "projection_map"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem
+GROUP BY
+  l_orderkey
+HAVING
+  sum(l_quantity) > 100;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:5127
+# sirius: id = "tpch_integration_parquet/standalone-filter-drops-pure-filter-column-via-projection-map/002"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "filter", "projection_map"]
+query ?? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus
+FROM
+  lineitem
+GROUP BY
+  l_returnflag, l_linestatus
+HAVING
+  sum(l_quantity) > 100 AND count(*) > 5;
+----

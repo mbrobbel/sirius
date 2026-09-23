@@ -1,0 +1,12 @@
+# gpu_execution - order by column not in select parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2918
+# sirius: id = "tpch_integration_parquet/order-by-column-not-in-select-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "order_by", "order_by_proj"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation ORDER BY n_regionkey;
+----
