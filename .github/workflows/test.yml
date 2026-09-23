@@ -94,8 +94,46 @@ jobs:
           grep -E '(FAILED:|: error:|: fatal error:)' /tmp/build.log | head -60 >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Build and validate SQL runner
+        run: |
+          pixi run --manifest-path tools/sqltest/pixi.toml cargo test \
+            --manifest-path rust/Cargo.toml --locked -p sirius-sqltest -p sirius-sqltest-format
+          pixi run --manifest-path tools/sqltest/pixi.toml cargo build \
+            --manifest-path rust/Cargo.toml --locked -p sirius-sqltest
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run correctness
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --cpu-only --run correctness --output runs/sqltest-cpu
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --cpu-only --run operators-multi-gpu --output runs/sqltest-operators-mgpu-cpu
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --cpu-only --run tpch-multi-gpu --select tpc-h-query- \
+            --output runs/sqltest-tpch-mgpu-cpu
+          pixi run bash setup_test_datasets.sh --tpch-only
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run legacy-tpch
+          pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+            --cpu-only --run legacy-tpch --output runs/sqltest-legacy-tpch-cpu
+          for suite in s3 s3-sf1 s3-pagination; do
+            pixi run --manifest-path tools/sqltest/pixi.toml sqltest prepare --run "$suite"
+            pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+              --cpu-only --run "$suite" --output "runs/sqltest-${suite}-cpu"
+          done
+
+      - name: Upload SQL runner validation
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sqltest-cpu-cuda-${{ matrix.cuda.version }}
+          path: |
+            runs/sqltest-cpu/
+            runs/sqltest-operators-mgpu-cpu/
+            runs/sqltest-tpch-mgpu-cpu/
+            runs/sqltest-legacy-tpch-cpu/
+            runs/sqltest-s3*-cpu/
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Package build artifacts
-        run: tar -cf build.tar build/release/
+        run: tar -cf build.tar build/release/ rust/target/debug/sirius-sqltest
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
