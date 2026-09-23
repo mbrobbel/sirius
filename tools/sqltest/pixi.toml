@@ -1,0 +1,22 @@
+[workspace]
+name = "sirius-sqltest"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+rust = ">=1.94,<2"
+cmake = ">=3.30,<4"
+ninja = ">=1.12,<2"
+cxx-compiler = ">=1.9,<2"
+python = ">=3.12,<3.15"
+git = ">=2.47,<3"
+libduckdb = "==1.5.5"
+libduckdb-devel = "==1.5.5"
+
+[activation.env]
+DUCKDB_LIB_DIR = "$CONDA_PREFIX/lib"
+DUCKDB_INCLUDE_DIR = "$CONDA_PREFIX/include"
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+[tasks]
+cargo = { cmd = "cargo", cwd = "../.." }
