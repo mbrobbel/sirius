@@ -1551,6 +1551,76 @@
       "test": "gpu_execution tpcds star joins with nullable filters/aggregates"
     },
     {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/001",
+      "identity": "f13a489a505fef8a69f62b26272e9e27c708b44dfd459704d26d47ed77cdbde4",
+      "kind": "query",
+      "line": 238,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/002",
+      "identity": "3a27885aafa3ef8725883be6af5b64a3014ae894b49bd32a5d3b28976b9db534",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/003",
+      "identity": "1448860c8fdb634dff7ed10e528a3b030bc526cb3dd852f852dd27f6e2df8fdd",
+      "kind": "query",
+      "line": 241,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/004",
+      "identity": "131f2c0ff3671018c0cf9c3ca9b9ac366ceeec51ec2408d25ebb528f89cf9715",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/005",
+      "identity": "a8333924268af00daf2d4fef478ba6bda5775abdfd94d9cc6e01c61c5918fd98",
+      "kind": "query",
+      "line": 243,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/006",
+      "identity": "9de4726d8f9aa6ff7b08fd474774361c8ffdba7db7e5f35a8ad6319c97dd2a23",
+      "kind": "query",
+      "line": 245,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
+      "file": "suites/tpcds_nulls/string-null-semantics-concat-vs.slt",
+      "id": "tpcds_nulls/string-null-semantics-concat-vs/007",
+      "identity": "64b7f3aaea548fb98ef11f052e6428956d74f7c04af541243a78a3da028b8ff7",
+      "kind": "query",
+      "line": 246,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds string NULL semantics (concat vs ||)"
+    },
+    {
       "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
       "id": "tpcds_nulls/null-propagation-through-expressions/001",
       "identity": "6faf9be79a0e2862cf71f9ad4640cd7e401790cb6b51c5b946c9af3c7112cd0e",
