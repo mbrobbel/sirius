@@ -118,6 +118,8 @@ pub struct Manifest {
     pub fixtures: BTreeMap<Name, Fixture>,
     #[serde(default)]
     pub sources: BTreeMap<Name, Source>,
+    #[serde(default)]
+    pub services: BTreeMap<Name, crate::services::Service>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
@@ -133,6 +135,7 @@ pub enum Checkpoint {
 struct SuiteSpec {
     #[serde(default)]
     substitutions: crate::substitutions::Substitutions,
+    object_store: Option<Name>,
     profile: Option<Name>,
     minimum_gpus: Option<NonZeroUsize>,
     #[serde(default)]
@@ -163,6 +166,7 @@ impl SuiteSpec {
 #[derive(Clone, Debug, Serialize)]
 pub struct Suite {
     pub substitutions: crate::substitutions::Substitutions,
+    pub object_store: Option<Name>,
     pub profile: Option<Name>,
     pub minimum_gpus: Option<NonZeroUsize>,
     pub scratch_directories: Vec<FixturePath>,
@@ -178,7 +182,7 @@ impl Suite {
     pub fn write_reproduction(&self, path: &Path) -> Result<()> {
         let spec = SuiteSpec {
             substitutions: self.substitutions.clone(),
-
+            object_store: self.object_store.clone(),
             profile: self.profile.clone(),
             minimum_gpus: self.minimum_gpus,
             scratch_directories: self.scratch_directories.clone(),
@@ -195,7 +199,7 @@ impl Suite {
     pub fn script_setup(&self) -> ScriptSetup {
         ScriptSetup {
             substitutions: self.substitutions.clone(),
-
+            object_store: self.object_store.clone(),
             checkpoint: self.checkpoint,
             scratch_directories: self.scratch_directories.clone(),
             fixture_files: self.fixture_files.clone(),
@@ -207,6 +211,7 @@ impl Suite {
 #[derive(Clone, Debug, Default)]
 pub struct ScriptSetup {
     pub substitutions: crate::substitutions::Substitutions,
+    pub object_store: Option<Name>,
     pub checkpoint: Checkpoint,
     pub scratch_directories: Vec<FixturePath>,
     pub fixture_files: BTreeMap<FixturePath, Name>,
@@ -215,7 +220,7 @@ pub struct ScriptSetup {
 
 impl ScriptSetup {
     fn from_spec(spec: &SuiteSpec, fixtures: &BTreeMap<Name, Fixture>) -> Result<Self> {
-        crate::substitutions::validate(&spec.substitutions, false)?;
+        crate::substitutions::validate(&spec.substitutions, spec.object_store.is_some())?;
         references(&spec.fixtures, fixtures, "fixture", false)?;
         let mut required = spec.fixtures.clone();
         for (path, name) in &spec.fixture_files {
@@ -234,7 +239,7 @@ impl ScriptSetup {
         }
         Ok(Self {
             substitutions: spec.substitutions.clone(),
-
+            object_store: spec.object_store.clone(),
             checkpoint: spec.checkpoint,
             scratch_directories: spec.scratch_directories.clone(),
             fixture_files: spec.fixture_files.clone(),
@@ -805,6 +810,9 @@ impl Config {
                 }
             }
         }
+        for service in config.manifest.services.values() {
+            service.validate(&config.manifest.fixtures)?;
+        }
         for profile in config.manifest.profiles.values() {
             ensure!(
                 config.path(&profile.config)?.is_file(),
@@ -843,7 +851,18 @@ impl Config {
             directory.display()
         );
         let spec = SuiteSpec::load(&directory)?;
-        let setup = ScriptSetup::from_spec(&spec, &self.manifest.fixtures)?;
+        let mut setup = ScriptSetup::from_spec(&spec, &self.manifest.fixtures)?;
+        if let Some(name) = &spec.object_store {
+            let service = self
+                .manifest
+                .services
+                .get(name)
+                .with_context(|| format!("unknown object store service {name}"))?;
+            service.validate(&self.manifest.fixtures)?;
+            setup.fixtures.extend(service.fixtures().cloned());
+            setup.fixtures.sort();
+            setup.fixtures.dedup();
+        }
         if let Some(profile) = &spec.profile {
             references(
                 std::slice::from_ref(profile),
@@ -869,7 +888,7 @@ impl Config {
             name,
             Suite {
                 substitutions: spec.substitutions,
-
+                object_store: spec.object_store,
                 profile: spec.profile,
                 minimum_gpus: spec.minimum_gpus,
                 scratch_directories: spec.scratch_directories,

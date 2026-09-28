@@ -50,7 +50,18 @@ pub fn complete(args: &CompleteArgs) -> Result<()> {
         fixtures: &fixtures,
         relation: crate::config::Relation::Table,
         scratch: directory.path(),
-        bucket: None,
+        bucket: setup
+            .object_store
+            .as_ref()
+            .map(|name| {
+                config
+                    .manifest
+                    .services
+                    .get(name)
+                    .with_context(|| format!("unknown object store service {name}"))
+                    .map(crate::services::Service::bucket)
+            })
+            .transpose()?,
     };
     let mut outputs = BTreeMap::new();
     for step in &script.steps {

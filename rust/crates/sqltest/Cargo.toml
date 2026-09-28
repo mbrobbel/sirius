@@ -16,13 +16,16 @@ flate2 = "1"
 glob = "0.3"
 itertools = "0.13"
 regex = "1"
+rust-s3 = { version = "0.37", default-features = false, features = ["sync-rustls-tls", "fail-on-err"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 sha2 = "0.10"
 sirius-sqltest-format = { path = "../sqltest-format" }
 sqllogictest = "=0.29.1"
 sqlparser = "=0.63.0"
 tempfile = "3"
+testcontainers-modules = { version = "0.15", features = ["blocking", "minio"] }
 toml = "0.8"
 ureq = "3"
 walkdir = "2"
