@@ -1,0 +1,17 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:79
+# gpu_execution IS NULL / IS NOT NULL per column type
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/is-null-is-not-null-per-column-type/007"
+# sirius: snapshot = true
+# sirius: tags = ["filter", "gpu_execution", "integration", "nulls"]
+query ? rowsort
+SELECT
+  id
+FROM
+  nt
+WHERE
+  dbl IS NULL;
+----
+2
+3
