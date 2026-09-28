@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped min
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4839
+# sirius: id = "tpch_integration_native/ungrouped-min/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  min(n_nationkey)
+FROM
+  nation;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - values joined with base table
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4761
+# sirius: id = "tpch_integration_native/values-joined-with-base-table/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  n.n_name
+FROM
+  nation n
+  JOIN (VALUES (0), (1), (2)) t (k) ON n.n_nationkey = t.k ORDER BY n.n_name;
+----

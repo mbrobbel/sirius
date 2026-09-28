@@ -1,0 +1,13 @@
+# gpu_execution - ungrouped avg decimal
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:629
+# sirius: id = "tpch_integration_native/ungrouped-avg-decimal/001"
+# sirius: tags = ["integration", "gpu_execution", "aggregate", "avg"]
+query ?? rowsort
+SELECT
+  avg(l_quantity),
+  avg(l_discount)
+FROM
+  lineitem;
+----

@@ -1,0 +1,31 @@
+# gpu_execution - TPC-H Query 8
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4247
+# sirius: id = "tpch_integration_native/tpc-h-query-8/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  o_year,
+  sum(CASE WHEN nation = 'EGYPT' THEN volume ELSE 0 END) / sum(volume) AS mkt_share
+FROM
+  (
+    SELECT
+      EXTRACT(YEAR FROM o.o_orderdate) AS o_year,
+      l.l_extendedprice * (1 - l.l_discount) AS volume,
+      n2.n_name AS nation
+    FROM
+      lineitem l,
+      part p,
+      supplier s,
+      orders o,
+      customer c,
+      nation n1,
+      nation n2,
+      region r
+    WHERE
+      p.p_partkey = l.l_partkey AND s.s_suppkey = l.l_suppkey AND l.l_orderkey = o.o_orderkey AND o.o_custkey = c.c_custkey AND c.c_nationkey = n1.n_nationkey AND n1.n_regionkey = r.r_regionkey AND r.r_name = 'MIDDLE EAST' AND s.s_nationkey = n2.n_nationkey AND o.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1996-12-31' AND p.p_type = 'PROMO BRUSHED COPPER'
+  ) AS all_nations
+GROUP BY
+  o_year ORDER BY o_year;
+----

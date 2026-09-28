@@ -1,0 +1,20 @@
+# gpu_execution - unsupported HUGEINT values fall back
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4794
+# sirius: id = "tpch_integration_native/unsupported-hugeint-values-fall-back/001"
+# sirius: tags = ["integration", "tpch", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query I nosort
+SELECT
+  x
+FROM
+  (
+    VALUES
+      (CAST('9223372036854775808' AS HUGEINT)),
+      (CAST('-9223372036854775809' AS HUGEINT))
+  ) t (x) ORDER BY x;
+----
+-9223372036854775809
+9223372036854775808
