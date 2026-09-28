@@ -1,0 +1,37 @@
+# mvcc guards: an uncheckpointed append refuses an ARRAY-only pin
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3]) AS a FROM range(1000);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+INSERT INTO t VALUES
+  (1000, CAST([1, 2, 3] AS INTEGER[3]));
+
+onlyif sirius
+statement error CHECKPOINT
+CALL pin_table(format='duckdb', name='t', tier='gpu', cols=['a']);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu', cols = ['a']);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:670
+# sirius: id = "pin_mvcc_insert/guards-an-uncheckpointed-append-refuses-an-array-only-pin/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ? rowsort
+SELECT
+  a
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

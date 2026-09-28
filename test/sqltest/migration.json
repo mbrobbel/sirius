@@ -3801,6 +3801,406 @@
       "test": "pin_table mvcc - duckdb GPU pin captures v_base and per-chunk counts"
     },
     {
+      "file": "suites/pin_mvcc_insert/insert-rows-inserted-then-deleted-before-the-query-never-appear.slt",
+      "id": "pin_mvcc_insert/insert-rows-inserted-then-deleted-before-the-query-never-appear/001",
+      "identity": "2ce04f23cca309327bb9db4c156a5e83e7993241275accd63300a8a7c9b9f750",
+      "kind": "query",
+      "line": 118,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: rows inserted then deleted before the query never appear"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-rows-inserted-then-deleted-before-the-query-never-appear.slt",
+      "id": "pin_mvcc_insert/insert-rows-inserted-then-deleted-before-the-query-never-appear/002",
+      "identity": "1d352d024631132fd0f74d81281c8dcb23d5b46e01dc2e1bcea6ad3d0d147b58",
+      "kind": "query",
+      "line": 119,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: rows inserted then deleted before the query never appear"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts.slt",
+      "id": "pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts/001",
+      "identity": "6707dc401490dc924e9e753514f8f55b30c83bb8becc39917ded7396ea2de521",
+      "kind": "query",
+      "line": 139,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: an older snapshot does not see newer committed inserts"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts.slt",
+      "id": "pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts/002",
+      "identity": "23d3db8dec0e70e2a156951cefebdd23d192e5011288bd9136b2e9754f4d9be9",
+      "kind": "query",
+      "line": 143,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: an older snapshot does not see newer committed inserts"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-base-deletes-and-post-pin-inserts-combine-in-one-query.slt",
+      "id": "pin_mvcc_insert/insert-base-deletes-and-post-pin-inserts-combine-in-one-query/001",
+      "identity": "9ae8dc6174f4d489717f667b18eba64f51841c44289a5766190a449db9f66eb5",
+      "kind": "query",
+      "line": 161,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: base deletes and post-pin inserts combine in one query"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-base-deletes-and-post-pin-inserts-combine-in-one-query.slt",
+      "id": "pin_mvcc_insert/insert-base-deletes-and-post-pin-inserts-combine-in-one-query/002",
+      "identity": "e4088f951257ea05a188d08bf07996cdc09ec6142ceff5caa4defafd556d5aa6",
+      "kind": "query",
+      "line": 162,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: base deletes and post-pin inserts combine in one query"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-inserts-ride-the-persistent-mergestorage-lane.slt",
+      "id": "pin_mvcc_insert/insert-bulk-inserts-ride-the-persistent-mergestorage-lane/001",
+      "identity": "99ff982ec2f0a3c521a627ffba755a27deb25eded5a84a1d18cbac776533215b",
+      "kind": "query",
+      "line": 180,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk inserts ride the persistent MergeStorage lane"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-inserts-ride-the-persistent-mergestorage-lane.slt",
+      "id": "pin_mvcc_insert/insert-bulk-inserts-ride-the-persistent-mergestorage-lane/002",
+      "identity": "f97ff781ac711dc13084a527bbd262f93b39c69458a9dcb17d2b5358c03e5ff0",
+      "kind": "query",
+      "line": 181,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk inserts ride the persistent MergeStorage lane"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments.slt",
+      "id": "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/001",
+      "identity": "55c50a14aef03fdaf45bb07b1f96b5cdb093713ef068d28da00a1cb3da064f51",
+      "kind": "query",
+      "line": 198,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk constant inserts decode from blockless CONSTANT segments"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments.slt",
+      "id": "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/002",
+      "identity": "3da2de88a13355fcef299579287e1a1bba2e35b4704a8732b0f35b527f34e616",
+      "kind": "query",
+      "line": 199,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk constant inserts decode from blockless CONSTANT segments"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments.slt",
+      "id": "pin_mvcc_insert/insert-bulk-constant-inserts-decode-from-blockless-constant-segments/003",
+      "identity": "90706952bb4da11bf391bc2746f7cbea7f5d06da3baa0245119948df2672695a",
+      "kind": "query",
+      "line": 202,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk constant inserts decode from blockless CONSTANT segments"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants.slt",
+      "id": "pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants/001",
+      "identity": "ca8c4b21310659bf8b656a40b4b6f88a4d1f269fbe4a36b7456c7d2a69ab38e4",
+      "kind": "query",
+      "line": 222,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: appends into an indexed tail row group keep per-segment constants"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants.slt",
+      "id": "pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants/002",
+      "identity": "95610a8f6fc3be7e373c42564a627951cf8e72aa2b037e2244066602625fe492",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: appends into an indexed tail row group keep per-segment constants"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls.slt",
+      "id": "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/001",
+      "identity": "1be7c2645c444e152fc847da594cc6934d754258ecc22d3ed79e193e0a7c6e18",
+      "kind": "query",
+      "line": 241,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk all-NULL inserts keep their NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls.slt",
+      "id": "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/002",
+      "identity": "883141cb615b0b7f412bfe50ffb8d76847457b17e0615519aa1a226a7a356c3b",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk all-NULL inserts keep their NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls.slt",
+      "id": "pin_mvcc_insert/insert-bulk-all-null-inserts-keep-their-nulls/003",
+      "identity": "90ffef200646a8af39b6222c7d518e8d9657cdf47eda84c67774e8447664acb1",
+      "kind": "query",
+      "line": 244,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk all-NULL inserts keep their NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls.slt",
+      "id": "pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls/001",
+      "identity": "4f5f0163710283a46ab8e86b6dc380233236a8d7eaf30f380609bba56204c390",
+      "kind": "query",
+      "line": 261,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk all-NULL varchar keeps its NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls.slt",
+      "id": "pin_mvcc_insert/insert-bulk-all-null-varchar-keeps-its-nulls/002",
+      "identity": "643d376a174ef47effbaaf24adaf2e699b8c723e2debcbab417993b708f0ec1f",
+      "kind": "query",
+      "line": 262,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk all-NULL varchar keeps its NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward.slt",
+      "id": "pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward/001",
+      "identity": "80d039cbfcc38565a6e80d5fc503d7fbea225f8712cf4c532482e319f677a72c",
+      "kind": "query",
+      "line": 279,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: an unaligned all-NULL row group does not bleed nulls forward"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward.slt",
+      "id": "pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward/002",
+      "identity": "4453b5aa0fa99407f50f930b2421715d06e36c585c5e0da07a7d0e6294304feb",
+      "kind": "query",
+      "line": 280,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: an unaligned all-NULL row group does not bleed nulls forward"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta.slt",
+      "id": "pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta/001",
+      "identity": "bc6e5924ca41c4caf63de9423c0ff856761ff44ed821f3bcf243504d7f44abf3",
+      "kind": "query",
+      "line": 301,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: varchar and NULLs decode through the delta"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta.slt",
+      "id": "pin_mvcc_insert/insert-varchar-and-nulls-decode-through-the-delta/002",
+      "identity": "d3361f524cf76ac4d013849bf5482df322de025b80cf98f06beef0566c394474",
+      "kind": "query",
+      "line": 302,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: varchar and NULLs decode through the delta"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-host-tier-pins-serve-the-delta-too.slt",
+      "id": "pin_mvcc_insert/insert-host-tier-pins-serve-the-delta-too/001",
+      "identity": "b9f9e677ffdf4dc820c831bd6d415e639507f63bf9d6e442169faf8bf45a7373",
+      "kind": "query",
+      "line": 317,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: host-tier pins serve the delta too"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-self-join-shares-one-delta-capture-across-both-sides.slt",
+      "id": "pin_mvcc_insert/insert-a-self-join-shares-one-delta-capture-across-both-sides/001",
+      "identity": "9304c14a217890537dc0ed023d55f6f7771be7b50665e4d228dc82c20e3e8bc5",
+      "kind": "query",
+      "line": 333,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a self-join shares one delta capture across both sides"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-joins-with-unpinned-tables-see-the-delta-rows.slt",
+      "id": "pin_mvcc_insert/insert-joins-with-unpinned-tables-see-the-delta-rows/001",
+      "identity": "c6ceb86afdf61cd1345009344c595d91c2e6eaaf37b60dc6b7dd36fc0bd7e0da",
+      "kind": "query",
+      "line": 351,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: joins with unpinned tables see the delta rows"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact.slt",
+      "id": "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/001",
+      "identity": "7d23b586c108722e495a28af849e81174015b81f186f439f14ec20ad2a6cf9f0",
+      "kind": "query",
+      "line": 364,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a delta growing across queries stays snapshot-exact"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact.slt",
+      "id": "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/002",
+      "identity": "95ab21680def54a3c5a4332566937a6f400ede79dd64208cd5e88215c1c6c3ff",
+      "kind": "query",
+      "line": 367,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a delta growing across queries stays snapshot-exact"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact.slt",
+      "id": "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/003",
+      "identity": "8b883cbd9b7e600bf7f832017d4445e8ff79cee3d54fcd81354ff526fbc0b13b",
+      "kind": "query",
+      "line": 370,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a delta growing across queries stays snapshot-exact"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-tiny-pin-serves-a-delta-larger-than-its-base.slt",
+      "id": "pin_mvcc_insert/insert-a-tiny-pin-serves-a-delta-larger-than-its-base/001",
+      "identity": "1325961e08ef8e84c490803addf513452aecf62c6f2d3d48f2d3468de7847daf",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a tiny pin serves a delta larger than its base"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-zone-map-pruned-base-still-serves-matching-delta-rows.slt",
+      "id": "pin_mvcc_insert/insert-zone-map-pruned-base-still-serves-matching-delta-rows/001",
+      "identity": "13c39d4e40f150647473b10ce02d5ae0a9dd2a3ae153222ff129641149560f66",
+      "kind": "query",
+      "line": 399,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: zone-map-pruned base still serves matching delta rows"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/guards-big-string-deltas-decline-at-plan-time.slt",
+      "id": "pin_mvcc_insert/guards-big-string-deltas-decline-at-plan-time/001",
+      "identity": "bdba283f64ee10b18b1640ed5ac6f2c3e501cde973cb66c559906bfc42316845",
+      "kind": "fallback",
+      "line": 415,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc guards: big-string deltas decline at plan time"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/guards-rowid-only-scans-keep-declining-with-a-delta-present.slt",
+      "id": "pin_mvcc_insert/guards-rowid-only-scans-keep-declining-with-a-delta-present/001",
+      "identity": "89dda11f54f5ebfeef6978a4f603d60b9879626010b2a420f79eb975481bb60f",
+      "kind": "fallback",
+      "line": 430,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc guards: rowid-only scans keep declining with a delta present"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-the-residency-gate-installs-no-narrow-sidecar-when-deltas-serve.slt",
+      "id": "pin_mvcc_insert/insert-the-residency-gate-installs-no-narrow-sidecar-when-deltas-serve/001",
+      "identity": "2516495bcf5e49f572e0b06b2f1e5178bf28632c92132bd44158f87a74c49cee",
+      "kind": "query",
+      "line": 536,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: the residency gate installs no narrow sidecar when deltas serve"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-a-pinned-array-column-serves-the-base-from-cache.slt",
+      "id": "pin_mvcc_insert/insert-a-pinned-array-column-serves-the-base-from-cache/001",
+      "identity": "03d6f8cfd66ad4cd6056891558f8855fcbac78322dbe0a312d1e3f0a5de1f4c5",
+      "kind": "query",
+      "line": 562,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: a pinned ARRAY column serves the base from cache"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-post-pin-array-inserts-serve-through-the-transient-delta.slt",
+      "id": "pin_mvcc_insert/insert-post-pin-array-inserts-serve-through-the-transient-delta/001",
+      "identity": "33a369959086c62b6228b7f6da5afef4364aa4d7a275201bd8a40c7a3b80e07f",
+      "kind": "query",
+      "line": 585,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: post-pin ARRAY inserts serve through the transient delta"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane.slt",
+      "id": "pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane/001",
+      "identity": "5733b6232ca0c44936d6510ec356400b2da8fc618b60bc0b10b13bbf0a347128",
+      "kind": "query",
+      "line": 610,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk ARRAY inserts ride the persistent delta lane"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane.slt",
+      "id": "pin_mvcc_insert/insert-bulk-array-inserts-ride-the-persistent-delta-lane/002",
+      "identity": "a33a6d16df5a9065d6547d8ee917865a2266506165f50345ec9ba1c41d0ffdac",
+      "kind": "query",
+      "line": 612,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: bulk ARRAY inserts ride the persistent delta lane"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/insert-array-delta-preserves-array-level-and-child-nulls.slt",
+      "id": "pin_mvcc_insert/insert-array-delta-preserves-array-level-and-child-nulls/001",
+      "identity": "d1bb1176d38240f8266f9f1b8bea5634316014a27e2a23e368b44f52a1bca457",
+      "kind": "query",
+      "line": 634,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc insert: ARRAY delta preserves array-level and child NULLs"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/guards-an-uncheckpointed-append-refuses-an-array-only-pin.slt",
+      "id": "pin_mvcc_insert/guards-an-uncheckpointed-append-refuses-an-array-only-pin/001",
+      "identity": "708d0b8d34336aeb0bf9908e73bbe5bac3f7dcf0d5945ea2617da1ee3f4a6d3f",
+      "kind": "query",
+      "line": 670,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc guards: an uncheckpointed append refuses an ARRAY-only pin"
+    },
+    {
+      "file": "suites/pin_mvcc_insert/guards-an-array-with-a-non-fixed-width-child-is-refused.slt",
+      "id": "pin_mvcc_insert/guards-an-array-with-a-non-fixed-width-child-is-refused/001",
+      "identity": "911a71efa42808f80b69faff92b692490bf057b5672662e23b30e36f58ec8eac",
+      "kind": "query",
+      "line": 693,
+      "source": "test/cpp/integration/test_pin_table_mvcc_insert.cpp",
+      "suite": "pin_mvcc_insert",
+      "test": "mvcc guards: an ARRAY with a non-fixed-width child is refused"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",

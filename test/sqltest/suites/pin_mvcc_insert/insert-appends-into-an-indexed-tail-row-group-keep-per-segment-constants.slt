@@ -1,0 +1,63 @@
+# mvcc insert: appends into an indexed tail row group keep per-segment constants
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t (
+  k INTEGER PRIMARY KEY,
+  v INTEGER
+);
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER,
+  range::INTEGER
+FROM
+  range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 20000,
+  9
+FROM
+  range(130000);
+
+statement ok
+INSERT INTO t VALUES
+  (150001, 7);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:222
+# sirius: id = "pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ???? rowsort
+SELECT
+  count(*),
+  sum(v),
+  min(v),
+  max(v)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:223
+# sirius: id = "pin_mvcc_insert/insert-appends-into-an-indexed-tail-row-group-keep-per-segment-constants/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  v
+FROM
+  t
+WHERE
+  k >= 149998 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
