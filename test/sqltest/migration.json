@@ -9851,6 +9851,296 @@
       "test": "physical_hash_join - broadcast BUILD_PROBE publishes dynamic filters across two GPUs"
     },
     {
+      "file": "suites/s3_surface/transparent.slt",
+      "id": "s3_surface/transparent/001",
+      "identity": "855cac77cc4af38b4ff9db97ffdcfbfcbe5077a63f3f5353f5878887d2c7dc88",
+      "kind": "query",
+      "line": 2500,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent read_parquet over S3 scans through Sirius REST"
+    },
+    {
+      "file": "suites/s3_surface/expand.slt",
+      "id": "s3_surface/expand/001",
+      "identity": "42493f8f19d685a24dd45f319d9cf6f4d76e915ec7e85f8cb47615739020bf2f",
+      "kind": "query",
+      "line": 2541,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 read_parquet expands globbed parquet files"
+    },
+    {
+      "file": "suites/s3_surface/literal-percent-slash.slt",
+      "id": "s3_surface/literal-percent-slash/001",
+      "identity": "f4cc7f0261b1c53f1164c6c7488edbb368033578bb2e85306e8b98840fa375d2",
+      "kind": "query",
+      "line": 2563,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob opens the literal percent key instead of its slash decoy"
+    },
+    {
+      "file": "suites/s3_surface/literal-percent-slash.slt",
+      "id": "s3_surface/literal-percent-slash/002",
+      "identity": "28cdf690c4079e18365f254a160130d8c3a05e7bd6bc6c9e84181f1ac24d82b1",
+      "kind": "query",
+      "line": 2563,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob opens the literal percent key instead of its slash decoy"
+    },
+    {
+      "file": "suites/s3_surface/fragment.slt",
+      "id": "s3_surface/fragment/001",
+      "identity": "46d4a88252d937eff3845b4f35e1de5f755e6f137c1a367c55a13555faa3d417",
+      "kind": "query",
+      "line": 2586,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob opens keys containing URI fragment and query delimiters"
+    },
+    {
+      "file": "suites/s3_surface/query-delimiter.slt",
+      "id": "s3_surface/query-delimiter/001",
+      "identity": "8f60a607a444ff66f28ee48b3dc380e9e48be30846ee59f8bb8213e43f2754ab",
+      "kind": "query",
+      "line": 2586,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob opens keys containing URI fragment and query delimiters"
+    },
+    {
+      "file": "suites/s3_surface/percent-byte.slt",
+      "id": "s3_surface/percent-byte/001",
+      "identity": "3e77a8dabae9ee60d66b96d0be2d88a57ed366bdf9427cdf06afa86c6039c646",
+      "kind": "query",
+      "line": 2607,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob opens a key containing a literal percent byte"
+    },
+    {
+      "file": "suites/s3_surface/hive-percent-space.slt",
+      "id": "s3_surface/hive-percent-space/001",
+      "identity": "6226e6f2d08ccfdaa1fc481b3ef35892eaa047a8b691cca110122703e79b7f0a",
+      "kind": "query",
+      "line": 2624,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob decodes a percent-encoded Hive value exactly once"
+    },
+    {
+      "file": "suites/s3_surface/hive-percent-space.slt",
+      "id": "s3_surface/hive-percent-space/002",
+      "identity": "b189ece254126fdad5147a111e387701f4df7e24df6cfcdc7541e75086547bf0",
+      "kind": "query",
+      "line": 2624,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob decodes a percent-encoded Hive value exactly once"
+    },
+    {
+      "file": "suites/s3_surface/percent-vs-space.slt",
+      "id": "s3_surface/percent-vs-space/001",
+      "identity": "09ea34923260e0ab97d70e2b02cca6b141c9d7919ea81ca12c7ec75898bce66f",
+      "kind": "query",
+      "line": 2672,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 non-glob reads distinguish literal percent keys from spaces"
+    },
+    {
+      "file": "suites/s3_surface/percent-vs-space.slt",
+      "id": "s3_surface/percent-vs-space/002",
+      "identity": "1af6e3ab6a90b51e07040c7bb86aa8e20dc49c8ea6c31b1301a941aa2167a252",
+      "kind": "query",
+      "line": 2672,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 non-glob reads distinguish literal percent keys from spaces"
+    },
+    {
+      "file": "suites/s3_surface/percent-vs-space.slt",
+      "id": "s3_surface/percent-vs-space/003",
+      "identity": "0bd140130249abc85220fc5440ab29d35a6ea936087a6f67b2e62fc3e4a1acd0",
+      "kind": "query",
+      "line": 2672,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 non-glob reads distinguish literal percent keys from spaces"
+    },
+    {
+      "file": "suites/s3_surface/percent-vs-space.slt",
+      "id": "s3_surface/percent-vs-space/004",
+      "identity": "31595b726e33e51b8fb6e345566e62957b394a046324983fc0d6609a6446508e",
+      "kind": "query",
+      "line": 2672,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 non-glob reads distinguish literal percent keys from spaces"
+    },
+    {
+      "file": "suites/s3_surface/filename-question-mark.slt",
+      "id": "s3_surface/filename-question-mark/001",
+      "identity": "3157fd84cb4488378f6930ad3ac1d18af5462a5d4f1fbfe11fb7392945f20555",
+      "kind": "query",
+      "line": 2733,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob permits a question mark in the terminal filename"
+    },
+    {
+      "file": "suites/s3_surface/filename-question-mark.slt",
+      "id": "s3_surface/filename-question-mark/002",
+      "identity": "40dbfb83afb5660290a29bdd92ba0142f9f76caf1fd197380164b514a009c2b0",
+      "kind": "query",
+      "line": 2733,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob permits a question mark in the terminal filename"
+    },
+    {
+      "file": "suites/s3_surface/hive-encoded-question-mark.slt",
+      "id": "s3_surface/hive-encoded-question-mark/001",
+      "identity": "90a3764e28b4af988aa9192a0a67ab1b449a4f36396c84b7dc7da33abee8abe7",
+      "kind": "query",
+      "line": 2757,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob supports an encoded question mark in a Hive partition value"
+    },
+    {
+      "file": "suites/s3_surface/hive-encoded-question-mark.slt",
+      "id": "s3_surface/hive-encoded-question-mark/002",
+      "identity": "0ddc5a0bffdde8190577a7748e1008db90581c76c1322d10c3f1ab3a6b22ddb7",
+      "kind": "query",
+      "line": 2757,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob supports an encoded question mark in a Hive partition value"
+    },
+    {
+      "file": "suites/s3_surface/unmatched-percent-key.slt",
+      "id": "s3_surface/unmatched-percent-key/001",
+      "identity": "8418d982d4d5c756727f67dd445e9101664f4b3c790ec71f71e216ed256467e1",
+      "kind": "query",
+      "line": 2806,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob ignores percent-encoded keys outside the match"
+    },
+    {
+      "file": "suites/s3_surface/hive-columns.slt",
+      "id": "s3_surface/hive-columns/001",
+      "identity": "d3bd490c91f82f77b84e73b5dd8a4c2de82e75b48acdfa799897df91c524687c",
+      "kind": "query",
+      "line": 2822,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob preserves hive partition columns"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/001",
+      "identity": "3f15a15b29a844890e5f9101f484f9ad09d4ee77ffb9744c458623bf285e182e",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/002",
+      "identity": "260ec5434f35a00046722e24ce1932a3e62856604b118c13eea12d3b6d2cab6c",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/003",
+      "identity": "fb4a1229b9e539cca18b071177970d3864635799c97a2217a23f12a0369f788d",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/004",
+      "identity": "9dfab3f8ad34a388e4c0a89cda1351be95442b5f9ac69cd48c5049d47304fc81",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/005",
+      "identity": "e5c4e6a4e05afe7d5e154e995a35c9891663e52c1a0fdb58d61167972f9b9ea8",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/006",
+      "identity": "a8743a27e5e30f6498a49d3dd545d2bde58ec1ff7e9e7e3c1217b95a6701eafe",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/007",
+      "identity": "a0b065f294b6d00b2f608a38085da69959c1cf1a8e190cf92edb091383350d1b",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/008",
+      "identity": "5fb4cb4a44b91db2b7ef5d47d06b14062d3981ece351a82aba33eb8a6287534d",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/009",
+      "identity": "e118038bb2a709124e0e1de8eb4f9deb0e55a19a7d4c969846fcbf48aab069b2",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
+      "file": "suites/s3_surface/matcher.slt",
+      "id": "s3_surface/matcher/010",
+      "identity": "81ae1f04509e4d5e0c37ea71cf38060838b68658155d7ad8c73110ed9d9e4826",
+      "kind": "query",
+      "line": 2913,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob matcher semantics match DuckDB segment globs"
+    },
+    {
       "file": "suites/csv_disabled/scan-single-column.slt",
       "id": "csv_disabled/scan-single-column",
       "identity": "4d783c167d2aa2db68361526bd9ed70a5d38fe77c35e91023200d5ab6cd2e14d",
@@ -10039,6 +10329,16 @@
       "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
       "suite": "csv_disabled",
       "test": "gpu_execution csv - order by date column"
+    },
+    {
+      "file": "suites/s3_surface/no-match.slt",
+      "id": "s3_surface/no-match/001",
+      "identity": "5917441d5cf3e61c0d450a3c4be3661aa9bdc847cc3590a70f61dea64d49c2b5",
+      "kind": "query",
+      "line": 2983,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface",
+      "test": "transparent S3 glob reports no-files and GPU-only errors clearly"
     },
     {
       "file": "suites/s3_glob_scale/pagination.slt",

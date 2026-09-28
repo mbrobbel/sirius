@@ -1,0 +1,13 @@
+# transparent S3 glob opens keys containing URI fragment and query delimiters
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2586
+# sirius: id = "s3_surface/query-delimiter/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/y*.parquet');
+----
+25

@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "tpch", "tpcds", "clickbench", "hive_disabled", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "tpch", "tpcds", "clickbench", "hive_disabled", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -1329,6 +1329,70 @@ config = "profiles/operator-mgpu-broadcast.yaml"
 [runs.operators-multi-gpu]
 suites = ["operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck", "partition_memory_mgpu"]
 profile = "operator-mgpu-partitioned"
+
+[fixtures.s3-surface-original.files]
+"parquet/customer.parquet" = "tpch-parquet-customer"
+"parquet/lineitem.parquet" = "tpch-parquet-lineitem"
+"parquet/nation.parquet" = "tpch-parquet-nation"
+"parquet/orders.parquet" = "tpch-parquet-orders"
+"parquet/part.parquet" = "tpch-parquet-part"
+"parquet/partsupp.parquet" = "tpch-parquet-partsupp"
+"parquet/region.parquet" = "tpch-parquet-region"
+"parquet/supplier.parquet" = "tpch-parquet-supplier"
+"glob/multi/nation_a.parquet" = "tpch-parquet-nation"
+"glob/multi/nation_b.parquet" = "tpch-parquet-nation"
+"glob/hive/year=2024/nation.parquet" = "tpch-parquet-nation"
+"glob/hive/year=2025/nation.parquet" = "tpch-parquet-nation"
+"root_a.parquet" = "tpch-parquet-nation"
+"root_b.parquet" = "tpch-parquet-nation"
+"glob-enc/a%2Fb.parquet" = "tpch-parquet-nation"
+"glob-enc/x#1.parquet" = "tpch-parquet-nation"
+"glob-enc/y?v.parquet" = "tpch-parquet-nation"
+"glob-enc/100%.parquet" = "tpch-parquet-nation"
+"glob-enc/t/col=a%20b/p0.parquet" = "tpch-parquet-nation"
+"glob-enc/q/col=a%3Fb/p0.parquet" = "tpch-parquet-nation"
+"glob-enc/q/col=a?b/p0.parquet" = "tpch-parquet-nation"
+"glob-enc/f%20g.parquet" = "tpch-parquet-nation"
+"glob-enc/guard-before/co?l=value/p0.parquet" = "tpch-parquet-nation"
+"glob-enc/guard-filename/report=foo?bar.parquet" = "tpch-parquet-nation"
+"glob/multi/region.parquet" = "tpch-parquet-region"
+"glob-enc/a/b.parquet" = "tpch-parquet-region"
+"glob-enc/f g.parquet" = "tpch-parquet-region"
+
+[services.s3-surface]
+kind = "minio"
+image_tag = "RELEASE.2025-09-07T16-13-09Z-cpuv1"
+bucket = "sirius-test"
+storage = { kind = "tmpfs", size_mib = 2048 }
+
+[services.s3-surface.objects]
+"parquet/customer.parquet" = { fixture = "s3-surface-original", path = "parquet/customer.parquet" }
+"parquet/lineitem.parquet" = { fixture = "s3-surface-original", path = "parquet/lineitem.parquet" }
+"parquet/nation.parquet" = { fixture = "s3-surface-original", path = "parquet/nation.parquet" }
+"parquet/orders.parquet" = { fixture = "s3-surface-original", path = "parquet/orders.parquet" }
+"parquet/part.parquet" = { fixture = "s3-surface-original", path = "parquet/part.parquet" }
+"parquet/partsupp.parquet" = { fixture = "s3-surface-original", path = "parquet/partsupp.parquet" }
+"parquet/region.parquet" = { fixture = "s3-surface-original", path = "parquet/region.parquet" }
+"parquet/supplier.parquet" = { fixture = "s3-surface-original", path = "parquet/supplier.parquet" }
+"glob/multi/nation_a.parquet" = { fixture = "s3-surface-original", path = "glob/multi/nation_a.parquet" }
+"glob/multi/nation_b.parquet" = { fixture = "s3-surface-original", path = "glob/multi/nation_b.parquet" }
+"glob/hive/year=2024/nation.parquet" = { fixture = "s3-surface-original", path = "glob/hive/year=2024/nation.parquet" }
+"glob/hive/year=2025/nation.parquet" = { fixture = "s3-surface-original", path = "glob/hive/year=2025/nation.parquet" }
+"root_a.parquet" = { fixture = "s3-surface-original", path = "root_a.parquet" }
+"root_b.parquet" = { fixture = "s3-surface-original", path = "root_b.parquet" }
+"glob-enc/a%2Fb.parquet" = { fixture = "s3-surface-original", path = "glob-enc/a%2Fb.parquet" }
+"glob-enc/x#1.parquet" = { fixture = "s3-surface-original", path = "glob-enc/x#1.parquet" }
+"glob-enc/y?v.parquet" = { fixture = "s3-surface-original", path = "glob-enc/y?v.parquet" }
+"glob-enc/100%.parquet" = { fixture = "s3-surface-original", path = "glob-enc/100%.parquet" }
+"glob-enc/t/col=a%20b/p0.parquet" = { fixture = "s3-surface-original", path = "glob-enc/t/col=a%20b/p0.parquet" }
+"glob-enc/q/col=a%3Fb/p0.parquet" = { fixture = "s3-surface-original", path = "glob-enc/q/col=a%3Fb/p0.parquet" }
+"glob-enc/q/col=a?b/p0.parquet" = { fixture = "s3-surface-original", path = "glob-enc/q/col=a?b/p0.parquet" }
+"glob-enc/f%20g.parquet" = { fixture = "s3-surface-original", path = "glob-enc/f%20g.parquet" }
+"glob-enc/guard-before/co?l=value/p0.parquet" = { fixture = "s3-surface-original", path = "glob-enc/guard-before/co?l=value/p0.parquet" }
+"glob-enc/guard-filename/report=foo?bar.parquet" = { fixture = "s3-surface-original", path = "glob-enc/guard-filename/report=foo?bar.parquet" }
+"glob/multi/region.parquet" = { fixture = "s3-surface-original", path = "glob/multi/region.parquet" }
+"glob-enc/a/b.parquet" = { fixture = "s3-surface-original", path = "glob-enc/a/b.parquet" }
+"glob-enc/f g.parquet" = { fixture = "s3-surface-original", path = "glob-enc/f g.parquet" }
 
 [profiles.s3-surface]
 gpus = 1

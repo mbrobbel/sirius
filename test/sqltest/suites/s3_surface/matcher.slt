@@ -1,0 +1,121 @@
+# transparent S3 glob matcher semantics match DuckDB segment globs
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/multi/nation_?.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/002"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/multi/nation_?.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/003"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/multi/nation_[ab].parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/004"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/multi/nation_[ab].parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/005"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/hive/**/nation.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/006"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob/hive/**/nation.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/007"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/root_*.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/008"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/root_*.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/009"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(n_nationkey)
+FROM
+  read_parquet('__UPPERCASE_OBJECT_ROOT__/root_*.parquet');
+----
+50
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2913
+# sirius: id = "s3_surface/matcher/010"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(n_nationkey)
+FROM
+  read_parquet('__UPPERCASE_OBJECT_ROOT__/root_*.parquet');
+----
+50
