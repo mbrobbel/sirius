@@ -1,0 +1,13 @@
+# gpu_execution - limit with offset on large table
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:766
+# sirius: id = "tpch_integration_native/limit-with-offset-on-large-table/001"
+# sirius: tags = ["integration", "gpu_execution", "limit", "limit_multi_batch"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  l_partkey
+FROM
+  lineitem LIMIT 50 OFFSET 200;
+----

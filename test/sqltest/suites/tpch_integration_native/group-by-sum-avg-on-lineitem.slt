@@ -1,0 +1,18 @@
+# gpu_execution - group by sum avg on lineitem
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2833
+# sirius: id = "tpch_integration_native/group-by-sum-avg-on-lineitem/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "avg"]
+query ????? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  sum(l_quantity),
+  avg(l_extendedprice),
+  count(*)
+FROM
+  lineitem
+GROUP BY
+  l_returnflag, l_linestatus;
+----

@@ -1,0 +1,12 @@
+# gpu_execution - scan single column
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:419
+# sirius: id = "tpch_integration_native/scan-single-column/001"
+# sirius: tags = ["integration", "gpu_execution", "scan"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation;
+----

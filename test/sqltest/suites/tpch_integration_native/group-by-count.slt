@@ -1,0 +1,15 @@
+# gpu_execution - group by count
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2751
+# sirius: id = "tpch_integration_native/group-by-count/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(*)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

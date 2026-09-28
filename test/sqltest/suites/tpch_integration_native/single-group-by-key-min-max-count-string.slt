@@ -1,0 +1,17 @@
+# gpu_execution - single group by key: min max, count string
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:665
+# sirius: id = "tpch_integration_native/single-group-by-key-min-max-count-string/001"
+# sirius: tags = ["integration", "gpu_execution", "grouped_aggregate"]
+query ???? rowsort
+SELECT
+  c_nationkey,
+  min(C_NAME),
+  max(C_NAME),
+  count(C_NAME)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----

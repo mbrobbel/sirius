@@ -1,0 +1,25 @@
+# gpu_execution - pin_table duckdb-native gpu tier scan and aggregate
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 'lineitem', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4994
+# sirius: id = "tpch_integration_native/pin-table-duckdb-native-gpu-tier-scan-and-aggregate/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  count(*),
+  sum(l_quantity)
+FROM
+  lineitem
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('lineitem');
