@@ -155,7 +155,10 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
             fixtures: &fixtures,
             relation: config.manifest.storage[&target.storage].relation,
             scratch: Path::new("validation"),
-            bucket: None,
+            bucket: suite
+                .object_store
+                .as_ref()
+                .map(|name| config.manifest.services[name].bucket()),
         };
         for script in &loaded {
             for step in &script.steps {
@@ -281,6 +284,10 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
         ))?);
         let storage = &config.manifest.storage[&target.storage];
         let profile_config = config.path(&profile.config)?;
+        let service_spec = suite
+            .object_store
+            .as_ref()
+            .map(|name| &config.manifest.services[name]);
         let fixture_hash = &fixture_hashes[&target.suite];
         for script in &scripts[&target.suite] {
             let Some(last_selected) = script.steps.iter().rposition(
@@ -303,9 +310,19 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
             if let Err(error) = fixture_hash {
                 abort = Some(format!("fixture unavailable: {error:#}"));
             }
-            let worker_profile = profile_config.clone();
+            let mut service = None;
+            let mut worker_profile = profile_config.clone();
             let pair = if abort.is_none() {
                 (|| -> Result<_> {
+                    if let Some(spec) = service_spec.filter(|_| !args.cpu_only) {
+                        service = Some(spec.start(&fixtures)?);
+                        let resolved = work.join("sirius.yaml");
+                        service
+                            .as_ref()
+                            .unwrap()
+                            .write_profile(&profile_config, &resolved)?;
+                        worker_profile = resolved;
+                    }
                     for worker in ["reference", "sirius"] {
                         crate::fixtures::stage(
                             &config,
@@ -357,7 +374,7 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                 fixtures: &fixtures,
                 relation: storage.relation,
                 scratch: &reference_work,
-                bucket: None,
+                bucket: service_spec.map(crate::services::Service::bucket),
             };
             let actual_context = crate::substitutions::ContextValues {
                 scratch: &actual_work,
@@ -510,6 +527,16 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                             )?;
                         }
                         fs::copy(&worker_profile, directory.join("sirius.yaml"))?;
+                        if let Some(spec) = service_spec {
+                            fs::copy(&profile_config, directory.join("sirius-template.yaml"))?;
+                            fs::write(
+                                directory.join("service.json"),
+                                serde_json::to_vec_pretty(&serde_json::json!({
+                                    "recipe": spec,
+                                    "runtime": service.as_ref().map(|service| &service.metadata),
+                                }))?,
+                            )?;
+                        }
                         fs::write(
                             directory.join("environment.json"),
                             serde_json::to_vec_pretty(&profile.environment)?,
@@ -545,6 +572,7 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                                 &suite.scratch_directories,
                                 &suite.fixture_files,
                                 &suite.substitutions,
+                                service_spec,
                                 &target.settings,
                                 &target.reference_settings,
                                 &case.tolerances,
@@ -616,6 +644,11 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                 }
             }
             drop(workers);
+            if let Some(service) = &service
+                && let Err(error) = service.save_logs(&work)
+            {
+                eprintln!("cannot save MinIO logs: {error:#}");
+            }
         }
     }
     ensure!(

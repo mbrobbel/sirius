@@ -5,6 +5,7 @@ mod name;
 mod report;
 mod result;
 mod run;
+mod services;
 mod snapshot;
 mod substitutions;
 mod worker;

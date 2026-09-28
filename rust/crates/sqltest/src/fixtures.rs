@@ -127,6 +127,14 @@ pub fn stage(
                 .with_context(|| format!("copy fixture {name} to {}", target.display()))?;
         }
     }
+    if let Some(name) = &setup.object_store {
+        config
+            .manifest
+            .services
+            .get(name)
+            .with_context(|| format!("unknown object store service {name}"))?
+            .stage(fixtures, directory)?;
+    }
     Ok(())
 }
 
