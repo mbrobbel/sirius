@@ -1,0 +1,35 @@
+# gpu_execution mixed-type null-safe join does not leak the materialized key
+include ../../fixtures/migrated/null_safe_join/MixedTypeNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:275
+# sirius: id = "null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ???????? rowsort
+SELECT
+  *
+FROM
+  mtl
+  JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b;
+----
+1	10	100	100	100	10	100	100
+2	10	NULL	NULL	101	10	NULL	NULL
+3	20	NULL	NULL	102	20	NULL	NULL
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:277
+# sirius: id = "null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ???????? rowsort
+SELECT
+  *
+FROM
+  mtl
+  LEFT JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b;
+----
+1	10	100	100	100	10	100	100
+2	10	NULL	NULL	101	10	NULL	NULL
+3	20	NULL	NULL	102	20	NULL	NULL
+4	30	300	300	NULL	NULL	NULL	NULL
+5	40	NULL	NULL	NULL	NULL	NULL	NULL
+6	NULL	500	500	NULL	NULL	NULL	NULL

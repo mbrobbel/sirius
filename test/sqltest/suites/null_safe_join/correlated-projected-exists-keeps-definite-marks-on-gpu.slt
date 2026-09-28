@@ -1,0 +1,38 @@
+# gpu_execution correlated projected EXISTS keeps definite marks on GPU
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:318
+# sirius: id = "null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  EXISTS (SELECT 1 FROM mnr WHERE mnr.a = mnl.a) AS has_match
+FROM
+  mnl;
+----
+1	true
+2	true
+3	true
+4	true
+5	false
+6	false
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:321
+# sirius: id = "null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  NOT EXISTS (SELECT 1 FROM mnr WHERE mnr.a = mnl.a) AS no_match
+FROM
+  mnl;
+----
+1	false
+2	false
+3	false
+4	false
+5	true
+6	true

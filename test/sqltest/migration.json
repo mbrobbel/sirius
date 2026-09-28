@@ -1241,6 +1241,296 @@
       "test": "select sum(C) from S"
     },
     {
+      "file": "suites/null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from.slt",
+      "id": "null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from/001",
+      "identity": "3d4f4fd73d72aa887f0f360619e3a3cf200bb39324e502ebbf1acf73a27a2640",
+      "kind": "query",
+      "line": 86,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe join matches NULL to NULL (IS NOT DISTINCT FROM)"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from.slt",
+      "id": "null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from/002",
+      "identity": "8a4bd627f7bbc733b8fb6a55ffee080d529d744e15a6f68b7df97e5235066303",
+      "kind": "query",
+      "line": 87,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe join matches NULL to NULL (IS NOT DISTINCT FROM)"
+    },
+    {
+      "file": "suites/null_safe_join/plain-join-still-drops-null-keys.slt",
+      "id": "null_safe_join/plain-join-still-drops-null-keys/001",
+      "identity": "ce7371118597c80911c7f63dfa61b821deb380bf5006250d9356e1a355baeb8e",
+      "kind": "query",
+      "line": 96,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution plain '=' join still drops NULL keys"
+    },
+    {
+      "file": "suites/null_safe_join/plain-join-still-drops-null-keys.slt",
+      "id": "null_safe_join/plain-join-still-drops-null-keys/002",
+      "identity": "302397c1088d54e0086e427a87f94e2e2fb9786c571fcfa0815bd52458fc892c",
+      "kind": "query",
+      "line": 97,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution plain '=' join still drops NULL keys"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-left-join-matches-null-and-pads-unmatched.slt",
+      "id": "null_safe_join/null-safe-left-join-matches-null-and-pads-unmatched/001",
+      "identity": "0fc11ae957821edf4b8dc38643dc1ce9da926b1d0b553d996878912834012105",
+      "kind": "query",
+      "line": 106,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe LEFT join matches NULL and pads unmatched"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-full-outer-join-matches-null-to-null.slt",
+      "id": "null_safe_join/null-safe-full-outer-join-matches-null-to-null/001",
+      "identity": "2296b84ab5995c27f3c8b0ce381f4b3b47cff60c2a1e251581d2040a5efab867",
+      "kind": "query",
+      "line": 115,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe FULL OUTER join matches NULL to NULL"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-right-join-hits-the-right-family-path-no-swap.slt",
+      "id": "null_safe_join/null-safe-right-join-hits-the-right-family-path-no-swap/001",
+      "identity": "31c5ca198eb8d3b976f4ab9d6c5f97d541eecc56bcc764925e6914028107cceb",
+      "kind": "query",
+      "line": 126,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe RIGHT join hits the right-family path (no swap)"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu.slt",
+      "id": "null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu/001",
+      "identity": "e1f13f6287fe3e6e6a36701f9677aa4d916c866b507a67dcba8a9706361ee8be",
+      "kind": "query",
+      "line": 134,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' and IS NOT DISTINCT FROM join runs on GPU"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu.slt",
+      "id": "null_safe_join/mixed-and-is-not-distinct-from-join-runs-on-gpu/002",
+      "identity": "0c4ee58f9d16c9866e72d744433d8228d304c81c8f42194613519d66caa40a19",
+      "kind": "query",
+      "line": 136,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' and IS NOT DISTINCT FROM join runs on GPU"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-inner-join-matches-null-to-null.slt",
+      "id": "null_safe_join/mixed-null-safe-inner-join-matches-null-to-null/001",
+      "identity": "fe18865f1517ae53648c1eef77cf51626309cac6f5158fc5613aa2b43c669f81",
+      "kind": "query",
+      "line": 163,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe INNER join matches NULL to NULL"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-inner-join-matches-null-to-null.slt",
+      "id": "null_safe_join/mixed-null-safe-inner-join-matches-null-to-null/002",
+      "identity": "e91be3053c1d632b4c27d63dfe2186d1b32989ec885d1ec295a433fbbb3987a3",
+      "kind": "query",
+      "line": 166,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe INNER join matches NULL to NULL"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-left-join-matches-null-and-pads-unmatched.slt",
+      "id": "null_safe_join/mixed-null-safe-left-join-matches-null-and-pads-unmatched/001",
+      "identity": "fe2d20fbd6fa2d64c9230ea18a4b8a00cd0a3b0211aed153584d345617e62209",
+      "kind": "query",
+      "line": 176,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe LEFT join matches NULL and pads unmatched"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-semi-and-anti-joins.slt",
+      "id": "null_safe_join/mixed-null-safe-semi-and-anti-joins/001",
+      "identity": "1ac8c7ebe14c80a64987cf173ba8cfe46d3f0e6c3b7b65b36503d8627d8452db",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe SEMI and ANTI joins"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-semi-and-anti-joins.slt",
+      "id": "null_safe_join/mixed-null-safe-semi-and-anti-joins/002",
+      "identity": "ca4dbc3de2e2c69d69f6f8ddf091cdae65ee3130f94ff80ddbfe57253d099f2f",
+      "kind": "query",
+      "line": 190,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe SEMI and ANTI joins"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-full-outer-join-matches-null-to-null.slt",
+      "id": "null_safe_join/mixed-null-safe-full-outer-join-matches-null-to-null/001",
+      "identity": "994cc6b350dee53a1ea996203a7aa6e61ffb4e9a2251ec1073d3123dfbea396c",
+      "kind": "query",
+      "line": 200,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe FULL OUTER join matches NULL to NULL"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-right-join-hits-the-right-family-path-no-swap.slt",
+      "id": "null_safe_join/mixed-null-safe-right-join-hits-the-right-family-path-no-swap/001",
+      "identity": "853b2851db6cfb82be71bfe7a890bec6f66796e25c37049a9845dd33bb50a655",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe RIGHT join hits the right-family path (no swap)"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast.slt",
+      "id": "null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast/001",
+      "identity": "6d85fcd76633efb3321ff4118f4aeae259ad00bf9ab33084c3411abdc49a84b8",
+      "kind": "query",
+      "line": 241,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe join with an AST-untranslatable cast"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast.slt",
+      "id": "null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast/002",
+      "identity": "9d5644a9efbde63e181e85847de26204f6991967a301a9233f5f6727f536c97b",
+      "kind": "query",
+      "line": 244,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe join with an AST-untranslatable cast"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-join-with-a-cast-and-no-nulls.slt",
+      "id": "null_safe_join/mixed-null-safe-join-with-a-cast-and-no-nulls/001",
+      "identity": "6f96dd04641895f34db3522878f023c0a87565cba1a286cbdb9ee700ecd00428",
+      "kind": "query",
+      "line": 254,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe join with a cast and no NULLs"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-null-safe-join-with-an-ast-translatable-cast.slt",
+      "id": "null_safe_join/mixed-null-safe-join-with-an-ast-translatable-cast/001",
+      "identity": "6dd348972cec4ef72d871b8c0ea842705f596e05999420c5d39ec84d3d9623db",
+      "kind": "query",
+      "line": 265,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed '=' + null-safe join with an AST-translatable cast"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key.slt",
+      "id": "null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key/001",
+      "identity": "e4b6b42d8ca9a76f3555942f37a4776a1e53c20357dce69335b9d30c5b754fd3",
+      "kind": "query",
+      "line": 275,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed-type null-safe join does not leak the materialized key"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key.slt",
+      "id": "null_safe_join/mixed-type-null-safe-join-does-not-leak-the-materialized-key/002",
+      "identity": "1ae0c180632368a3272e83fabcbbdc0e5929168001b888a392307951007bc703",
+      "kind": "query",
+      "line": 277,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed-type null-safe join does not leak the materialized key"
+    },
+    {
+      "file": "suites/null_safe_join/mixed-plain-null-safe-mark-join-falls-back-at-plan-time.slt",
+      "id": "null_safe_join/mixed-plain-null-safe-mark-join-falls-back-at-plan-time/001",
+      "identity": "2234cd3334f4adb904207d8c9b3a3ef89b8c30e955fa19c4a8ec47a84dc52807",
+      "kind": "plan_fallback",
+      "line": 288,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution mixed plain + null-safe MARK join falls back at plan time"
+    },
+    {
+      "file": "suites/null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks.slt",
+      "id": "null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks/001",
+      "identity": "111c9ade887b05704cbe68fa2492b68624f0e9c8966969c02082c132e8c6e8ef",
+      "kind": "query",
+      "line": 298,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution all-null-safe MARK join runs on GPU with definite marks"
+    },
+    {
+      "file": "suites/null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks.slt",
+      "id": "null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks/002",
+      "identity": "639cce2cdbce9484a54b457cf10449dad30068916d4d78c2edadcceaa1f9f2cb",
+      "kind": "query",
+      "line": 304,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution all-null-safe MARK join runs on GPU with definite marks"
+    },
+    {
+      "file": "suites/null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu.slt",
+      "id": "null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu/001",
+      "identity": "4998999b7aa222710263b197d24fde13ff035100e4232977bf15c6a122b7cdf6",
+      "kind": "query",
+      "line": 318,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution correlated projected EXISTS keeps definite marks on GPU"
+    },
+    {
+      "file": "suites/null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu.slt",
+      "id": "null_safe_join/correlated-projected-exists-keeps-definite-marks-on-gpu/002",
+      "identity": "3ece08d8e005d76d5d979272fbb32247eb332c57e9af353930b752815e5a490d",
+      "kind": "query",
+      "line": 321,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution correlated projected EXISTS keeps definite marks on GPU"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists.slt",
+      "id": "null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists/001",
+      "identity": "28693336a7a6a405437bbf12aa8fac51dc686aa598ce0e3b0cb8e267cb0d1472",
+      "kind": "query",
+      "line": 331,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe MARK rejection does not spill onto plain IN/EXISTS"
+    },
+    {
+      "file": "suites/null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists.slt",
+      "id": "null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists/002",
+      "identity": "47daf6799e80d7df3188317d47f3d7508f9f3a3400cea9387aeccaa9fd23c350",
+      "kind": "query",
+      "line": 332,
+      "source": "test/cpp/integration/test_gpu_execution_null_safe_join.cpp",
+      "suite": "null_safe_join",
+      "test": "gpu_execution null-safe MARK rejection does not spill onto plain IN/EXISTS"
+    },
+    {
       "file": "suites/array/scan-integer-3-passthrough.slt",
       "id": "array/scan-integer-3-passthrough/001",
       "identity": "4de9a70faae1e8eb5aac847869027144d47fdcae9629eb6a8ba7cc4a051063e1",

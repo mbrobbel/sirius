@@ -1,0 +1,38 @@
+# gpu_execution all-null-safe MARK join runs on GPU with definite marks
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:298
+# sirius: id = "null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  EXISTS (SELECT 1 FROM mnr WHERE mnr.b IS NOT DISTINCT FROM mnl.b) AS has_match
+FROM
+  mnl;
+----
+1	true
+2	true
+3	true
+4	false
+5	true
+6	true
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:304
+# sirius: id = "null_safe_join/all-null-safe-mark-join-runs-on-gpu-with-definite-marks/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  EXISTS (SELECT 1 FROM mnr WHERE mnr.a = mnl.a AND mnr.b IS NOT DISTINCT FROM mnl.b) AS has_match
+FROM
+  mnl;
+----
+1	true
+2	true
+3	true
+4	false
+5	false
+6	false

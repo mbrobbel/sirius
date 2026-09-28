@@ -1,0 +1,38 @@
+# gpu_execution null-safe MARK rejection does not spill onto plain IN/EXISTS
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:331
+# sirius: id = "null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  mnl.b IN (SELECT mnr.b FROM mnr) AS in_b
+FROM
+  mnl;
+----
+1	true
+2	NULL
+3	NULL
+4	NULL
+5	NULL
+6	true
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:332
+# sirius: id = "null_safe_join/null-safe-mark-rejection-does-not-spill-onto-plain-in-exists/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  mnl.a IN (SELECT mnr.a FROM mnr) AS in_a
+FROM
+  mnl;
+----
+1	true
+2	true
+3	true
+4	true
+5	NULL
+6	NULL

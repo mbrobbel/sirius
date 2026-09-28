@@ -1,0 +1,35 @@
+statement ok
+CREATE TABLE mtl (
+  id INTEGER,
+  a INTEGER,
+  b SMALLINT,
+  c SMALLINT
+);
+
+statement ok
+CREATE TABLE mtr (
+  id INTEGER,
+  a INTEGER,
+  b INTEGER,
+  c BIGINT
+);
+
+statement ok
+INSERT INTO mtl VALUES
+  (1, 10, 100, 100),
+  (2, 10, NULL, NULL),
+  (3, 20, NULL, NULL),
+  (4, 30, 300, 300),
+  (5, 40, NULL, NULL),
+  (6, NULL, 500, 500);
+
+statement ok
+INSERT INTO mtr VALUES
+  (100, 10, 100, 100),
+  (101, 10, NULL, NULL),
+  (102, 20, NULL, NULL),
+  (103, 30, 999, 999),
+  (104, NULL, 500, 500);
+
+statement ok
+CHECKPOINT;

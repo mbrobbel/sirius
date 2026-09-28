@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE mnl (
+  id INTEGER,
+  a INTEGER,
+  b INTEGER
+);
+
+statement ok
+CREATE TABLE mnr (
+  id INTEGER,
+  a INTEGER,
+  b INTEGER
+);
+
+statement ok
+INSERT INTO mnl VALUES
+  (1, 10, 100),
+  (2, 10, NULL),
+  (3, 20, NULL),
+  (4, 30, 300),
+  (5, 40, NULL),
+  (6, NULL, 500);
+
+statement ok
+INSERT INTO mnr VALUES
+  (100, 10, 100),
+  (101, 10, NULL),
+  (102, 20, NULL),
+  (103, 30, 999),
+  (104, NULL, 500);
+
+statement ok
+CHECKPOINT;

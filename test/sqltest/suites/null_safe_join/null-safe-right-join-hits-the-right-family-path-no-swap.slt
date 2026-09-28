@@ -1,0 +1,22 @@
+# gpu_execution null-safe RIGHT join hits the right-family path (no swap)
+include ../../fixtures/migrated/null_safe_join/NullSafeJoinFixture.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'build_side_probe_side');
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:126
+# sirius: id = "null_safe_join/null-safe-right-join-hits-the-right-family-path-no-swap/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  l.id,
+  r.id
+FROM
+  l
+  RIGHT JOIN r ON l.k IS NOT DISTINCT FROM r.k;
+----
+1	100
+2	101
+3	101
+NULL	102
