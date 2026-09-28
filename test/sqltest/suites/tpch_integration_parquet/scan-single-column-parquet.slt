@@ -1,0 +1,12 @@
+# gpu_execution - scan single column parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:426
+# sirius: id = "tpch_integration_parquet/scan-single-column-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "scan"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation;
+----

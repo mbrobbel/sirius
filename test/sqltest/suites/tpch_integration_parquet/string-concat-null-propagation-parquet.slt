@@ -1,0 +1,13 @@
+# gpu_execution - string concat NULL propagation parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3155
+# sirius: id = "tpch_integration_parquet/string-concat-null-propagation-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "string_concat", "nulls"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  CASE WHEN l_orderkey % 7 = 0 THEN NULL ELSE l_returnflag END || '-' || l_linestatus
+FROM
+  lineitem ORDER BY l_orderkey, l_linenumber LIMIT 100;
+----

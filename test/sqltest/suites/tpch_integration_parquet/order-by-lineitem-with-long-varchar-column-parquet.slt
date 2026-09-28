@@ -1,0 +1,14 @@
+# gpu_execution - order by lineitem with long varchar column parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3067
+# sirius: id = "tpch_integration_parquet/order-by-lineitem-with-long-varchar-column-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "order_by", "varchar_order"]
+query ??? rowsort
+SELECT
+  l_orderkey,
+  l_comment,
+  l_linenumber
+FROM
+  lineitem ORDER BY l_orderkey;
+----

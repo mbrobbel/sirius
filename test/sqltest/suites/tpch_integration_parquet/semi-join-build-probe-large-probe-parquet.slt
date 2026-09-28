@@ -1,0 +1,13 @@
+# gpu_execution - semi join build_probe large probe parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1705
+# sirius: id = "tpch_integration_parquet/semi-join-build-probe-large-probe-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "semijoin"]
+query ? rowsort
+SELECT
+  o.o_orderkey
+FROM
+  orders o
+  SEMI JOIN (SELECT c_custkey FROM customer WHERE c_nationkey < 3) c ON o.o_custkey = c.c_custkey;
+----

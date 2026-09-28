@@ -1,0 +1,15 @@
+# gpu_execution - swapped semi join 0 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1794
+# sirius: id = "tpch_integration_parquet/swapped-semi-join-0-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "semijoin"]
+query ??? rowsort
+SELECT
+  c.c_nationkey,
+  c.c_custkey,
+  c.c_name
+FROM
+  customer c
+  SEMI JOIN nation n ON n.n_nationkey = c.c_nationkey;
+----
