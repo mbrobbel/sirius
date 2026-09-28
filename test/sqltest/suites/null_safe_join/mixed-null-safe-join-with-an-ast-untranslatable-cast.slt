@@ -1,0 +1,31 @@
+# gpu_execution mixed '=' + null-safe join with an AST-untranslatable cast
+include ../../fixtures/migrated/null_safe_join/MixedTypeNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:241
+# sirius: id = "null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mtl.id,
+  mtr.id
+FROM
+  mtl
+  JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b;
+----
+1	100
+2	101
+3	102
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:244
+# sirius: id = "null_safe_join/mixed-null-safe-join-with-an-ast-untranslatable-cast/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  mtl
+  JOIN mtr ON mtl.a = mtr.a AND mtl.b IS NOT DISTINCT FROM mtr.b;
+----
+3

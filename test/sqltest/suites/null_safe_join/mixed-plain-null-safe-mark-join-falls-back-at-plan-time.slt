@@ -1,0 +1,21 @@
+# gpu_execution mixed plain + null-safe MARK join falls back at plan time
+include ../../fixtures/migrated/null_safe_join/MixedKeyNullSafeJoinFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_null_safe_join.cpp:288
+# sirius: id = "null_safe_join/mixed-plain-null-safe-mark-join-falls-back-at-plan-time/001"
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "join", "nulls", "null_safe"]
+query ?? rowsort
+SELECT
+  mnl.id,
+  mnl.b IN (SELECT mnr.b FROM mnr WHERE mnr.a = mnl.a) AS in_b
+FROM
+  mnl;
+----
+1	true
+2	NULL
+3	NULL
+4	false
+5	false
+6	false
