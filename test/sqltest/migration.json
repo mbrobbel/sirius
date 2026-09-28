@@ -6711,6 +6711,26 @@
       "test": "physical_order - order by with limit over large input"
     },
     {
+      "file": "suites/operator_mgpu_rangecheck/rangecheck.slt",
+      "id": "operator_mgpu_rangecheck/rangecheck/001",
+      "identity": "84fe612983d33766cfea491623250e5c1fe90e1954ffe1c9ba992a5c8445dc39",
+      "kind": "query",
+      "line": 162,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_rangecheck",
+      "test": "physical_order - small sort rangecheck regression"
+    },
+    {
+      "file": "suites/operator_mgpu_rangecheck/rangecheck.slt",
+      "id": "operator_mgpu_rangecheck/rangecheck/002",
+      "identity": "31d8572dcc49ea85c6aefd4ab8a630c30356998f8979c228d412bbd09ce893c3",
+      "kind": "query",
+      "line": 162,
+      "source": "test/cpp/operator/test_physical_order_mgpu.cpp",
+      "suite": "operator_mgpu_rangecheck",
+      "test": "physical_order - small sort rangecheck regression"
+    },
+    {
       "file": "suites/operator_mgpu_aggregate/high-cardinality.slt",
       "id": "operator_mgpu_aggregate/high-cardinality/001",
       "identity": "b0c1b1e73fc7447631bbfadd2ba30f76772a48f5b64f00397d0209ca0edc45f5",
