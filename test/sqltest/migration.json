@@ -10041,6 +10041,16 @@
       "test": "gpu_execution csv - order by date column"
     },
     {
+      "file": "suites/s3_glob_scale/pagination.slt",
+      "id": "s3_glob_scale/pagination/001",
+      "identity": "c2a9099f747024c0f1a16f83a395faec30df12e8ceabc2fbea2d148f2a86bb21",
+      "kind": "query",
+      "line": 2957,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_glob_scale",
+      "test": "transparent S3 glob scans 1001 parquet objects across LIST pages"
+    },
+    {
       "file": "suites/iceberg/conformance-added-column-declines-at-plan-time.slt",
       "id": "iceberg/conformance-added-column-declines-at-plan-time/liveness",
       "identity": "623784b45095aad869b98b4c134e2f70a71931494a2757c87b00a2ec66910d1d",

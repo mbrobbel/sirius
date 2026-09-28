@@ -1,0 +1,14 @@
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2957
+# sirius: id = "s3_glob_scale/pagination/001"
+# sirius: tags = ["s3", "integration", "glob", "pagination"]
+# sirius: snapshot = true
+query IIII nosort
+SELECT
+  count(n_nationkey),
+  sum(n_nationkey),
+  min(n_nationkey),
+  max(n_nationkey)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-scale/part_*.parquet');
+----
+25025	300300	0	24

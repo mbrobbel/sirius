@@ -1,0 +1,8 @@
+profile = "s3-surface"
+storage = ["parquet"]
+checkpoint = "explicit"
+object_store = "s3-glob-scale"
+
+[substitutions.OBJECT_ROOT]
+duckdb = "__TEST_DIR__/.sqltest-objects"
+sirius = "s3://__S3_BUCKET__"
