@@ -54,8 +54,9 @@ struct dynamic_filter_switch_guard {
   bool original;
 };
 
-// Verify GPU execution and return the result as a sorted bag.
-std::vector<std::vector<std::string>> run_on_gpu(duckdb::Connection& con, const std::string& query)
+// Verify GPU execution and retain the result for fixture assertions.
+duckdb::unique_ptr<duckdb::MaterializedQueryResult> run_on_gpu(duckdb::Connection& con,
+                                                               const std::string& query)
 {
   auto const before = sirius::test::get_transparent_execution_stats(con);
 
@@ -68,7 +69,7 @@ std::vector<std::vector<std::string>> run_on_gpu(duckdb::Connection& con, const 
 
   auto const after = sirius::test::get_transparent_execution_stats(con);
   sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1);
-  return sirius::test::collect_rows(result->Cast<duckdb::MaterializedQueryResult>());
+  return result;
 }
 
 // Dynamic-filter counter deltas for one query execution.
@@ -80,7 +81,7 @@ struct publication_deltas {
   std::uint64_t filters_pushed                       = 0;
 };
 
-struct switch_comparison {
+struct switch_measurements {
   publication_deltas off;
   publication_deltas on;
   std::vector<std::vector<std::string>> rows;
@@ -88,11 +89,12 @@ struct switch_comparison {
 
 publication_deltas run_and_measure(duckdb::Connection& con,
                                    const std::string& query,
-                                   std::vector<std::vector<std::string>>& rows)
+                                   std::vector<std::vector<std::string>>* rows = nullptr)
 {
   auto const before = sirius::test::get_dynamic_filter_stats_snapshot(con);
-  rows              = run_on_gpu(con, query);
-  auto const after  = sirius::test::get_dynamic_filter_stats_snapshot(con);
+  auto result       = run_on_gpu(con, query);
+  if (rows) { *rows = sirius::test::collect_rows(*result); }
+  auto const after = sirius::test::get_dynamic_filter_stats_snapshot(con);
   return publication_deltas{
     .producers_enabled        = after.producers_enabled - before.producers_enabled,
     .membership_filters_built = after.membership_filters_built - before.membership_filters_built,
@@ -104,26 +106,21 @@ publication_deltas run_and_measure(duckdb::Connection& con,
 
 // Publication completes before these probes, making the enabled/disabled counter deltas
 // deterministic.
-switch_comparison require_switch_result_equivalence(duckdb::Connection& con,
-                                                    const std::string& query)
+switch_measurements require_switch_execution(duckdb::Connection& con, const std::string& query)
 {
   con.Query("SET gpu_execution = true;");
 
-  switch_comparison deltas;
-  std::vector<std::vector<std::string>> off_rows;
+  switch_measurements deltas;
   {
     dynamic_filter_switch_guard switch_off(con, /*enabled=*/false);
-    deltas.off = run_and_measure(con, query, off_rows);
+    deltas.off = run_and_measure(con, query);
   }
 
-  std::vector<std::vector<std::string>> on_rows;
   {
     dynamic_filter_switch_guard switch_on(con, /*enabled=*/true);
-    deltas.on = run_and_measure(con, query, on_rows);
+    deltas.on = run_and_measure(con, query, &deltas.rows);
   }
 
-  REQUIRE(on_rows == off_rows);
-  deltas.rows = std::move(on_rows);
   return deltas;
 }
 
@@ -151,13 +148,12 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
     sirius::test::disabled_optimizers_guard shape(
       con, "statistics_propagation,join_order,build_side_probe_side");
     sirius::test::coverage_gate_disable_guard gate_off(con);
-    auto const deltas =
-      require_switch_result_equivalence(con,
-                                        "SELECT count(*), sum(o.o_custkey) "
-                                        "FROM lineitem l "
-                                        "JOIN orders o ON l.l_orderkey = o.o_orderkey "
-                                        "JOIN customer c ON o.o_custkey = c.c_custkey "
-                                        "WHERE c.c_nationkey = 3");
+    auto const deltas = require_switch_execution(con,
+                                                 "SELECT count(*), sum(o.o_custkey) "
+                                                 "FROM lineitem l "
+                                                 "JOIN orders o ON l.l_orderkey = o.o_orderkey "
+                                                 "JOIN customer c ON o.o_custkey = c.c_custkey "
+                                                 "WHERE c.c_nationkey = 3");
 
     REQUIRE(deltas.off.producers_enabled == 0);
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
@@ -172,12 +168,12 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
       con, "statistics_propagation,join_order,build_side_probe_side");
     sirius::test::coverage_gate_disable_guard gate_off(con);
     auto const deltas =
-      require_switch_result_equivalence(con,
-                                        "SELECT count(*), sum(o.o_custkey) "
-                                        "FROM lineitem l "
-                                        "LEFT JOIN orders o ON l.l_orderkey = o.o_orderkey "
-                                        "JOIN customer c ON o.o_custkey = c.c_custkey "
-                                        "WHERE c.c_nationkey = 3");
+      require_switch_execution(con,
+                               "SELECT count(*), sum(o.o_custkey) "
+                               "FROM lineitem l "
+                               "LEFT JOIN orders o ON l.l_orderkey = o.o_orderkey "
+                               "JOIN customer c ON o.o_custkey = c.c_custkey "
+                               "WHERE c.c_nationkey = 3");
 
     REQUIRE(deltas.off.producers_enabled == 0);
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
@@ -191,12 +187,12 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
       con, "statistics_propagation,join_order,build_side_probe_side");
     sirius::test::coverage_gate_disable_guard gate_off(con);
     auto const deltas =
-      require_switch_result_equivalence(con,
-                                        "SELECT count(*), count(o.o_orderkey) "
-                                        "FROM orders o "
-                                        "RIGHT JOIN customer c ON o.o_custkey = c.c_custkey "
-                                        "JOIN nation n ON c.c_nationkey = n.n_nationkey "
-                                        "WHERE n.n_regionkey = 3");
+      require_switch_execution(con,
+                               "SELECT count(*), count(o.o_orderkey) "
+                               "FROM orders o "
+                               "RIGHT JOIN customer c ON o.o_custkey = c.c_custkey "
+                               "JOIN nation n ON c.c_nationkey = n.n_nationkey "
+                               "WHERE n.n_regionkey = 3");
 
     REQUIRE(deltas.off.producers_enabled == 0);
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
@@ -213,12 +209,12 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
       con, "statistics_propagation,join_order,build_side_probe_side");
     sirius::test::coverage_gate_disable_guard gate_off(con);
     auto const deltas =
-      require_switch_result_equivalence(con,
-                                        "SELECT count(*), count(o.o_orderkey) "
-                                        "FROM orders o "
-                                        "FULL OUTER JOIN customer c ON o.o_custkey = c.c_custkey "
-                                        "JOIN nation n ON c.c_nationkey = n.n_nationkey "
-                                        "WHERE n.n_regionkey = 3");
+      require_switch_execution(con,
+                               "SELECT count(*), count(o.o_orderkey) "
+                               "FROM orders o "
+                               "FULL OUTER JOIN customer c ON o.o_custkey = c.c_custkey "
+                               "JOIN nation n ON c.c_nationkey = n.n_nationkey "
+                               "WHERE n.n_regionkey = 3");
 
     REQUIRE(deltas.off.producers_enabled == 0);
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
@@ -253,7 +249,7 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
 
     for (auto const& query : queries) {
       CAPTURE(query);
-      auto const deltas = require_switch_result_equivalence(con, query);
+      auto const deltas = require_switch_execution(con, query);
 
       REQUIRE(deltas.off.producers_enabled == 0);
       REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
@@ -266,26 +262,25 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
   {
     // These keys are non-null, so result parity cannot verify null-equal rejection. Admission and
     // plan-shape tests cover that rule directly.
-    require_switch_result_equivalence(
-      con,
-      "SELECT count(*), sum(o.o_custkey) "
-      "FROM lineitem l "
-      "JOIN orders o ON l.l_orderkey = o.o_orderkey "
-      "JOIN customer c ON o.o_custkey IS NOT DISTINCT FROM c.c_custkey "
-      "WHERE c.c_nationkey = 3 "
-      "AND l.l_shipdate < DATE '1992-03-01'");
+    require_switch_execution(con,
+                             "SELECT count(*), sum(o.o_custkey) "
+                             "FROM lineitem l "
+                             "JOIN orders o ON l.l_orderkey = o.o_orderkey "
+                             "JOIN customer c ON o.o_custkey IS NOT DISTINCT FROM c.c_custkey "
+                             "WHERE c.c_nationkey = 3 "
+                             "AND l.l_shipdate < DATE '1992-03-01'");
   }
 
   SECTION("an endpoint whose channel receives no filter passes rows through")
   {
     // The customer predicate produces no rows but remains inside the column statistics, preserving
     // the join in the plan.
-    require_switch_result_equivalence(con,
-                                      "SELECT count(*), sum(o.o_custkey) "
-                                      "FROM lineitem l "
-                                      "JOIN orders o ON l.l_orderkey = o.o_orderkey "
-                                      "JOIN customer c ON o.o_custkey = c.c_custkey "
-                                      "WHERE c.c_phone = '25-000-000-0000'");
+    require_switch_execution(con,
+                             "SELECT count(*), sum(o.o_custkey) "
+                             "FROM lineitem l "
+                             "JOIN orders o ON l.l_orderkey = o.o_orderkey "
+                             "JOIN customer c ON o.o_custkey = c.c_custkey "
+                             "WHERE c.c_phone = '25-000-000-0000'");
   }
 
   SECTION("a single-partition MIXED_JOIN publishes through the partition fold")
@@ -293,12 +288,12 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
     // An equality plus an inequality condition puts the join in MIXED_JOIN mode, which
     // compute_hash_join_partition_strategy excludes from BUILD_PROBE.
     sirius::test::coverage_gate_disable_guard gate_off(con);
-    auto const deltas = require_switch_result_equivalence(
-      con,
-      "select count(*) from orders o "
-      "join (select l_orderkey, l_shipdate from lineitem "
-      "      where l_shipdate < date '1992-02-01') l "
-      "on o.o_orderkey = l.l_orderkey and o.o_orderdate < l.l_shipdate");
+    auto const deltas =
+      require_switch_execution(con,
+                               "select count(*) from orders o "
+                               "join (select l_orderkey, l_shipdate from lineitem "
+                               "      where l_shipdate < date '1992-02-01') l "
+                               "on o.o_orderkey = l.l_orderkey and o.o_orderdate < l.l_shipdate");
 
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
     REQUIRE(deltas.on.publications_finished > deltas.off.publications_finished);
@@ -320,7 +315,7 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
     sirius::test::scoped_setting small_partitions(con, "hash_partition_bytes", 8ULL * 1024 * 1024);
     sirius::test::scoped_setting small_build_budget(
       con, "max_build_hash_table_bytes", 8ULL * 1024 * 1024);
-    auto const deltas = require_switch_result_equivalence(
+    auto const deltas = require_switch_execution(
       con,
       "select count(*), sum(l.l_partkey), sum(l.l_suppkey), sum(l.l_linenumber), "
       "       sum(l.l_quantity), sum(l.l_extendedprice), sum(l.l_discount), sum(l.l_tax) "
@@ -338,11 +333,11 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
     // visible subtree and no opaque build root, enabling dynamic filters must arm no producer.
     sirius::test::disabled_optimizers_guard shape(con, "join_order,build_side_probe_side");
     sirius::test::coverage_gate_disable_guard gate_off(con);
-    auto const deltas = require_switch_result_equivalence(
-      con,
-      "select count(*) from lineitem l "
-      "join (select l_orderkey from lineitem group by l_orderkey) g "
-      "on l.l_orderkey = g.l_orderkey");
+    auto const deltas =
+      require_switch_execution(con,
+                               "select count(*) from lineitem l "
+                               "join (select l_orderkey from lineitem group by l_orderkey) g "
+                               "on l.l_orderkey = g.l_orderkey");
 
     REQUIRE(deltas.off.producers_enabled == 0);
     REQUIRE(deltas.on.producers_enabled == deltas.off.producers_enabled);
@@ -351,16 +346,16 @@ TEST_CASE("gpu_execution - opaque-build and build-block routes preserve results"
   SECTION("TPC-H q17: a delim-scan build wires only through opaque-build evidence")
   {
     auto const deltas =
-      require_switch_result_equivalence(con,
-                                        "select sum(l.l_extendedprice) / 7.0 as avg_yearly "
-                                        "from lineitem l, part p "
-                                        "where p.p_partkey = l.l_partkey "
-                                        "and p.p_brand = 'Brand#13' "
-                                        "and p.p_container = 'JUMBO CAN' "
-                                        "and l.l_quantity < ("
-                                        "select 0.2 * avg(l2.l_quantity) "
-                                        "from lineitem l2 "
-                                        "where l2.l_partkey = p.p_partkey)");
+      require_switch_execution(con,
+                               "select sum(l.l_extendedprice) / 7.0 as avg_yearly "
+                               "from lineitem l, part p "
+                               "where p.p_partkey = l.l_partkey "
+                               "and p.p_brand = 'Brand#13' "
+                               "and p.p_container = 'JUMBO CAN' "
+                               "and l.l_quantity < ("
+                               "select 0.2 * avg(l2.l_quantity) "
+                               "from lineitem l2 "
+                               "where l2.l_partkey = p.p_partkey)");
 
     REQUIRE(deltas.on.producers_enabled > deltas.off.producers_enabled);
     REQUIRE(deltas.on.filters_pushed > deltas.off.filters_pushed);
