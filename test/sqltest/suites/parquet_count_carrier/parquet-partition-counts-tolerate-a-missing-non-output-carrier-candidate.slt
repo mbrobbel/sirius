@@ -1,0 +1,14 @@
+include ../../fixtures/migrated/parquet_count_carrier.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:315
+# sirius: id = "parquet_count_carrier/parquet-partition-counts-tolerate-a-missing-non-output-carrier-candidate/001"
+# sirius: tags = ["integration", "parquet", "carrier"]
+query ?? rowsort
+SELECT
+  part,
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/evolved/part=*/*.parquet', hive_partitioning = true, union_by_name = true)
+GROUP BY
+  part ORDER BY part;
+----
