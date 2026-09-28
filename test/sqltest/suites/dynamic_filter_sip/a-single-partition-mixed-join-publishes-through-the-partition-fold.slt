@@ -1,0 +1,36 @@
+# a single-partition MIXED_JOIN publishes through the partition fold
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:291
+# sirius: id = "dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  orders o
+  JOIN (SELECT l_orderkey, l_shipdate FROM lineitem WHERE l_shipdate < DATE '1992-02-01') l ON o.o_orderkey = l.l_orderkey AND o.o_orderdate < l.l_shipdate;
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:291
+# sirius: id = "dynamic_filter_sip/a-single-partition-mixed-join-publishes-through-the-partition-fold/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  orders o
+  JOIN (SELECT l_orderkey, l_shipdate FROM lineitem WHERE l_shipdate < DATE '1992-02-01') l ON o.o_orderkey = l.l_orderkey AND o.o_orderdate < l.l_shipdate;
+----

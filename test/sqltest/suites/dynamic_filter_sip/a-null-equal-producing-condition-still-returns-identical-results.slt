@@ -1,0 +1,40 @@
+# a null-equal producing condition still returns identical results
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:265
+# sirius: id = "dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_custkey)
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey
+  JOIN customer c ON o.o_custkey IS NOT DISTINCT FROM c.c_custkey
+WHERE
+  c.c_nationkey = 3 AND l.l_shipdate < DATE '1992-03-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:265
+# sirius: id = "dynamic_filter_sip/a-null-equal-producing-condition-still-returns-identical-results/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_custkey)
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey
+  JOIN customer c ON o.o_custkey IS NOT DISTINCT FROM c.c_custkey
+WHERE
+  c.c_nationkey = 3 AND l.l_shipdate < DATE '1992-03-01';
+----

@@ -1,0 +1,39 @@
+# an unfiltered aggregate build supplies no publication evidence
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'join_order,build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:335
+# sirius: id = "dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem l
+  JOIN (SELECT l_orderkey FROM lineitem GROUP BY l_orderkey) g ON l.l_orderkey = g.l_orderkey;
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:335
+# sirius: id = "dynamic_filter_sip/an-unfiltered-aggregate-build-supplies-no-publication-evidence/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem l
+  JOIN (SELECT l_orderkey FROM lineitem GROUP BY l_orderkey) g ON l.l_orderkey = g.l_orderkey;
+----
