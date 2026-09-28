@@ -1,0 +1,51 @@
+# mvcc insert: an unaligned all-NULL row group does not bleed nulls forward
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, NULL::INTEGER AS v FROM range(10001);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 10001,
+  range::INTEGER
+FROM
+  range(5000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:279
+# sirius: id = "pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ??? rowsort
+SELECT
+  count(*),
+  count(v),
+  sum(v)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:280
+# sirius: id = "pin_mvcc_insert/insert-an-unaligned-all-null-row-group-does-not-bleed-nulls-forward/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  v
+FROM
+  t
+WHERE
+  k BETWEEN 9998 AND 10008 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

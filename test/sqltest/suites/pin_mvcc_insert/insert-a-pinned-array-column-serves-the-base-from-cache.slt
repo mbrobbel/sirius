@@ -1,0 +1,29 @@
+# mvcc insert: a pinned ARRAY column serves the base from cache
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3]) AS a FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:562
+# sirius: id = "pin_mvcc_insert/insert-a-pinned-array-column-serves-the-base-from-cache/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  a
+FROM
+  t
+WHERE
+  k >= 19995 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

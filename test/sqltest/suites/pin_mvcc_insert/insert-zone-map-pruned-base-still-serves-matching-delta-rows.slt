@@ -1,0 +1,34 @@
+# mvcc insert: zone-map-pruned base still serves matching delta rows
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (1000000),
+  (1000001);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:399
+# sirius: id = "pin_mvcc_insert/insert-zone-map-pruned-base-still-serves-matching-delta-rows/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t
+WHERE
+  k >= 500000;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

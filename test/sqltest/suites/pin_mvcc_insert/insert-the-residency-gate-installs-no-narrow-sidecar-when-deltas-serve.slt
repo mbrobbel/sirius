@@ -1,0 +1,60 @@
+# mvcc insert: the residency gate installs no narrow sidecar when deltas serve
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t_delta_comp AS SELECT (range % 1000)::BIGINT AS k FROM range(50000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SET pin_table_compression = true;
+
+onlyif sirius
+statement ok
+SET pin_table_compression_min_batch_size_bytes = 0;
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+statement ok
+COPY (SELECT 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed') TO '__TEST_DIR__/t_delta_comp.txt' (FORMAT CSV, HEADER FALSE, DELIMITER '|');
+
+onlyif sirius
+statement ok
+SET pin_table_input_compression_plan_dir = '__TEST_DIR__';
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't_delta_comp', tier = 'host');
+
+statement ok
+INSERT INTO t_delta_comp VALUES
+  (3000000000),
+  (7);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:536
+# sirius: id = "pin_mvcc_insert/insert-the-residency-gate-installs-no-narrow-sidecar-when-deltas-serve/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ??? rowsort
+SELECT
+  count(*),
+  max(k),
+  sum(k)
+FROM
+  t_delta_comp;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t_delta_comp');
+
+onlyif sirius
+statement ok
+SET pin_table_compression = false;
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;

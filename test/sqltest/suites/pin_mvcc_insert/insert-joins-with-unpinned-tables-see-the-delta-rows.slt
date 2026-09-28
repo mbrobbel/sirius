@@ -1,0 +1,39 @@
+# mvcc insert: joins with unpinned tables see the delta rows
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(60000);
+
+statement ok
+CREATE TABLE u AS SELECT range::INTEGER AS k, (range % 10)::INTEGER AS g FROM range(70000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 60000
+FROM
+  range(5000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:351
+# sirius: id = "pin_mvcc_insert/insert-joins-with-unpinned-tables-see-the-delta-rows/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  u.g,
+  count(*)
+FROM
+  t
+  JOIN u ON t.k = u.k
+GROUP BY
+  u.g ORDER BY u.g;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

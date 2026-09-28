@@ -1,0 +1,60 @@
+# mvcc insert: an older snapshot does not see newer committed inserts
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(50000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+connection reader
+statement ok
+BEGIN TRANSACTION;
+
+connection reader
+statement ok
+SELECT
+  count(*)
+FROM
+  t;
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 50000
+FROM
+  range(500);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:139
+# sirius: id = "pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+connection reader
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+connection reader
+statement ok
+ROLLBACK;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:143
+# sirius: id = "pin_mvcc_insert/insert-an-older-snapshot-does-not-see-newer-committed-inserts/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

@@ -1,0 +1,34 @@
+# mvcc insert: post-pin ARRAY inserts serve through the transient delta
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, CAST([range::INTEGER, range::INTEGER + 1, range::INTEGER + 2] AS INTEGER[3]) AS a FROM range(20000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (20000, CAST([9, 9, 9] AS INTEGER[3])),
+  (20001, CAST([8, 7, 6] AS INTEGER[3]));
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:585
+# sirius: id = "pin_mvcc_insert/insert-post-pin-array-inserts-serve-through-the-transient-delta/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  k,
+  a
+FROM
+  t
+WHERE
+  k >= 19998 ORDER BY k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

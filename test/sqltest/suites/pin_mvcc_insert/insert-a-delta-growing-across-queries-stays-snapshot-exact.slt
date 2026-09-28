@@ -1,0 +1,65 @@
+# mvcc insert: a delta growing across queries stays snapshot-exact
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(40000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t VALUES
+  (40000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:364
+# sirius: id = "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 40001
+FROM
+  range(999);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:367
+# sirius: id = "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k = 40500;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:370
+# sirius: id = "pin_mvcc_insert/insert-a-delta-growing-across-queries-stays-snapshot-exact/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

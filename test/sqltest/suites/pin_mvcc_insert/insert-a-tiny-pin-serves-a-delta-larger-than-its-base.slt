@@ -1,0 +1,33 @@
+# mvcc insert: a tiny pin serves a delta larger than its base
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(10);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 10
+FROM
+  range(5000);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:383
+# sirius: id = "pin_mvcc_insert/insert-a-tiny-pin-serves-a-delta-larger-than-its-base/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

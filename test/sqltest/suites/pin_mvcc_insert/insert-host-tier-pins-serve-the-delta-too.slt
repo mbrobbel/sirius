@@ -1,0 +1,39 @@
+# mvcc insert: host-tier pins serve the delta too
+# Checkpoints are explicit to preserve base, transient, and persistent delta storage.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(80000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'host');
+
+statement ok
+INSERT INTO t SELECT
+  range::INTEGER + 80000
+FROM
+  range(1000);
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k IN (5, 80003);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_insert.cpp:317
+# sirius: id = "pin_mvcc_insert/insert-host-tier-pins-serve-the-delta-too/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "insert"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
