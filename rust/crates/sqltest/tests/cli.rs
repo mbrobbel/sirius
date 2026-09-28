@@ -656,6 +656,41 @@ fn generated_test_directories_need_no_registration() {
 }
 
 #[test]
+fn formatting_directories_includes_sql_and_is_idempotent() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    fs::write(root.join("query.sql"), "select 1;").unwrap();
+    let commented = "SELECT 1; -- keep this comment\n";
+    fs::write(root.join("comment.sql"), commented).unwrap();
+    fs::write(root.join("query.slt"), "query I\nselect 1;\n----\n1\n").unwrap();
+    let format = |check: bool| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"));
+        command.arg("format").arg(root);
+        if check {
+            command.arg("--check");
+        }
+        command.output().unwrap()
+    };
+    assert_eq!(format(true).status.code(), Some(1));
+    assert_eq!(
+        fs::read_to_string(root.join("query.sql")).unwrap(),
+        "select 1;"
+    );
+    assert!(format(false).status.success());
+    assert!(format(true).status.success());
+    assert!(format(false).status.success());
+    assert!(format(true).status.success());
+    assert_eq!(
+        fs::read_to_string(root.join("comment.sql")).unwrap(),
+        commented
+    );
+    assert_eq!(
+        fs::read_to_string(root.join("query.sql")).unwrap(),
+        "SELECT\n  1;\n"
+    );
+}
+
+#[test]
 fn invalid_substitutions_fail_before_execution() {
     let dir = corpus();
     let root = dir.path();

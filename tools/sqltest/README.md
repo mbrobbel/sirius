@@ -18,7 +18,11 @@ Use a fresh output directory for each run.
 
 Suites are discovered under `test/sqltest/suites`. Each `.slt` file can create and
 populate its own tables, include shared SQL fixtures, and compare query results
-with DuckDB. No C++ registration is needed.
+with DuckDB. No C++ registration is needed. Format SQL with:
+
+```bash
+pixi run --manifest-path tools/sqltest/pixi.toml sqlformat test/sqltest/suites
+```
 
 The SQL corpus initially supplements the existing C++ tests. C++ migration is
 deferred until fuzz integration. The fuzzer can keep its own generation and replay

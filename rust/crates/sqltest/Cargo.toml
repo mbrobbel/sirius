@@ -18,6 +18,7 @@ regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+sirius-sqltest-format = { path = "../sqltest-format" }
 sqllogictest = "=0.29.1"
 sqlparser = "=0.63.0"
 tempfile = "3"
