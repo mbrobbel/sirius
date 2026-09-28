@@ -1,0 +1,18 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q22"
+# sirius: tags = ["clickbench"]
+
+query ??? nosort
+SELECT
+  SearchPhrase,
+  MIN(URL),
+  COUNT(*) AS c
+FROM
+  hits
+WHERE
+  URL LIKE '%google%' AND SearchPhrase <> ''
+GROUP BY
+  SearchPhrase ORDER BY c DESC, 1, 2, 3 LIMIT 10;
+----

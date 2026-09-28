@@ -1,0 +1,17 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q38"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT
+  Title,
+  COUNT(*) AS PageViews
+FROM
+  hits
+WHERE
+  CounterID = 62 AND EventDate >= '2013-07-01' AND EventDate <= '2013-07-31' AND DontCountHits = 0 AND IsRefresh = 0 AND Title <> ''
+GROUP BY
+  Title ORDER BY PageViews DESC, 1, 2 LIMIT 10;
+----

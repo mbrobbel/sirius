@@ -1,0 +1,20 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q23"
+# sirius: tags = ["clickbench"]
+
+query ????? nosort
+SELECT
+  SearchPhrase,
+  MIN(URL),
+  MIN(Title),
+  COUNT(*) AS c,
+  COUNT(DISTINCT UserID)
+FROM
+  hits
+WHERE
+  Title LIKE '%Google%' AND URL NOT LIKE '%.google.%' AND SearchPhrase <> ''
+GROUP BY
+  SearchPhrase ORDER BY c DESC, 1, 2, 3, 4, 5 LIMIT 10;
+----

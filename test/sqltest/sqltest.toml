@@ -28,6 +28,17 @@ extensions = ["tpcds"]
 sql = ["fixtures/prepare/tpcds.sql"]
 tables = ["call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer", "customer_address", "customer_demographics", "date_dim", "household_demographics", "income_band", "inventory", "item", "promotion", "reason", "ship_mode", "store", "store_returns", "store_sales", "time_dim", "warehouse", "web_page", "web_returns", "web_sales", "web_site"]
 
+[fixtures.clickbench]
+sources = ["hits"]
+sql = ["fixtures/clickbench-schema.sql", "fixtures/prepare/clickbench.sql"]
+tables = ["hits"]
+
+[sources.hits]
+kind = "download"
+compression = "gzip"
+url = "https://pages.cs.wisc.edu/~yxy/sirius-datasets/test_hits.tsv.gz"
+sha256 = "e852e982eda2e5119b9a4aed460de4a1422fa80b341b9c9b00a0c755d224cba4"
+
 [axes.gpu.one]
 profile = "one-gpu"
 
@@ -56,11 +67,11 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["tpch", "tpcds"]
+exclude_suites = ["tpch", "tpcds", "clickbench"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
-suites = ["tpch", "tpcds"]
+suites = ["tpch", "tpcds", "clickbench"]
 axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]

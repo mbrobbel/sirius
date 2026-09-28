@@ -1,0 +1,19 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q10"
+# sirius: tags = ["clickbench"]
+# sirius: tolerances = { "3" = { absolute = 1e-8, relative = 1e-9 } }
+
+query ????? nosort
+SELECT
+  RegionID,
+  SUM(AdvEngineID),
+  COUNT(*) AS c,
+  AVG(ResolutionWidth),
+  COUNT(DISTINCT UserID)
+FROM
+  hits
+GROUP BY
+  RegionID ORDER BY c DESC, 1, 2, 3, 4, 5 LIMIT 10;
+----
