@@ -1,0 +1,32 @@
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i)) TO '__TEST_DIR__/flat.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE i < 129) TO '__TEST_DIR__/parts/a.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE i >= 129) TO '__TEST_DIR__/parts/b.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE i < 129) TO '__TEST_DIR__/hive/part=2024/a.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE i >= 129) TO '__TEST_DIR__/hive/part=2025/b.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE i < 129) TO '__TEST_DIR__/evolved/part=2024/a.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT id, amount, label, small, day FROM (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i)) WHERE id >= 129) TO '__TEST_DIR__/evolved/part=2025/b.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT 'a-' || i AS a, 'b-' || i AS b FROM range(257) t (i)) TO '__TEST_DIR__/strings.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT CASE WHEN i % 4 = 0 THEN NULL::BIGINT ELSE i END AS id, NULL::BOOLEAN AS flag FROM range(257) t (i)) TO '__TEST_DIR__/null_carrier.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY (SELECT i::BIGINT AS id, (i * 0.25)::DOUBLE AS amount, ('label-' || i)::VARCHAR AS label, (i % 100)::SMALLINT AS small, DATE '2024-01-01' + i::INTEGER AS day, CASE WHEN i % 3 = 0 THEN NULL::BOOLEAN ELSE i % 2 = 0 END AS flag FROM range(257) t (i) WHERE false) TO '__TEST_DIR__/empty.parquet' (FORMAT PARQUET);
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation');

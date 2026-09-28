@@ -1,0 +1,2 @@
+storage = ["parquet"]
+scratch_directories = ["evolved/part=2024", "evolved/part=2025", "hive/part=2024", "hive/part=2025", "parts"]
