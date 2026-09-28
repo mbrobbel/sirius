@@ -1,0 +1,468 @@
+# Original sequence: test/cpp/integration/test_s3_tpch.cpp
+include ../../fixtures/migrated/s3-tpch-sf1.slt
+
+# sirius: id = "s3_tpch_sf1/q01"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+# sirius:
+# sirius: [float_tolerance]
+# sirius: absolute = 0.00001
+# sirius: relative = 0.0
+query ?????????? nosort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  sum(l_quantity) AS sum_qty,
+  sum(l_extendedprice) AS sum_base_price,
+  sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,
+  sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,
+  avg(l_quantity) AS avg_qty,
+  avg(l_extendedprice) AS avg_price,
+  avg(l_discount) AS avg_disc,
+  count(*) AS count_order
+FROM
+  lineitem
+WHERE
+  l_shipdate <= DATE '1995-08-19'
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q02"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ???????? rowsort
+SELECT
+  s.s_acctbal,
+  s.s_name,
+  n.n_name,
+  p.p_partkey,
+  p.p_mfgr,
+  s.s_address,
+  s.s_phone,
+  s.s_comment
+FROM
+  part p,
+  supplier s,
+  partsupp ps,
+  nation n,
+  region r
+WHERE
+  p.p_partkey = ps.ps_partkey AND s.s_suppkey = ps.ps_suppkey AND p.p_size = 41 AND p.p_type LIKE '%NICKEL' AND s.s_nationkey = n.n_nationkey AND n.n_regionkey = r.r_regionkey AND r.r_name = 'EUROPE' AND ps.ps_supplycost = (SELECT min(ps.ps_supplycost) FROM partsupp ps, supplier s, nation n, region r WHERE p.p_partkey = ps.ps_partkey AND s.s_suppkey = ps.ps_suppkey AND s.s_nationkey = n.n_nationkey AND n.n_regionkey = r.r_regionkey AND r.r_name = 'EUROPE') ORDER BY s.s_acctbal DESC, n.n_name, s.s_name, p.p_partkey LIMIT 100;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q03"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ???? rowsort
+SELECT
+  l.l_orderkey,
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue,
+  o.o_orderdate,
+  o.o_shippriority
+FROM
+  customer c,
+  orders o,
+  lineitem l
+WHERE
+  c.c_mktsegment = 'HOUSEHOLD' AND c.c_custkey = o.o_custkey AND l.l_orderkey = o.o_orderkey AND o.o_orderdate < DATE '1995-03-25' AND l.l_shipdate > DATE '1995-03-25'
+GROUP BY
+  l.l_orderkey, o.o_orderdate, o.o_shippriority ORDER BY revenue DESC, o.o_orderdate LIMIT 10;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q04"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  o.o_orderpriority,
+  count(*) AS order_count
+FROM
+  orders o
+WHERE
+  o.o_orderdate >= DATE '1996-10-01' AND o.o_orderdate < DATE '1997-01-01' AND EXISTS (SELECT * FROM lineitem l WHERE l.l_orderkey = o.o_orderkey AND l.l_commitdate < l.l_receiptdate)
+GROUP BY
+  o.o_orderpriority ORDER BY o.o_orderpriority;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q05"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  n.n_name,
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue
+FROM
+  orders o,
+  lineitem l,
+  supplier s,
+  nation n,
+  region r,
+  customer c
+WHERE
+  c.c_custkey = o.o_custkey AND l.l_orderkey = o.o_orderkey AND l.l_suppkey = s.s_suppkey AND c.c_nationkey = s.s_nationkey AND s.s_nationkey = n.n_nationkey AND n.n_regionkey = r.r_regionkey AND r.r_name = 'EUROPE' AND o.o_orderdate >= DATE '1997-01-01' AND o.o_orderdate < DATE '1998-01-01'
+GROUP BY
+  n.n_name ORDER BY revenue DESC;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q06"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l_extendedprice * l_discount) AS revenue
+FROM
+  lineitem
+WHERE
+  l_shipdate >= DATE '1997-01-01' AND l_shipdate < DATE '1998-01-01' AND l_discount BETWEEN 0.03 - 0.01 AND 0.03 + 0.01 AND l_quantity < 24;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q07"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ???? rowsort
+SELECT
+  supp_nation,
+  cust_nation,
+  l_year,
+  sum(volume) AS revenue
+FROM
+  (
+    SELECT
+      n1.n_name AS supp_nation,
+      n2.n_name AS cust_nation,
+      EXTRACT(YEAR FROM l.l_shipdate) AS l_year,
+      l.l_extendedprice * (1 - l.l_discount) AS volume
+    FROM
+      supplier s,
+      lineitem l,
+      orders o,
+      customer c,
+      nation n1,
+      nation n2
+    WHERE
+      s.s_suppkey = l.l_suppkey AND o.o_orderkey = l.l_orderkey AND c.c_custkey = o.o_custkey AND s.s_nationkey = n1.n_nationkey AND c.c_nationkey = n2.n_nationkey AND ((n1.n_name = 'EGYPT' AND n2.n_name = 'UNITED STATES') OR (n1.n_name = 'UNITED STATES' AND n2.n_name = 'EGYPT')) AND l.l_shipdate BETWEEN DATE '1995-01-01' AND DATE '1996-12-31'
+  ) AS shipping
+GROUP BY
+  supp_nation, cust_nation, l_year ORDER BY supp_nation, cust_nation, l_year;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q08"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  o_year,
+  sum(CASE WHEN nation = 'EGYPT' THEN volume ELSE 0 END) / sum(volume) AS mkt_share
+FROM
+  (
+    SELECT
+      EXTRACT(YEAR FROM o.o_orderdate) AS o_year,
+      l.l_extendedprice * (1 - l.l_discount) AS volume,
+      n2.n_name AS nation
+    FROM
+      lineitem l,
+      part p,
+      supplier s,
+      orders o,
+      customer c,
+      nation n1,
+      nation n2,
+      region r
+    WHERE
+      p.p_partkey = l.l_partkey AND s.s_suppkey = l.l_suppkey AND l.l_orderkey = o.o_orderkey AND o.o_custkey = c.c_custkey AND c.c_nationkey = n1.n_nationkey AND n1.n_regionkey = r.r_regionkey AND r.r_name = 'MIDDLE EAST' AND s.s_nationkey = n2.n_nationkey AND o.o_orderdate BETWEEN DATE '1995-01-01' AND DATE '1996-12-31' AND p.p_type = 'PROMO BRUSHED COPPER'
+  ) AS all_nations
+GROUP BY
+  o_year ORDER BY o_year;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q09"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ??? rowsort
+SELECT
+  nation,
+  o_year,
+  sum(amount) AS sum_profit
+FROM
+  (
+    SELECT
+      n.n_name AS nation,
+      EXTRACT(YEAR FROM o.o_orderdate) AS o_year,
+      l.l_extendedprice * (1 - l.l_discount) - ps.ps_supplycost * l.l_quantity AS amount
+    FROM
+      part p,
+      supplier s,
+      lineitem l,
+      partsupp ps,
+      orders o,
+      nation n
+    WHERE
+      s.s_suppkey = l.l_suppkey AND ps.ps_suppkey = l.l_suppkey AND ps.ps_partkey = l.l_partkey AND p.p_partkey = l.l_partkey AND o.o_orderkey = l.l_orderkey AND s.s_nationkey = n.n_nationkey AND p.p_name LIKE '%yellow%'
+  ) AS profit
+GROUP BY
+  nation, o_year ORDER BY nation, o_year DESC;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q10"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ???????? rowsort
+SELECT
+  c.c_custkey,
+  c.c_name,
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue,
+  c.c_acctbal,
+  n.n_name,
+  c.c_address,
+  c.c_phone,
+  c.c_comment
+FROM
+  customer c,
+  orders o,
+  lineitem l,
+  nation n
+WHERE
+  c.c_custkey = o.o_custkey AND l.l_orderkey = o.o_orderkey AND o.o_orderdate >= DATE '1994-03-01' AND o.o_orderdate < DATE '1994-06-01' AND l.l_returnflag = 'R' AND c.c_nationkey = n.n_nationkey
+GROUP BY
+  c.c_custkey, c.c_name, c.c_acctbal, c.c_phone, n.n_name, c.c_address, c.c_comment ORDER BY revenue DESC LIMIT 20;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q11"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  ps.ps_partkey,
+  sum(ps.ps_supplycost * ps.ps_availqty) AS value
+FROM
+  partsupp ps,
+  supplier s,
+  nation n
+WHERE
+  ps.ps_suppkey = s.s_suppkey AND s.s_nationkey = n.n_nationkey AND n.n_name = 'JAPAN'
+GROUP BY
+  ps.ps_partkey
+HAVING
+  sum(ps.ps_supplycost * ps.ps_availqty) > (SELECT sum(ps.ps_supplycost * ps.ps_availqty) * 0.0001000000 FROM partsupp ps, supplier s, nation n WHERE ps.ps_suppkey = s.s_suppkey AND s.s_nationkey = n.n_nationkey AND n.n_name = 'JAPAN') ORDER BY value DESC;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q12"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ??? rowsort
+SELECT
+  l.l_shipmode,
+  sum(CASE WHEN o.o_orderpriority = '1-URGENT' OR o.o_orderpriority = '2-HIGH' THEN 1 ELSE 0 END) AS high_line_count,
+  sum(CASE WHEN o.o_orderpriority <> '1-URGENT' AND o.o_orderpriority <> '2-HIGH' THEN 1 ELSE 0 END) AS low_line_count
+FROM
+  orders o,
+  lineitem l
+WHERE
+  o.o_orderkey = l.l_orderkey AND l.l_shipmode IN ('TRUCK', 'REG AIR') AND l.l_commitdate < l.l_receiptdate AND l.l_shipdate < l.l_commitdate AND l.l_receiptdate >= DATE '1994-01-01' AND l.l_receiptdate < DATE '1995-01-01'
+GROUP BY
+  l.l_shipmode ORDER BY l.l_shipmode;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q13"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  c_count,
+  count(*) AS custdist
+FROM
+  (
+    SELECT
+      c.c_custkey,
+      count(o.o_orderkey)
+    FROM
+      customer c
+      LEFT OUTER JOIN orders o ON c.c_custkey = o.o_custkey AND o.o_comment NOT LIKE '%special%requests%'
+    GROUP BY
+      c.c_custkey
+  ) AS orders (c_custkey, c_count)
+GROUP BY
+  c_count ORDER BY custdist DESC, c_count DESC;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q14"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ? rowsort
+SELECT
+  100.00 * sum(CASE WHEN p.p_type LIKE 'PROMO%' THEN l.l_extendedprice * (1 - l.l_discount) ELSE 0 END) / sum(l.l_extendedprice * (1 - l.l_discount)) AS promo_revenue
+FROM
+  lineitem l,
+  part p
+WHERE
+  l.l_partkey = p.p_partkey AND l.l_shipdate >= DATE '1994-08-01' AND l.l_shipdate < DATE '1994-09-01';
+----
+
+
+# sirius: id = "s3_tpch_sf1/q15"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ????? rowsort
+WITH revenue_view AS (
+  SELECT
+    l_suppkey AS supplier_no,
+    sum(l_extendedprice * (1 - l_discount)) AS total_revenue
+  FROM
+    lineitem
+  WHERE
+    l_shipdate >= DATE '1993-05-01' AND l_shipdate < DATE '1993-08-01'
+  GROUP BY
+    l_suppkey
+)
+SELECT
+  s.s_suppkey,
+  s.s_name,
+  s.s_address,
+  s.s_phone,
+  r.total_revenue
+FROM
+  supplier s,
+  revenue_view r
+WHERE
+  s.s_suppkey = r.supplier_no AND r.total_revenue = (SELECT max(total_revenue) FROM revenue_view) ORDER BY s.s_suppkey;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q16"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ???? rowsort
+SELECT
+  p.p_brand,
+  p.p_type,
+  p.p_size,
+  count(DISTINCT ps.ps_suppkey) AS supplier_cnt
+FROM
+  partsupp ps,
+  part p
+WHERE
+  p.p_partkey = ps.ps_partkey AND p.p_brand <> 'Brand#21' AND p.p_type NOT LIKE 'MEDIUM PLATED%' AND p.p_size IN (38, 2, 8, 31, 44, 5, 14, 24) AND ps.ps_suppkey NOT IN (SELECT s.s_suppkey FROM supplier s WHERE s.s_comment LIKE '%Customer%Complaints%')
+GROUP BY
+  p.p_brand, p.p_type, p.p_size ORDER BY supplier_cnt DESC, p.p_brand, p.p_type, p.p_size;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q17"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l.l_extendedprice) / 7.0 AS avg_yearly
+FROM
+  lineitem l,
+  part p
+WHERE
+  p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#13' AND p.p_container = 'JUMBO CAN' AND l.l_quantity < (SELECT 0.2 * avg(l2.l_quantity) FROM lineitem l2 WHERE l2.l_partkey = p.p_partkey);
+----
+
+
+# sirius: id = "s3_tpch_sf1/q18"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?????? rowsort
+SELECT
+  c.c_name,
+  c.c_custkey,
+  o.o_orderkey,
+  o.o_orderdate,
+  o.o_totalprice,
+  sum(l.l_quantity)
+FROM
+  customer c,
+  orders o,
+  lineitem l
+WHERE
+  o.o_orderkey IN (SELECT l_orderkey FROM lineitem GROUP BY l_orderkey HAVING sum(l_quantity) > 300) AND c.c_custkey = o.o_custkey AND o.o_orderkey = l.l_orderkey
+GROUP BY
+  c.c_name, c.c_custkey, o.o_orderkey, o.o_orderdate, o.o_totalprice ORDER BY o.o_totalprice DESC, o.o_orderdate LIMIT 100;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q19"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue
+FROM
+  lineitem l,
+  part p
+WHERE
+  (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#41' AND p.p_container IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') AND l.l_quantity >= 2 AND l.l_quantity <= 2 + 10 AND p.p_size BETWEEN 1 AND 5 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON') OR (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#13' AND p.p_container IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK') AND l.l_quantity >= 14 AND l.l_quantity <= 14 + 10 AND p.p_size BETWEEN 1 AND 10 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON') OR (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#55' AND p.p_container IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG') AND l.l_quantity >= 23 AND l.l_quantity <= 23 + 10 AND p.p_size BETWEEN 1 AND 15 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON');
+----
+
+
+# sirius: id = "s3_tpch_sf1/q20"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  s.s_name,
+  s.s_address
+FROM
+  supplier s,
+  nation n
+WHERE
+  s.s_suppkey IN (SELECT ps.ps_suppkey FROM partsupp ps WHERE ps.ps_partkey IN (SELECT p.p_partkey FROM part p WHERE p.p_name LIKE 'antique%') AND ps.ps_availqty > (SELECT 0.5 * sum(l.l_quantity) FROM lineitem l WHERE l.l_partkey = ps.ps_partkey AND l.l_suppkey = ps.ps_suppkey AND l.l_shipdate >= DATE '1993-01-01' AND l.l_shipdate < DATE '1994-01-01')) AND s.s_nationkey = n.n_nationkey AND n.n_name = 'KENYA' ORDER BY s.s_name;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q21"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ?? rowsort
+SELECT
+  s.s_name,
+  count(*) AS numwait
+FROM
+  supplier s,
+  lineitem l1,
+  orders o,
+  nation n
+WHERE
+  s.s_suppkey = l1.l_suppkey AND o.o_orderkey = l1.l_orderkey AND o.o_orderstatus = 'F' AND l1.l_receiptdate > l1.l_commitdate AND EXISTS (SELECT * FROM lineitem l2 WHERE l2.l_orderkey = l1.l_orderkey AND l2.l_suppkey <> l1.l_suppkey) AND NOT EXISTS (SELECT * FROM lineitem l3 WHERE l3.l_orderkey = l1.l_orderkey AND l3.l_suppkey <> l1.l_suppkey AND l3.l_receiptdate > l3.l_commitdate) AND s.s_nationkey = n.n_nationkey AND n.n_name = 'BRAZIL'
+GROUP BY
+  s.s_name ORDER BY numwait DESC, s.s_name LIMIT 100;
+----
+
+
+# sirius: id = "s3_tpch_sf1/q22"
+# sirius: snapshot = false
+# sirius: tags = ["s3", "integration", "tpch"]
+query ??? rowsort
+SELECT
+  cntrycode,
+  count(*) AS numcust,
+  sum(c_acctbal) AS totacctbal
+FROM
+  (
+    SELECT
+      SUBSTRING(c_phone FROM 1 FOR 2) AS cntrycode,
+      c_acctbal
+    FROM
+      customer c
+    WHERE
+      SUBSTRING(c_phone FROM 1 FOR 2) IN ('24', '31', '11', '16', '21', '20', '34') AND c_acctbal > (SELECT avg(c_acctbal) FROM customer WHERE c_acctbal > 0.00 AND SUBSTRING(c_phone FROM 1 FOR 2) IN ('24', '31', '11', '16', '21', '20', '34')) AND NOT EXISTS (SELECT * FROM orders o WHERE o.o_custkey = c.c_custkey)
+  ) AS custsale
+GROUP BY
+  cntrycode ORDER BY cntrycode;
+----

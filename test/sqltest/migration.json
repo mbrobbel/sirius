@@ -10601,6 +10601,226 @@
       "test": "gpu_execution csv - order by date column"
     },
     {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q01",
+      "identity": "f06d2a1566e1cdde4f094287ed946ed196676a40133b5e32cdbccee14ed0d69d",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q02",
+      "identity": "407a1ef54388692771533135cf0b30d47425bb6434f993b1eeac229a7925682f",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q03",
+      "identity": "30a77455ca15d98fd76122d53d2ec0e93b17fd3fc5700f46faba7eb367ab44b1",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q04",
+      "identity": "38d61a338bcb47a4cad82f5b893ba6a2b3945d58234a116e0d67d39bcab0ff22",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q05",
+      "identity": "d3fc01e616976977f0f91d92e88e965dc8e8c356a0a2adc068892cf4d8d86c13",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q06",
+      "identity": "c886118dca7510f34ca9623a9d93fc5557f723fe640fc2324c4938d51359882b",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q07",
+      "identity": "d4e5dc61e57a2debcb6fc0eb4fb880ddbae56094870887f70b564ee04dd0e2af",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q08",
+      "identity": "bfaf8c86ee15863cc54f6a04fbf2b9671c3691ca9a955886e6dae16b0b624524",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q09",
+      "identity": "c37968b6c478bd77a7c8788383d9cf12ad972d8fb1e19155cb87772d19150642",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q10",
+      "identity": "56b040ae01556249e295076e9f8ff8f135602d595bd19a9cae60001ae8192c62",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q11",
+      "identity": "2c1ed9b8ff4dfd56147c0fb17d5412800a4cf89960d226b3bf41c9a94a953775",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q12",
+      "identity": "5761da62948d3ea8b26317e0148a42c497a47b4819640f2f028d78b7d1709087",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q13",
+      "identity": "894a7b43663eb3e5fa6a5c4ab3cb2f7dcb058eab56b3c1f9a972d02cfb42acb9",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q14",
+      "identity": "a23bb3b0a0b1c1a4fcf79a3529e7ac6d45869a7909c7b90e6b1be65621656de8",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q15",
+      "identity": "384ece785974904970f50b0ab789efcd0589c8b9381b408d19671c8fc08e39bc",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q16",
+      "identity": "14cf232acdf6881e8b3fdbffb5f7cf354ba3f9cc6ec44e84ea7450a589f576e5",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q17",
+      "identity": "1ac26195ce56ee8b26640e48e977e0f8e4cdcbab0af08c4e4e5457929db5daac",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q18",
+      "identity": "9db429367e8bca53fa57e418a8d6e87cab3ed62be18b9ff8c27cb4c5fff330b2",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q19",
+      "identity": "11ac6464ae04d0b62f3678bb2ee1b67ffc0ae402d567d83f0b69cb1551346f7a",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q20",
+      "identity": "1aeffc688fc6fc061e6ad01053ef0aba0db5ab1c6ef0cd41ebfbd81986938523",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q21",
+      "identity": "01fa6300c9ab4cbd88f7cf0ad14c95754724e764b75124c0f699fe4ded02bae1",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch_sf1/queries.slt",
+      "id": "s3_tpch_sf1/q22",
+      "identity": "fa159503eed062a43ad67a1c9b1ed2d22ff93c0e662e24508966e83f42f1c152",
+      "kind": "query",
+      "line": 394,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch_sf1",
+      "test": "transparent S3 TPC-H Q1-Q22 match the SF1 local CPU oracle"
+    },
+    {
       "file": "suites/s3_surface/no-match.slt",
       "id": "s3_surface/no-match/001",
       "identity": "5917441d5cf3e61c0d450a3c4be3661aa9bdc847cc3590a70f61dea64d49c2b5",
