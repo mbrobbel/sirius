@@ -10117,6 +10117,58 @@
       "test": "gpu_execution - empty parquet count identity"
     },
     {
+      "file": "suites/tpch_sf10/q01.slt",
+      "gpu_counts": [
+        2
+      ],
+      "id": "tpch_sf10/q01",
+      "identity": "da9cf4ed1d781f8672cd3537db1e1f59d764e9e5010f7b2919f3d3ae072afb64",
+      "kind": "approx",
+      "line": 4472,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_sf10",
+      "test": "gpu_execution - tpch_q1_sf10_2gpu"
+    },
+    {
+      "file": "suites/tpch_sf10/q06.slt",
+      "gpu_counts": [
+        2
+      ],
+      "id": "tpch_sf10/q06",
+      "identity": "82abb69ef4024296052ac8e735bf7c25ccccd599843a82a8b2845cff2b029ae3",
+      "kind": "approx",
+      "line": 4503,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_sf10",
+      "test": "gpu_execution - tpch_q6_sf10_2gpu"
+    },
+    {
+      "file": "suites/tpch_sf10/q12.slt",
+      "gpu_counts": [
+        2
+      ],
+      "id": "tpch_sf10/q12",
+      "identity": "1795f9cab3bf8fdbea580757616fac4677013d4b95c18b3ee517948c99aee56e",
+      "kind": "query",
+      "line": 4530,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_sf10",
+      "test": "gpu_execution - tpch_q12_sf10_2gpu"
+    },
+    {
+      "file": "suites/tpch_sf10/q11.slt",
+      "gpu_counts": [
+        2
+      ],
+      "id": "tpch_sf10/q11",
+      "identity": "5e3a7f631c1d35b04e709e021dfba79b156417a4cf4a80ac74b8a136a775675a",
+      "kind": "approx",
+      "line": 4573,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_sf10",
+      "test": "gpu_execution - tpch_q11_sf10_2gpu"
+    },
+    {
       "file": "suites/dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent.slt",
       "id": "dynamic_filter_sip/a-key-on-the-inner-join-s-build-side-reached-by-build-block-descent/001-off",
       "identity": "cf5e41cee4b5d97d96e2a453ec39cbcfb7469d0dde61b49edcd25332bb90c4f0",
