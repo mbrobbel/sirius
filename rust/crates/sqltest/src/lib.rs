@@ -5,3 +5,4 @@ pub mod config;
 pub mod worker;
 pub mod services;
 pub mod substitutions;
+pub mod report;
