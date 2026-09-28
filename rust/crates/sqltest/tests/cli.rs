@@ -474,3 +474,407 @@ fn ambiguous_floats_are_a_harness_limitation() {
     assert_eq!(report["cases"][0]["outcome"], "harness_error");
     assert_eq!(report["cases"][0]["reference_rows"], 2);
 }
+
+#[test]
+fn manifest_recipes_drive_new_suites_and_storage_modes() {
+    let dir = corpus();
+    let root = dir.path();
+    let path = root.join("sqltest.toml");
+    let manifest = fs::read_to_string(&path).unwrap();
+    fs::write(
+        &path,
+        format!("{manifest}\n[fixtures.tiny]\nsql = [\"tiny.sql\"]\ntables = [\"numbers\"]\n"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "storage = [\"cached\", \"external\"]\nfixtures = [\"tiny\"]\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("tiny.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(3);\n",
+    )
+    .unwrap();
+    fs::write(root.join("suites/regressions/recipe.slt"), "statement ok\nCREATE __RELATION__ numbers AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tiny/numbers.parquet');\n\n# sirius: id = \"custom/recipe\"\nquery I\nSELECT count(*) FROM numbers;\n----\n").unwrap();
+    let fixtures = root.join("data");
+    assert!(
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["prepare", "--root"])
+            .arg(root)
+            .arg("--output")
+            .arg(&fixtures)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let (passed, report) = run(
+        root,
+        "recipes",
+        &[
+            "--fixtures",
+            fixtures.to_str().unwrap(),
+            "--axis",
+            "backend=all",
+        ],
+    );
+    assert!(passed, "{report}");
+    let cases = report["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 2);
+    assert_eq!(cases[0]["profile"], "desktop");
+    assert_eq!(cases[0]["storage"], "cached");
+    assert_eq!(cases[1]["storage"], "external");
+    fs::write(
+        root.join("tiny.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(4);\n",
+    )
+    .unwrap();
+    let (passed, report) = run(
+        root,
+        "stale-recipe",
+        &["--fixtures", fixtures.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert_eq!(report["cases"][0]["outcome"], "infrastructure_failure");
+    assert!(
+        report["cases"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("recipe changed")
+    );
+}
+
+#[test]
+fn dry_run_checks_references_before_starting_workers() {
+    let dir = corpus();
+    fs::write(
+        dir.path().join("suites/regressions/query.slt"),
+        "# sirius: id = \"custom/query\"\nquery I\nSELECT 1;\n----\n",
+    )
+    .unwrap();
+    let dry_run = || {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(dir.path())
+            .output()
+            .unwrap()
+    };
+    let good = dry_run();
+    assert!(good.status.success());
+    let plan: Value = serde_json::from_slice(&good.stdout).unwrap();
+    assert_eq!(plan["cases"], 1);
+    let path = dir.path().join("sqltest.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)
+            .unwrap()
+            .replace("profile = \"desktop\"", "profile = \"typo\""),
+    )
+    .unwrap();
+    let bad = dry_run();
+    assert_eq!(bad.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("unknown profile typo"));
+}
+
+#[test]
+fn suite_gpu_requirement_filters_incompatible_profiles() {
+    let dir = corpus();
+    let root = dir.path();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "minimum_gpus = 2\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/query.slt"),
+        "# sirius: id = \"multi/query\"\nquery I\nSELECT 1;\n----\n1\n",
+    )
+    .unwrap();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[profiles.pair]\ngpus = 2\nconfig = \"config.yaml\"\n[axes.machine.pair]\nprofile = \"pair\"\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    let dry_run = |choices: &str| {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--axis", choices, "--root"])
+            .arg(root)
+            .output()
+            .unwrap()
+    };
+    let single = dry_run("machine=desktop");
+    assert_eq!(single.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&single.stderr).contains("no compatible suite/storage/GPU"));
+    let sweep = dry_run("machine=all");
+    assert!(sweep.status.success());
+    let plan: Value = serde_json::from_slice(&sweep.stdout).unwrap();
+    assert_eq!(plan["cases"], 1);
+    assert_eq!(plan["plan"]["targets"][0]["profile"], "pair");
+}
+
+#[test]
+fn profile_environment_applies_to_candidate_and_is_recorded() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    let original = fs::read_to_string(&manifest).unwrap();
+    fs::write(
+        root.join("suites/regressions/query.slt"),
+        "# sirius: id = \"environment/query\"\nquery I\nSELECT 1;\n----\n1\n",
+    )
+    .unwrap();
+    let (passed, baseline) = run(root, "baseline", &[]);
+    assert!(passed);
+    let cache = root.join("candidate-extensions");
+    let environment = format!(
+        "environment = {{ SIRIUS_SQLTEST_EXTENSION_DIR = {:?} }}\n",
+        cache.to_str().unwrap()
+    );
+    fs::write(
+        &manifest,
+        original.replace(
+            "[profiles.desktop]\n",
+            &format!("[profiles.desktop]\n{environment}"),
+        ),
+    )
+    .unwrap();
+    let (passed, report) = run(root, "environment", &[]);
+    assert!(passed, "{report}");
+    assert!(cache.is_dir());
+    let case = &report["cases"][0];
+    assert_ne!(case["fingerprint"], baseline["cases"][0]["fingerprint"]);
+    let artifact = root
+        .join("environment")
+        .join(case["artifacts"].as_str().unwrap());
+    let recorded: Value =
+        serde_json::from_slice(&fs::read(artifact.join("environment.json")).unwrap()).unwrap();
+    assert_eq!(
+        recorded["SIRIUS_SQLTEST_EXTENSION_DIR"],
+        cache.to_str().unwrap()
+    );
+    for key in ["SIRIUS_DISABLE", "SIRIUS_CONFIG_FILE", "bad-name"] {
+        fs::write(
+            &manifest,
+            original.replace(
+                "[profiles.desktop]\n",
+                &format!("[profiles.desktop]\nenvironment = {{ {key} = \"1\" }}\n"),
+            ),
+        )
+        .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(root)
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("environment variable"));
+    }
+}
+
+#[test]
+fn excluded_suites_remain_discoverable_and_explicitly_selectable() {
+    let dir = corpus();
+    let root = dir.path();
+    for suite in ["regressions", "specialized"] {
+        let path = root.join("suites").join(suite);
+        fs::create_dir_all(&path).unwrap();
+        fs::write(path.join("suite.toml"), "storage = [\"cached\"]\n").unwrap();
+        fs::write(
+            path.join("query.slt"),
+            format!("# sirius: id = \"{suite}/query\"\nquery I\nSELECT 1;\n----\n1\n"),
+        )
+        .unwrap();
+    }
+    let manifest = root.join("sqltest.toml");
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest).unwrap().replace(
+            "suites = \"all\"",
+            "suites = \"all\"\nexclude_suites = [\"specialized\"]",
+        ),
+    )
+    .unwrap();
+    for (selection, expected) in [
+        (vec![], 1),
+        (vec!["--suite", "specialized"], 1),
+        (vec!["--suite", "all"], 2),
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(root)
+            .args(selection)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let plan: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(plan["cases"], expected);
+    }
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest).unwrap().replace(
+            "exclude_suites = [\"specialized\"]",
+            "exclude_suites = [\"typo\"]",
+        ),
+    )
+    .unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["run", "--dry-run", "--root"])
+        .arg(root)
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown excluded suite typo"));
+}
+
+#[test]
+fn correctness_runs_use_fixed_suite_profiles_without_sweeps() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[profiles.small]\ngpus = 1\nconfig = \"config.yaml\"\n[runs.correctness]\nsuites = \"all\"\nprofile = \"desktop\"\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "storage = [\"cached\", \"external\"]\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/query.slt"),
+        "# sirius: id = \"regular/query\"\nquery I\nSELECT 1;\n----\n",
+    )
+    .unwrap();
+    fs::create_dir(root.join("suites/small")).unwrap();
+    fs::write(
+        root.join("suites/small/suite.toml"),
+        "storage = [\"cached\"]\nprofile = \"small\"\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/small/query.slt"),
+        "# sirius: id = \"small/query\"\nquery I\nSELECT 2;\n----\n",
+    )
+    .unwrap();
+    let (passed, report) = run(root, "fixed", &["--run", "correctness"]);
+    assert!(passed, "{report}");
+    let cases = report["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 3);
+    let artifacts: std::collections::BTreeSet<_> = cases
+        .iter()
+        .map(|c| c["artifacts"].as_str().unwrap())
+        .collect();
+    assert_eq!(artifacts.len(), 3);
+    for case in cases {
+        assert!(case["axes"].as_object().unwrap().is_empty());
+        assert_eq!(
+            case["profile"],
+            if case["suite"] == "small" {
+                "small"
+            } else {
+                "desktop"
+            }
+        );
+    }
+    let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args([
+            "run",
+            "--dry-run",
+            "--run",
+            "correctness",
+            "--axis",
+            "machine=all",
+            "--root",
+        ])
+        .arg(root)
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("select a sweep run"));
+    let (passed, report) = run(root, "sweep", &["--run", "quick"]);
+    assert!(passed, "{report}");
+    assert!(
+        report["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|c| c["profile"] == "desktop")
+    );
+}
+
+#[test]
+fn sweeps_apply_settings_and_keep_results_distinct() {
+    let dir = corpus();
+    let root = dir.path();
+    let path = root.join("sqltest.toml");
+    fs::write(&path, format!("{}\n[axes.workers.single]\nsettings = {{ threads = 1 }}\n[axes.workers.pair]\nsettings = {{ threads = 2 }}\n", fs::read_to_string(&path).unwrap())).unwrap();
+    fs::write(root.join("suites/regressions/settings.slt"), "# sirius: id = \"settings/optimizer\"\nquery T\nSELECT current_setting('disabled_optimizers');\n----\n").unwrap();
+    let (passed, report) = run(
+        root,
+        "sweep",
+        &["--axis", "optimizers=all", "--axis", "workers=all"],
+    );
+    assert!(!passed);
+    let cases = report["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 4);
+    assert_eq!(cases.iter().filter(|c| c["outcome"] == "match").count(), 2);
+    assert_eq!(
+        cases.iter().filter(|c| c["outcome"] == "mismatch").count(),
+        2
+    );
+    let paths: std::collections::BTreeSet<_> = cases
+        .iter()
+        .map(|c| c["artifacts"].as_str().unwrap())
+        .collect();
+    assert_eq!(paths.len(), 4);
+    for case in cases {
+        let settings = root
+            .join("sweep")
+            .join(case["artifacts"].as_str().unwrap())
+            .join("sirius-settings.sql");
+        assert!(fs::read_to_string(settings).unwrap().contains("threads"));
+    }
+}
+
+#[test]
+fn generated_test_directories_need_no_registration() {
+    let dir = corpus();
+    let generated = tempfile::tempdir().unwrap();
+    fs::write(generated.path().join("seed-17.slt"), "statement ok\nCREATE TABLE t(i INTEGER);\n\nstatement ok\nINSERT INTO t VALUES (-1), (NULL), (4);\n\n# sirius: id = \"generated/seed-17\"\n# sirius: snapshot = true\nquery I\nSELECT sum(i) FROM t;\n----\n3\n").unwrap();
+    let binding = format!("generated={}", generated.path().display());
+    let (passed, report) = run(
+        dir.path(),
+        "generated",
+        &["--suite-dir", &binding, "--suite", "generated"],
+    );
+    assert!(passed, "{report}");
+    assert_eq!(report["cases"].as_array().unwrap().len(), 1);
+    assert_eq!(report["cases"][0]["suite"], "generated");
+}
+
+#[test]
+fn conflicting_sweep_settings_fail_before_execution() {
+    let dir = corpus();
+    fs::write(
+        dir.path().join("suites/regressions/query.slt"),
+        "# sirius: id = \"custom/query\"\nquery I\nSELECT 1;\n----\n",
+    )
+    .unwrap();
+    let path = dir.path().join("sqltest.toml");
+    fs::write(&path, format!("{}\n[axes.first.value]\nsettings = {{ threads = 1 }}\n[axes.second.value]\nsettings = {{ threads = 2 }}\n", fs::read_to_string(&path).unwrap())).unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args([
+            "run",
+            "--dry-run",
+            "--axis",
+            "first=all",
+            "--axis",
+            "second=all",
+            "--root",
+        ])
+        .arg(dir.path())
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("conflicting values for setting threads")
+    );
+}
