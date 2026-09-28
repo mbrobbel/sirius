@@ -1,0 +1,56 @@
+# gpu_execution array - single-element arrays (array_size == 1)
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_one (
+  id INTEGER,
+  a INTEGER[1]
+);
+
+statement ok
+INSERT INTO arr_one VALUES
+  (1, [10]),
+  (2, NULL),
+  (3, [30]),
+  (4, [NULL]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:240
+# sirius: id = "array/single-element-arrays-array-size-1/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_one;
+----
+
+statement ok
+CREATE TABLE arr_one_big (
+  id INTEGER,
+  a INTEGER[1]
+);
+
+statement ok
+INSERT INTO arr_one_big SELECT
+  i,
+  [i]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:247
+# sirius: id = "array/single-element-arrays-array-size-1/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_one_big;
+----

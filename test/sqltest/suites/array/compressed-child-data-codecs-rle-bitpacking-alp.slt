@@ -1,0 +1,127 @@
+# gpu_execution array - compressed child data codecs (RLE/BitPacking/ALP)
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TEMPORARY TABLE codec_check (
+  present BOOLEAN CHECK (present)
+);
+
+statement ok
+SET force_compression = 'rle';
+
+statement ok
+CREATE TABLE arr_rle (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_rle SELECT
+  i,
+  [i // 100, i // 100, i // 100]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+RESET force_compression;
+
+# Require the original compression premise.
+statement count 1
+INSERT INTO codec_check SELECT
+  count(*) > 0
+FROM
+  pragma_storage_info('arr_rle')
+WHERE
+  column_name = 'a' AND compression = 'RLE';
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:456
+# sirius: id = "array/compressed-child-data-codecs-rle-bitpacking-alp/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_rle;
+----
+
+statement ok
+SET force_compression = 'bitpacking';
+
+statement ok
+CREATE TABLE arr_bp (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_bp SELECT
+  i,
+  [i % 1000, (i * 2) % 1000, (i * 3) % 1000]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+RESET force_compression;
+
+# Require the original compression premise.
+statement count 1
+INSERT INTO codec_check SELECT
+  count(*) > 0
+FROM
+  pragma_storage_info('arr_bp')
+WHERE
+  column_name = 'a' AND compression = 'BitPacking';
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:468
+# sirius: id = "array/compressed-child-data-codecs-rle-bitpacking-alp/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_bp;
+----
+
+statement ok
+CREATE TABLE arr_alp (
+  id INTEGER,
+  a FLOAT[3]
+);
+
+statement ok
+INSERT INTO arr_alp SELECT
+  i,
+  [i * 0.5, i * 0.25, i * -0.125]::FLOAT[3]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Require the original compression premise.
+statement count 1
+INSERT INTO codec_check SELECT
+  count(*) > 0
+FROM
+  pragma_storage_info('arr_alp')
+WHERE
+  column_name = 'a' AND compression IN ('ALP', 'ALPRD');
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:488
+# sirius: id = "array/compressed-child-data-codecs-rle-bitpacking-alp/003"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_alp;
+----

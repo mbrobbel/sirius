@@ -1,0 +1,29 @@
+# gpu_execution array - many rows span multiple scan batches
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_big_n (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_big_n SELECT
+  i,
+  [i, i + 1, i + 2]
+FROM
+  range(5000) t (i);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:576
+# sirius: id = "array/many-rows-span-multiple-scan-batches/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_big_n;
+----
