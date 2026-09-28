@@ -15,3 +15,4 @@ libduckdb-devel = "==1.5.5"
 
 [tasks]
 cargo = { cmd = "cargo", cwd = "../.." }
+sqltest = { cmd = "rust/target/debug/sirius-sqltest", cwd = "../.." }

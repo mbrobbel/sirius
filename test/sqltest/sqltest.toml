@@ -1,0 +1,15 @@
+version = 1
+default_run = "smoke"
+suite_roots = ["suites"]
+
+[storage.native]
+relation = "table"
+
+[profiles.one-gpu]
+gpus = 1
+config = "profiles/one-gpu.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[runs.smoke]
+suites = ["regressions"]
+profile = "one-gpu"
