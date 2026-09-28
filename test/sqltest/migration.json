@@ -15049,6 +15049,256 @@
       "test": "runtime fallback: snapshot is stable across a concurrent commit"
     },
     {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/001",
+      "identity": "5bb817e53946020c671e0552c1d9444216bd7803eb8d2428446c26f801f967a5",
+      "kind": "query",
+      "line": 97,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/002",
+      "identity": "7b97d4106912240fb6f40f70ce6dcfc01742c91485077be0c5adfcc29f44ef4b",
+      "kind": "query",
+      "line": 97,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/003",
+      "identity": "588c262785236df6967c2e64d92683bf37a9793fa716a0fe3542903c2a3f2f0c",
+      "kind": "query",
+      "line": 97,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/004",
+      "identity": "017c46e91a65fbe97dde0df9a1e7310625d1aca3a98b04176a0d5328003a9e8d",
+      "kind": "query",
+      "line": 97,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/005",
+      "identity": "1c58a6ea5d5c4dbbff8b1d2e6cbc0f911373c61933c8aeb6c9894920c21ddd05",
+      "kind": "query",
+      "line": 105,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/006",
+      "identity": "3fb39ec52031988d7afb7a5a2e658852909af43d3aff22fc529bf31a01a8b251",
+      "kind": "query",
+      "line": 105,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-l2.slt",
+      "id": "vector_search/ann-l2/007",
+      "identity": "f651a374b20b6f3d7cd2ce356312469db335ebdac285934c605c861235cc1b0f",
+      "kind": "query",
+      "line": 105,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ANN (IVF-Flat) l2 matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/probes-distance.slt",
+      "id": "vector_search/probes-distance/001",
+      "identity": "60deb8addfa12b0c0e94e2e81ffbfbae1d63d466e8c175659e7704a9868e0096",
+      "kind": "query",
+      "line": 250,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - explicit n_probes and distance column"
+    },
+    {
+      "file": "suites/vector_search/probes-distance.slt",
+      "id": "vector_search/probes-distance/002",
+      "identity": "d58a984accee27d3012e4ff8649afe752334a33f990b9b52b71059ab870a1992",
+      "kind": "query",
+      "line": 257,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - explicit n_probes and distance column"
+    },
+    {
+      "file": "suites/vector_search/enn-l2.slt",
+      "id": "vector_search/enn-l2/001",
+      "identity": "f5e9cae5037d108eb9d567297b686fcd8c00e5845fc827ef55ef726cfd21ce35",
+      "kind": "query",
+      "line": 285,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ENN brute force over pinned table"
+    },
+    {
+      "file": "suites/vector_search/enn-l2.slt",
+      "id": "vector_search/enn-l2/002",
+      "identity": "19471b66bb7d21ed3c3ce508eb6e66425c37c21c492e830de79e2bbe71912cf8",
+      "kind": "query",
+      "line": 299,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ENN brute force over pinned table"
+    },
+    {
+      "file": "suites/vector_search/ann-cosine.slt",
+      "id": "vector_search/ann-cosine/001",
+      "identity": "36c0c26b1f6b8129538ff0fb700b03f456ac505e59d70122b72850a9c34a1dcc",
+      "kind": "query",
+      "line": 480,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - cosine metric matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-cosine.slt",
+      "id": "vector_search/ann-cosine/002",
+      "identity": "703d591279ac5266f682257030bf1123051574885f1d5861aa5fb1ce06ec2834",
+      "kind": "query",
+      "line": 480,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - cosine metric matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-cosine.slt",
+      "id": "vector_search/ann-cosine/003",
+      "identity": "63eeaacd3a31e8fd6afe4cfd27d3acfc361f98aa9f2b47353ba709b01191dc5e",
+      "kind": "query",
+      "line": 480,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - cosine metric matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/ann-cosine.slt",
+      "id": "vector_search/ann-cosine/004",
+      "identity": "160800238b7a2d3ce4bc306bddbd1b1cbf3853797e448b63c858157d25d95c28",
+      "kind": "query",
+      "line": 480,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - cosine metric matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/enn-cosine.slt",
+      "id": "vector_search/enn-cosine/001",
+      "identity": "0bbf824cbf0c04e65ecf8794137020949c4ca293c297e90a20eb90a0afe763b4",
+      "kind": "query",
+      "line": 504,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - ENN cosine matches exact top-k"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-enn.slt",
+      "id": "vector_search/multi-chunk-enn/001",
+      "identity": "d33a104b85ab0df543ec7ab5f1665f73998672a33b952e901643d9e072ecc84d",
+      "kind": "query",
+      "line": 955,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-enn.slt",
+      "id": "vector_search/multi-chunk-enn/002",
+      "identity": "c997724bee07a65054d5dacde752db793e495a91be8e6c7729ffa3e6f53abb5e",
+      "kind": "query",
+      "line": 955,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-enn.slt",
+      "id": "vector_search/multi-chunk-enn/003",
+      "identity": "439f8041099234229a537d46d2023989ce0c9b67e0ccffc7c71c61086c0d746e",
+      "kind": "query",
+      "line": 955,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-enn.slt",
+      "id": "vector_search/multi-chunk-enn/004",
+      "identity": "003b76fc9664ca2532ec8502c59db165c6f1662192610f5fd167f13235751d58",
+      "kind": "query",
+      "line": 955,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-ann.slt",
+      "id": "vector_search/multi-chunk-ann/001",
+      "identity": "86cd194c48fdf9c80b78260439beb5f730862ff636417962bed013b6edb472c8",
+      "kind": "query",
+      "line": 970,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-ann.slt",
+      "id": "vector_search/multi-chunk-ann/002",
+      "identity": "7293aa6f9321eac3c91a360ecd4db72193cf5453c415b2b64c9c17f63d954aad",
+      "kind": "query",
+      "line": 970,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-ann.slt",
+      "id": "vector_search/multi-chunk-ann/003",
+      "identity": "29ea7391fc9a7ec78816527e8c5ebca683197650ea0afdccea2f5ac498561cb7",
+      "kind": "query",
+      "line": 970,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/multi-chunk-ann.slt",
+      "id": "vector_search/multi-chunk-ann/004",
+      "identity": "bed24ec86dcba257ab5e39b8fe3922ba96a8c7833d28857e3f204e4123a4773f",
+      "kind": "query",
+      "line": 970,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_knn_search - multi-chunk pinned table (ANN + ENN)"
+    },
+    {
+      "file": "suites/vector_search/default-lists.slt",
+      "id": "vector_search/default-lists/001",
+      "identity": "5a099d829928afe67c7cb053876ef13cbfb34a0eec622b09f5a55faeda71ed5d",
+      "kind": "query",
+      "line": 1032,
+      "source": "test/cpp/integration/test_gpu_execution_vector_search.cpp",
+      "suite": "vector_search",
+      "test": "sirius_create_ann_index - error handling and default n_lists"
+    },
+    {
       "file": "suites/partition_memory/repeated-join.slt",
       "id": "partition_memory/repeated-join/001",
       "identity": "cd6b72aff389da621161f34ccb51c80dae62f341241dd9265e891494a667560b",
