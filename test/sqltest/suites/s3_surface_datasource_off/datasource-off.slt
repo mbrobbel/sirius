@@ -1,0 +1,13 @@
+# transparent read_parquet over S3 keeps REST routing when local Sirius datasource is off
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2520
+# sirius: id = "s3_surface_datasource_off/datasource-off/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "scan"]
+query ? nosort
+SELECT
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/parquet/nation.parquet');
+----
+25

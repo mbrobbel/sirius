@@ -1,0 +1,28 @@
+sirius:
+  space:
+    gpu:
+      - device_id: 0
+        per_stream_reservation: false
+        reservation_limit_fraction: 0.4
+        downgrade_trigger_fraction: 0.8
+        downgrade_stop_fraction: 0.6
+        memory_capacity: 256 MiB
+    host:
+      - numa_id: -1
+        reservation_limit_fraction: 0.9
+        downgrade_trigger_fraction: 0.8
+        downgrade_stop_fraction: 0.6
+        memory_capacity: 512 MiB
+        block_size: 1 MiB
+    disk:
+      - disk_id: 0
+        mount_path: disk_memory
+        memory_capacity: 2 GiB
+  executor:
+    scan_manager:
+      use_sirius_datasource: false
+      object_store:
+        tls_verify: false
+      rest:
+        max_connections: 8
+        request_timeout_s: 30

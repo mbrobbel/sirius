@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "s3_surface_datasource_off", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "tpch", "tpcds", "clickbench", "hive_disabled", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "s3_surface_datasource_off", "tpch", "tpcds", "clickbench", "hive_disabled", "partition_memory_mgpu", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "s3_surface_datasource_off", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["s3_glob_scale", "csv_disabled", "s3_surface", "s3_surface_datasource_off", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory_mgpu", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -1397,6 +1397,10 @@ storage = { kind = "tmpfs", size_mib = 2048 }
 [profiles.s3-surface]
 gpus = 1
 config = "profiles/s3-surface.yaml"
+
+[profiles.s3-surface-datasource-off]
+gpus = 1
+config = "profiles/s3-surface-datasource-off.yaml"
 
 [services.s3-glob-scale]
 kind = "minio"
