@@ -1,0 +1,25 @@
+statement ok
+CREATE TABLE mvcc_gpu_t AS SELECT range AS a, range * 2 AS b FROM range(300000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 'mvcc_gpu_t', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_foundation.cpp:133
+# sirius: id = "pin_mvcc_foundation/gpu-pin-serves-captured-base"
+# sirius: tags = ["integration", "pin_table", "mvcc", "foundation"]
+query ???
+SELECT
+  count(*),
+  sum(a),
+  sum(b)
+FROM
+  mvcc_gpu_t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('mvcc_gpu_t');
