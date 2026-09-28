@@ -1,0 +1,47 @@
+# a FULL OUTER join admits build-block descent under equality semantics
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation,join_order,build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:210
+# sirius: id = "dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(o.o_orderkey)
+FROM
+  orders o
+  FULL JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN nation n ON c.c_nationkey = n.n_nationkey
+WHERE
+  n.n_regionkey = 3;
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:210
+# sirius: id = "dynamic_filter_sip/a-full-outer-join-admits-build-block-descent-under-equality-semantics/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(o.o_orderkey)
+FROM
+  orders o
+  FULL JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN nation n ON c.c_nationkey = n.n_nationkey
+WHERE
+  n.n_regionkey = 3;
+----

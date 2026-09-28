@@ -1,0 +1,69 @@
+# a multi-partition build publishes nothing
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation,join_order,build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET max_broadcast_join_size = 1;
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 8388608;
+
+onlyif sirius
+statement ok
+SET max_build_hash_table_bytes = 8388608;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:308
+# sirius: id = "dynamic_filter_sip/a-multi-partition-build-publishes-nothing/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ???????? rowsort
+SELECT
+  count(*),
+  sum(l.l_partkey),
+  sum(l.l_suppkey),
+  sum(l.l_linenumber),
+  sum(l.l_quantity),
+  sum(l.l_extendedprice),
+  sum(l.l_discount),
+  sum(l.l_tax)
+FROM
+  orders o
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate >= DATE '1992-01-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:308
+# sirius: id = "dynamic_filter_sip/a-multi-partition-build-publishes-nothing/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ???????? rowsort
+SELECT
+  count(*),
+  sum(l.l_partkey),
+  sum(l.l_suppkey),
+  sum(l.l_linenumber),
+  sum(l.l_quantity),
+  sum(l.l_extendedprice),
+  sum(l.l_discount),
+  sum(l.l_tax)
+FROM
+  orders o
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate >= DATE '1992-01-01';
+----

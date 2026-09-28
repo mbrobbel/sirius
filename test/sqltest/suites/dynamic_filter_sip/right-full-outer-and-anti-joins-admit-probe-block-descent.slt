@@ -1,0 +1,123 @@
+# RIGHT, FULL OUTER, and ANTI joins admit probe-block descent
+include ../../fixtures/migrated/tpch-native-original.slt
+
+statement ok
+SET disabled_optimizers = concat_ws(',', nullif(current_setting('disabled_optimizers'), ''), 'statistics_propagation,join_order,build_side_probe_side');
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/001-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  RIGHT JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/001-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  RIGHT JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/002-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  FULL JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/002-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  FULL JOIN customer c ON o.o_custkey = c.c_custkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/003-off"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  ANTI JOIN nation n ON o.o_custkey = n.n_nationkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
+
+onlyif sirius
+statement ok
+SET enable_dynamic_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_sip.cpp:232
+# sirius: id = "dynamic_filter_sip/right-full-outer-and-anti-joins-admit-probe-block-descent/003-on"
+# sirius: tags = ["integration", "dynamic_filter", "sip"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(o.o_orderkey)
+FROM
+  orders o
+  ANTI JOIN nation n ON o.o_custkey = n.n_nationkey
+  JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE
+  l.l_shipdate < DATE '1992-02-01';
+----
