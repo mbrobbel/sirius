@@ -130,7 +130,7 @@ TEST_CASE_METHOD(PinMvccFixture,
   REQUIRE(probe.n_cache == probe.num_rows);
 
   // The pin still serves queries (serve path untouched by the foundation).
-  compare_gpu_vs_cpu("SELECT count(*), sum(a), sum(b) FROM mvcc_gpu_t;");
+  require_gpu_execution("SELECT count(*), sum(a), sum(b) FROM mvcc_gpu_t;");
 
   run_ok("CALL unpin_table('mvcc_gpu_t');");
   REQUIRE_FALSE(probe_entry(*con, "mvcc_gpu_t").found);
