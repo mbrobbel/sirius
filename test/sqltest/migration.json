@@ -10051,6 +10051,16 @@
       "test": "transparent S3 glob preserves hive partition columns"
     },
     {
+      "file": "suites/s3_surface_footer_straddle/footer-straddle.slt",
+      "id": "s3_surface_footer_straddle/footer-straddle/001",
+      "identity": "a70f41c41d856e20a0e1fd9ccb8dab34a6e8196c42f3cb31cd4bdbda7f854588",
+      "kind": "query",
+      "line": 2869,
+      "source": "test/cpp/integration/test_s3_sql_surface.cpp",
+      "suite": "s3_surface_footer_straddle",
+      "test": "transparent S3 glob remains correct with a straddled footer-probe window"
+    },
+    {
       "file": "suites/s3_surface/matcher.slt",
       "id": "s3_surface/matcher/001",
       "identity": "3f15a15b29a844890e5f9101f484f9ad09d4ee77ffb9744c458623bf285e182e",
