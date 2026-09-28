@@ -1,0 +1,3 @@
+storage = ["parquet"]
+profile = "pin-host-streaming"
+checkpoint = "explicit"

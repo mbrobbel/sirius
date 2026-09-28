@@ -7731,6 +7731,26 @@
       "test": "pin_table - same-row-count merge extends cache_info to the column union (single GPU)"
     },
     {
+      "file": "suites/pin_host_streaming/streaming.slt",
+      "id": "pin_host_streaming/streaming/001",
+      "identity": "2fca89cbbab89539119b7ac60b17742555d8feb6cfa71ed3da3b0e04d294af9b",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_pin_table_host_streaming.cpp",
+      "suite": "pin_host_streaming",
+      "test": "gpu_execution - pin_table host tier streams without fitting the whole table in GPU"
+    },
+    {
+      "file": "suites/pin_host_streaming/streaming.slt",
+      "id": "pin_host_streaming/streaming/002",
+      "identity": "1b8504cfbaa1f77b6d667fd85a214fd4dd9914abce42b5b482cfb269ff57c0fb",
+      "kind": "query",
+      "line": 193,
+      "source": "test/cpp/integration/test_pin_table_host_streaming.cpp",
+      "suite": "pin_host_streaming",
+      "test": "gpu_execution - pin_table host tier streams without fitting the whole table in GPU"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
