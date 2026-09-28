@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE test_t AS SELECT i AS id, i * 2 AS val FROM range(1000) t (i);
+
+# Original query: test/cpp/integration/test_transparent_execution.cpp:172
+# sirius: id = "transparent/simple-filter"
+# sirius: tags = ["integration", "transparent"]
+query ?? nosort
+SELECT
+  *
+FROM
+  test_t
+WHERE
+  val > 500 ORDER BY id LIMIT 10;
+----

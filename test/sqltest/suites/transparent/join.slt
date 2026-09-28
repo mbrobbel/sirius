@@ -1,0 +1,18 @@
+statement ok
+CREATE TABLE test_left AS SELECT i AS id, i * 3 AS val FROM range(100) t (i);
+
+statement ok
+CREATE TABLE test_right AS SELECT i * 2 AS id, i AS other FROM range(100) t (i);
+
+# Original query: test/cpp/integration/test_transparent_execution.cpp:202
+# sirius: id = "transparent/join"
+# sirius: tags = ["integration", "transparent"]
+query ??? nosort
+SELECT
+  l.id,
+  l.val,
+  r.other
+FROM
+  test_left l
+  JOIN test_right r ON l.id = r.id ORDER BY l.id;
+----

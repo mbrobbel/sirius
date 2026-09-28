@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE test_stats AS SELECT i AS id FROM range(1000) t (i);
+
+# Original query: test/cpp/integration/test_transparent_execution.cpp:193
+# sirius: id = "transparent/statistics-propagated-aggregates"
+# sirius: tags = ["integration", "transparent"]
+query ??? nosort
+SELECT
+  count(*),
+  min(id),
+  max(id)
+FROM
+  test_stats;
+----
