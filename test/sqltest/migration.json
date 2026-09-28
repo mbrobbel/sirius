@@ -1711,6 +1711,26 @@
       "test": "gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N"
     },
     {
+      "file": "suites/tpcds_nulls/three-valued-not-in-with-null.slt",
+      "id": "tpcds_nulls/three-valued-not-in-with-null/001",
+      "identity": "9e27ea1781a2b065558dba3eea35ca18c5d43de9cf7d46c8d1ed003ed584ddec",
+      "kind": "query",
+      "line": 297,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds three-valued NOT IN with NULL"
+    },
+    {
+      "file": "suites/tpcds_nulls/three-valued-not-in-subquery-with-null.slt",
+      "id": "tpcds_nulls/three-valued-not-in-subquery-with-null/001",
+      "identity": "6bf4027249b97d22d576153b21a2af3cee4c104dae626c1e833ee90455e3ff0e",
+      "kind": "query",
+      "line": 306,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds three-valued NOT IN (subquery with NULL)"
+    },
+    {
       "file": "suites/tpcds_nulls/null-safe-join-is-not-distinct-from.slt",
       "id": "tpcds_nulls/null-safe-join-is-not-distinct-from/001",
       "identity": "2d224294c6d3150c5d929076415bbd704dd7522ec172e5a34285962fac97dbb3",
