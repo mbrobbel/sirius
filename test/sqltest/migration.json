@@ -5181,6 +5181,66 @@
       "test": "gpu_execution - narrow group keys cross the aggregate exchange"
     },
     {
+      "file": "suites/hive_disabled/basic.slt",
+      "id": "hive_disabled/basic",
+      "identity": "e29536efb78cb22decc29fc185a7682f11901368a293487fa851e796b5547dee",
+      "kind": "query",
+      "line": 2057,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - basic scan with partition columns"
+    },
+    {
+      "file": "suites/hive_disabled/data-filter.slt",
+      "id": "hive_disabled/data-filter",
+      "identity": "71c905078149ddf2d433b5e125ddd66bcb826a32367980cb2502997d185903e6",
+      "kind": "query",
+      "line": 2069,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - filter on data column"
+    },
+    {
+      "file": "suites/hive_disabled/partition-filter.slt",
+      "id": "hive_disabled/partition-filter",
+      "identity": "a6615f6735ffbeb7a9059ec8f7745fd64bf96308cc778e951a081c7de16f2d6d",
+      "kind": "query",
+      "line": 2081,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - filter on partition column"
+    },
+    {
+      "file": "suites/hive_disabled/group.slt",
+      "id": "hive_disabled/group",
+      "identity": "b0026e5c0ab59a957184ec6b4338194a90a86cc0ec9613066585f13e5267bc2c",
+      "kind": "query",
+      "line": 2093,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - group by partition column"
+    },
+    {
+      "file": "suites/hive_disabled/reversed.slt",
+      "id": "hive_disabled/reversed",
+      "identity": "067b647b309d1e52dff6e5ae8dad0a7a891c25635b174be9f241c06ab9022668",
+      "kind": "query",
+      "line": 2105,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - reversed column order"
+    },
+    {
+      "file": "suites/hive_disabled/aggregate.slt",
+      "id": "hive_disabled/aggregate",
+      "identity": "1e82fa3925d50a387fb8c300e1e43834c33d8c094f8337ef61fd90156f86ab43",
+      "kind": "query",
+      "line": 2117,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_disabled",
+      "test": "gpu_execution hive partition - aggregation on data column"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
