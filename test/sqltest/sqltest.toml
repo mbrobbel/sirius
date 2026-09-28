@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -67,7 +67,7 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = ["csv_disabled", "tpch", "tpcds", "clickbench"]
+exclude_suites = ["csv_disabled", "tpch", "tpcds", "clickbench", "hive_disabled"]
 profile = "integration-one-gpu"
 
 [runs.benchmarks]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -140,7 +140,7 @@ path = "../cpp/integration/data/parquet/supplier.parquet"
 sha256 = "ecd25c4af4b5d65f4f80012f5dc301ae6b657a8029d0dfb915fc88b43b70c34e"
 
 [runs.previously-disabled]
-suites = ["csv_disabled"]
+suites = ["hive_disabled", "csv_disabled"]
 axes = { gpu = ["integration-one"], storage = "all", optimizers = ["default"] }
 
 [profiles.integration-one-gpu]
@@ -182,3 +182,32 @@ profile = "compressed-materialization-partition"
 [runs.compressed-partition]
 suites = ["compressed_materialization_partition"]
 profile = "compressed-materialization-partition"
+
+[sources.hive-2024-01]
+kind = "file"
+path = "../cpp/integration/data/hive_partitioned/year=2024/month=01/data.parquet"
+sha256 = "208ab55ae59b219dfa433e3e5f08a9e0aeea76081d782525cb52ecc5edc8d5da"
+
+[sources.hive-2024-02]
+kind = "file"
+path = "../cpp/integration/data/hive_partitioned/year=2024/month=02/data.parquet"
+sha256 = "37c584c4a5a9bbc006cae3848a5d3f14c87b6732a72d0fe3751b9a2471145f37"
+
+[sources.hive-2025-01]
+kind = "file"
+path = "../cpp/integration/data/hive_partitioned/year=2025/month=01/data.parquet"
+sha256 = "332aae6daced910888b0e8f41eca3097af01b016f70910dcf3bff52da145fc49"
+
+[fixtures.hive-original.files]
+"h/year=2024/month=01/data.parquet" = "hive-2024-01"
+"flat/part_2024_01.parquet" = "hive-2024-01"
+"h/year=2024/month=02/data.parquet" = "hive-2024-02"
+"flat/part_2024_02.parquet" = "hive-2024-02"
+"h/year=2025/month=01/data.parquet" = "hive-2025-01"
+"flat/part_2025_01.parquet" = "hive-2025-01"
+"space/city=New%20York/data.parquet" = "hive-2024-01"
+"slash/city=Path%2FTeam/data.parquet" = "hive-2024-01"
+"percent/city=100%25/data.parquet" = "hive-2024-01"
+"multiple/city=Los%20Angeles%2FWest/data.parquet" = "hive-2024-01"
+"two_columns/city=New%20York/dept=R%26D/data.parquet" = "hive-2024-01"
+"plain/city=Boston/data.parquet" = "hive-2024-01"

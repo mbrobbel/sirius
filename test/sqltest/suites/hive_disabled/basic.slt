@@ -1,0 +1,10 @@
+# gpu_execution hive partition - basic scan with partition columns
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:2057
+# sirius: id = "hive_disabled/basic"
+# sirius: tags = ["integration", "parquet", "hive_partition", "previously_disabled"]
+query ????? rowsort
+SELECT
+  *
+FROM
+  read_parquet('__FIXTURE_ROOT__/hive-original/h/year=*/month=*/*.parquet', hive_partitioning = true) ORDER BY id;
+----

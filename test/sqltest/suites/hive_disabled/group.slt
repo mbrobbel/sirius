@@ -1,0 +1,13 @@
+# gpu_execution hive partition - group by partition column
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:2093
+# sirius: id = "hive_disabled/group"
+# sirius: tags = ["integration", "parquet", "hive_partition", "previously_disabled"]
+query ?? rowsort
+SELECT
+  year,
+  SUM(amount) AS total
+FROM
+  read_parquet('__FIXTURE_ROOT__/hive-original/h/year=*/month=*/*.parquet', hive_partitioning = true)
+GROUP BY
+  year ORDER BY year;
+----
