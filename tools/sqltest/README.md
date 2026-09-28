@@ -9,12 +9,13 @@ pixi run --manifest-path tools/sqltest/pixi.toml cargo build \
   --manifest-path rust/Cargo.toml --locked -p sirius-sqltest
 pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
   --cpu-only --run smoke --output runs/smoke-cpu
-pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
-  --extension /absolute/path/to/sirius.duckdb_extension --run smoke \
-  --output runs/smoke-gpu
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest-host \
+  --extension /absolute/path/to/sirius.duckdb_extension smoke
 ```
 
-Use a fresh output directory for each run.
+Use a fresh output directory for each run. The host launcher finds GPU libraries
+in the repository's Pixi environment; use `--gpu-lib-dir` to select another one.
+The smoke suite reports engine gaps as failures rather than hiding them.
 
 Suites are discovered under `test/sqltest/suites`. Each `.slt` file can create and
 populate its own tables, include shared SQL fixtures, and compare query results
