@@ -1,5 +1,5 @@
 use crate::{
-    config::{Config, Name, PathBinding, Selection},
+    config::{AxisOverride, Config, Name, PathBinding, Selection},
     corpus::{self, Expected, Step},
     report::{Baseline, CaseReport, Outcome, Provenance, Report},
     result,
@@ -27,6 +27,8 @@ pub struct RunArgs {
     pub dry_run: bool,
     #[arg(long)]
     pub select: Option<String>,
+    #[arg(long, value_name = "NAME=CHOICE[,CHOICE]")]
+    pub axis: Vec<AxisOverride>,
     #[arg(long, value_name = "NAME=PATH")]
     pub suite_dir: Vec<PathBinding>,
     #[arg(long)]
@@ -140,7 +142,7 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
     let config = Config::load_with_suites(&args.root, &args.suite_dir)?;
     let root = &config.root;
     let fixtures = std::path::absolute(&args.fixtures)?;
-    let plan = config.plan(args.run.as_ref(), args.suite.as_ref())?;
+    let plan = config.plan(args.run.as_ref(), args.suite.as_ref(), &args.axis)?;
     let mut scripts = std::collections::BTreeMap::new();
     let mut ids = std::collections::BTreeSet::new();
     for target in &plan.targets {

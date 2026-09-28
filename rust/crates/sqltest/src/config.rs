@@ -69,6 +69,24 @@ impl Choices {
 }
 
 #[derive(Clone, Debug)]
+pub struct AxisOverride {
+    pub name: Name,
+    pub choices: Choices,
+}
+impl FromStr for AxisOverride {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self> {
+        let (name, choices) = s
+            .split_once('=')
+            .context("axis must be NAME=CHOICE[,CHOICE] or NAME=all")?;
+        Ok(Self {
+            name: name.parse()?,
+            choices: choices.parse()?,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct PathBinding {
     pub name: Name,
     pub path: PathBuf,
@@ -93,6 +111,8 @@ pub struct Manifest {
     pub suite_roots: Vec<PathBuf>,
     pub profiles: BTreeMap<Name, Profile>,
     pub storage: BTreeMap<Name, Storage>,
+    #[serde(default)]
+    pub axes: BTreeMap<Name, BTreeMap<Name, AxisChoice>>,
     pub runs: BTreeMap<Name, Run>,
 }
 
@@ -264,12 +284,14 @@ pub struct Storage {
 #[serde(untagged)]
 pub enum Run {
     Correctness(CorrectnessRun),
+    Sweep(Matrix),
 }
 
 impl Run {
     fn selection(&self) -> (&Choices, &[Name]) {
         match self {
             Self::Correctness(run) => (&run.suites, &run.exclude_suites),
+            Self::Sweep(run) => (&run.suites, &run.exclude_suites),
         }
     }
 }
@@ -287,6 +309,15 @@ pub struct CorrectnessRun {
     pub settings: Settings,
     #[serde(default)]
     pub reference_settings: Settings,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Matrix {
+    pub suites: Choices,
+    #[serde(default)]
+    pub exclude_suites: Vec<Name>,
+    pub axes: BTreeMap<Name, Choices>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -340,12 +371,32 @@ impl From<Settings> for BTreeMap<Name, SettingValue> {
     }
 }
 impl Settings {
+    fn merge(&mut self, other: &Self) -> Result<()> {
+        for (key, value) in &other.0 {
+            if let Some(existing) = self.0.get(key) {
+                ensure!(existing == value, "conflicting values for setting {key}");
+            }
+            self.0.insert(key.clone(), value.clone());
+        }
+        Ok(())
+    }
     pub fn sql(&self) -> Vec<String> {
         self.0
             .iter()
             .map(|(name, value)| format!("SET \"{name}\" = {};", value.sql()))
             .collect()
     }
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AxisChoice {
+    pub profile: Option<Name>,
+    pub storage: Option<Name>,
+    #[serde(default)]
+    pub settings: Settings,
+    #[serde(default)]
+    pub reference_settings: Settings,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
@@ -435,6 +486,17 @@ fn references<T>(
     Ok(())
 }
 
+fn merge_dimension(target: &mut Option<Name>, value: &Option<Name>, dimension: &str) -> Result<()> {
+    if let Some(value) = value {
+        ensure!(
+            target.as_ref().is_none_or(|old| old == value),
+            "conflicting {dimension} choices in sweep"
+        );
+        *target = Some(value.clone());
+    }
+    Ok(())
+}
+
 impl Config {
     pub fn load(root: &Path) -> Result<Self> {
         Self::load_with_suites(root, &[])
@@ -499,20 +561,55 @@ impl Config {
                 .resolve(&config.suites, "suite")
                 .with_context(|| format!("run {name}"))?;
             references(excluded, &config.suites, "excluded suite", false)?;
-            let Run::Correctness(run) = run;
-            references(
-                std::slice::from_ref(&run.profile),
-                &config.manifest.profiles,
-                "profile",
-                true,
-            )?;
-            run.storage.resolve(&config.manifest.storage, "storage")?;
+            let matrix = match run {
+                Run::Correctness(run) => {
+                    references(
+                        std::slice::from_ref(&run.profile),
+                        &config.manifest.profiles,
+                        "profile",
+                        true,
+                    )?;
+                    run.storage.resolve(&config.manifest.storage, "storage")?;
+                    continue;
+                }
+                Run::Sweep(matrix) => matrix,
+            };
+            ensure!(!matrix.axes.is_empty(), "run {name} has no axes");
+            for (axis, choices) in &matrix.axes {
+                let values = config
+                    .manifest
+                    .axes
+                    .get(axis)
+                    .with_context(|| format!("unknown axis {axis} in run {name}"))?;
+                choices.resolve(values, &format!("choice for {axis}"))?;
+            }
         }
         for profile in config.manifest.profiles.values() {
             ensure!(
                 config.path(&profile.config)?.is_file(),
                 "profile config must be a file"
             );
+        }
+        for (axis, choices) in &config.manifest.axes {
+            ensure!(!choices.is_empty(), "axis {axis} has no choices");
+            for choice in choices.values() {
+                if let Some(profile) = &choice.profile {
+                    references(
+                        std::slice::from_ref(profile),
+                        &config.manifest.profiles,
+                        "profile",
+                        true,
+                    )?;
+                }
+                if let Some(storage) = &choice.storage {
+                    references(
+                        std::slice::from_ref(storage),
+                        &config.manifest.storage,
+                        "storage",
+                        true,
+                    )?;
+                }
+            }
         }
         Ok(config)
     }
@@ -613,7 +710,12 @@ impl Config {
         Ok(suites)
     }
 
-    pub fn plan(&self, run: Option<&Name>, suites: Option<&Selection>) -> Result<Plan> {
+    pub fn plan(
+        &self,
+        run: Option<&Name>,
+        suites: Option<&Selection>,
+        overrides: &[AxisOverride],
+    ) -> Result<Plan> {
         let name = run.unwrap_or(&self.manifest.default_run);
         let spec = self
             .manifest
@@ -621,28 +723,101 @@ impl Config {
             .get(name)
             .with_context(|| format!("unknown run {name}"))?;
         let suites = self.suites(run, suites)?;
-        let Run::Correctness(fixed) = spec;
-        let storage = fixed.storage.resolve(&self.manifest.storage, "storage")?;
-        let mut targets = Vec::new();
-        for name in suites {
-            let suite = &self.suites[&name];
-            let profile = suite.profile.as_ref().unwrap_or(&fixed.profile);
-            if suite
-                .minimum_gpus
-                .is_some_and(|minimum| self.manifest.profiles[profile].gpus < minimum)
-            {
-                continue;
+        let matrix = match spec {
+            Run::Correctness(fixed) => {
+                ensure!(
+                    overrides.is_empty(),
+                    "correctness runs use fixed suite profiles; select a sweep run for --axis overrides"
+                );
+                let storage = fixed.storage.resolve(&self.manifest.storage, "storage")?;
+                let mut targets = Vec::new();
+                for name in suites {
+                    let suite = &self.suites[&name];
+                    let profile = suite.profile.as_ref().unwrap_or(&fixed.profile);
+                    if suite
+                        .minimum_gpus
+                        .is_some_and(|minimum| self.manifest.profiles[profile].gpus < minimum)
+                    {
+                        continue;
+                    }
+                    for mode in &suite.storage {
+                        if storage.contains(mode) {
+                            targets.push(Target {
+                                checkpoint: suite.checkpoint,
+                                suite: name.clone(),
+                                profile: profile.clone(),
+                                storage: mode.clone(),
+                                axes: BTreeMap::new(),
+                                settings: fixed.settings.clone(),
+                                reference_settings: fixed.reference_settings.clone(),
+                            });
+                        }
+                    }
+                }
+                ensure!(
+                    !targets.is_empty(),
+                    "run has no compatible suite/storage/GPU combinations"
+                );
+                return Ok(Plan {
+                    run: name.clone(),
+                    targets,
+                });
             }
-            for mode in &suite.storage {
-                if storage.contains(mode) {
+            Run::Sweep(matrix) => matrix,
+        };
+        let mut axes = matrix.axes.clone();
+        let mut seen = BTreeSet::new();
+        for value in overrides {
+            ensure!(
+                seen.insert(&value.name),
+                "duplicate axis override {}",
+                value.name
+            );
+            axes.insert(value.name.clone(), value.choices.clone());
+        }
+        let dimensions: Vec<Vec<_>> = axes
+            .iter()
+            .map(|(axis, selected)| {
+                let choices = self
+                    .manifest
+                    .axes
+                    .get(axis)
+                    .with_context(|| format!("unknown axis {axis}"))?;
+                Ok(selected
+                    .resolve(choices, &format!("choice for {axis}"))?
+                    .into_iter()
+                    .map(|name| (axis.clone(), name.clone(), choices[&name].clone()))
+                    .collect())
+            })
+            .collect::<Result<_>>()?;
+        let mut targets = Vec::new();
+        for combination in dimensions.into_iter().multi_cartesian_product() {
+            let (mut profile, mut storage) = (None, None);
+            let (mut settings, mut reference_settings) = (Settings::default(), Settings::default());
+            let mut axes = BTreeMap::new();
+            for (axis, name, choice) in combination {
+                merge_dimension(&mut profile, &choice.profile, "profile")?;
+                merge_dimension(&mut storage, &choice.storage, "storage")?;
+                settings.merge(&choice.settings)?;
+                reference_settings.merge(&choice.reference_settings)?;
+                axes.insert(axis, name);
+            }
+            let profile = profile.context("sweep combination does not select a GPU profile")?;
+            let storage = storage.context("sweep combination does not select a storage mode")?;
+            for suite in &suites {
+                if self.suites[suite].storage.contains(&storage)
+                    && self.suites[suite]
+                        .minimum_gpus
+                        .is_none_or(|minimum| self.manifest.profiles[&profile].gpus >= minimum)
+                {
                     targets.push(Target {
-                        checkpoint: suite.checkpoint,
-                        suite: name.clone(),
+                        checkpoint: self.suites[suite].checkpoint,
+                        suite: suite.clone(),
                         profile: profile.clone(),
-                        storage: mode.clone(),
-                        axes: BTreeMap::new(),
-                        settings: fixed.settings.clone(),
-                        reference_settings: fixed.reference_settings.clone(),
+                        storage: storage.clone(),
+                        axes: axes.clone(),
+                        settings: settings.clone(),
+                        reference_settings: reference_settings.clone(),
                     });
                 }
             }
