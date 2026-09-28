@@ -1,0 +1,17 @@
+# gpu_execution - issue 227 cast decimal with avg and group by
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3216
+# sirius: id = "tpch_disabled_native/issue-227-cast-decimal-with-avg-and-group-by/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "cast", "decimal", "previously_disabled"]
+query ???? rowsort
+SELECT
+  avg(n_regionkey),
+  avg(n_nationkey),
+  n_name,
+  max(CAST(n_nationkey AS DECIMAL(18,2)))
+FROM
+  nation
+GROUP BY
+  n_regionkey, n_name;
+----
