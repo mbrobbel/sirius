@@ -1281,6 +1281,10 @@ config = "profiles/pin-column-order.yaml"
 gpus = 1
 config = "profiles/pin-column-merge.yaml"
 
+[profiles.pin-host-streaming]
+gpus = 1
+config = "profiles/pin-host-streaming.yaml"
+
 [profiles.partition-memory-1gpu]
 gpus = 1
 config = "profiles/partition-memory-1gpu.yaml"
