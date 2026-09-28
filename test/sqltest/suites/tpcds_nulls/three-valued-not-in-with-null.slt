@@ -1,0 +1,16 @@
+# gpu_execution tpcds three-valued NOT IN with NULL
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:297
+# sirius: id = "tpcds_nulls/three-valued-not-in-with-null/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales
+WHERE
+  ss_store_sk NOT IN (1, 2, NULL);
+----
+0
