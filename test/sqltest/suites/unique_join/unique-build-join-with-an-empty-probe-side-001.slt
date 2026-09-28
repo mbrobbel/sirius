@@ -1,0 +1,15 @@
+# Migrated from test/cpp/integration/test_gpu_execution_unique_join.cpp:93
+# gpu_execution unique-build join with an empty probe side
+include ../../fixtures/migrated/unique_join/e72633960a41581b.slt
+
+# sirius: id = "unique_join/unique-build-join-with-an-empty-probe-side/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "unique_build_keys"]
+query ?? rowsort
+SELECT
+  f.k,
+  d.name
+FROM
+  empty_fact f
+  JOIN dim d ON f.k = d.id;
+----

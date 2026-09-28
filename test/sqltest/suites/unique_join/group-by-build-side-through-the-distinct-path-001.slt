@@ -1,0 +1,27 @@
+# Migrated from test/cpp/integration/test_gpu_execution_unique_join.cpp:130
+# gpu_execution GROUP BY build side through the distinct path
+include ../../fixtures/migrated/unique_join/e72633960a41581b.slt
+
+# sirius: id = "unique_join/group-by-build-side-through-the-distinct-path/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "unique_build_keys"]
+query ??? rowsort
+SELECT
+  f.k,
+  f.v,
+  agg.cnt
+FROM
+  fact f
+  JOIN (SELECT grp, COUNT(*) AS cnt FROM fact GROUP BY grp) agg ON f.k = agg.grp;
+----
+1	1	6
+1	10	6
+1	11	6
+1	30	6
+2	12	5
+2	2	5
+2	20	5
+2	5	5
+3	13	5
+3	3	5
+3	50	5
