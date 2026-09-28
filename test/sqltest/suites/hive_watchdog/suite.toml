@@ -1,0 +1,3 @@
+profile = "hive-watchdog"
+storage = ["parquet"]
+fixtures = ["hive-original"]
