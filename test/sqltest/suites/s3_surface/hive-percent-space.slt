@@ -1,0 +1,31 @@
+# transparent S3 glob decodes a percent-encoded Hive value exactly once
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2624
+# sirius: id = "s3_surface/hive-percent-space/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ?? nosort
+SELECT
+  col,
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/t/*/*.parquet', hive_partitioning = true)
+GROUP BY
+  col ORDER BY col;
+----
+"a b"	25
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2624
+# sirius: id = "s3_surface/hive-percent-space/002"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ?? nosort
+SELECT
+  col,
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/t/*/*.parquet', hive_partitioning = true)
+GROUP BY
+  col ORDER BY col;
+----
+"a b"	25

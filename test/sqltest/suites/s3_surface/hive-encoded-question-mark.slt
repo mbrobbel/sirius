@@ -1,0 +1,31 @@
+# transparent S3 glob supports an encoded question mark in a Hive partition value
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2757
+# sirius: id = "s3_surface/hive-encoded-question-mark/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ?? nosort
+SELECT
+  col,
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/q/col=a%3F*/*.parquet', hive_partitioning = true)
+GROUP BY
+  col ORDER BY col;
+----
+"a?b"	25
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2757
+# sirius: id = "s3_surface/hive-encoded-question-mark/002"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ?? nosort
+SELECT
+  col,
+  count(*)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/q/col=a%3F*/*.parquet', hive_partitioning = true)
+GROUP BY
+  col ORDER BY col;
+----
+"a?b"	25

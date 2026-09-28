@@ -1,0 +1,25 @@
+# transparent S3 glob permits a question mark in the terminal filename
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2733
+# sirius: id = "s3_surface/filename-question-mark/001"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(n_nationkey)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/guard-filename/report*.parquet', hive_partitioning = true);
+----
+25
+
+# Original case: test/cpp/integration/test_s3_sql_surface.cpp:2733
+# sirius: id = "s3_surface/filename-question-mark/002"
+# sirius: snapshot = true
+# sirius: tags = ["s3", "integration", "glob"]
+query ? nosort
+SELECT
+  count(n_nationkey)
+FROM
+  read_parquet('__OBJECT_ROOT__/glob-enc/guard-filename/report*.parquet', hive_partitioning = true);
+----
+25
