@@ -7529,6 +7529,16 @@
       "test": "gpu_execution - count over projection-pruned values preserves cardinality"
     },
     {
+      "file": "suites/tpch_integration_native/values-spanning-multiple-chunks.slt",
+      "id": "tpch_integration_native/values-spanning-multiple-chunks/001",
+      "identity": "b1764c95b29a8b08654edc13cdf7c662f505f42882ea2d3ce60cfe99a4accb88",
+      "kind": "query",
+      "line": 4742,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - values spanning multiple chunks"
+    },
+    {
       "file": "suites/tpch_integration_native/pin-table-duckdb-native-gpu-tier-scan-and-aggregate.slt",
       "id": "tpch_integration_native/pin-table-duckdb-native-gpu-tier-scan-and-aggregate/001",
       "identity": "4a85e15d71f795429cc2e7e7f13b7a760d810d5d2fddd7ac324e060aec204150",
