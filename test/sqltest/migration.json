@@ -5311,6 +5311,46 @@
       "test": "gpu_execution hive partition - aggregation on data column"
     },
     {
+      "file": "suites/hive_watchdog/hive-count.slt",
+      "id": "hive_watchdog/hive-count",
+      "identity": "8f1c87f11ae5cc94611135d3b8f4c33c76e7edbc5f319b4819e9382e09f29ce3",
+      "kind": "query",
+      "line": 1993,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_watchdog",
+      "test": "gpu_execution hive partition count star completes under watchdog"
+    },
+    {
+      "file": "suites/hive_watchdog/flat-count.slt",
+      "id": "hive_watchdog/flat-count",
+      "identity": "7cdd6bce55125e77ffdffd4d62ccdc7b8dc513023bfbe2b59188c0564ef543de",
+      "kind": "query",
+      "line": 1993,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_watchdog",
+      "test": "gpu_execution hive partition count star completes under watchdog"
+    },
+    {
+      "file": "suites/hive_watchdog/filtered-count.slt",
+      "id": "hive_watchdog/filtered-count",
+      "identity": "ac22595f2b66abe82e97c5db1cee08bc54c8968240d68b1ed2ae1ac0b04f87e0",
+      "kind": "query",
+      "line": 1993,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_watchdog",
+      "test": "gpu_execution hive partition count star completes under watchdog"
+    },
+    {
+      "file": "suites/hive_watchdog/partition-select.slt",
+      "id": "hive_watchdog/partition-select",
+      "identity": "4773ea5980b2ae7fe9cd1422f1efc24110f24146bb99e9aaa89c4e8ad71d70d9",
+      "kind": "query",
+      "line": 1993,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "hive_watchdog",
+      "test": "gpu_execution hive partition count star completes under watchdog"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
