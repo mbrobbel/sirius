@@ -20,7 +20,8 @@
  *
  * DuckDB's CAST and TRY_CAST behavior for these pairs cannot be implemented by the physical DATE
  * carrier tunnel. The tests cover configured CPU fallback, fallback-disabled plan rejection, and
- * positive GPU-planning controls. A file-backed database exercises the DuckDB-native scan path.
+ * positive GPU-planning controls. SQL result comparisons live in
+ * test/sqltest/suites/semantic_cast/. A file-backed database exercises the DuckDB-native scan path.
  */
 
 #include <catch.hpp>
@@ -92,7 +93,7 @@ TEST_CASE_METHOD(SemanticCastFixture,
 {
   create_cast_table(*this);
   // DuckDB null-cast semantics: every row is NULL -- never the int16 epoch-day value 1.
-  expect_plan_fallback_matches_cpu("SELECT TRY_CAST(d AS SMALLINT) FROM cast_t;");
+  expect_plan_fallback("SELECT TRY_CAST(d AS SMALLINT) FROM cast_t;");
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -101,7 +102,7 @@ TEST_CASE_METHOD(SemanticCastFixture,
 {
   create_cast_table(*this);
   // Every row NULL -- never DATE '1970-01-02' retagged from s = 1.
-  expect_plan_fallback_matches_cpu("SELECT TRY_CAST(s AS DATE) FROM cast_t;");
+  expect_plan_fallback("SELECT TRY_CAST(s AS DATE) FROM cast_t;");
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -119,12 +120,6 @@ TEST_CASE_METHOD(SemanticCastFixture,
   REQUIRE(result->HasError());
   REQUIRE(after.fallbacks == before.fallbacks + 1);
   REQUIRE(after.executions == before.executions);
-
-  run_ok("SET gpu_execution = false;");
-  auto cpu_result = con->Query("SELECT CAST(s AS DATE) FROM cast_t;");
-  run_ok("SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE(cpu_result->HasError());
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -142,12 +137,6 @@ TEST_CASE_METHOD(SemanticCastFixture,
   REQUIRE(result->HasError());
   REQUIRE(after.fallbacks == before.fallbacks + 1);
   REQUIRE(after.executions == before.executions);
-
-  run_ok("SET gpu_execution = false;");
-  auto cpu_result = con->Query("SELECT CAST(d AS SMALLINT) FROM cast_t;");
-  run_ok("SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE(cpu_result->HasError());
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -158,8 +147,7 @@ TEST_CASE_METHOD(SemanticCastFixture,
   // Filter position: DuckDB pushes this predicate into the scan's table filters, so the same
   // translation declines it from reject_untranslatable_table_filter (sirius_plan_get.cpp) rather
   // than the LogicalFilter site. On the CPU the null-cast makes the predicate true for every row.
-  expect_plan_fallback_matches_cpu(
-    "SELECT count(*) FROM cast_t WHERE TRY_CAST(d AS SMALLINT) IS NULL;");
+  expect_plan_fallback("SELECT count(*) FROM cast_t WHERE TRY_CAST(d AS SMALLINT) IS NULL;");
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -182,11 +170,11 @@ TEST_CASE_METHOD(SemanticCastFixture,
 {
   create_cast_table(*this);
   // Guards this file against going tautological: the fallback and rejection cases above only
-  // prove the CAST GATE fired if the same table is otherwise GPU-plannable. compare_gpu_vs_cpu
+  // prove the CAST GATE fired if the same table is otherwise GPU-plannable. require_gpu_execution
   // asserts executions +1 / fallbacks +0 for each query.
-  compare_gpu_vs_cpu("SELECT d FROM cast_t WHERE d IS NOT NULL;");
+  require_gpu_execution("SELECT d FROM cast_t WHERE d IS NOT NULL;");
   // A supported (temporal -> temporal) cast on the same column translates and runs on the GPU.
-  compare_gpu_vs_cpu("SELECT CAST(d AS TIMESTAMP) FROM cast_t;");
+  require_gpu_execution("SELECT CAST(d AS TIMESTAMP) FROM cast_t;");
 }
 
 TEST_CASE_METHOD(SemanticCastFixture,
@@ -221,16 +209,6 @@ TEST_CASE_METHOD(SemanticCastFixture,
     if (result->HasError()) { UNSCOPED_INFO("query error: " << result->GetError()); }
     REQUIRE_FALSE(result->HasError());
     REQUIRE(after.fallbacks == before.fallbacks);
-
-    run_ok("SET gpu_execution = false;");
-    auto cpu_result = con->Query("SELECT CAST(d AS VARCHAR) FROM cast_t;");
-    run_ok("SET gpu_execution = true;");
-    REQUIRE(cpu_result);
-    REQUIRE_FALSE(cpu_result->HasError());
-    auto rows = SemanticCastFixture::collect_rows(result->Cast<duckdb::MaterializedQueryResult>());
-    auto cpu_rows =
-      SemanticCastFixture::collect_rows(cpu_result->Cast<duckdb::MaterializedQueryResult>());
-    REQUIRE(rows == cpu_rows);
   }
 }
 
@@ -248,8 +226,8 @@ TEST_CASE_METHOD(SemanticCastFixture,
   REQUIRE(disabled->GetValue(0, 0).ToString().find("sum_rewriter") == std::string::npos);
   run_ok("SET enable_duckdb_fallback = false;");
 
-  compare_gpu_vs_cpu("SELECT SUM(ResolutionWidth + 1) FROM hits;");
-  compare_gpu_vs_cpu("SELECT grp, SUM(ResolutionWidth + 1) FROM hits GROUP BY grp;");
-  compare_gpu_vs_cpu("SELECT SUM(ResolutionWidth + 1) FROM hits WHERE grp = 3;");
-  compare_gpu_vs_cpu("SELECT SUM(ResolutionWidth + 1) FROM hits WHERE grp = 99;");
+  require_gpu_execution("SELECT SUM(ResolutionWidth + 1) FROM hits;");
+  require_gpu_execution("SELECT grp, SUM(ResolutionWidth + 1) FROM hits GROUP BY grp;");
+  require_gpu_execution("SELECT SUM(ResolutionWidth + 1) FROM hits WHERE grp = 3;");
+  require_gpu_execution("SELECT SUM(ResolutionWidth + 1) FROM hits WHERE grp = 99;");
 }
