@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for the DuckDB-native scan reconstructing the validity
+// GPU execution coverage for the DuckDB-native scan reconstructing the validity
 // mask of wholly-NULL columns (issue #1218). A wholly-NULL column checkpoints to
 // CONSTANT all-invalid validity with no on-disk bitmap; the scan must synthesize
 // the null mask, otherwise the column reads back as sentinel values with no
@@ -24,9 +24,8 @@
 // multiple data segments and multiple row groups. Scalar aggregates over
 // wholly-NULL columns are covered by test_gpu_execution_aggregate_nulls.cpp.
 //
-// Every query goes through the shared file-backed GpuExecutionFixture, which runs
-// it on the GPU (asserting a real GPU execution, no fallback) and on DuckDB CPU,
-// then compares the results.
+// Every query verifies GPU execution without fallback. Result comparisons live
+// in test/sqltest/suites/allnull_scan/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -66,7 +65,7 @@ TEST_CASE_METHOD(AllNullScanFixture,
                  "gpu_execution wholly-NULL column projection preserves NULLs",
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
-  compare_gpu_vs_cpu("SELECT id, n_int, n_big, n_dbl, n_dec, n_date FROM ans");
+  require_gpu_execution("SELECT id, n_int, n_big, n_dbl, n_dec, n_date FROM ans");
 }
 
 TEST_CASE_METHOD(AllNullScanFixture,
@@ -74,9 +73,9 @@ TEST_CASE_METHOD(AllNullScanFixture,
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
   // Every row is NULL: IS NULL keeps all rows, IS NOT NULL keeps none.
-  compare_gpu_vs_cpu("SELECT id FROM ans WHERE n_int IS NULL");
-  compare_gpu_vs_cpu("SELECT id FROM ans WHERE n_int IS NOT NULL");
-  compare_gpu_vs_cpu("SELECT id FROM ans WHERE n_date IS NULL");
+  require_gpu_execution("SELECT id FROM ans WHERE n_int IS NULL");
+  require_gpu_execution("SELECT id FROM ans WHERE n_int IS NOT NULL");
+  require_gpu_execution("SELECT id FROM ans WHERE n_date IS NULL");
 }
 
 TEST_CASE_METHOD(AllNullScanFixture,
@@ -84,9 +83,9 @@ TEST_CASE_METHOD(AllNullScanFixture,
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
   // `part` has a real per-row validity bitmap; its valid rows must survive.
-  compare_gpu_vs_cpu("SELECT id, part FROM ans");
-  compare_gpu_vs_cpu("SELECT COUNT(part), SUM(part), MIN(part), MAX(part) FROM ans");
-  compare_gpu_vs_cpu("SELECT id FROM ans WHERE part IS NOT NULL");
+  require_gpu_execution("SELECT id, part FROM ans");
+  require_gpu_execution("SELECT COUNT(part), SUM(part), MIN(part), MAX(part) FROM ans");
+  require_gpu_execution("SELECT id FROM ans WHERE part IS NOT NULL");
 }
 
 // A column whose rows are a constant non-NULL run followed by an all-NULL run
@@ -111,9 +110,9 @@ TEST_CASE_METHOD(ConstantThenNullFixture,
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
   // If the valid run were wrongly masked, COUNT(c)/SUM(c) would drop below 500/3500.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(c), SUM(c), MIN(c), MAX(c) FROM mix");
-  compare_gpu_vs_cpu("SELECT id FROM mix WHERE c IS NOT NULL");
-  compare_gpu_vs_cpu("SELECT id FROM mix WHERE c IS NULL");
+  require_gpu_execution("SELECT COUNT(*), COUNT(c), SUM(c), MIN(c), MAX(c) FROM mix");
+  require_gpu_execution("SELECT id FROM mix WHERE c IS NOT NULL");
+  require_gpu_execution("SELECT id FROM mix WHERE c IS NULL");
 }
 
 // A large column mixing a NULL region and a valid region: the valid rows must
@@ -139,7 +138,7 @@ TEST_CASE_METHOD(NullThenValidLargeFixture,
 {
   // COUNT(c)=10000 and SUM over [70000,80000) only hold if the valid trailing
   // rows were not masked.
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(c), SUM(c), MIN(c), MAX(c) FROM big");
+  require_gpu_execution("SELECT COUNT(*), COUNT(c), SUM(c), MIN(c), MAX(c) FROM big");
 }
 
 // A wholly-NULL column spanning multiple row groups, with a ragged final row
@@ -161,7 +160,7 @@ TEST_CASE_METHOD(WhollyNullMultiRowGroupFixture,
                  "gpu_execution wholly-NULL column spanning multiple row groups",
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(n), SUM(n) FROM big_null");
+  require_gpu_execution("SELECT COUNT(*), COUNT(n), SUM(n) FROM big_null");
 }
 
 // VARCHAR wholly-NULL columns are reconstructed too: the scan must produce NULLs
@@ -182,7 +181,7 @@ TEST_CASE_METHOD(AllNullVarcharFixture,
                  "gpu_execution wholly-NULL VARCHAR column",
                  "[integration][gpu_execution][scan][nulls][allnull]")
 {
-  compare_gpu_vs_cpu("SELECT id, s FROM ans_str");
-  compare_gpu_vs_cpu("SELECT COUNT(s) FROM ans_str");
-  compare_gpu_vs_cpu("SELECT id FROM ans_str WHERE s IS NULL");
+  require_gpu_execution("SELECT id, s FROM ans_str");
+  require_gpu_execution("SELECT COUNT(s) FROM ans_str");
+  require_gpu_execution("SELECT id FROM ans_str WHERE s IS NULL");
 }
