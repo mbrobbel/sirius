@@ -1,0 +1,33 @@
+include ../../fixtures/migrated/operator_mgpu/order-large.slt
+
+# Original query: test/cpp/operator/test_physical_order_mgpu.cpp:233
+# sirius: id = "operator_mgpu_order/topn/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ? nosort
+SELECT
+  k
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet') ORDER BY k LIMIT 5;
+----
+0
+0
+0
+0
+0
+
+# Original query: test/cpp/operator/test_physical_order_mgpu.cpp:233
+# sirius: id = "operator_mgpu_order/topn/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ? nosort
+SELECT
+  k
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet') ORDER BY k LIMIT 5;
+----
+0
+0
+0
+0
+0
