@@ -16,11 +16,19 @@ relation = "view"
 [profiles.desktop]
 gpus = 1
 config = "config.yaml"
+[axes.machine.desktop]
+profile = "desktop"
+[axes.backend.cached]
+storage = "cached"
+[axes.backend.external]
+storage = "external"
+[axes.optimizers.default]
+settings = { disabled_optimizers = "" }
+[axes.optimizers.fixed]
+settings = { disabled_optimizers = "join_order" }
 [runs.quick]
 suites = "all"
-profile = "desktop"
-storage = ["cached"]
-settings = { disabled_optimizers = "" }
+axes = { machine = ["desktop"], backend = ["cached"], optimizers = ["default"] }
 "#,
     )
     .unwrap();
@@ -84,7 +92,7 @@ fn completion_includes_and_selection_roundtrip() {
             .success()
     );
     assert_eq!(fs::read_to_string(&file).unwrap(), completed);
-    let (passed, report) = run(root, "completed", &[]);
+    let (passed, report) = run(root, "completed", &["--axis", "backend=all"]);
     assert!(passed, "{report}");
     assert_eq!(report["cases"].as_array().unwrap().len(), 2);
     assert_eq!(report["provenance"]["cpu_only"], true);
@@ -326,6 +334,16 @@ SELECT sum(i) FROM t;
 }
 
 #[test]
+fn sweep_settings_apply_to_every_named_connection() {
+    let dir = corpus();
+    let manifest = dir.path().join("sqltest.toml");
+    fs::write(&manifest, fs::read_to_string(&manifest).unwrap().replace("settings = { disabled_optimizers = \"\" }", "settings = { disabled_optimizers = \"join_order\" }\nreference_settings = { disabled_optimizers = \"join_order\" }")).unwrap();
+    fs::write(dir.path().join("suites/regressions/settings.slt"), "# sirius: id = \"settings/named\"\n# sirius: snapshot = true\nconnection other\nquery T\nSELECT current_setting('disabled_optimizers');\n----\n\"join_order\"\n").unwrap();
+    let (passed, report) = run(dir.path(), "named-settings", &[]);
+    assert!(passed, "{report}");
+}
+
+#[test]
 fn generated_files_are_isolated_between_workers() {
     let dir = corpus();
     fs::write(dir.path().join("suites/regressions/files.slt"), "statement ok\nCOPY (SELECT 17 AS value) TO '__TEST_DIR__/nested/data.parquet' (FORMAT PARQUET);\n\n# sirius: id = \"files/read\"\n# sirius: snapshot = true\nquery I\nSELECT value FROM read_parquet('__TEST_DIR__/nested/data.parquet');\n----\n17\n").unwrap();
@@ -455,6 +473,39 @@ fn ambiguous_floats_are_a_harness_limitation() {
     assert!(!passed);
     assert_eq!(report["cases"][0]["outcome"], "harness_error");
     assert_eq!(report["cases"][0]["reference_rows"], 2);
+}
+
+#[test]
+fn suite_gpu_requirement_filters_incompatible_profiles() {
+    let dir = corpus();
+    let root = dir.path();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "minimum_gpus = 2\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/query.slt"),
+        "# sirius: id = \"multi/query\"\nquery I\nSELECT 1;\n----\n1\n",
+    )
+    .unwrap();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[profiles.pair]\ngpus = 2\nconfig = \"config.yaml\"\n[axes.machine.pair]\nprofile = \"pair\"\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    let dry_run = |choices: &str| {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--axis", choices, "--root"])
+            .arg(root)
+            .output()
+            .unwrap()
+    };
+    let single = dry_run("machine=desktop");
+    assert_eq!(single.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&single.stderr).contains("no compatible suite/storage/GPU"));
+    let sweep = dry_run("machine=all");
+    assert!(sweep.status.success());
+    let plan: Value = serde_json::from_slice(&sweep.stdout).unwrap();
+    assert_eq!(plan["cases"], 1);
+    assert_eq!(plan["plan"]["targets"][0]["profile"], "pair");
 }
 
 #[test]
@@ -636,7 +687,50 @@ fn correctness_runs_use_fixed_suite_profiles_without_sweeps() {
         .output()
         .unwrap();
     assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("unexpected argument"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("select a sweep run"));
+    let (passed, report) = run(root, "sweep", &["--run", "quick"]);
+    assert!(passed, "{report}");
+    assert!(
+        report["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|c| c["profile"] == "desktop")
+    );
+}
+
+#[test]
+fn sweeps_apply_settings_and_keep_results_distinct() {
+    let dir = corpus();
+    let root = dir.path();
+    let path = root.join("sqltest.toml");
+    fs::write(&path, format!("{}\n[axes.workers.single]\nsettings = {{ threads = 1 }}\n[axes.workers.pair]\nsettings = {{ threads = 2 }}\n", fs::read_to_string(&path).unwrap())).unwrap();
+    fs::write(root.join("suites/regressions/settings.slt"), "# sirius: id = \"settings/optimizer\"\nquery T\nSELECT current_setting('disabled_optimizers');\n----\n").unwrap();
+    let (passed, report) = run(
+        root,
+        "sweep",
+        &["--axis", "optimizers=all", "--axis", "workers=all"],
+    );
+    assert!(!passed);
+    let cases = report["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 4);
+    assert_eq!(cases.iter().filter(|c| c["outcome"] == "match").count(), 2);
+    assert_eq!(
+        cases.iter().filter(|c| c["outcome"] == "mismatch").count(),
+        2
+    );
+    let paths: std::collections::BTreeSet<_> = cases
+        .iter()
+        .map(|c| c["artifacts"].as_str().unwrap())
+        .collect();
+    assert_eq!(paths.len(), 4);
+    for case in cases {
+        let settings = root
+            .join("sweep")
+            .join(case["artifacts"].as_str().unwrap())
+            .join("sirius-settings.sql");
+        assert!(fs::read_to_string(settings).unwrap().contains("threads"));
+    }
 }
 
 #[test]
@@ -653,6 +747,35 @@ fn generated_test_directories_need_no_registration() {
     assert!(passed, "{report}");
     assert_eq!(report["cases"].as_array().unwrap().len(), 1);
     assert_eq!(report["cases"][0]["suite"], "generated");
+}
+
+#[test]
+fn conflicting_sweep_settings_fail_before_execution() {
+    let dir = corpus();
+    fs::write(
+        dir.path().join("suites/regressions/query.slt"),
+        "# sirius: id = \"custom/query\"\nquery I\nSELECT 1;\n----\n",
+    )
+    .unwrap();
+    let path = dir.path().join("sqltest.toml");
+    fs::write(&path, format!("{}\n[axes.first.value]\nsettings = {{ threads = 1 }}\n[axes.second.value]\nsettings = {{ threads = 2 }}\n", fs::read_to_string(&path).unwrap())).unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args([
+            "run",
+            "--dry-run",
+            "--axis",
+            "first=all",
+            "--axis",
+            "second=all",
+            "--root",
+        ])
+        .arg(dir.path())
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("conflicting values for setting threads")
+    );
 }
 
 #[test]
