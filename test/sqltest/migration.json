@@ -6891,6 +6891,126 @@
       "test": "physical_hash_join - MIXED_JOIN large-vs-large join distributes partitions"
     },
     {
+      "file": "suites/operator_mgpu_q11/bisect-1.slt",
+      "id": "operator_mgpu_q11/bisect-1/001",
+      "identity": "859621bf07c2c0679d30a08b1c4ef147613d77538c09a34565f21e06bc103768",
+      "kind": "query",
+      "line": 442,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 1 - simple JOIN+GROUP BY+ORDER BY, cache=none"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/bisect-1.slt",
+      "id": "operator_mgpu_q11/bisect-1/002",
+      "identity": "639547ac567fe6ba01b5b3a8c41298f3904ce97dccf7aac3f8df856fa6b6b60b",
+      "kind": "query",
+      "line": 442,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 1 - simple JOIN+GROUP BY+ORDER BY, cache=none"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/bisect-2.slt",
+      "id": "operator_mgpu_q11/bisect-2/001",
+      "identity": "cf0bb1b1423186f3a1de4abb0b1849d32ae7344d02af8ddb71710afd241cfd6b",
+      "kind": "query",
+      "line": 472,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 2 - simple JOIN+GROUP BY+ORDER BY, cache=table_gpu"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/bisect-2.slt",
+      "id": "operator_mgpu_q11/bisect-2/002",
+      "identity": "edcb40008400ffd892eafc3b3b5c2f5ca6b4ff65471b46af709f3377e5887c32",
+      "kind": "query",
+      "line": 472,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 2 - simple JOIN+GROUP BY+ORDER BY, cache=table_gpu"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/bisect-3.slt",
+      "id": "operator_mgpu_q11/bisect-3/001",
+      "identity": "48c351a571f6ea03f1924273a19e936b7dd49344c92207ba6ce3606b30fafc02",
+      "kind": "query",
+      "line": 515,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 3 - Q11 shape with HAVING subquery, cache=none"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/bisect-3.slt",
+      "id": "operator_mgpu_q11/bisect-3/002",
+      "identity": "42a479e176e8e60c3e04008cad0c88873c159f9d5f5da35ca19d7c421dcd3cda",
+      "kind": "query",
+      "line": 515,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "hash_join bisect 3 - Q11 shape with HAVING subquery, cache=none"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/001",
+      "identity": "e61a7f90a0f26d68ac78897c31f55454e90795d693cb05481ee88ebfe8a3adc7",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/002",
+      "identity": "52597bd4592ca50648a563c6a9b519c3c07094ebfea78f2a0056b0fa7d99871a",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/003",
+      "identity": "ea88f6d5fea6fd3d59ebd02b6b2330111bbb43e6e54e30e0a5df7dca28ef5168",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/004",
+      "identity": "776eae2eda34647bd77d75018b7539b65301f1826654cfcf1c8537865ffed0d2",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/005",
+      "identity": "8169be699bedad31ba7155d88dd83b433d25c05edd71e32cac8af73e8b4b0c01",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
+      "file": "suites/operator_mgpu_q11/scale-up.slt",
+      "id": "operator_mgpu_q11/scale-up/006",
+      "identity": "74e187314097e3a401bbd191cf178b7fe84a37afd65a7a978f31e448ddf81d60",
+      "kind": "query",
+      "line": 645,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_q11",
+      "test": "physical_hash_join - follow-up #17 scale-up: Q11-like BUILD_PROBE with table_gpu cache"
+    },
+    {
       "file": "suites/operator_mgpu_broadcast/replicate.slt",
       "id": "operator_mgpu_broadcast/replicate/001",
       "identity": "f477652c850baa25879678ec92c7c90cc8e375b1d28ad3bf537b861b0622acbc",
