@@ -1,0 +1,38 @@
+# parquet nulls — wholly-NULL column across multiple row groups
+include ../../fixtures/migrated/parquet_nulls/ParquetMultiRowGroupFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:957
+# sirius: id = "parquet_nulls/wholly-null-column-across-multiple-row-groups/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  COUNT(*),
+  COUNT(n_int),
+  SUM(n_int)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:961
+# sirius: id = "parquet_nulls/wholly-null-column-across-multiple-row-groups/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  n_int IS NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:962
+# sirius: id = "parquet_nulls/wholly-null-column-across-multiple-row-groups/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  n_int IS NOT NULL;
+----

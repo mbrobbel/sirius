@@ -1,0 +1,68 @@
+# Original fixture: ParquetMultiRowGroupFixture
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+COPY (  SELECT    CAST(i AS INTEGER) AS id,    CAST(NULL AS INTEGER) AS n_int,    CAST(CASE WHEN i % 7 <> 0 THEN i ELSE NULL END AS INTEGER) AS part  FROM range(1, 8396) AS t(i)  ORDER BY i) TO '__TEST_DIR__/multi_rg.parquet' (FORMAT PARQUET, ROW_GROUP_SIZE 2048);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  list(row_group_num_rows ORDER BY row_group_id) = [2048, 2048, 2048, 2048, 203]
+FROM
+  (
+    SELECT DISTINCT
+      row_group_id,
+      row_group_num_rows
+    FROM
+      parquet_metadata('__TEST_DIR__/multi_rg.parquet')
+  );
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 8395 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 8395)
+FROM
+  parquet_metadata('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  path_in_schema = 'n_int';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 8395 AND count(n_int) = 0
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 8395 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 1199)
+FROM
+  parquet_metadata('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  path_in_schema = 'part';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 8395 AND count(part) = 7196
+FROM
+  read_parquet('__TEST_DIR__/multi_rg.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  list(stats_null_count ORDER BY row_group_id) = [292, 293, 292, 293, 29]
+FROM
+  parquet_metadata('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  path_in_schema = 'part';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  list(stats_null_count ORDER BY row_group_id) = [2048, 2048, 2048, 2048, 203]
+FROM
+  parquet_metadata('__TEST_DIR__/multi_rg.parquet')
+WHERE
+  path_in_schema = 'n_int';
+
+statement ok
+DROP TABLE fixture_check;

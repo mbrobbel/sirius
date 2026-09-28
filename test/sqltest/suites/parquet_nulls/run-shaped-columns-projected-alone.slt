@@ -1,0 +1,22 @@
+# parquet nulls — run-shaped columns projected alone
+include ../../fixtures/migrated/parquet_nulls/ParquetNullRunFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1047
+# sirius: id = "parquet_nulls/run-shaped-columns-projected-alone/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(c_run)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1048
+# sirius: id = "parquet_nulls/run-shaped-columns-projected-alone/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(c_pre)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet');
+----
