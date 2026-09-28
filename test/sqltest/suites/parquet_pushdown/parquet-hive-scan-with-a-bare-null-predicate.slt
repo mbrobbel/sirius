@@ -1,0 +1,26 @@
+# parquet hive scan with a bare null predicate
+include ../../fixtures/migrated/parquet_pushdown/ParquetHiveNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:223
+# sirius: id = "parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NULL;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:224
+# sirius: id = "parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/hive/part=*/*.parquet', hive_partitioning = true)
+WHERE
+  v IS NOT NULL;
+----

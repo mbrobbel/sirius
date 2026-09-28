@@ -1,0 +1,41 @@
+# parquet null predicates return correct rows without pushdown
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:195
+# sirius: id = "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  v
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL AND id <= 60 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:197
+# sirius: id = "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ??? nosort
+SELECT
+  id,
+  v,
+  s
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NOT NULL AND id <= 60 ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:199
+# sirius: id = "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/003"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ??? rowsort
+SELECT
+  COUNT(*),
+  COUNT(v),
+  COUNT(s)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet');
+----

@@ -1,0 +1,27 @@
+# parquet un-splittable OR with a null predicate
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:167
+# sirius: id = "parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NULL OR v > 5000;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:168
+# sirius: id = "parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  v
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  (v IS NULL OR v > 5990) AND id > 5900 ORDER BY id;
+----
