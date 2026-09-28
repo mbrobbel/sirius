@@ -1,0 +1,9 @@
+storage = ["native", "parquet"]
+fixtures = ["tpch"]
+
+[import]
+extensions = ["tpch"]
+schema = ["fixtures/prepare/tpch-schema.sql"]
+expected_queries = 22
+provenance = "DuckDB v1.5.5 tpch_queries()"
+source = { kind = "database", query = "SELECT query FROM tpch_queries() ORDER BY query_nr" }

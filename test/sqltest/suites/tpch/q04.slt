@@ -1,0 +1,17 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/tpch.slt
+
+# sirius: id = "tpch/q04"
+# sirius: tags = ["tpch"]
+
+query ?? nosort
+SELECT
+  o_orderpriority,
+  count(*) AS order_count
+FROM
+  orders
+WHERE
+  o_orderdate >= CAST('1993-07-01' AS DATE) AND o_orderdate < CAST('1993-10-01' AS DATE) AND EXISTS (SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate)
+GROUP BY
+  o_orderpriority ORDER BY o_orderpriority, 1, 2;
+----
