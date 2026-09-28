@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Regression test: `WHERE <col> IS NULL` over a parquet scan used to SIGSEGV in
+// Execution regression test: `WHERE <col> IS NULL` over a parquet scan used to SIGSEGV in
 // cuDF's row-group statistics filter, which cannot evaluate a null predicate
 // against min/max stats. Sirius now pushes only the null-free conjuncts and
 // applies the full predicate post-decode.
@@ -26,6 +26,8 @@
 // 6000 rows at ROW_GROUP_SIZE 2048 is deliberate: DuckDB's writer flushes a
 // whole buffered DataChunk (<= 2048 rows) as one row group, so a smaller table
 // would land in a single row group and barely exercise the stats path.
+
+// Result comparisons live in test/sqltest/suites/parquet_pushdown/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -126,9 +128,9 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet IS NULL predicate does not crash row-group pruning",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE s IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE s IS NULL");
 }
 
 // A mixed conjunct is the case where only PART of the predicate is pushed: the
@@ -143,15 +145,15 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet partially-pushed conjunction still applies the null predicate",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL AND id > 3000");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE id < 100 AND v IS NULL");
-  compare_gpu_vs_cpu_ordered("SELECT id, v FROM " + scan_ +
-                             " WHERE v IS NULL AND id > 5940 ORDER BY id");
-  compare_gpu_vs_cpu_ordered("SELECT id, v, s FROM " + scan_ +
-                             " WHERE s IS NULL AND id BETWEEN 40 AND 80 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL AND id > 3000");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE id < 100 AND v IS NULL");
+  require_gpu_execution("SELECT id, v FROM " + scan_ +
+                        " WHERE v IS NULL AND id > 5940 ORDER BY id");
+  require_gpu_execution("SELECT id, v, s FROM " + scan_ +
+                        " WHERE s IS NULL AND id BETWEEN 40 AND 80 ORDER BY id");
   // Two null conjuncts plus a range: everything but the range is dropped.
-  compare_gpu_vs_cpu_ordered("SELECT id FROM " + scan_ +
-                             " WHERE v IS NULL AND s IS NULL AND id < 100 ORDER BY id");
+  require_gpu_execution("SELECT id FROM " + scan_ +
+                        " WHERE v IS NULL AND s IS NULL AND id < 100 ORDER BY id");
 }
 
 // Both sides reference the SAME column on purpose: TableFilterSet is keyed by
@@ -164,9 +166,9 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet un-splittable OR with a null predicate",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL OR v > 5000");
-  compare_gpu_vs_cpu_ordered("SELECT id, v FROM " + scan_ +
-                             " WHERE (v IS NULL OR v > 5990) AND id > 5900 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL OR v > 5000");
+  require_gpu_execution("SELECT id, v FROM " + scan_ +
+                        " WHERE (v IS NULL OR v > 5990) AND id > 5900 ORDER BY id");
 }
 
 // A nested IS NOT NULL survives convert_table_filters_to_expression (which only
@@ -181,9 +183,9 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet nested IS NOT NULL does not crash",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL AND v > 3000");
-  compare_gpu_vs_cpu_ordered("SELECT id, v FROM " + scan_ +
-                             " WHERE v IS NOT NULL AND v < 60 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL AND v > 3000");
+  require_gpu_execution("SELECT id, v FROM " + scan_ +
+                        " WHERE v IS NOT NULL AND v < 60 ORDER BY id");
 }
 
 // Results, not just survival: the rows returned must still be correct now that
@@ -192,11 +194,10 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet null predicates return correct rows without pushdown",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu_ordered("SELECT id, v FROM " + scan_ +
-                             " WHERE v IS NULL AND id <= 60 ORDER BY id");
-  compare_gpu_vs_cpu_ordered("SELECT id, v, s FROM " + scan_ +
-                             " WHERE v IS NOT NULL AND id <= 60 ORDER BY id");
-  compare_gpu_vs_cpu("SELECT COUNT(*), COUNT(v), COUNT(s) FROM " + scan_);
+  require_gpu_execution("SELECT id, v FROM " + scan_ + " WHERE v IS NULL AND id <= 60 ORDER BY id");
+  require_gpu_execution("SELECT id, v, s FROM " + scan_ +
+                        " WHERE v IS NOT NULL AND id <= 60 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*), COUNT(v), COUNT(s) FROM " + scan_);
 }
 
 // ===========================================================================
@@ -209,9 +210,9 @@ TEST_CASE_METHOD(ParquetHiveNullPredicateFixture,
                  "parquet hive scan applies the null predicate after a partial push",
                  "[integration][gpu_execution][scan][parquet][pushdown][hive]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL AND id > 3000");
-  compare_gpu_vs_cpu_ordered("SELECT id, v FROM " + scan_ +
-                             " WHERE v IS NULL AND id > 5940 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL AND id > 3000");
+  require_gpu_execution("SELECT id, v FROM " + scan_ +
+                        " WHERE v IS NULL AND id > 5940 ORDER BY id");
 }
 
 // Bare null predicate on a partitioned scan: nothing survives the split, so
@@ -220,8 +221,8 @@ TEST_CASE_METHOD(ParquetHiveNullPredicateFixture,
                  "parquet hive scan with a bare null predicate",
                  "[integration][gpu_execution][scan][parquet][pushdown][hive]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NULL");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IS NOT NULL");
 }
 
 // The partition column participates alongside the null predicate: partition
@@ -230,9 +231,9 @@ TEST_CASE_METHOD(ParquetHiveNullPredicateFixture,
                  "parquet hive scan combining partition column and null predicate",
                  "[integration][gpu_execution][scan][parquet][pushdown][hive]")
 {
-  compare_gpu_vs_cpu("SELECT part, COUNT(*) FROM " + scan_ + " WHERE v IS NULL GROUP BY part");
-  compare_gpu_vs_cpu_ordered("SELECT id, v, part FROM " + scan_ +
-                             " WHERE v IS NULL AND part = 2 AND id > 5900 ORDER BY id");
+  require_gpu_execution("SELECT part, COUNT(*) FROM " + scan_ + " WHERE v IS NULL GROUP BY part");
+  require_gpu_execution("SELECT id, v, part FROM " + scan_ +
+                        " WHERE v IS NULL AND part = 2 AND id > 5900 ORDER BY id");
 }
 
 // ===========================================================================
@@ -250,10 +251,9 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet bare boolean column predicate does not crash",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE flag");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE flag_dense");
-  compare_gpu_vs_cpu_ordered("SELECT id, flag FROM " + scan_ +
-                             " WHERE flag AND id > 5900 ORDER BY id");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE flag");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE flag_dense");
+  require_gpu_execution("SELECT id, flag FROM " + scan_ + " WHERE flag AND id > 5900 ORDER BY id");
 }
 
 // Shapes that are safe and must KEEP their pushdown -- a bare reference nested
@@ -263,8 +263,8 @@ TEST_CASE_METHOD(ParquetNullPredicateFixture,
                  "parquet predicate shapes that remain pushable",
                  "[integration][gpu_execution][scan][parquet][pushdown]")
 {
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE flag AND v > 5000");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE NOT flag");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v IN (1, 2, 3)");
-  compare_gpu_vs_cpu("SELECT COUNT(*) FROM " + scan_ + " WHERE v BETWEEN 10 AND 20");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE flag AND v > 5000");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE NOT flag");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v IN (1, 2, 3)");
+  require_gpu_execution("SELECT COUNT(*) FROM " + scan_ + " WHERE v BETWEEN 10 AND 20");
 }
