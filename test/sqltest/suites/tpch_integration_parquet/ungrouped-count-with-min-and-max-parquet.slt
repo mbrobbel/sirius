@@ -1,0 +1,14 @@
+# gpu_execution - ungrouped count(*) with min and max parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4888
+# sirius: id = "tpch_integration_parquet/ungrouped-count-with-min-and-max-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "gpu_values"]
+query ??? rowsort
+SELECT
+  count(*),
+  min(l_orderkey),
+  max(l_orderkey)
+FROM
+  lineitem;
+----
