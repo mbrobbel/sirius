@@ -205,7 +205,7 @@ TEST_CASE_METHOD(PinMvccUpdateFixture,
 
   run_ok("CHECKPOINT;");
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
-  compare_gpu_vs_cpu("SELECT v FROM t;");
+  require_gpu_execution("SELECT v FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
