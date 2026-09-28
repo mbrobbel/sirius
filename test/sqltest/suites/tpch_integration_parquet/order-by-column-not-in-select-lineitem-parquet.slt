@@ -1,0 +1,12 @@
+# gpu_execution - order by column not in select lineitem parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2932
+# sirius: id = "tpch_integration_parquet/order-by-column-not-in-select-lineitem-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "order_by", "order_by_proj"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem ORDER BY l_linenumber;
+----

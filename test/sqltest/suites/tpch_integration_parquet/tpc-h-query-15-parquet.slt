@@ -1,0 +1,30 @@
+# gpu_execution - TPC-H Query 15 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4352
+# sirius: id = "tpch_integration_parquet/tpc-h-query-15-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ????? rowsort
+WITH revenue_view AS (
+  SELECT
+    l_suppkey AS supplier_no,
+    sum(l_extendedprice * (1 - l_discount)) AS total_revenue
+  FROM
+    lineitem
+  WHERE
+    l_shipdate >= DATE '1993-05-01' AND l_shipdate < DATE '1993-08-01'
+  GROUP BY
+    l_suppkey
+)
+SELECT
+  s.s_suppkey,
+  s.s_name,
+  s.s_address,
+  s.s_phone,
+  r.total_revenue
+FROM
+  supplier s,
+  revenue_view r
+WHERE
+  s.s_suppkey = r.supplier_no AND r.total_revenue = (SELECT max(total_revenue) FROM revenue_view) ORDER BY s.s_suppkey;
+----

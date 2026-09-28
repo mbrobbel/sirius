@@ -1,0 +1,22 @@
+# gpu_execution - pin_table gpu tier filter drops pure-filter column
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+onlyif sirius
+statement ok
+CALL pin_table('__FIXTURE_ROOT__/tpch-parquet-original/lineitem.parquet', tier = 'gpu', name = 'lineitem');
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4930
+# sirius: id = "tpch_integration_parquet/pin-table-gpu-tier-filter-drops-pure-filter-column/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem
+WHERE
+  l_linenumber = 1 AND l_orderkey < 1000;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('lineitem');

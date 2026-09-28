@@ -1,0 +1,26 @@
+# gpu_execution - TPC-H Query 1 parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4130
+# sirius: id = "tpch_integration_parquet/tpc-h-query-1-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+# sirius: tolerances = { "6" = { absolute = 1e-05, relative = 0.0 }, "7" = { absolute = 1e-05, relative = 0.0 }, "8" = { absolute = 1e-05, relative = 0.0 } }
+query ?????????? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  sum(l_quantity) AS sum_qty,
+  sum(l_extendedprice) AS sum_base_price,
+  sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,
+  sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,
+  avg(l_quantity) AS avg_qty,
+  avg(l_extendedprice) AS avg_price,
+  avg(l_discount) AS avg_disc,
+  count(*) AS count_order
+FROM
+  lineitem
+WHERE
+  l_shipdate <= DATE '1995-08-19'
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----

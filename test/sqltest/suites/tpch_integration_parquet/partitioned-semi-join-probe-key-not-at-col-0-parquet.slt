@@ -1,0 +1,17 @@
+# gpu_execution - partitioned semi join (probe key not at col 0) parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 1;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2141
+# sirius: id = "tpch_integration_parquet/partitioned-semi-join-probe-key-not-at-col-0-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  n.n_nationkey
+FROM
+  nation n
+  SEMI JOIN region r ON n.n_regionkey = r.r_regionkey;
+----

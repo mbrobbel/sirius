@@ -1,0 +1,13 @@
+# gpu_execution - string concat with nested expression parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3144
+# sirius: id = "tpch_integration_parquet/string-concat-with-nested-expression-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "string_concat"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  SUBSTRING(l_comment, 1, 5) || '...'
+FROM
+  lineitem ORDER BY l_orderkey, l_linenumber LIMIT 100;
+----
