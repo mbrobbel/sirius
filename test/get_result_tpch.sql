@@ -34,7 +34,7 @@ group by
 order by
     l_returnflag,
     l_linestatus
-) TO 'test/answers/tpch/q1.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q01.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -80,7 +80,7 @@ order by
   n.n_name,
   s.s_name,
   p.p_partkey
-) TO 'test/answers/tpch/q2.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q02.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -105,7 +105,7 @@ group by
 order by
   revenue desc,
   o.o_orderdate
-) TO 'test/answers/tpch/q3.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q03.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -130,7 +130,7 @@ group by
   o.o_orderpriority
 order by
   o.o_orderpriority
-) TO 'test/answers/tpch/q4.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q04.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -157,7 +157,7 @@ group by
   n.n_name
 order by
   revenue desc
-) TO 'test/answers/tpch/q5.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q05.csv' (HEADER, DELIMITER '|');
 
 COPY(
 select
@@ -169,7 +169,7 @@ where
   and l_shipdate < date '1997-01-01' + interval '1' year
   and l_discount between 0.03 - 0.01 and 0.03 + 0.01
   and l_quantity < 24
-) TO 'test/answers/tpch/q6.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q06.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -211,7 +211,7 @@ order by
   supp_nation,
   cust_nation,
   l_year
-) TO 'test/answers/tpch/q7.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q07.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -251,7 +251,7 @@ group by
   o_year
 order by
   o_year
-) TO 'test/answers/tpch/q8.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q08.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -286,7 +286,7 @@ group by
 order by
   nation,
   o_year desc
-) TO 'test/answers/tpch/q9.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q09.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -321,7 +321,7 @@ group by
 order by
   c.c_custkey,
   revenue desc
-) TO 'test/answers/tpch/q10.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q10.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -352,7 +352,7 @@ group by
 order by
   value desc,
   ps.ps_partkey
-) TO 'test/answers/tpch/q11.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q11.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -383,7 +383,7 @@ group by
   l.l_shipmode
 order by
   l.l_shipmode
-) TO 'test/answers/tpch/q12.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q12.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -407,7 +407,7 @@ group by
 order by
   custdist desc,
   c_count desc
-) TO 'test/answers/tpch/q13.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q13.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -423,7 +423,7 @@ where
   l.l_partkey = p.p_partkey
   and l.l_shipdate >= date '1994-08-01'
   and l.l_shipdate < date '1994-08-01' + interval '1' month
-) TO 'test/answers/tpch/q14.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q14.csv' (HEADER, DELIMITER '|');
 
 COPY (
 with revenue_view as (
@@ -458,7 +458,7 @@ where
   )
 order by
   s.s_suppkey
-) TO 'test/answers/tpch/q15.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q15.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -491,7 +491,7 @@ order by
   p.p_brand,
   p.p_type,
   p.p_size
-) TO 'test/answers/tpch/q16.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q16.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -511,7 +511,7 @@ where
     where
       l2.l_partkey = p.p_partkey
   )
-) TO 'test/answers/tpch/q17.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q17.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -547,7 +547,7 @@ order by
   o.o_totalprice desc,
   o.o_orderdate,
   o.o_orderkey
-) TO 'test/answers/tpch/q18.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q18.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -585,7 +585,7 @@ where
     and l.l_shipmode in ('AIR', 'AIR REG')
     and l.l_shipinstruct = 'DELIVER IN PERSON'
   )
-) TO 'test/answers/tpch/q19.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q19.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -625,7 +625,7 @@ where
   and n.n_name = 'KENYA'
 order by
   s.s_name
-) TO 'test/answers/tpch/q20.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q20.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -667,7 +667,7 @@ group by
 order by
   numwait desc,
   s.s_name
-) TO 'test/answers/tpch/q21.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q21.csv' (HEADER, DELIMITER '|');
 
 COPY (
 select
@@ -707,4 +707,4 @@ group by
   cntrycode
 order by
   cntrycode
-) TO 'test/answers/tpch/q22.csv' (HEADER, DELIMITER '|');
+) TO 'test/sqltest/fixtures/goldens/tpch/q22.csv' (HEADER, DELIMITER '|');
