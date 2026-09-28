@@ -1,0 +1,46 @@
+# gpu_execution iceberg - unpinned scan declines
+
+statement ok
+LOAD avro;
+
+statement ok
+LOAD iceberg;
+
+statement ok
+SET unsafe_enable_version_guessing = true;
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:1138
+# sirius: id = "iceberg/unpinned-scan-declines/001"
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+# sirius: execution = "allow_fallback"
+query ?? rowsort
+SELECT
+  fruit,
+  count
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_v1') ORDER BY count;
+----
+"apple"	1
+"banana"	2
+"cherry"	3
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:1138
+# sirius: id = "iceberg/unpinned-scan-declines/002"
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_v1', snapshot_from_id = 1000000000000000001);
+----
+3
+
+statement ok
+DROP TABLE fixture_check;

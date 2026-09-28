@@ -1,0 +1,46 @@
+# gpu_execution iceberg - conformance dropped-and-re-added column reads NULL
+
+statement ok
+LOAD avro;
+
+statement ok
+LOAD iceberg;
+
+statement ok
+SET GLOBAL unsafe_enable_version_guessing = true;
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:1028
+# sirius: id = "iceberg/conformance-dropped-and-re-added-column-reads-null/001"
+# sirius: timeout = 90
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+# sirius: execution = "allow_fallback"
+query ??? rowsort
+SELECT
+  id,
+  x,
+  y
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_conformance/drop_readd/conf/drop_readd') ORDER BY id;
+----
+1	10	NULL
+2	20	NULL
+
+# sirius: id = "iceberg/conformance-dropped-and-re-added-column-reads-null/liveness"
+# sirius: tags = ["integration", "iceberg", "liveness"]
+# sirius: snapshot = true
+# sirius: execution = "allow_fallback"
+# sirius: timeout = 90
+query T
+SELECT
+  'LIVENESS_OK' AS probe;
+----
+"LIVENESS_OK"
+
+statement ok
+DROP TABLE fixture_check;
