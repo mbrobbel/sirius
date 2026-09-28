@@ -6811,6 +6811,26 @@
       "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
     },
     {
+      "file": "suites/operator_mgpu_mixed_join/mixed-join.slt",
+      "id": "operator_mgpu_mixed_join/mixed-join/001",
+      "identity": "f20724222c82add295d95cae59ed737c7031f9372d43afb31b4172560c7f2992",
+      "kind": "query",
+      "line": 257,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_mixed_join",
+      "test": "physical_hash_join - MIXED_JOIN large-vs-large join distributes partitions"
+    },
+    {
+      "file": "suites/operator_mgpu_mixed_join/mixed-join.slt",
+      "id": "operator_mgpu_mixed_join/mixed-join/002",
+      "identity": "aa90503e6e6fa66f3c793153704cb8cfdd753ac851480d6014dd6b9183c5d2b4",
+      "kind": "query",
+      "line": 257,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_mixed_join",
+      "test": "physical_hash_join - MIXED_JOIN large-vs-large join distributes partitions"
+    },
+    {
       "file": "suites/operator_mgpu_broadcast/replicate.slt",
       "id": "operator_mgpu_broadcast/replicate/001",
       "identity": "f477652c850baa25879678ec92c7c90cc8e375b1d28ad3bf537b861b0622acbc",

@@ -1,0 +1,4 @@
+storage = ["parquet"]
+profile = "operator-mgpu-mixed-join"
+checkpoint = "explicit"
+scratch_directories = ["left", "right"]
