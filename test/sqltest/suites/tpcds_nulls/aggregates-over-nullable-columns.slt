@@ -1,0 +1,88 @@
+# gpu_execution tpcds aggregates over nullable columns
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:130
+# sirius: id = "tpcds_nulls/aggregates-over-nullable-columns/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ???? rowsort
+SELECT
+  count(*),
+  count(ss_addr_sk),
+  count(ss_customer_sk),
+  count(ss_promo_sk)
+FROM
+  store_sales;
+----
+28810	27551	27613	27556
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:136
+# sirius: id = "tpcds_nulls/aggregates-over-nullable-columns/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ???? rowsort
+SELECT
+  sum(ss_quantity),
+  avg(ss_quantity),
+  min(ss_sales_price),
+  max(ss_sales_price)
+FROM
+  store_sales;
+----
+1397502	50.76840919824173	0.00	188.67
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:139
+# sirius: id = "tpcds_nulls/aggregates-over-nullable-columns/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  count(ss_net_profit),
+  min(ss_net_profit),
+  max(ss_net_profit)
+FROM
+  store_sales;
+----
+27550	-9538.98	7987.00
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:142
+# sirius: id = "tpcds_nulls/aggregates-over-nullable-columns/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ????? rowsort
+SELECT
+  ss_store_sk,
+  count(*),
+  sum(ss_quantity),
+  min(ss_sales_price),
+  max(ss_sales_price)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk;
+----
+1	27568	1367718	0.00	188.67
+NULL	1242	29784	0.00	177.37
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:146
+# sirius: id = "tpcds_nulls/aggregates-over-nullable-columns/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  ss_store_sk,
+  ss_promo_sk,
+  count(*)
+FROM
+  store_sales
+GROUP BY
+  ss_store_sk, ss_promo_sk;
+----
+1	1	8988
+1	2	8935
+1	3	9037
+1	NULL	608
+NULL	1	209
+NULL	2	188
+NULL	3	199
+NULL	NULL	646

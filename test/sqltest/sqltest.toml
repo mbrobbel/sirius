@@ -88,6 +88,16 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 suites = "all"
 axes = { gpu = "all", storage = "all", optimizers = "all" }
 
+[sources.tpcds-original]
+kind = "file"
+path = "../cpp/integration/data/duckdb/tpcds.duckdb"
+sha256 = "a3e1c8de48fce26e6fd795237ba5bd7db48240dd5c93936d012e2778fedb9552"
+
+[fixtures.tpcds-original]
+sources = ["tpcds-original"]
+sql = ["fixtures/prepare/tpcds-original.sql"]
+tables = ["call_center", "catalog_page", "catalog_returns", "catalog_sales", "customer", "customer_address", "customer_demographics", "date_dim", "household_demographics", "income_band", "inventory", "item", "promotion", "reason", "ship_mode", "store", "store_returns", "store_sales", "time_dim", "warehouse", "web_page", "web_returns", "web_sales", "web_site"]
+
 [sources.tpch-original]
 kind = "file"
 path = "../cpp/integration/data/duckdb/integration.duckdb"

@@ -1,0 +1,66 @@
+# gpu_execution tpcds NULL propagation through expressions
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:256
+# sirius: id = "tpcds_nulls/null-propagation-through-expressions/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(ss_ext_sales_price - ss_ext_discount_amt)
+FROM
+  store_sales;
+----
+28810	26957
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:259
+# sirius: id = "tpcds_nulls/null-propagation-through-expressions/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  sum(coalesce(ss_addr_sk, -1))
+FROM
+  store_sales;
+----
+6879091
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:261
+# sirius: id = "tpcds_nulls/null-propagation-through-expressions/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(nullif(ss_promo_sk, 1))
+FROM
+  store_sales;
+----
+28810	18359
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:263
+# sirius: id = "tpcds_nulls/null-propagation-through-expressions/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  count(*),
+  count(CAST(ss_quantity AS BIGINT)),
+  sum(CAST(ss_quantity AS BIGINT))
+FROM
+  store_sales;
+----
+28810	27527	1397502
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:266
+# sirius: id = "tpcds_nulls/null-propagation-through-expressions/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  sum(CASE WHEN ss_addr_sk IS NULL THEN 1 ELSE 0 END) AS null_addrs
+FROM
+  store_sales;
+----
+1259

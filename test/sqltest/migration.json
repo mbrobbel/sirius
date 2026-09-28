@@ -1241,6 +1241,456 @@
       "test": "select sum(C) from S"
     },
     {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/001",
+      "identity": "836ffaf956619b8c77fa1bfe024bfa3f3b2de8bc52b614296120801869664a76",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/002",
+      "identity": "49a4c3328a2e987d5c66c040279d4a342cfc1ad435595ae5e7e71e5066a93ecf",
+      "kind": "query",
+      "line": 113,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/003",
+      "identity": "fd0ed5a5323a371d0ecf125422ca3905c46947f2527797a28978f5b996002cef",
+      "kind": "query",
+      "line": 114,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/004",
+      "identity": "06be404278ec6fcccd81907720a8811ac7f5a76a5f17d3f76a269f4b2e9f561c",
+      "kind": "query",
+      "line": 117,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/005",
+      "identity": "130a87c5b8233b3c7b5411cb06a0a16abf2f05da34b328f9eb22b36d03da45af",
+      "kind": "query",
+      "line": 118,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/006",
+      "identity": "2b2b7475357cbd0076b1437e1ba0bde9fef2c4fec70a57ec438dddfd3d4b1d1f",
+      "kind": "query",
+      "line": 120,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/007",
+      "identity": "2f752b1e223cb2f1caddb31b583363852bd06c793d1762757a86ad9559b9c60c",
+      "kind": "query",
+      "line": 122,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-filters-and-three-valued-logic.slt",
+      "id": "tpcds_nulls/null-filters-and-three-valued-logic/008",
+      "identity": "a99e66e92df6a6e926cd44cb382a2ceb0597f2f4a6199d79b0cdd50b5eb6c7b6",
+      "kind": "query",
+      "line": 123,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL filters and three-valued logic"
+    },
+    {
+      "file": "suites/tpcds_nulls/aggregates-over-nullable-columns.slt",
+      "id": "tpcds_nulls/aggregates-over-nullable-columns/001",
+      "identity": "152ba70894c40a02c375740076dd0a1e0a88166bbeaf9c7cc376e0d02561ba28",
+      "kind": "query",
+      "line": 130,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds aggregates over nullable columns"
+    },
+    {
+      "file": "suites/tpcds_nulls/aggregates-over-nullable-columns.slt",
+      "id": "tpcds_nulls/aggregates-over-nullable-columns/002",
+      "identity": "696566cf59d76b8a9bf8553fe43e43c7402ab7c8f98889384d4ad5dceaec88f5",
+      "kind": "query",
+      "line": 136,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds aggregates over nullable columns"
+    },
+    {
+      "file": "suites/tpcds_nulls/aggregates-over-nullable-columns.slt",
+      "id": "tpcds_nulls/aggregates-over-nullable-columns/003",
+      "identity": "4b9da0b30b6d856e97c51cb194bed023fb3017ba595ebcadd82f81b803498204",
+      "kind": "query",
+      "line": 139,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds aggregates over nullable columns"
+    },
+    {
+      "file": "suites/tpcds_nulls/aggregates-over-nullable-columns.slt",
+      "id": "tpcds_nulls/aggregates-over-nullable-columns/004",
+      "identity": "53d2ef6b24b01116c6184614b0eea96932503ab5e99760d4d7b3b96c87ee59c3",
+      "kind": "query",
+      "line": 142,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds aggregates over nullable columns"
+    },
+    {
+      "file": "suites/tpcds_nulls/aggregates-over-nullable-columns.slt",
+      "id": "tpcds_nulls/aggregates-over-nullable-columns/005",
+      "identity": "b31b25705441d81a53007cbfdb2f30fb756a8997f3d6257d73700bc8fac325c9",
+      "kind": "query",
+      "line": 146,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds aggregates over nullable columns"
+    },
+    {
+      "file": "suites/tpcds_nulls/float-aggregates-over-nullable-measures-approx.slt",
+      "id": "tpcds_nulls/float-aggregates-over-nullable-measures-approx/001",
+      "identity": "85292a39020298a41ed84ee96afa8de5c6cb52af3fe46ec258e3804f7f5554d7",
+      "kind": "query",
+      "line": 157,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds float aggregates over nullable measures (approx)"
+    },
+    {
+      "file": "suites/tpcds_nulls/float-aggregates-over-nullable-measures-approx.slt",
+      "id": "tpcds_nulls/float-aggregates-over-nullable-measures-approx/002",
+      "identity": "c4cc37faeacc55eb28da41f9837729531ead18bb57a725498c7d0b1c62c501bc",
+      "kind": "query",
+      "line": 159,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds float aggregates over nullable measures (approx)"
+    },
+    {
+      "file": "suites/tpcds_nulls/float-aggregates-over-nullable-measures-approx.slt",
+      "id": "tpcds_nulls/float-aggregates-over-nullable-measures-approx/003",
+      "identity": "c50c89dd4f4462e2adfe723b727e77ba459539452f5367e36b0442f40390e19d",
+      "kind": "query",
+      "line": 162,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds float aggregates over nullable measures (approx)"
+    },
+    {
+      "file": "suites/tpcds_nulls/float-aggregates-over-nullable-measures-approx.slt",
+      "id": "tpcds_nulls/float-aggregates-over-nullable-measures-approx/004",
+      "identity": "7556f442f99b3e3413f1d883cd08904bb042530b5f4cf6a7edc869f0815b28e8",
+      "kind": "query",
+      "line": 164,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds float aggregates over nullable measures (approx)"
+    },
+    {
+      "file": "suites/tpcds_nulls/float-aggregates-over-nullable-measures-approx.slt",
+      "id": "tpcds_nulls/float-aggregates-over-nullable-measures-approx/005",
+      "identity": "bf42065d123044b6bdc513fd210d9d69dedc4eec0051373cf78026b975bf10fa",
+      "kind": "query",
+      "line": 169,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds float aggregates over nullable measures (approx)"
+    },
+    {
+      "file": "suites/tpcds_nulls/nullable-columns-across-web-sales-catalog-sales.slt",
+      "id": "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/001",
+      "identity": "65bb53c91676e71615204efc994a97a97591bd5af076cb41a18c9c9a43f56aa1",
+      "kind": "query",
+      "line": 177,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds nullable columns across web_sales / catalog_sales"
+    },
+    {
+      "file": "suites/tpcds_nulls/nullable-columns-across-web-sales-catalog-sales.slt",
+      "id": "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/002",
+      "identity": "64eb472897e658775e174ce02d50cf6128d423f12f51141b734be129cc985f23",
+      "kind": "query",
+      "line": 179,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds nullable columns across web_sales / catalog_sales"
+    },
+    {
+      "file": "suites/tpcds_nulls/nullable-columns-across-web-sales-catalog-sales.slt",
+      "id": "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/003",
+      "identity": "53968cca49d09b04064ef77fe64e17e5b5178fecb52c36ba44d6da64cabe7ddc",
+      "kind": "query",
+      "line": 180,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds nullable columns across web_sales / catalog_sales"
+    },
+    {
+      "file": "suites/tpcds_nulls/nullable-columns-across-web-sales-catalog-sales.slt",
+      "id": "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/004",
+      "identity": "c9a7b5ccc257afc3f4600c05a7ad0d3e6c71b40234eca1159c4b403715417645",
+      "kind": "query",
+      "line": 182,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds nullable columns across web_sales / catalog_sales"
+    },
+    {
+      "file": "suites/tpcds_nulls/nullable-columns-across-web-sales-catalog-sales.slt",
+      "id": "tpcds_nulls/nullable-columns-across-web-sales-catalog-sales/005",
+      "identity": "8eca2e6ccc9a3ae1c4828247d1a3eeaf57a0f5b71dd3c3b1aaaaf3fb0c548aa4",
+      "kind": "query",
+      "line": 183,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds nullable columns across web_sales / catalog_sales"
+    },
+    {
+      "file": "suites/tpcds_nulls/left-join-null-pads-unmatched-rows.slt",
+      "id": "tpcds_nulls/left-join-null-pads-unmatched-rows/001",
+      "identity": "764d89f621b658999d2606e8765a239843383edf93460f5560338270563c7742",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows"
+    },
+    {
+      "file": "suites/tpcds_nulls/left-join-null-pads-unmatched-rows.slt",
+      "id": "tpcds_nulls/left-join-null-pads-unmatched-rows/002",
+      "identity": "39e8431c959b218212a52005b9798bfb01561f852d6d299c25ea4b47d492a3da",
+      "kind": "query",
+      "line": 195,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows"
+    },
+    {
+      "file": "suites/tpcds_nulls/left-join-null-pads-unmatched-rows.slt",
+      "id": "tpcds_nulls/left-join-null-pads-unmatched-rows/003",
+      "identity": "6c4894d02080ac4c270ccab9ea5ea095f6db4b4f0f6aa55c3e48a919507edac1",
+      "kind": "query",
+      "line": 199,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows"
+    },
+    {
+      "file": "suites/tpcds_nulls/left-join-null-pads-unmatched-rows.slt",
+      "id": "tpcds_nulls/left-join-null-pads-unmatched-rows/004",
+      "identity": "230e1222bfff63a20006c3309cea414cfc58782b9d8bc5f9628ee985c9b8081b",
+      "kind": "query",
+      "line": 204,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows"
+    },
+    {
+      "file": "suites/tpcds_nulls/left-join-null-pads-unmatched-rows.slt",
+      "id": "tpcds_nulls/left-join-null-pads-unmatched-rows/005",
+      "identity": "25317eb1e5e541f7bd8e5f5c5ae29433cc2e29b35b997811f09bb25ce7ecaa98",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows"
+    },
+    {
+      "file": "suites/tpcds_nulls/star-joins-with-nullable-filters-aggregates.slt",
+      "id": "tpcds_nulls/star-joins-with-nullable-filters-aggregates/001",
+      "identity": "34ff8bfa09b861fe6e0a9f52e45a66f9c7ff5ec460cf069fa12846d432261503",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds star joins with nullable filters/aggregates"
+    },
+    {
+      "file": "suites/tpcds_nulls/star-joins-with-nullable-filters-aggregates.slt",
+      "id": "tpcds_nulls/star-joins-with-nullable-filters-aggregates/002",
+      "identity": "47659d98240fa363fe1e19f0cf4e4d14ca0f05917a0eff83596c2973c50224e7",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds star joins with nullable filters/aggregates"
+    },
+    {
+      "file": "suites/tpcds_nulls/star-joins-with-nullable-filters-aggregates.slt",
+      "id": "tpcds_nulls/star-joins-with-nullable-filters-aggregates/003",
+      "identity": "e6205e138b8f3e15aa429ee02e6b261ccdf661998291ac957ebbcfdbdea67d15",
+      "kind": "query",
+      "line": 227,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds star joins with nullable filters/aggregates"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
+      "id": "tpcds_nulls/null-propagation-through-expressions/001",
+      "identity": "6faf9be79a0e2862cf71f9ad4640cd7e401790cb6b51c5b946c9af3c7112cd0e",
+      "kind": "query",
+      "line": 256,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL propagation through expressions"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
+      "id": "tpcds_nulls/null-propagation-through-expressions/002",
+      "identity": "bf30636082340af9ef2b3852975f0ec933ecec386d259b9193c24a215ed7dd05",
+      "kind": "query",
+      "line": 259,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL propagation through expressions"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
+      "id": "tpcds_nulls/null-propagation-through-expressions/003",
+      "identity": "fb2ee4147415a3ca121c26e4d011954e550225227ce7efdedc0a8a6793614c98",
+      "kind": "query",
+      "line": 261,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL propagation through expressions"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
+      "id": "tpcds_nulls/null-propagation-through-expressions/004",
+      "identity": "0da73b40091acefd3e14ea0e99cb22d96fd83c5d22127014ea30129b8e0374a9",
+      "kind": "query",
+      "line": 263,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL propagation through expressions"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-propagation-through-expressions.slt",
+      "id": "tpcds_nulls/null-propagation-through-expressions/005",
+      "identity": "9d17ea656802b0d8a4aad16a0ce876d6026244ee78040f1dde8e198db9f29215",
+      "kind": "query",
+      "line": 266,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds NULL propagation through expressions"
+    },
+    {
+      "file": "suites/tpcds_nulls/order-by-nulls-first-last-and-top-n.slt",
+      "id": "tpcds_nulls/order-by-nulls-first-last-and-top-n/001",
+      "identity": "c1a72b883f6dc47ac65d23c082341f2f9dd7eeb24176f0b0b5a148c04f695797",
+      "kind": "query",
+      "line": 277,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N"
+    },
+    {
+      "file": "suites/tpcds_nulls/order-by-nulls-first-last-and-top-n.slt",
+      "id": "tpcds_nulls/order-by-nulls-first-last-and-top-n/002",
+      "identity": "f7ad51ab48f6c814b02f86588dc4dd1307235fcd501d1664b5a2ee88565a0b38",
+      "kind": "query",
+      "line": 280,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N"
+    },
+    {
+      "file": "suites/tpcds_nulls/order-by-nulls-first-last-and-top-n.slt",
+      "id": "tpcds_nulls/order-by-nulls-first-last-and-top-n/003",
+      "identity": "9038d90603acf29fac4a5f9a3e400c21758c9e906dbb7f8e5696ee36d8799e47",
+      "kind": "query",
+      "line": 283,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N"
+    },
+    {
+      "file": "suites/tpcds_nulls/order-by-nulls-first-last-and-top-n.slt",
+      "id": "tpcds_nulls/order-by-nulls-first-last-and-top-n/004",
+      "identity": "237390bff964c501e2bf66eaf78605ce287b64c7f528cd5f1e80699e65cafd52",
+      "kind": "query",
+      "line": 287,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds ORDER BY NULLS FIRST/LAST and top-N"
+    },
+    {
+      "file": "suites/tpcds_nulls/null-safe-join-is-not-distinct-from.slt",
+      "id": "tpcds_nulls/null-safe-join-is-not-distinct-from/001",
+      "identity": "2d224294c6d3150c5d929076415bbd704dd7522ec172e5a34285962fac97dbb3",
+      "kind": "query",
+      "line": 317,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds null-safe join (IS NOT DISTINCT FROM)"
+    },
+    {
+      "file": "suites/tpcds_nulls/date-functions-and-returns-tables-with-nulls.slt",
+      "id": "tpcds_nulls/date-functions-and-returns-tables-with-nulls/001",
+      "identity": "ca041596553707388cc71e30cf64f4e57ac1c4a73e30420315e9620567e1b16b",
+      "kind": "query",
+      "line": 326,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds date functions and returns tables with NULLs"
+    },
+    {
+      "file": "suites/tpcds_nulls/date-functions-and-returns-tables-with-nulls.slt",
+      "id": "tpcds_nulls/date-functions-and-returns-tables-with-nulls/002",
+      "identity": "9bcc686671ff6d52befb202b23e618ea8ffb88cf2727d80aee4396c4a78afbfb",
+      "kind": "query",
+      "line": 330,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds date functions and returns tables with NULLs"
+    },
+    {
+      "file": "suites/tpcds_nulls/date-functions-and-returns-tables-with-nulls.slt",
+      "id": "tpcds_nulls/date-functions-and-returns-tables-with-nulls/003",
+      "identity": "03ef5b780961622982f39289818a3a65e634a88ae8a30e68bbddc23ec3d01c56",
+      "kind": "query",
+      "line": 331,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds date functions and returns tables with NULLs"
+    },
+    {
+      "file": "suites/tpcds_nulls/date-functions-and-returns-tables-with-nulls.slt",
+      "id": "tpcds_nulls/date-functions-and-returns-tables-with-nulls/004",
+      "identity": "7699e7130f27082ff916a5b4ec3762d997b84c6518367358f7c0ffc2ad525447",
+      "kind": "query",
+      "line": 334,
+      "source": "test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp",
+      "suite": "tpcds_nulls",
+      "test": "gpu_execution tpcds date functions and returns tables with NULLs"
+    },
+    {
       "file": "suites/order_nulls/sort_asc_nulls_first.slt",
       "id": "order_nulls/sort/asc_nulls_first",
       "identity": "2bf6a9503106327d0714c0143ea63d686d1532707c321ed96660f0bad7f61939",
