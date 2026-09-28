@@ -1,0 +1,38 @@
+statement ok
+CREATE TABLE dim_source AS SELECT range AS k, range % 1000 AS v FROM range(200000);
+
+statement ok
+COPY dim_source TO '__TEST_DIR__/dim/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+CREATE TABLE fact_source AS SELECT range % 200000 AS fk, range % 1000 AS v FROM range(2000000);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p0.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p1.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p2.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p3.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p4.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p5.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p6.parquet' (FORMAT PARQUET);
+
+statement ok
+COPY fact_source TO '__TEST_DIR__/fact/p7.parquet' (FORMAT PARQUET);
+
+statement ok
+DROP TABLE dim_source;
+
+statement ok
+DROP TABLE fact_source;

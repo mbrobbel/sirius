@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
+exclude_suites = ["csv_disabled", "compressed_materialization_gate", "compressed_materialization_partition", "hive_disabled", "hive_watchdog", "partition_memory", "operator_mgpu_aggregate", "operator_mgpu_broadcast", "operator_mgpu_hash_join", "operator_mgpu_mixed_join", "operator_mgpu_order", "operator_mgpu_q11", "operator_mgpu_rangecheck"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -1272,6 +1272,10 @@ extensions = ["avro", "iceberg"]
 "iceberg_v3_dv_replaced/metadata/snap-7000000000000000001-1-d7e8f9a0-0007-0007-0007-000000000005.avro" = "iceberg-8bf2afac0dae"
 "iceberg_v3_dv_replaced/metadata/v1.metadata.json" = "iceberg-46126f6caa63"
 "iceberg_v3_dv_replaced/metadata/version-hint.text" = "iceberg-38fecacae164"
+
+[profiles.partition-memory-1gpu]
+gpus = 1
+config = "profiles/partition-memory-1gpu.yaml"
 
 [profiles.operator-mgpu-order]
 gpus = 2

@@ -1,0 +1,76 @@
+include ../../fixtures/migrated/partition-memory.slt
+
+# Original query: test/cpp/operator/test_partition_memspace_mgpu.cpp:217
+# sirius: id = "partition_memory/repeated-join/001"
+# sirius: tags = ["operator", "partition", "memory_pressure", "repeated_query"]
+# sirius: snapshot = true
+query ??? rowsort
+SELECT
+  count(*) AS c,
+  sum(f.v) AS sf,
+  sum(d.v) AS sd
+FROM
+  read_parquet('__TEST_DIR__/fact/*.parquet') f
+  JOIN read_parquet('__TEST_DIR__/dim/*.parquet') d ON f.fk = d.k;
+----
+16000000	7992000000	7992000000
+
+# Original query: test/cpp/operator/test_partition_memspace_mgpu.cpp:217
+# sirius: id = "partition_memory/repeated-join/002"
+# sirius: tags = ["operator", "partition", "memory_pressure", "repeated_query"]
+# sirius: snapshot = true
+query ??? rowsort
+SELECT
+  count(*) AS c,
+  sum(f.v) AS sf,
+  sum(d.v) AS sd
+FROM
+  read_parquet('__TEST_DIR__/fact/*.parquet') f
+  JOIN read_parquet('__TEST_DIR__/dim/*.parquet') d ON f.fk = d.k;
+----
+16000000	7992000000	7992000000
+
+# Original query: test/cpp/operator/test_partition_memspace_mgpu.cpp:217
+# sirius: id = "partition_memory/repeated-join/003"
+# sirius: tags = ["operator", "partition", "memory_pressure", "repeated_query"]
+# sirius: snapshot = true
+query ??? rowsort
+SELECT
+  count(*) AS c,
+  sum(f.v) AS sf,
+  sum(d.v) AS sd
+FROM
+  read_parquet('__TEST_DIR__/fact/*.parquet') f
+  JOIN read_parquet('__TEST_DIR__/dim/*.parquet') d ON f.fk = d.k;
+----
+16000000	7992000000	7992000000
+
+# Original query: test/cpp/operator/test_partition_memspace_mgpu.cpp:217
+# sirius: id = "partition_memory/repeated-join/004"
+# sirius: tags = ["operator", "partition", "memory_pressure", "repeated_query"]
+# sirius: snapshot = true
+query ??? rowsort
+SELECT
+  count(*) AS c,
+  sum(f.v) AS sf,
+  sum(d.v) AS sd
+FROM
+  read_parquet('__TEST_DIR__/fact/*.parquet') f
+  JOIN read_parquet('__TEST_DIR__/dim/*.parquet') d ON f.fk = d.k;
+----
+16000000	7992000000	7992000000
+
+# Original query: test/cpp/operator/test_partition_memspace_mgpu.cpp:217
+# sirius: id = "partition_memory/repeated-join/005"
+# sirius: tags = ["operator", "partition", "memory_pressure", "repeated_query"]
+# sirius: snapshot = true
+query ??? rowsort
+SELECT
+  count(*) AS c,
+  sum(f.v) AS sf,
+  sum(d.v) AS sd
+FROM
+  read_parquet('__TEST_DIR__/fact/*.parquet') f
+  JOIN read_parquet('__TEST_DIR__/dim/*.parquet') d ON f.fk = d.k;
+----
+16000000	7992000000	7992000000
