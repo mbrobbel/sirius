@@ -1,0 +1,14 @@
+# gpu_execution - filter returns empty result parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2740
+# sirius: id = "tpch_disabled_parquet/filter-returns-empty-result-parquet/001"
+# sirius: tags = ["integration_disabled", "gpu_execution", "parquet", "previously_disabled"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation
+WHERE
+  n_regionkey = 99;
+----
