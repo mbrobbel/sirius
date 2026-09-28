@@ -1241,6 +1241,126 @@
       "test": "select sum(C) from S"
     },
     {
+      "file": "suites/order_nulls/sort_asc_nulls_first.slt",
+      "id": "order_nulls/sort/asc_nulls_first",
+      "identity": "2bf6a9503106327d0714c0143ea63d686d1532707c321ed96660f0bad7f61939",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "sort ASC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/sort_asc_nulls_last.slt",
+      "id": "order_nulls/sort/asc_nulls_last",
+      "identity": "5d66b6b46e3e3b54e3bf185cdf0c85517251c48554c132cad34464d5f73f4762",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "sort ASC NULLS LAST"
+    },
+    {
+      "file": "suites/order_nulls/sort_desc_nulls_first.slt",
+      "id": "order_nulls/sort/desc_nulls_first",
+      "identity": "cd27cc9a22dbc7b09d2501d38b303a9c5db0fd2cb5bfcab4d431e9aea5acf189",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "sort DESC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/sort_desc_nulls_last.slt",
+      "id": "order_nulls/sort/desc_nulls_last",
+      "identity": "395a176a6d2bc9d8c881a6c465b9fcee3f25e1134da14fbf182837eacf57715a",
+      "kind": "query",
+      "line": 112,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "sort DESC NULLS LAST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_single_asc_nulls_first.slt",
+      "id": "order_nulls/top_n_single/asc_nulls_first",
+      "identity": "42da3ac23b1a34a9a396c87c4f662ecd474b45d64314ada8fc60679e0957d4dd",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_single ASC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_single_asc_nulls_last.slt",
+      "id": "order_nulls/top_n_single/asc_nulls_last",
+      "identity": "8855f1dd7ea75a493ead8e661e5cb06e08ac6623b867c8d78c9a822d42d95758",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_single ASC NULLS LAST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_single_desc_nulls_first.slt",
+      "id": "order_nulls/top_n_single/desc_nulls_first",
+      "identity": "5b7946ddb0333a759b8f1964564cf9833760f7a647d9001b24f0af84e04cab55",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_single DESC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_single_desc_nulls_last.slt",
+      "id": "order_nulls/top_n_single/desc_nulls_last",
+      "identity": "c3d4c08ee06db0b2f19293536559c01a41d434b4995426f3aa0f240ff6d65fa0",
+      "kind": "query",
+      "line": 133,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_single DESC NULLS LAST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_multi_asc_nulls_first.slt",
+      "id": "order_nulls/top_n_multi/asc_nulls_first",
+      "identity": "19b13301457a04eaf8d260177f859d25bff5cb451ff2070e44ff4782d1adf971",
+      "kind": "query",
+      "line": 149,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_multi ASC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_multi_asc_nulls_last.slt",
+      "id": "order_nulls/top_n_multi/asc_nulls_last",
+      "identity": "54f457a349c88174c9333fae0f3dcd8f242455282151bdbdc882a7c9910aed4e",
+      "kind": "query",
+      "line": 149,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_multi ASC NULLS LAST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_multi_desc_nulls_first.slt",
+      "id": "order_nulls/top_n_multi/desc_nulls_first",
+      "identity": "6d81777f80b4c23db281c949b6b8da6aa443acabc7ee2d40c8849fa32d63022b",
+      "kind": "query",
+      "line": 149,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_multi DESC NULLS FIRST"
+    },
+    {
+      "file": "suites/order_nulls/top_n_multi_desc_nulls_last.slt",
+      "id": "order_nulls/top_n_multi/desc_nulls_last",
+      "identity": "b185f34177202ae4fd23366a98d167a4b52a10838e1748bb4bbdadd660cea985",
+      "kind": "query",
+      "line": 149,
+      "source": "test/cpp/integration/test_gpu_execution_order_nulls.cpp",
+      "suite": "order_nulls",
+      "test": "top_n_multi DESC NULLS LAST"
+    },
+    {
       "file": "suites/null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from.slt",
       "id": "null_safe_join/null-safe-join-matches-null-to-null-is-not-distinct-from/001",
       "identity": "3d4f4fd73d72aa887f0f360619e3a3cf200bb39324e502ebbf1acf73a27a2640",
