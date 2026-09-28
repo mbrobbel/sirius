@@ -1,0 +1,27 @@
+# parquet nested IS NOT NULL does not crash
+include ../../fixtures/migrated/parquet_pushdown/ParquetNullPredicateFixture.slt
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:184
+# sirius: id = "parquet_pushdown/parquet-nested-is-not-null-does-not-crash/001"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NOT NULL AND v > 3000;
+----
+
+# Original query: test/cpp/integration/test_parquet_null_predicate_pushdown.cpp:185
+# sirius: id = "parquet_pushdown/parquet-nested-is-not-null-does-not-crash/002"
+# sirius: tags = ["integration", "parquet", "pushdown", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  v
+FROM
+  read_parquet('__TEST_DIR__/null_pred.parquet')
+WHERE
+  v IS NOT NULL AND v < 60 ORDER BY id;
+----

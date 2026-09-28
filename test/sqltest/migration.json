@@ -3231,6 +3231,286 @@
       "test": "parquet nulls \u2014 FLBA decimal projected alone"
     },
     {
+      "file": "suites/parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning.slt",
+      "id": "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/001",
+      "identity": "5cb3e25e73dd70f1cfcf08c653343305f2167338100054c50eb52aba74e1bdb5",
+      "kind": "query",
+      "line": 129,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet IS NULL predicate does not crash row-group pruning"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning.slt",
+      "id": "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/002",
+      "identity": "e7f0952ea6d25afe9845c85bdddc93db78b8d9945d1659358ac13d90a32a6545",
+      "kind": "query",
+      "line": 130,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet IS NULL predicate does not crash row-group pruning"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning.slt",
+      "id": "parquet_pushdown/parquet-is-null-predicate-does-not-crash-row-group-pruning/003",
+      "identity": "c71a5ebcc6aa6c3ded022b55876d6144a5af402b2d98c280603a65c9d4992e30",
+      "kind": "query",
+      "line": 131,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet IS NULL predicate does not crash row-group pruning"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/001",
+      "identity": "d6bba5cf29e7aff92e0a84ed25121903e53b78fe48fdd63900ab730b7d2098a1",
+      "kind": "query",
+      "line": 146,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet partially-pushed conjunction still applies the null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/002",
+      "identity": "9a3cd30b602477c6fc797df6de01b428c9c6e2451f4d698562910229f4a31f09",
+      "kind": "query",
+      "line": 147,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet partially-pushed conjunction still applies the null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/003",
+      "identity": "86238671e18d31e1b3f7b77adb038e2f28971b151ac406d2cfa485fd3bd83188",
+      "kind": "ordered",
+      "line": 148,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet partially-pushed conjunction still applies the null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/004",
+      "identity": "e044534191ffb46ac5f7d03a7e8a92d99a35ba8298ab316457f923011921789a",
+      "kind": "ordered",
+      "line": 150,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet partially-pushed conjunction still applies the null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-partially-pushed-conjunction-still-applies-the-null-predicate/005",
+      "identity": "cb435c65e4f180430c7b2b2bdb35fec60bd01274f3df1d8ecb9e27507619e1c3",
+      "kind": "ordered",
+      "line": 153,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet partially-pushed conjunction still applies the null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate/001",
+      "identity": "6db3907faaea43c6bfd620fd0c5d77d625d3be4e7d6968c379beca2492f7d3fe",
+      "kind": "query",
+      "line": 167,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet un-splittable OR with a null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-un-splittable-or-with-a-null-predicate/002",
+      "identity": "d2806c12e8bbd338856086195656523e65c4203aa29b5dac926dad159fbcda3a",
+      "kind": "ordered",
+      "line": 168,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet un-splittable OR with a null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-nested-is-not-null-does-not-crash.slt",
+      "id": "parquet_pushdown/parquet-nested-is-not-null-does-not-crash/001",
+      "identity": "cf930d8804aa6558a758b09afb41050294fc338ae30422d8a6e6f13ba44f1d05",
+      "kind": "query",
+      "line": 184,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet nested IS NOT NULL does not crash"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-nested-is-not-null-does-not-crash.slt",
+      "id": "parquet_pushdown/parquet-nested-is-not-null-does-not-crash/002",
+      "identity": "4923ec73035740f1a259326f4c830c090dc03c8fecac26ac38b97ed9c1a2453b",
+      "kind": "ordered",
+      "line": 185,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet nested IS NOT NULL does not crash"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown.slt",
+      "id": "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/001",
+      "identity": "170799494fe8e83920dcc65a8148394769b2322fee234aba04cc18e6499c212a",
+      "kind": "ordered",
+      "line": 195,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet null predicates return correct rows without pushdown"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown.slt",
+      "id": "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/002",
+      "identity": "c021a45282e46bc46cb274d962bd234507f5c943d14b71b6d76854238b73f12a",
+      "kind": "ordered",
+      "line": 197,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet null predicates return correct rows without pushdown"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown.slt",
+      "id": "parquet_pushdown/parquet-null-predicates-return-correct-rows-without-pushdown/003",
+      "identity": "81637afa3079bee1df2f93b63d4a34c34ba1f53f7d97d8a4ac69b9eafb4c448f",
+      "kind": "query",
+      "line": 199,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet null predicates return correct rows without pushdown"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push/001",
+      "identity": "cf83a361385428cbbf484c054015f53528fc190cca252b233f5c3500d892acc9",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan applies the null predicate after a partial push"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-applies-the-null-predicate-after-a-partial-push/002",
+      "identity": "016aaac922eb1564e104dc3f8a370497f6804de6e236fc78a48e66bff3a3ca8f",
+      "kind": "ordered",
+      "line": 213,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan applies the null predicate after a partial push"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate/001",
+      "identity": "7704242d12c4b58266665abf21e4ec354fd68fc895fa0e1825b4ab482d9b8eca",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan with a bare null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-with-a-bare-null-predicate/002",
+      "identity": "dcaa937c185819cad686728c8c3f56d16c7ac755775c5781d37cfb34bb579c58",
+      "kind": "query",
+      "line": 224,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan with a bare null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate/001",
+      "identity": "c9341d6c2fa8ad0fd5608cdc668bfc5f82413b0a0966f0ee6986910f8d1ee6e9",
+      "kind": "query",
+      "line": 233,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan combining partition column and null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate.slt",
+      "id": "parquet_pushdown/parquet-hive-scan-combining-partition-column-and-null-predicate/002",
+      "identity": "f003ffc154e3bb0560ca5243c0a4e6fb644f150ae6fe0fa2283caa72d8a1d458",
+      "kind": "ordered",
+      "line": 234,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet hive scan combining partition column and null predicate"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash.slt",
+      "id": "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/001",
+      "identity": "f7d5f3249a20013788f67fc565e2c6fdb51cbbdfbf2865313b97655d935c3995",
+      "kind": "query",
+      "line": 253,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet bare boolean column predicate does not crash"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash.slt",
+      "id": "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/002",
+      "identity": "6e4eeea41cca05ea56a83235fe320e2c91e4dfe41438adcb5a0e9a835929718f",
+      "kind": "query",
+      "line": 254,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet bare boolean column predicate does not crash"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash.slt",
+      "id": "parquet_pushdown/parquet-bare-boolean-column-predicate-does-not-crash/003",
+      "identity": "ef244f961ae9aed2d7df61610bca0bdd04f8cb98aa05d410836244ed44d7a868",
+      "kind": "ordered",
+      "line": 255,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet bare boolean column predicate does not crash"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-predicate-shapes-that-remain-pushable.slt",
+      "id": "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/001",
+      "identity": "917b85749f90b07b4917f4a0bcfd5480b4de4d82afa60e65eed4b33d1eabad0f",
+      "kind": "query",
+      "line": 266,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet predicate shapes that remain pushable"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-predicate-shapes-that-remain-pushable.slt",
+      "id": "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/002",
+      "identity": "4f49f30a461379805939c4e2dcf47a5943acc292b0a28da92c974f5e068d5fef",
+      "kind": "query",
+      "line": 267,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet predicate shapes that remain pushable"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-predicate-shapes-that-remain-pushable.slt",
+      "id": "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/003",
+      "identity": "84808fa2a354e1684ac504d39a2ffed72ef407a9dd5f613c3e35382cc7036180",
+      "kind": "query",
+      "line": 268,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet predicate shapes that remain pushable"
+    },
+    {
+      "file": "suites/parquet_pushdown/parquet-predicate-shapes-that-remain-pushable.slt",
+      "id": "parquet_pushdown/parquet-predicate-shapes-that-remain-pushable/004",
+      "identity": "8100fde13499ccfa770d4223ed2db6d07734ae03f744f7dbacc7c40e477dbd82",
+      "kind": "query",
+      "line": 269,
+      "source": "test/cpp/integration/test_parquet_null_predicate_pushdown.cpp",
+      "suite": "parquet_pushdown",
+      "test": "parquet predicate shapes that remain pushable"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",
