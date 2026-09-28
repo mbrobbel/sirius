@@ -971,6 +971,76 @@
       "test": "gpu_execution MARK join (IN) emits TRUE/FALSE/NULL"
     },
     {
+      "file": "suites/unique_join/unique-build-inner-join-on-a-pk-build-side-001.slt",
+      "id": "unique_join/unique-build-inner-join-on-a-pk-build-side/001",
+      "identity": "cda8b840da99db4984d3894cf715d21e6404d7ebb0d0dca723411472a4891176",
+      "kind": "query",
+      "line": 78,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution unique-build INNER join on a PK build side"
+    },
+    {
+      "file": "suites/unique_join/unique-build-left-join-null-pads-through-the-distinct-path-001.slt",
+      "id": "unique_join/unique-build-left-join-null-pads-through-the-distinct-path/001",
+      "identity": "f3a111143fc01807f8c92148e32c6f6b9eb2cb421292004949e49ab61dec2fa5",
+      "kind": "query",
+      "line": 86,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution unique-build LEFT join NULL-pads through the distinct path"
+    },
+    {
+      "file": "suites/unique_join/unique-build-join-with-an-empty-probe-side-001.slt",
+      "id": "unique_join/unique-build-join-with-an-empty-probe-side/001",
+      "identity": "7f6ba2a3c649e46d6a582013502767021d93f879fc31b1e938fc3793a4c983ef",
+      "kind": "query",
+      "line": 93,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution unique-build join with an empty probe side"
+    },
+    {
+      "file": "suites/unique_join/delim-shaped-not-exists-q22-delim-get-build-001.slt",
+      "id": "unique_join/delim-shaped-not-exists-q22-delim-get-build/001",
+      "identity": "efce05061c6fa768272192c0a712b14a58bbc3e2ccd859f634ff06a8e3a640b6",
+      "kind": "query",
+      "line": 102,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution delim-shaped NOT EXISTS (q22 DELIM_GET build)"
+    },
+    {
+      "file": "suites/unique_join/delim-shaped-not-exists-over-an-empty-table-001.slt",
+      "id": "unique_join/delim-shaped-not-exists-over-an-empty-table/001",
+      "identity": "d70b5cd654e604bf45b63b1c08917feecddc74ba4df5fd44ccaba64dee08c33e",
+      "kind": "query",
+      "line": 111,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution delim-shaped NOT EXISTS over an empty table"
+    },
+    {
+      "file": "suites/unique_join/non-unique-build-keys-preserve-match-multiplicity-001.slt",
+      "id": "unique_join/non-unique-build-keys-preserve-match-multiplicity/001",
+      "identity": "75ae45a1e91dbca55ea587c3bd3981711e95d2ce0ec4b577b3fbd736368bb534",
+      "kind": "query",
+      "line": 122,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution non-unique build keys preserve match multiplicity"
+    },
+    {
+      "file": "suites/unique_join/group-by-build-side-through-the-distinct-path-001.slt",
+      "id": "unique_join/group-by-build-side-through-the-distinct-path/001",
+      "identity": "0cd03741d9f1b5bd6ba8d2187f41002f550bd1033ffdf9e1333eb0f66c4c158f",
+      "kind": "query",
+      "line": 130,
+      "source": "test/cpp/integration/test_gpu_execution_unique_join.cpp",
+      "suite": "unique_join",
+      "test": "gpu_execution GROUP BY build side through the distinct path"
+    },
+    {
       "file": "suites/legacy_regressions/issue_56.slt",
       "id": "legacy_regressions/issue_56/01",
       "identity": "11833db4f6fe848d8240167e2f048abb828cb3b671b7bb35b10a3768e9f1da96",

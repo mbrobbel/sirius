@@ -1,0 +1,17 @@
+# Migrated from test/cpp/integration/test_gpu_execution_unique_join.cpp:111
+# gpu_execution delim-shaped NOT EXISTS over an empty table
+include ../../fixtures/migrated/unique_join/e72633960a41581b.slt
+
+# sirius: id = "unique_join/delim-shaped-not-exists-over-an-empty-table/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "unique_build_keys"]
+query ??? rowsort
+SELECT
+  f.k,
+  f.grp,
+  f.v
+FROM
+  empty_fact f
+WHERE
+  f.v > 3 AND NOT EXISTS (SELECT 1 FROM big o WHERE o.k = f.k);
+----
