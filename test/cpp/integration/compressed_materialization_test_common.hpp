@@ -171,4 +171,9 @@ inline void compare_gpu_vs_cpu(duckdb::Connection& con, std::string const& query
   }
 }
 
+inline void require_gpu_query(duckdb::Connection& con, std::string const& query)
+{
+  require_ok(con.Query(query), "gpu query");
+}
+
 }  // namespace sirius::test::compmat

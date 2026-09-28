@@ -87,15 +87,21 @@ struct coverage_gate_disable_guard {
   double original;
 };
 
-/// Appends the given optimizers to `disabled_optimizers` and restores the setting on destruction.
+/// Temporarily changes `disabled_optimizers` and restores the setting on destruction.
 struct disabled_optimizers_guard {
-  disabled_optimizers_guard(duckdb::Connection& c, const std::string& optimizers) : con(c)
+  enum class mode { append, replace };
+
+  disabled_optimizers_guard(duckdb::Connection& c,
+                            const std::string& optimizers,
+                            mode operation = mode::append)
+    : con(c)
   {
     auto current = con.Query("SELECT current_setting('disabled_optimizers');");
     REQUIRE(current);
     REQUIRE_FALSE(current->HasError());
-    original    = current->GetValue(0, 0).ToString();
-    auto merged = original.empty() ? optimizers : original + "," + optimizers;
+    original = current->GetValue(0, 0).ToString();
+    auto merged =
+      operation == mode::replace || original.empty() ? optimizers : original + "," + optimizers;
     auto result = con.Query("SET disabled_optimizers = '" + merged + "';");
     REQUIRE(result);
     REQUIRE_FALSE(result->HasError());
