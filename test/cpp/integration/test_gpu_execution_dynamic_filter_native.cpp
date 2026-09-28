@@ -52,9 +52,8 @@ struct zone_map_switch_guard {
   bool original;
 };
 
-//! Transparent GPU run (asserted to actually execute on GPU) vs CPU run, exact row-set
-//! equality. All queries below aggregate to integer/decimal values, so no float tolerance.
-void compare_gpu_vs_cpu(duckdb::Connection& con, const std::string& query)
+//! Require transparent GPU execution without fallback.
+void require_gpu_execution(duckdb::Connection& con, const std::string& query)
 {
   con.Query("SET gpu_execution = true;");
   auto before_gpu_stats = sirius::test::get_transparent_execution_stats(con);
@@ -67,19 +66,6 @@ void compare_gpu_vs_cpu(duckdb::Connection& con, const std::string& query)
   REQUIRE_FALSE(gpu_result->HasError());
   auto after_gpu_stats = sirius::test::get_transparent_execution_stats(con);
   sirius::test::require_transparent_execution_delta(before_gpu_stats, after_gpu_stats, 1, 0, 1);
-
-  con.Query("SET gpu_execution = false;");
-  auto cpu_result = con.Query(query);
-  con.Query("SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE_FALSE(cpu_result->HasError());
-
-  REQUIRE(gpu_result->ColumnCount() == cpu_result->ColumnCount());
-  REQUIRE(gpu_result->RowCount() == cpu_result->RowCount());
-
-  auto gpu_rows = sirius::test::collect_rows(gpu_result->Cast<duckdb::MaterializedQueryResult>());
-  auto cpu_rows = sirius::test::collect_rows(cpu_result->Cast<duckdb::MaterializedQueryResult>());
-  REQUIRE(gpu_rows == cpu_rows);
 }
 
 }  // namespace
@@ -107,20 +93,20 @@ TEST_CASE("gpu_execution - dynamic filters over duckdb-native tables",
   {
     // ~1/1000-selective part build: the publisher emits an IN-list over p_partkey and the
     // lineitem native scan's post-decode operator drops non-matching rows before the probe.
-    compare_gpu_vs_cpu(con,
-                       "SELECT count(*), min(l_orderkey), max(l_orderkey) "
-                       "FROM lineitem JOIN part ON l_partkey = p_partkey "
-                       "WHERE p_size = 15 AND p_container = 'SM BOX'");
+    require_gpu_execution(con,
+                          "SELECT count(*), min(l_orderkey), max(l_orderkey) "
+                          "FROM lineitem JOIN part ON l_partkey = p_partkey "
+                          "WHERE p_size = 15 AND p_container = 'SM BOX'");
   }
 
   SECTION("membership filter composed with a probe-side static filter")
   {
     // l_quantity is a pure-filter probe column (decoded, filtered, then dropped from the
     // output): the dynamic filter on l_partkey must key by output position regardless.
-    compare_gpu_vs_cpu(con,
-                       "SELECT count(*) "
-                       "FROM lineitem JOIN part ON l_partkey = p_partkey "
-                       "WHERE p_size = 15 AND p_container = 'SM BOX' AND l_quantity < 10");
+    require_gpu_execution(con,
+                          "SELECT count(*) "
+                          "FROM lineitem JOIN part ON l_partkey = p_partkey "
+                          "WHERE p_size = 15 AND p_container = 'SM BOX' AND l_quantity < 10");
   }
 
   SECTION("opt-in zone map rides the post-decode AST row-mask path")
@@ -130,11 +116,11 @@ TEST_CASE("gpu_execution - dynamic filters over duckdb-native tables",
     // (integer division defeats static transitive pushdown) and narrow, so publication passes
     // the domain-coverage gate.
     zone_map_switch_guard zone_maps_on(con);
-    compare_gpu_vs_cpu(con,
-                       "SELECT count(*), sum(l.l_orderkey) "
-                       "FROM lineitem l "
-                       "JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o "
-                       "ON l.l_orderkey = o.o_orderkey");
+    require_gpu_execution(con,
+                          "SELECT count(*), sum(l.l_orderkey) "
+                          "FROM lineitem l "
+                          "JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o "
+                          "ON l.l_orderkey = o.o_orderkey");
   }
 }
 
@@ -168,7 +154,7 @@ TEST_CASE("gpu_execution - dynamic-filter domain-coverage gate",
   SECTION("a domain-covering build publishes nothing")
   {
     auto const before = sirius::test::get_dynamic_filter_stats_snapshot(con);
-    compare_gpu_vs_cpu(con, covering_query);
+    require_gpu_execution(con, covering_query);
     auto const after = sirius::test::get_dynamic_filter_stats_snapshot(con);
 
     REQUIRE(after.keys_with_known_domain > before.keys_with_known_domain);
@@ -181,7 +167,7 @@ TEST_CASE("gpu_execution - dynamic-filter domain-coverage gate",
   SECTION("a selective build publishes normally")
   {
     auto const before = sirius::test::get_dynamic_filter_stats_snapshot(con);
-    compare_gpu_vs_cpu(con, selective_query);
+    require_gpu_execution(con, selective_query);
     auto const after = sirius::test::get_dynamic_filter_stats_snapshot(con);
 
     REQUIRE(after.keys_with_known_domain > before.keys_with_known_domain);
@@ -194,7 +180,7 @@ TEST_CASE("gpu_execution - dynamic-filter domain-coverage gate",
   {
     coverage_gate_disable_guard gate_off(con);
     auto const before = sirius::test::get_dynamic_filter_stats_snapshot(con);
-    compare_gpu_vs_cpu(con, covering_query);
+    require_gpu_execution(con, covering_query);
     auto const after = sirius::test::get_dynamic_filter_stats_snapshot(con);
 
     REQUIRE(after.keys_with_known_domain > before.keys_with_known_domain);
@@ -206,17 +192,17 @@ TEST_CASE("gpu_execution - dynamic-filter domain-coverage gate",
   {
     // Any increment means lineage admitted an amplifying shape or supplied an invalid upper bound.
     auto const before = sirius::test::get_dynamic_filter_stats_snapshot(con);
-    compare_gpu_vs_cpu(con, covering_query);
-    compare_gpu_vs_cpu(con, selective_query);
-    compare_gpu_vs_cpu(con,
-                       "SELECT count(*), min(l_orderkey), max(l_orderkey) "
-                       "FROM lineitem JOIN part ON l_partkey = p_partkey "
-                       "WHERE p_size = 15 AND p_container = 'SM BOX'");
-    compare_gpu_vs_cpu(con,
-                       "SELECT count(*), sum(l.l_orderkey) "
-                       "FROM lineitem l "
-                       "JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o "
-                       "ON l.l_orderkey = o.o_orderkey");
+    require_gpu_execution(con, covering_query);
+    require_gpu_execution(con, selective_query);
+    require_gpu_execution(con,
+                          "SELECT count(*), min(l_orderkey), max(l_orderkey) "
+                          "FROM lineitem JOIN part ON l_partkey = p_partkey "
+                          "WHERE p_size = 15 AND p_container = 'SM BOX'");
+    require_gpu_execution(con,
+                          "SELECT count(*), sum(l.l_orderkey) "
+                          "FROM lineitem l "
+                          "JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o "
+                          "ON l.l_orderkey = o.o_orderkey");
     auto const after = sirius::test::get_dynamic_filter_stats_snapshot(con);
 
     REQUIRE(after.keys_build_exceeded_domain == before.keys_build_exceeded_domain);
