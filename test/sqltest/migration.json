@@ -7001,6 +7001,16 @@
       "test": "gpu_execution - DECIMAL32, DECIMAL64, and DECIMAL128 values"
     },
     {
+      "file": "suites/tpch_integration_native/values-with-varchar-and-nulls.slt",
+      "id": "tpch_integration_native/values-with-varchar-and-nulls/001",
+      "identity": "327766361feb303c407422d9712bfd3bb24f11bed53351165b7400047230551f",
+      "kind": "query",
+      "line": 4724,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_native",
+      "test": "gpu_execution - values with varchar and nulls"
+    },
+    {
       "file": "suites/tpch_integration_native/values-source-fanned-out-to-multiple-consumers.slt",
       "id": "tpch_integration_native/values-source-fanned-out-to-multiple-consumers/001",
       "identity": "96b9a321ad0929157804d0a62257a8047b2e3b1bb4bd5a45c190b76796b5e081",
