@@ -1,0 +1,48 @@
+# Original fixture: ParquetDictNullFixture
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+COPY (SELECT i AS id, CASE WHEN i % 3 = 0 THEN NULL WHEN i % 3 = 1 THEN 'alpha' ELSE 'beta' END AS cat, CASE WHEN i % 5 = 0 THEN NULL ELSE i * 10 END AS val FROM range(1, 31) AS t (i)) TO '__TEST_DIR__/dict_nulls.parquet' (FORMAT PARQUET);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) > 0 AND bool_and(contains(CAST(encodings AS VARCHAR), 'DICTIONARY'))
+FROM
+  parquet_metadata('__TEST_DIR__/dict_nulls.parquet')
+WHERE
+  path_in_schema = 'cat';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 30 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 10)
+FROM
+  parquet_metadata('__TEST_DIR__/dict_nulls.parquet')
+WHERE
+  path_in_schema = 'cat';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 30 AND count(cat) = 20
+FROM
+  read_parquet('__TEST_DIR__/dict_nulls.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 30 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 6)
+FROM
+  parquet_metadata('__TEST_DIR__/dict_nulls.parquet')
+WHERE
+  path_in_schema = 'val';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 30 AND count(val) = 24
+FROM
+  read_parquet('__TEST_DIR__/dict_nulls.parquet');
+
+statement ok
+DROP TABLE fixture_check;

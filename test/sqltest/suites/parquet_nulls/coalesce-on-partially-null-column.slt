@@ -1,0 +1,24 @@
+# parquet nulls — COALESCE on partially-NULL column
+include ../../fixtures/migrated/parquet_nulls/ParquetNullFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:893
+# sirius: id = "parquet_nulls/coalesce-on-partially-null-column/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? rowsort
+SELECT
+  id,
+  COALESCE(p_int, -1) AS v
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:894
+# sirius: id = "parquet_nulls/coalesce-on-partially-null-column/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? rowsort
+SELECT
+  id,
+  COALESCE(p_str, 'none') AS v
+FROM
+  read_parquet('__TEST_DIR__/nulls.parquet');
+----

@@ -2391,6 +2391,846 @@
       "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
     },
     {
+      "file": "suites/parquet_nulls/wholly-null-column-projection-preserves-nulls.slt",
+      "id": "parquet_nulls/wholly-null-column-projection-preserves-nulls/001",
+      "identity": "c88b8741cf2ac6c6d5e934fb43a301bea27531f4aa2c1e4a838fb62f4e3f42c4",
+      "kind": "query",
+      "line": 762,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 wholly-NULL column projection preserves NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/count-vs-count-col-on-wholly-null-columns.slt",
+      "id": "parquet_nulls/count-vs-count-col-on-wholly-null-columns/001",
+      "identity": "97875644212e8ecf6405305a0b2ef89fbd1a81dbe1aef948ea8ca81b383a7182",
+      "kind": "query",
+      "line": 773,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 COUNT(*) vs COUNT(col) on wholly-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns.slt",
+      "id": "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/001",
+      "identity": "ceb411d0936791f3a45320c50ce4d10c7678ecc2208b6b0522b2516308627262",
+      "kind": "query",
+      "line": 785,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates skip NULLs on wholly-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns.slt",
+      "id": "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/002",
+      "identity": "83eeeea67f5a465dc1dc6de82376956043144403dfe50ec72c184c3cbb8bd25e",
+      "kind": "query",
+      "line": 786,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates skip NULLs on wholly-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns.slt",
+      "id": "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/003",
+      "identity": "4eeaaff2e91479e0cf0406ddf4ecbc9822bca8672f9f1388f259d8b7c25db077",
+      "kind": "query",
+      "line": 787,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates skip NULLs on wholly-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns.slt",
+      "id": "parquet_nulls/aggregates-skip-nulls-on-wholly-null-columns/004",
+      "identity": "57e13dde7c4150608f7b5a63149333968bf86bbd74373504f75b2a13f3a1a1de",
+      "kind": "query",
+      "line": 788,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates skip NULLs on wholly-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-on-wholly-null-column.slt",
+      "id": "parquet_nulls/is-null-is-not-null-on-wholly-null-column/001",
+      "identity": "e2506337b9148b222fcd5c5f715ee75c75932df24ae582decb45beb7dbf7ed1d",
+      "kind": "query",
+      "line": 796,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL on wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-on-wholly-null-column.slt",
+      "id": "parquet_nulls/is-null-is-not-null-on-wholly-null-column/002",
+      "identity": "6829b601d74b7e30fdbdce88671333a4915f595a664f94d9412a2f3073f20ea4",
+      "kind": "query",
+      "line": 797,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL on wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-on-wholly-null-column.slt",
+      "id": "parquet_nulls/is-null-is-not-null-on-wholly-null-column/003",
+      "identity": "7d2523e8ffdfe43d8afe4844a6509f05cd60a2a9afb7938de7ffb41577a615a5",
+      "kind": "query",
+      "line": 798,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL on wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-on-wholly-null-column.slt",
+      "id": "parquet_nulls/is-null-is-not-null-on-wholly-null-column/004",
+      "identity": "d9cfb705cd08743b236f9472e75d67328b515e34f0e69197dbf113e07b205a4f",
+      "kind": "query",
+      "line": 799,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL on wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-on-wholly-null-column.slt",
+      "id": "parquet_nulls/is-null-is-not-null-on-wholly-null-column/005",
+      "identity": "0bce45111f3938cd1a140a230b0f01c87d4a2a2c9595284b8f65ca3470023f06",
+      "kind": "query",
+      "line": 800,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL on wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/001",
+      "identity": "8918cdeaefe116bacc045e2e8a6d99909d08db410502a8c1efaf779a8352739d",
+      "kind": "query",
+      "line": 811,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/002",
+      "identity": "c8840bb4562d5f3d0a93963b07569df0a4559c805b8eec4eb25cf9ae94668e93",
+      "kind": "query",
+      "line": 812,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/003",
+      "identity": "a82843a55af81d2229a11ae56876e8851737e43250fb828c0d2416e38391fcd0",
+      "kind": "query",
+      "line": 813,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/004",
+      "identity": "1a36bf6d4cc27fd32fe731e7d544fc02693819a01aab4a92435e3317f5a32a2d",
+      "kind": "query",
+      "line": 814,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/005",
+      "identity": "3cc7bc4ebfc1c335406b49ef5ca3ffc0876c7348f1c48768ee1125637198cf3e",
+      "kind": "query",
+      "line": 815,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-wholly-null-column/006",
+      "identity": "571e3d54a5d27b545186271e3345f5d6ab4b006c1a39ec4bd6d9a595b3e01834",
+      "kind": "query",
+      "line": 816,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a wholly-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column/001",
+      "identity": "b701b445552e5d6ecf8caecb14efd1f1eadb4e907debc6764b3181bcc7fe9d98",
+      "kind": "query",
+      "line": 823,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column/002",
+      "identity": "436076e02beecbafd8b98a0366fb856bba1af4e89eac4889446b1daac683cbd5",
+      "kind": "query",
+      "line": 824,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column.slt",
+      "id": "parquet_nulls/column-pruned-scan-projecting-only-a-partially-null-column/003",
+      "identity": "887f0dfebce091dac6da0ab1dfe355aca5eff3848dee92eef4462976141cd814",
+      "kind": "query",
+      "line": 825,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 column-pruned scan projecting only a partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-columns-keep-their-valid-rows-across-all-types.slt",
+      "id": "parquet_nulls/partially-null-columns-keep-their-valid-rows-across-all-types/001",
+      "identity": "009749eef4f23c669f42b40b558e714f87737c3c7594512bfa0863fdcc31fe27",
+      "kind": "query",
+      "line": 838,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL columns keep their valid rows across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/001",
+      "identity": "cea34889f08f40267ab719740a2600a82f9915f6ba5bed945e1660d673eb1f81",
+      "kind": "query",
+      "line": 849,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/002",
+      "identity": "1d418606cbdc72a9bebe5c262b740b13ca86c7d7975896dc5defcd6ac40ec044",
+      "kind": "query",
+      "line": 854,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/003",
+      "identity": "6b2218e7fade34504675db9b7aeca20997b6a2d9f43564494ff688489ae45891",
+      "kind": "query",
+      "line": 855,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/004",
+      "identity": "51c16690ac99e8fc85c58251c28a178bd499ddca12d36a22c384175ff39d6666",
+      "kind": "query",
+      "line": 856,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/005",
+      "identity": "4f8fb5a9f916cab4e0deef76ebf07dbe223a011b71fa463ca9203c3d1138f9fc",
+      "kind": "query",
+      "line": 857,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/006",
+      "identity": "d18ca8122e86783635711954deffdb442d6bb99fe932b718a4629fcdff65cfc2",
+      "kind": "query",
+      "line": 858,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/aggregates-over-partially-null-columns-across-all-types.slt",
+      "id": "parquet_nulls/aggregates-over-partially-null-columns-across-all-types/007",
+      "identity": "2f9d854cc1279902d5f84dffca970ef9189485dc00a22d315652b167cf946be5",
+      "kind": "query",
+      "line": 859,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 aggregates over partially-NULL columns across all types"
+    },
+    {
+      "file": "suites/parquet_nulls/floating-point-aggregates-over-partially-null-columns.slt",
+      "id": "parquet_nulls/floating-point-aggregates-over-partially-null-columns/001",
+      "identity": "9c95ceda8b279eb670a76b60e476bb6cd521504df900833649d8eb151f0a17a4",
+      "kind": "approx",
+      "line": 868,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 floating-point aggregates over partially-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/floating-point-aggregates-over-partially-null-columns.slt",
+      "id": "parquet_nulls/floating-point-aggregates-over-partially-null-columns/002",
+      "identity": "acbc3970c4c874060496663a2b02e6373b9b9fa2f5e0b8605d64e5c3dafbb97b",
+      "kind": "query",
+      "line": 869,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 floating-point aggregates over partially-NULL columns"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/001",
+      "identity": "9cc3656253ba1476d6c53bde31b39587f26854d0cdc242dd25b5dae3748cdc38",
+      "kind": "query",
+      "line": 876,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/002",
+      "identity": "6020a24af337e11951d707a9304a8e04b89f01c5f182a5568c4dc94d3b0eedb0",
+      "kind": "query",
+      "line": 877,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/003",
+      "identity": "a14e4fd3c8f544a0613afcd84e908c2c22aa5026c59ec8bde6d16fbf57c64703",
+      "kind": "query",
+      "line": 878,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/004",
+      "identity": "f35cee449a80da38dd387645ec9ef6b7b25f801530724351a8ea51a52618284a",
+      "kind": "query",
+      "line": 879,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/005",
+      "identity": "95f9343ada49207c74c5a8d268a550b5efc858a3924a347140d9c292aefc3f9c",
+      "kind": "query",
+      "line": 880,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/006",
+      "identity": "f9e2fb70f1f797693584e3f9cdf0c93066bd077aface773060530847381f5b4e",
+      "kind": "query",
+      "line": 881,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/007",
+      "identity": "9c708e8bf9bfd15f81228cae826594e3650cb76a385130b481e72205af442cd9",
+      "kind": "query",
+      "line": 882,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/008",
+      "identity": "930225068d583c6ed817b20ed63c2b3094095ee235ce7934e43b1d1b75f813ac",
+      "kind": "query",
+      "line": 885,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-is-not-null-across-partially-null-types.slt",
+      "id": "parquet_nulls/is-null-is-not-null-across-partially-null-types/009",
+      "identity": "c2937413d44b4bc004a7921b1c56f38997c60208738c9d07180f8ef6a719575f",
+      "kind": "query",
+      "line": 886,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL / IS NOT NULL across partially-NULL types"
+    },
+    {
+      "file": "suites/parquet_nulls/coalesce-on-partially-null-column.slt",
+      "id": "parquet_nulls/coalesce-on-partially-null-column/001",
+      "identity": "83944ee949a8a7e7689902ea78631e497585c8ebe7bae82a0aaf0edce0808df3",
+      "kind": "query",
+      "line": 893,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 COALESCE on partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/coalesce-on-partially-null-column.slt",
+      "id": "parquet_nulls/coalesce-on-partially-null-column/002",
+      "identity": "f1f7907fd6886348ea88faf96558309ad5893713858146f7ede8cfb1aed822ab",
+      "kind": "query",
+      "line": 894,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 COALESCE on partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/case-expression-over-partially-null-column.slt",
+      "id": "parquet_nulls/case-expression-over-partially-null-column/001",
+      "identity": "22bf3058b2ee450a039f63988516f91b075b832951cf6b0fc258ec5807184b64",
+      "kind": "query",
+      "line": 901,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 CASE expression over partially-NULL column"
+    },
+    {
+      "file": "suites/parquet_nulls/dictionary-encoded-string-column-with-nulls-projection.slt",
+      "id": "parquet_nulls/dictionary-encoded-string-column-with-nulls-projection/001",
+      "identity": "bf550938b95be8470b9d53a5cd6bf18cc0dc52913b2a6c518d40d49128f60d9e",
+      "kind": "query",
+      "line": 912,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 dictionary-encoded string column with nulls projection"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-on-dictionary-encoded-column.slt",
+      "id": "parquet_nulls/is-null-on-dictionary-encoded-column/001",
+      "identity": "a0b2ee9656171c370f2192941e92a7197b7059b23517af3ee0bd763147af91bd",
+      "kind": "query",
+      "line": 919,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL on dictionary-encoded column"
+    },
+    {
+      "file": "suites/parquet_nulls/is-null-on-dictionary-encoded-column.slt",
+      "id": "parquet_nulls/is-null-on-dictionary-encoded-column/002",
+      "identity": "4135fd16537d33f642899eb225e664b6d13f3b8f1cb7ba7370ba751252899e15",
+      "kind": "query",
+      "line": 920,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 IS NULL on dictionary-encoded column"
+    },
+    {
+      "file": "suites/parquet_nulls/group-by-dictionary-encoded-column-with-nulls.slt",
+      "id": "parquet_nulls/group-by-dictionary-encoded-column-with-nulls/001",
+      "identity": "a70ba6c52ab24c895536c66cda291893d59a0861f1e71379c88f4830f00af2e3",
+      "kind": "query",
+      "line": 928,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 GROUP BY dictionary-encoded column with nulls"
+    },
+    {
+      "file": "suites/parquet_nulls/numeric-column-with-nulls-aggregates.slt",
+      "id": "parquet_nulls/numeric-column-with-nulls-aggregates/001",
+      "identity": "6f9751f104a8ed779540e99ed20178ff368b04e9fc22f95eb121d4f553d035fa",
+      "kind": "query",
+      "line": 935,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 numeric column with nulls aggregates"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-nullable-numeric-column.slt",
+      "id": "parquet_nulls/filter-on-nullable-numeric-column/001",
+      "identity": "9308338c64809c7d3e1eb1eb605979eee8fb1d690c749d451dcc1658f50006cf",
+      "kind": "query",
+      "line": 942,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on nullable numeric column"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-nullable-numeric-column.slt",
+      "id": "parquet_nulls/filter-on-nullable-numeric-column/002",
+      "identity": "1e93bf7caceb7880f4d4279fa52ff1eaf355effae50a298e984818de5e402c58",
+      "kind": "query",
+      "line": 944,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on nullable numeric column"
+    },
+    {
+      "file": "suites/parquet_nulls/wholly-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/wholly-null-column-across-multiple-row-groups/001",
+      "identity": "a489a02ef219e5c4bb619817b2533e933b43e5154cad92e50ea41c3090734a5f",
+      "kind": "query",
+      "line": 957,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 wholly-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/wholly-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/wholly-null-column-across-multiple-row-groups/002",
+      "identity": "4ab212ffbc8e170a3d2c040e0d92a3551c4da9eb02b98a419b41dfb08f8ddef7",
+      "kind": "query",
+      "line": 961,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 wholly-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/wholly-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/wholly-null-column-across-multiple-row-groups/003",
+      "identity": "9a3fb0b2c102753029f66704b753e5a2ccd7f7799e4bc48deb9b166d13d7bb6a",
+      "kind": "query",
+      "line": 962,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 wholly-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/001",
+      "identity": "dee59d655b9cec4dc4ac88000a31365193f0885daf94421a034ae6cf4bd6fe6f",
+      "kind": "query",
+      "line": 971,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/002",
+      "identity": "515694dfdb1d658f8a6b7035fba6f289c218491b5a05fabaa50b90e32b34aee2",
+      "kind": "query",
+      "line": 972,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/003",
+      "identity": "b82e229742d5b22a4cedca5930251b24b7fe58b17b280f4371b12c79fc8a05cc",
+      "kind": "query",
+      "line": 973,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/004",
+      "identity": "09c9221b5a06aff3533477bd89229253a57ab7795f448573f27403030be04cc6",
+      "kind": "ordered",
+      "line": 980,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/005",
+      "identity": "dc52594acf5e951f74005d78cfc7a8eeef1a2a1d76b448fa9032b0ba1ea83d11",
+      "kind": "ordered",
+      "line": 980,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/006",
+      "identity": "83dbd4712c6323213f0892bb6c204f01bf9a3fb40d33db77f0d67123e9be7269",
+      "kind": "ordered",
+      "line": 980,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/partially-null-column-across-multiple-row-groups.slt",
+      "id": "parquet_nulls/partially-null-column-across-multiple-row-groups/007",
+      "identity": "fffbe3f4c3fe7358efda36b97eba787d9cf9dc5f8aa8ce6361f7b991843c9e5e",
+      "kind": "ordered",
+      "line": 984,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 partially-NULL column across multiple row groups"
+    },
+    {
+      "file": "suites/parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls.slt",
+      "id": "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/001",
+      "identity": "7fa7fcee878385735c9e4cb5022d90745a624aedbaadf879e77a69ba21360676",
+      "kind": "query",
+      "line": 996,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 dense zero-NULL columns produce no spurious NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls.slt",
+      "id": "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/002",
+      "identity": "98a7e702611877782513c4a0fe954420a89864923ce79c54859b3fcdec932813",
+      "kind": "query",
+      "line": 997,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 dense zero-NULL columns produce no spurious NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls.slt",
+      "id": "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/003",
+      "identity": "3ad21c79eec846114adcbbee95ce446d134ccd0d91d9acae205f0a68c67f8286",
+      "kind": "query",
+      "line": 999,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 dense zero-NULL columns produce no spurious NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls.slt",
+      "id": "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/004",
+      "identity": "78cba423f27ce565e0749dfca3e958b917950b07e1dfb3a390507f4ef06683fc",
+      "kind": "query",
+      "line": 1000,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 dense zero-NULL columns produce no spurious NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/constant-valid-run-followed-by-an-all-null-run.slt",
+      "id": "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/001",
+      "identity": "e4499f91aa5163e58a2e06ec1976217152d8ded7362a969ec1b4675f02d1c08c",
+      "kind": "query",
+      "line": 1013,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 constant-valid run followed by an all-NULL run"
+    },
+    {
+      "file": "suites/parquet_nulls/constant-valid-run-followed-by-an-all-null-run.slt",
+      "id": "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/002",
+      "identity": "04428199b68e9075e13dbdef2012a559415e71a3f38c945074d4907603deeda4",
+      "kind": "query",
+      "line": 1015,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 constant-valid run followed by an all-NULL run"
+    },
+    {
+      "file": "suites/parquet_nulls/constant-valid-run-followed-by-an-all-null-run.slt",
+      "id": "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/003",
+      "identity": "542838deccdb1b4478a99352e5ba686c6a47ab0c584c31b078c9c21b58a57a6a",
+      "kind": "query",
+      "line": 1016,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 constant-valid run followed by an all-NULL run"
+    },
+    {
+      "file": "suites/parquet_nulls/constant-valid-run-followed-by-an-all-null-run.slt",
+      "id": "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/004",
+      "identity": "6a7a598561b800554dd0d3ea978c191d6cf0e3c6d85925bae1eb3e081957172e",
+      "kind": "ordered",
+      "line": 1021,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 constant-valid run followed by an all-NULL run"
+    },
+    {
+      "file": "suites/parquet_nulls/constant-valid-run-followed-by-an-all-null-run.slt",
+      "id": "parquet_nulls/constant-valid-run-followed-by-an-all-null-run/005",
+      "identity": "80505bb39a531b0c22f36ae1e9b96491b15b716ca9491b40193dd5684aba4cbc",
+      "kind": "ordered",
+      "line": 1024,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 constant-valid run followed by an all-NULL run"
+    },
+    {
+      "file": "suites/parquet_nulls/long-null-prefix-followed-by-a-valid-suffix.slt",
+      "id": "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/001",
+      "identity": "695a2cd2a60140fd9c414de4a31e54f740cb8006dc8ce0d5c945df5b1d2e6863",
+      "kind": "query",
+      "line": 1033,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 long NULL prefix followed by a valid suffix"
+    },
+    {
+      "file": "suites/parquet_nulls/long-null-prefix-followed-by-a-valid-suffix.slt",
+      "id": "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/002",
+      "identity": "d0ec581b38ec14b489ce6ba2b8cfeacf04d07de139adaf456ededcdec340c084",
+      "kind": "query",
+      "line": 1035,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 long NULL prefix followed by a valid suffix"
+    },
+    {
+      "file": "suites/parquet_nulls/long-null-prefix-followed-by-a-valid-suffix.slt",
+      "id": "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/003",
+      "identity": "327966462af23cfcce96706357c39c5dfce2058de0ccf5b8d00b2e341bcda18c",
+      "kind": "ordered",
+      "line": 1038,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 long NULL prefix followed by a valid suffix"
+    },
+    {
+      "file": "suites/parquet_nulls/long-null-prefix-followed-by-a-valid-suffix.slt",
+      "id": "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/004",
+      "identity": "5341ee19cd55ac891e2d0ffed2718a46e81a795ba58ff2586d5a3c0f1c4b2302",
+      "kind": "ordered",
+      "line": 1039,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 long NULL prefix followed by a valid suffix"
+    },
+    {
+      "file": "suites/parquet_nulls/run-shaped-columns-projected-alone.slt",
+      "id": "parquet_nulls/run-shaped-columns-projected-alone/001",
+      "identity": "a955afa96e93fb6def444457110502f31caba9725398d26e27f9feaa139bc5b6",
+      "kind": "query",
+      "line": 1047,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 run-shaped columns projected alone"
+    },
+    {
+      "file": "suites/parquet_nulls/run-shaped-columns-projected-alone.slt",
+      "id": "parquet_nulls/run-shaped-columns-projected-alone/002",
+      "identity": "94b96d01e5c99394750817e2502e30f61c3294088afac864544f42e3189d7f0d",
+      "kind": "query",
+      "line": 1048,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 run-shaped columns projected alone"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-projection-preserves-nulls.slt",
+      "id": "parquet_nulls/flba-decimal-projection-preserves-nulls/001",
+      "identity": "759ae54d7e729423caebc8be50d82b2a7f43ff11e483d1a0827ab85d96004843",
+      "kind": "query",
+      "line": 1059,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal projection preserves NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-projection-preserves-nulls.slt",
+      "id": "parquet_nulls/flba-decimal-projection-preserves-nulls/002",
+      "identity": "590b07d3f0351354116884d91e0648332c81c6b6d11ef199dd17ae03dcaf3030",
+      "kind": "query",
+      "line": 1060,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal projection preserves NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-aggregates-skip-nulls.slt",
+      "id": "parquet_nulls/flba-decimal-aggregates-skip-nulls/001",
+      "identity": "b53f04dc167b491c1300761140c9e9779deb2c01aadb859714e8b2be1f3c3aaa",
+      "kind": "query",
+      "line": 1067,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal aggregates skip NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-aggregates-skip-nulls.slt",
+      "id": "parquet_nulls/flba-decimal-aggregates-skip-nulls/002",
+      "identity": "3c18bf54abd4cc78f23253eb9c4aa39348ab3b987562b2feea5d0b33da2c44ec",
+      "kind": "query",
+      "line": 1069,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal aggregates skip NULLs"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path.slt",
+      "id": "parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path/001",
+      "identity": "9e323e59cfed03692dbc5bf5178684d95812b0cb678c7c8108506689078cbcb6",
+      "kind": "query",
+      "line": 1080,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on FLBA decimal with NULLs (post-decode path)"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path.slt",
+      "id": "parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path/002",
+      "identity": "dee8ad4a27fe0a63ccfbd4450becf9a06e963240861ddf3686782d59c04324f7",
+      "kind": "query",
+      "line": 1081,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on FLBA decimal with NULLs (post-decode path)"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path.slt",
+      "id": "parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path/003",
+      "identity": "7249ef20486a39fffa36bf7abe858e00957ce1a50a9ed60b4dc5719b9c52a923",
+      "kind": "query",
+      "line": 1082,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on FLBA decimal with NULLs (post-decode path)"
+    },
+    {
+      "file": "suites/parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path.slt",
+      "id": "parquet_nulls/filter-on-flba-decimal-with-nulls-post-decode-path/004",
+      "identity": "f96a902476d17cd7ee754000fbdb88a90f32187c0ec19ba311eb92f9bf60f347",
+      "kind": "query",
+      "line": 1084,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 filter on FLBA decimal with NULLs (post-decode path)"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-projected-alone.slt",
+      "id": "parquet_nulls/flba-decimal-projected-alone/001",
+      "identity": "e769c64d82aeaa15d2fd0257d60c8b05bf122192d32958a371c8397e8513404e",
+      "kind": "query",
+      "line": 1091,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal projected alone"
+    },
+    {
+      "file": "suites/parquet_nulls/flba-decimal-projected-alone.slt",
+      "id": "parquet_nulls/flba-decimal-projected-alone/002",
+      "identity": "62254637f84135cd692060344404960ee80f8d3f26f72f0a0252e0be9061b247",
+      "kind": "query",
+      "line": 1092,
+      "source": "test/cpp/integration/test_gpu_execution_parquet_nulls.cpp",
+      "suite": "parquet_nulls",
+      "test": "parquet nulls \u2014 FLBA decimal projected alone"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",

@@ -1,0 +1,93 @@
+# Original fixture: ParquetDenseColFixture
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+CREATE TABLE dense (
+  id INTEGER,
+  val INTEGER,
+  s VARCHAR
+);
+
+statement ok
+INSERT INTO dense SELECT
+  i,
+  i * 2,
+  'str_' || CAST(i AS VARCHAR)
+FROM
+  range(1, 33) AS t (i);
+
+statement ok
+COPY dense TO '__TEST_DIR__/dense.parquet' (FORMAT PARQUET);
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(repetition_type = 'OPTIONAL')
+FROM
+  parquet_schema('__TEST_DIR__/dense.parquet')
+WHERE
+  name = 'id' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(repetition_type = 'OPTIONAL')
+FROM
+  parquet_schema('__TEST_DIR__/dense.parquet')
+WHERE
+  name = 'val' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 1 AND bool_and(repetition_type = 'OPTIONAL')
+FROM
+  parquet_schema('__TEST_DIR__/dense.parquet')
+WHERE
+  name = 's' AND num_children IS NULL;
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 32 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 0)
+FROM
+  parquet_metadata('__TEST_DIR__/dense.parquet')
+WHERE
+  path_in_schema = 'id';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 32 AND count(id) = 32
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 32 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 0)
+FROM
+  parquet_metadata('__TEST_DIR__/dense.parquet')
+WHERE
+  path_in_schema = 'val';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 32 AND count(val) = 32
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet');
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  sum(num_values) = 32 AND (sum(stats_null_count) IS NULL OR sum(stats_null_count) = 0)
+FROM
+  parquet_metadata('__TEST_DIR__/dense.parquet')
+WHERE
+  path_in_schema = 's';
+
+statement count 1
+INSERT INTO fixture_check SELECT
+  count(*) = 32 AND count(s) = 32
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet');
+
+statement ok
+DROP TABLE fixture_check;

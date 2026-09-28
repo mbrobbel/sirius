@@ -1,0 +1,50 @@
+# parquet nulls — dense zero-NULL columns produce no spurious NULLs
+include ../../fixtures/migrated/parquet_nulls/ParquetDenseColFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:996
+# sirius: id = "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  id,
+  val,
+  s
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:997
+# sirius: id = "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ??? rowsort
+SELECT
+  COUNT(*),
+  COUNT(val),
+  COUNT(s)
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:999
+# sirius: id = "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet')
+WHERE
+  val IS NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1000
+# sirius: id = "parquet_nulls/dense-zero-null-columns-produce-no-spurious-nulls/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/dense.parquet')
+WHERE
+  s IS NULL;
+----

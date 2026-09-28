@@ -1,0 +1,51 @@
+# parquet nulls — long NULL prefix followed by a valid suffix
+include ../../fixtures/migrated/parquet_nulls/ParquetNullRunFixture.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1033
+# sirius: id = "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/001"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ????? rowsort
+SELECT
+  COUNT(*),
+  COUNT(c_pre),
+  SUM(c_pre),
+  MIN(c_pre),
+  MAX(c_pre)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet');
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1035
+# sirius: id = "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/002"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(*)
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet')
+WHERE
+  c_pre IS NOT NULL;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1038
+# sirius: id = "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/003"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ?? nosort
+SELECT
+  id,
+  c_pre
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet') ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_parquet_nulls.cpp:1039
+# sirius: id = "parquet_nulls/long-null-prefix-followed-by-a-valid-suffix/004"
+# sirius: tags = ["integration", "parquet", "nulls"]
+query ? nosort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/runs.parquet')
+WHERE
+  c_pre IS NOT NULL ORDER BY id;
+----
