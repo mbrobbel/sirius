@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped min parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4846
+# sirius: id = "tpch_integration_parquet/ungrouped-min-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "gpu_values"]
+query ? rowsort
+SELECT
+  min(l_orderkey)
+FROM
+  lineitem;
+----

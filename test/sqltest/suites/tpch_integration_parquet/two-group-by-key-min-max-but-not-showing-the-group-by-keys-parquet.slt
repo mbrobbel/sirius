@@ -1,0 +1,15 @@
+# gpu_execution - two group by key: min max, but not showing the group by keys parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:692
+# sirius: id = "tpch_integration_parquet/two-group-by-key-min-max-but-not-showing-the-group-by-keys-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "grouped_aggregate"]
+query ?? rowsort
+SELECT
+  min(c_custkey),
+  max(c_custkey)
+FROM
+  customer
+GROUP BY
+  c_nationkey, c_mktsegment;
+----

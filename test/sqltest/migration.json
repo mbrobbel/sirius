@@ -5441,6 +5441,16 @@
       "test": "gpu_execution - ungrouped min max"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-min-max-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-min-max-parquet/001",
+      "identity": "5b95b5101864dc5090691d87a42a883291a187d1c0ddfcad5b7bd62f277f3770",
+      "kind": "query",
+      "line": 564,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped min max parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-min-with-filter.slt",
       "id": "tpch_integration_native/ungrouped-min-with-filter/001",
       "identity": "bf32f1174e438f61d3bb0dd6ae2b2a7ac855b3d0b53c90391283fe23afa0fb9e",
@@ -5449,6 +5459,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - ungrouped min with filter"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/ungrouped-min-with-filter-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-min-with-filter-parquet/001",
+      "identity": "5d0d48ef4097d7d8957fd89f2d860600b03078be1794652f438f5018d4b520f4",
+      "kind": "query",
+      "line": 578,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped min with filter parquet"
     },
     {
       "file": "suites/tpch_integration_native/ungrouped-sum-count.slt",
@@ -5461,6 +5481,16 @@
       "test": "gpu_execution - ungrouped sum count"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-sum-count-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-sum-count-parquet/001",
+      "identity": "a6d50be63822c5b5b480f7bc6b36ee34c74a88fe2a6b9ceed2a4cec338ef7ec1",
+      "kind": "query",
+      "line": 592,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped sum count parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-all-agg-functions.slt",
       "id": "tpch_integration_native/ungrouped-all-agg-functions/001",
       "identity": "9e0fef198cbe24dddc5077f02b9a55d69befea4ec1a6022832f0fc9d0b054925",
@@ -5469,6 +5499,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - ungrouped all agg functions"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/ungrouped-all-agg-functions-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-all-agg-functions-parquet/001",
+      "identity": "7d44bde33daa16b4e9a6abb5d2a1690f0b57e18cea1705da0161b77319df35f2",
+      "kind": "query",
+      "line": 607,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped all agg functions parquet"
     },
     {
       "file": "suites/tpch_integration_native/ungrouped-avg-integer.slt",
@@ -5481,6 +5521,16 @@
       "test": "gpu_execution - ungrouped avg integer"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-avg-integer-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-avg-integer-parquet/001",
+      "identity": "23152842de4bbbdd7352e1d0e311504737596f1427f03ed74cd43bf982fb84d9",
+      "kind": "query",
+      "line": 622,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped avg integer parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-avg-decimal.slt",
       "id": "tpch_integration_native/ungrouped-avg-decimal/001",
       "identity": "01052afc4945b3ca25049aa2fe1098c550e5a70c0ed1b8f31d945869a9393abb",
@@ -5489,6 +5539,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - ungrouped avg decimal"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/ungrouped-avg-decimal-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-avg-decimal-parquet/001",
+      "identity": "5f4cfc684f16702efbf1f71c7bbbbf03ad29d6bd0663bae5bbe0c71188b929e8",
+      "kind": "query",
+      "line": 636,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped avg decimal parquet"
     },
     {
       "file": "suites/tpch_integration_native/single-group-by-key-min-max-sum-count.slt",
@@ -5541,6 +5601,16 @@
       "test": "gpu_execution - two group by key: min max, but not showing the group by keys"
     },
     {
+      "file": "suites/tpch_integration_parquet/two-group-by-key-min-max-but-not-showing-the-group-by-keys-parquet.slt",
+      "id": "tpch_integration_parquet/two-group-by-key-min-max-but-not-showing-the-group-by-keys-parquet/001",
+      "identity": "21ce44b8000451519c4b23bf340d42f19870796daece496b80e1195c597ce90d",
+      "kind": "query",
+      "line": 692,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - two group by key: min max, but not showing the group by keys parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/two-group-keys-and-noaggregations.slt",
       "id": "tpch_integration_native/two-group-keys-and-noaggregations/001",
       "identity": "4698678bbf78433c70740535798d790c468e6450bf6c17a875b1c8884a7b88e0",
@@ -5549,6 +5619,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - two group keys and noaggregations"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/two-group-keys-and-noaggregations-parquet.slt",
+      "id": "tpch_integration_parquet/two-group-keys-and-noaggregations-parquet/001",
+      "identity": "e0103694c4b6716f3e85dddf8cfc33c4edc2ef825ce200c2c7b0033318eeb8fc",
+      "kind": "query",
+      "line": 708,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - two group keys and noaggregations parquet"
     },
     {
       "file": "suites/tpch_integration_native/limit.slt",
@@ -8421,6 +8501,16 @@
       "test": "gpu_execution - ungrouped count(*)"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-count-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-count-parquet/001",
+      "identity": "7838b05dfe44a9a275f0d1a50fe299f26c105ef4e6477870251774f47d28f201",
+      "kind": "query",
+      "line": 4832,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped count(*) parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-min.slt",
       "id": "tpch_integration_native/ungrouped-min/001",
       "identity": "efadfc46436f2408233f856decda3a888544ab2aa5689a11afc702b65f8e1017",
@@ -8429,6 +8519,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - ungrouped min"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/ungrouped-min-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-min-parquet/001",
+      "identity": "1bbe1e78db953467e52fdd67e58682606c942db3e9576f018b1f8154fc5a7262",
+      "kind": "query",
+      "line": 4846,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped min parquet"
     },
     {
       "file": "suites/tpch_integration_native/ungrouped-max.slt",
@@ -8441,6 +8541,16 @@
       "test": "gpu_execution - ungrouped max"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-max-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-max-parquet/001",
+      "identity": "2f5929030a0202629f44ff4f9cfda4eb5657ca1c4d3191b6ae0fc803fc724539",
+      "kind": "query",
+      "line": 4860,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped max parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-min-and-max.slt",
       "id": "tpch_integration_native/ungrouped-min-and-max/001",
       "identity": "652eb3e2f38fb147fc5ff55211c5031a8ad61196c22fe774a224773d2b19e924",
@@ -8451,6 +8561,16 @@
       "test": "gpu_execution - ungrouped min and max"
     },
     {
+      "file": "suites/tpch_integration_parquet/ungrouped-min-and-max-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-min-and-max-parquet/001",
+      "identity": "09c0a703da9384a25d5350d5169b5ef66224c80142dd396ac619a0e21c52e2e3",
+      "kind": "query",
+      "line": 4874,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped min and max parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/ungrouped-count-with-min-and-max.slt",
       "id": "tpch_integration_native/ungrouped-count-with-min-and-max/001",
       "identity": "48c4a31ff122fd6b8cfb4db332a5c6afe791d45b3e1cc39988ce745aa130ceaf",
@@ -8459,6 +8579,16 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - ungrouped count(*) with min and max"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/ungrouped-count-with-min-and-max-parquet.slt",
+      "id": "tpch_integration_parquet/ungrouped-count-with-min-and-max-parquet/001",
+      "identity": "e5d2b49206e1733cc818ad4e9aa6b94049d023144081cd7d2f7bc9d5ef42f079",
+      "kind": "query",
+      "line": 4888,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - ungrouped count(*) with min and max parquet"
     },
     {
       "file": "suites/tpch_integration_parquet/standalone-filter-drops-pure-filter-column-via-projection-map.slt",
@@ -8763,6 +8893,20 @@
       "test": "gpu_execution - TPC-H Query 2"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-2-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-2-parquet/001",
+      "identity": "683e963a0a7d03ca8c665804d5243a4a05bad3e5a3990eee297ed7f64b6c2052",
+      "kind": "query",
+      "line": 4144,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 2 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-3.slt",
       "gpu_counts": [
         1,
@@ -8775,6 +8919,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 3"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-3-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-3-parquet/001",
+      "identity": "c46295b56ad712044d5c570f9401d700e347813f57cfdbfbb300b6305030652e",
+      "kind": "query",
+      "line": 4158,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 3 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-4.slt",
@@ -8791,6 +8949,20 @@
       "test": "gpu_execution - TPC-H Query 4"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-4-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-4-parquet/001",
+      "identity": "4ffcf3ca64917ec4fe40013aa6102a98b8f481c4d866327c81dda263166d8861",
+      "kind": "query",
+      "line": 4188,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 4 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-5.slt",
       "gpu_counts": [
         1,
@@ -8803,6 +8975,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 5"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-5-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-5-parquet/001",
+      "identity": "f1c22bd6c462c5faf06510fa25b740d4b305b16727e4567b66be4e24658d6f08",
+      "kind": "query",
+      "line": 4212,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 5 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-6.slt",
@@ -8819,6 +9005,20 @@
       "test": "gpu_execution - TPC-H Query 6"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-6-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-6-parquet/001",
+      "identity": "60c802a6dc2e47d019fcf47fd5103959fcdff8c452211b92d034c7ed4d7c9039",
+      "kind": "query",
+      "line": 4226,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 6 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-7.slt",
       "gpu_counts": [
         1,
@@ -8831,6 +9031,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 7"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-7-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-7-parquet/001",
+      "identity": "56a1a9cc4e45823b471945949ae72f1943435fa41495c93cbb3fef9d8ee94602",
+      "kind": "query",
+      "line": 4240,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 7 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-8.slt",
@@ -8847,6 +9061,20 @@
       "test": "gpu_execution - TPC-H Query 8"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-8-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-8-parquet/001",
+      "identity": "0e8de6f929bad6bf5dfc5b7d75d0f36793e20f73212dd71f3fedc654d419c00c",
+      "kind": "query",
+      "line": 4254,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 8 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-9.slt",
       "gpu_counts": [
         1,
@@ -8859,6 +9087,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 9"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-9-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-9-parquet/001",
+      "identity": "53b6830e9e212934653bab05a6468bf4d563643408b296e6c2cb7e7b6b48746c",
+      "kind": "query",
+      "line": 4268,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 9 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-10.slt",
@@ -9043,6 +9285,20 @@
       "test": "gpu_execution - TPC-H Query 16"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-16-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-16-parquet/001",
+      "identity": "357c6c7c5499099455141576a3c4c6b08cd88d3d68222065a78cd6de5f7e8206",
+      "kind": "query",
+      "line": 4366,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 16 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-17.slt",
       "gpu_counts": [
         1,
@@ -9055,6 +9311,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 17"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-17-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-17-parquet/001",
+      "identity": "0620b203a7fcc7205acbca26468f71fae383c128c51bf78068f1437cf7de272f",
+      "kind": "query",
+      "line": 4380,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 17 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-18.slt",
@@ -9071,6 +9341,20 @@
       "test": "gpu_execution - TPC-H Query 18"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-18-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-18-parquet/001",
+      "identity": "be0b389dabe17b60a61ed6dd30407bbe5e1e8d8aa9fe43f9865ca73cf260c755",
+      "kind": "query",
+      "line": 4394,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 18 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-19.slt",
       "gpu_counts": [
         1,
@@ -9083,6 +9367,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 19"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-19-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-19-parquet/001",
+      "identity": "a6e6098c527702094a900e245c94f7de6cd4d3c242dd37ff68f209f90c5e7cff",
+      "kind": "query",
+      "line": 4408,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 19 parquet"
     },
     {
       "file": "suites/tpch_integration_native/tpc-h-query-20.slt",
@@ -9099,6 +9397,20 @@
       "test": "gpu_execution - TPC-H Query 20"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-20-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-20-parquet/001",
+      "identity": "4b8df92300baef2886de8a5c0e5e42a26cb60221aa0e0ed5443e86b3643f1d09",
+      "kind": "query",
+      "line": 4422,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 20 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-21.slt",
       "gpu_counts": [
         1,
@@ -9113,6 +9425,20 @@
       "test": "gpu_execution - TPC-H Query 21"
     },
     {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-21-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-21-parquet/001",
+      "identity": "2d1e4c1faa054fd55e7778de81a6792b89a409e61229ef6dc9b87382e5cb333b",
+      "kind": "query",
+      "line": 4441,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 21 parquet"
+    },
+    {
       "file": "suites/tpch_integration_native/tpc-h-query-22.slt",
       "gpu_counts": [
         1,
@@ -9125,6 +9451,20 @@
       "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
       "suite": "tpch_integration_native",
       "test": "gpu_execution - TPC-H Query 22"
+    },
+    {
+      "file": "suites/tpch_integration_parquet/tpc-h-query-22-parquet.slt",
+      "gpu_counts": [
+        1,
+        2
+      ],
+      "id": "tpch_integration_parquet/tpc-h-query-22-parquet/001",
+      "identity": "dd9f39efbb8715ebcfe56c14fdd8095643175b82aecd7cb047e4c04e1b287eb9",
+      "kind": "query",
+      "line": 4455,
+      "source": "test/cpp/integration/test_gpu_execution_tpch.cpp",
+      "suite": "tpch_integration_parquet",
+      "test": "gpu_execution - TPC-H Query 22 parquet"
     },
     {
       "file": "suites/tpch_integration_native/count-over-projection-pruned-values-preserves-cardinality.slt",
