@@ -1,0 +1,10 @@
+# gpu_execution - dummy scan (SELECT literal)
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4667
+# sirius: id = "tpch_integration_native/dummy-scan-select-literal/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  42 AS x;
+----

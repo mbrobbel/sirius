@@ -1,0 +1,15 @@
+# gpu_execution - cast integer to decimal with aggregation
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3179
+# sirius: id = "tpch_integration_native/cast-integer-to-decimal-with-aggregation/001"
+# sirius: tags = ["integration", "gpu_execution", "cast", "decimal"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  max(CAST(n_nationkey AS DECIMAL(18,2))) AS max_d
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

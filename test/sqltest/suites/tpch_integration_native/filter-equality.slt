@@ -1,0 +1,14 @@
+# gpu_execution - filter equality
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:497
+# sirius: id = "tpch_integration_native/filter-equality/001"
+# sirius: tags = ["integration", "gpu_execution", "filter"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation
+WHERE
+  n_regionkey = 1;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - cast integer to decimal preserves scale
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3165
+# sirius: id = "tpch_integration_native/cast-integer-to-decimal-preserves-scale/001"
+# sirius: tags = ["integration", "gpu_execution", "cast", "decimal"]
+query ?? rowsort
+SELECT
+  n_nationkey,
+  CAST(n_nationkey AS DECIMAL(18,2)) AS d
+FROM
+  nation;
+----

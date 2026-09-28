@@ -1,0 +1,17 @@
+# gpu_execution - boolean values
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4693
+# sirius: id = "tpch_integration_native/boolean-values/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values", "types"]
+query ? rowsort
+SELECT
+  b
+FROM
+  (
+    VALUES
+      (true),
+      (false),
+      (NULL::BOOLEAN)
+  ) t (b);
+----
