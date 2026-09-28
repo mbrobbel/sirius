@@ -1,0 +1,30 @@
+include ../../fixtures/migrated/semantic_cast.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:187
+# sirius: id = "semantic_cast/positive_control/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "positive_control"]
+query ? rowsort
+SELECT
+  d
+FROM
+  cast_t
+WHERE
+  d IS NOT NULL;
+----
+1970-01-02
+2024-06-15
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:189
+# sirius: id = "semantic_cast/positive_control/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "positive_control"]
+query ? rowsort
+SELECT
+  CAST(d AS TIMESTAMP)
+FROM
+  cast_t;
+----
+1970-01-02T00:00:00
+2024-06-15T00:00:00
+NULL
