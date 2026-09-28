@@ -1,0 +1,15 @@
+# gpu_execution - group by count parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2758
+# sirius: id = "tpch_integration_parquet/group-by-count-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "group_by"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(*)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

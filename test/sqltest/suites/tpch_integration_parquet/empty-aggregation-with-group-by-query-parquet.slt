@@ -1,0 +1,24 @@
+# gpu_execution - empty aggregation with group by query parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3474
+# sirius: id = "tpch_integration_parquet/empty-aggregation-with-group-by-query-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "empty_result"]
+query ????????? rowsort
+SELECT
+  l_linestatus,
+  count(*),
+  min(l_orderkey) AS mino,
+  sum(l_orderkey),
+  count(l_orderkey),
+  count(l_receiptdate),
+  min(l_receiptdate),
+  count(l_comment),
+  min(l_comment)
+FROM
+  lineitem
+WHERE
+  l_linestatus = 'J'
+GROUP BY
+  l_linestatus;
+----

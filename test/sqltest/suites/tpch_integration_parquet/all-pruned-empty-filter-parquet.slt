@@ -1,0 +1,14 @@
+# gpu_execution - all-pruned empty filter parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4028
+# sirius: id = "tpch_integration_parquet/all-pruned-empty-filter-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "empty_result", "all_pruned"]
+query ? rowsort
+SELECT
+  n_nationkey
+FROM
+  nation
+WHERE
+  n_regionkey = 99 ORDER BY n_nationkey;
+----
