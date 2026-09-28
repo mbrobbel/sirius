@@ -1,0 +1,15 @@
+# gpu_execution - TPC-H Query 19
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4401
+# sirius: id = "tpch_integration_native/tpc-h-query-19/001"
+# sirius: tags = ["integration", "tpch"]
+query ? rowsort
+SELECT
+  sum(l.l_extendedprice * (1 - l.l_discount)) AS revenue
+FROM
+  lineitem l,
+  part p
+WHERE
+  (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#41' AND p.p_container IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') AND l.l_quantity >= 2 AND l.l_quantity <= 2 + 10 AND p.p_size BETWEEN 1 AND 5 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON') OR (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#13' AND p.p_container IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK') AND l.l_quantity >= 14 AND l.l_quantity <= 14 + 10 AND p.p_size BETWEEN 1 AND 10 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON') OR (p.p_partkey = l.l_partkey AND p.p_brand = 'Brand#55' AND p.p_container IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG') AND l.l_quantity >= 23 AND l.l_quantity <= 23 + 10 AND p.p_size BETWEEN 1 AND 15 AND l.l_shipmode IN ('AIR', 'AIR REG') AND l.l_shipinstruct = 'DELIVER IN PERSON');
+----

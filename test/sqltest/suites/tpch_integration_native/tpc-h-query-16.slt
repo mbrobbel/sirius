@@ -1,0 +1,20 @@
+# gpu_execution - TPC-H Query 16
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4359
+# sirius: id = "tpch_integration_native/tpc-h-query-16/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  p.p_brand,
+  p.p_type,
+  p.p_size,
+  count(DISTINCT ps.ps_suppkey) AS supplier_cnt
+FROM
+  partsupp ps,
+  part p
+WHERE
+  p.p_partkey = ps.ps_partkey AND p.p_brand <> 'Brand#21' AND p.p_type NOT LIKE 'MEDIUM PLATED%' AND p.p_size IN (38, 2, 8, 31, 44, 5, 14, 24) AND ps.ps_suppkey NOT IN (SELECT s.s_suppkey FROM supplier s WHERE s.s_comment LIKE '%Customer%Complaints%')
+GROUP BY
+  p.p_brand, p.p_type, p.p_size ORDER BY supplier_cnt DESC, p.p_brand, p.p_type, p.p_size;
+----

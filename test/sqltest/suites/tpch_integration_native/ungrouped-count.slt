@@ -1,0 +1,12 @@
+# gpu_execution - ungrouped count(*)
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4825
+# sirius: id = "tpch_integration_native/ungrouped-count/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  nation;
+----
