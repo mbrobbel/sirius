@@ -17009,6 +17009,66 @@
       "test": "transparent S3 glob scans 1001 parquet objects across LIST pages"
     },
     {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/001",
+      "identity": "210ffa535a06e9898d1302add29e07447ac45d905faf37798c2220f76b6abef6",
+      "kind": "query",
+      "line": 21,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from crossfit left outer join equipment on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/002",
+      "identity": "5d8791c79c47882121ebef27f38f6139bd5a5af806efaca426079e2ee8837d73",
+      "kind": "query",
+      "line": 23,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from crossfit right outer join equipment on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/003",
+      "identity": "8ce51877434e20c32a25f1bc07c433c9c1b41ff95fac02ab9ee22b7e58a06ac0",
+      "kind": "query",
+      "line": 25,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from crossfit semi join equipment on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/004",
+      "identity": "eafc657d51b7f403d123442d80cda8b662356595d629cff8aa91f546da08ad32",
+      "kind": "query",
+      "line": 27,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from equipment semi join crossfit on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/005",
+      "identity": "40ceab269ccbc2c195559b72a9664edd1b6be1143fdd9be652694a39b3b67379",
+      "kind": "query",
+      "line": 29,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from crossfit anti join equipment on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
+      "file": "suites/regressions/manual_joins.slt",
+      "id": "regressions/manual-joins/006",
+      "identity": "f803c657481772489aa7050ed942655c8b85b3e8d2a5dad58db55950d5ad9f83",
+      "kind": "query",
+      "line": 31,
+      "source": "test/test_join.sql",
+      "suite": "regressions",
+      "test": "select * from equipment anti join crossfit on crossfit.difficulty_level = equipment.difficulty_level;"
+    },
+    {
       "file": "suites/iceberg/conformance-added-column-declines-at-plan-time.slt",
       "id": "iceberg/conformance-added-column-declines-at-plan-time/liveness",
       "identity": "623784b45095aad869b98b4c134e2f70a71931494a2757c87b00a2ec66910d1d",
