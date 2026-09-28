@@ -1,0 +1,16 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:579
+# sirius: id = "fallback_mix/topn-round/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? nosort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY round(id) DESC LIMIT 3;
+----
+199
+198
+197

@@ -1,0 +1,16 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:574
+# sirius: id = "fallback_mix/projection-list-extract/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query ? nosort
+SELECT
+  li[1]
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') LIMIT 3;
+----
+0
+1
+2
