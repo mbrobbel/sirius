@@ -1,0 +1,30 @@
+# gpu_execution dense count-join: disabled knob keeps the join plan correct
+include ../../fixtures/migrated/dense_count_join.slt
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:117
+# sirius: id = "dense_count_join/disabled-knob-keeps-the-join-plan-correct/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(o_id) AS c_count
+FROM
+  cust
+  LEFT JOIN ord ON c_id = o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	2
+3	2
+4	0
+5	3
+6	0
+7	0
+8	0
+NULL	0

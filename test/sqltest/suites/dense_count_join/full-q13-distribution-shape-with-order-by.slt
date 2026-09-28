@@ -1,0 +1,28 @@
+# gpu_execution dense count-join: full q13 distribution shape with ORDER BY
+include ../../fixtures/migrated/dense_count_join.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:94
+# sirius: id = "dense_count_join/full-q13-distribution-shape-with-order-by/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? nosort
+SELECT
+  c_count,
+  count(*) AS custdist
+FROM
+  (
+    SELECT
+      c_id,
+      count(o_id) AS c_count
+    FROM
+      cust
+      LEFT JOIN ord ON c_id = o_cust
+    GROUP BY
+      c_id
+  ) t
+GROUP BY
+  c_count ORDER BY custdist DESC, c_count DESC;
+----
+0	6
+2	2
+3	1

@@ -641,6 +641,366 @@
       "test": "gpu_execution array - many rows span multiple scan batches"
     },
     {
+      "file": "suites/dense_count_join/count-col-grouped-by-the-left-join-key.slt",
+      "id": "dense_count_join/count-col-grouped-by-the-left-join-key/001",
+      "identity": "3d7241dccebc46b26aba67abe2c896d639118d4f8c10c655540299f33aad25a6",
+      "kind": "query",
+      "line": 66,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: COUNT(col) grouped by the LEFT-join key"
+    },
+    {
+      "file": "suites/dense_count_join/count-and-nullable-count-col-semantics.slt",
+      "id": "dense_count_join/count-and-nullable-count-col-semantics/001",
+      "identity": "40275fa81a5d2e926cbdcd2058e5746a8ccddcb4a4c5fdb77f5810b0674c2003",
+      "kind": "query",
+      "line": 74,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: COUNT(*) and nullable COUNT(col) semantics"
+    },
+    {
+      "file": "suites/dense_count_join/count-and-nullable-count-col-semantics.slt",
+      "id": "dense_count_join/count-and-nullable-count-col-semantics/002",
+      "identity": "5664e1ee152f167bddf548a3c74be5bd2fa02d17d0a1ccc4dc9c8baa243063ca",
+      "kind": "query",
+      "line": 76,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: COUNT(*) and nullable COUNT(col) semantics"
+    },
+    {
+      "file": "suites/dense_count_join/right-join-orientation.slt",
+      "id": "dense_count_join/right-join-orientation/001",
+      "identity": "85033327f2a3e1c0e13e40c59b2e3b0f8a608f6a16a279c2572ae47c4df1d84e",
+      "kind": "query",
+      "line": 85,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: RIGHT-join orientation"
+    },
+    {
+      "file": "suites/dense_count_join/full-q13-distribution-shape-with-order-by.slt",
+      "id": "dense_count_join/full-q13-distribution-shape-with-order-by/001",
+      "identity": "17488e16fa754136036e69b4173ae3265e5caa70fa169bde1ee08e795c94e7ae",
+      "kind": "ordered",
+      "line": 94,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: full q13 distribution shape with ORDER BY"
+    },
+    {
+      "file": "suites/dense_count_join/sparse-strategy-under-a-tiny-histogram-budget.slt",
+      "id": "dense_count_join/sparse-strategy-under-a-tiny-histogram-budget/001",
+      "identity": "7fbb292c6429f1a1bc2a0df05090048f4a1889981f7b9685ffdc6200ee933fa8",
+      "kind": "query",
+      "line": 106,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: sparse strategy under a tiny histogram budget"
+    },
+    {
+      "file": "suites/dense_count_join/sparse-strategy-under-a-tiny-histogram-budget.slt",
+      "id": "dense_count_join/sparse-strategy-under-a-tiny-histogram-budget/002",
+      "identity": "d85c5acb449a929f10da1dd17e4a05df29ee948e10cb4b3e624da4394a30748d",
+      "kind": "query",
+      "line": 108,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: sparse strategy under a tiny histogram budget"
+    },
+    {
+      "file": "suites/dense_count_join/disabled-knob-keeps-the-join-plan-correct.slt",
+      "id": "dense_count_join/disabled-knob-keeps-the-join-plan-correct/001",
+      "identity": "bf30844b4c49254f4e1e6632d20befcbc64a1a7c1d6c56a29e0faf85e1439eab",
+      "kind": "query",
+      "line": 117,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: disabled knob keeps the join plan correct"
+    },
+    {
+      "file": "suites/dense_count_join/runtime-empty-sides.slt",
+      "id": "dense_count_join/runtime-empty-sides/001",
+      "identity": "ec15113fe9e75427ce7c0dfe8c41a7a548b21a81e164ea67b2501eafb572d9b6",
+      "kind": "query",
+      "line": 148,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: runtime-empty sides"
+    },
+    {
+      "file": "suites/dense_count_join/runtime-empty-sides.slt",
+      "id": "dense_count_join/runtime-empty-sides/002",
+      "identity": "2d1abdab8aedbae96c0fe77382316f62beecf2ab616756b60ca933f624103beb",
+      "kind": "query",
+      "line": 151,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: runtime-empty sides"
+    },
+    {
+      "file": "suites/dense_count_join/runtime-empty-sides.slt",
+      "id": "dense_count_join/runtime-empty-sides/003",
+      "identity": "1b0064e200f0b6b0d21280018b2546441cf6032907e264387b1f6f15c86c5652",
+      "kind": "query",
+      "line": 154,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: runtime-empty sides"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-counted-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-counted-side/001-fused",
+      "identity": "8820f29ea6f60f20d6c0277ab26c77fcf216a9a3e1a91bdcec6f04c5ef34d74b",
+      "kind": "query",
+      "line": 164,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-counted-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-counted-side/001-unfused",
+      "identity": "ca26f9d8c1c83a88ad990243a677e631ac8080c205107ba1de0f3e22d94bd3fb",
+      "kind": "query",
+      "line": 164,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-counted-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-counted-side/002-fused",
+      "identity": "e0da860b846198ee650026a6d6e9f593d966776486add49f764d7222a0672ce9",
+      "kind": "query",
+      "line": 168,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-counted-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-counted-side/002-unfused",
+      "identity": "93dee302841104f8f7dae969c274c05b2a82ff070960398b6bcbdbea9c7002fc",
+      "kind": "query",
+      "line": 168,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-preserved-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-preserved-side/001-fused",
+      "identity": "49590bb4185fe2728d6f872d63417a7eaf19f3b1996c9730b3e6801762a11196",
+      "kind": "query",
+      "line": 178,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the preserved side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-preserved-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-preserved-side/001-unfused",
+      "identity": "2107dfb7be2c524d8e9cfa911f2a6b4cb81cad508f169e253c46f285f2d24b0a",
+      "kind": "query",
+      "line": 178,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the preserved side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-preserved-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-preserved-side/002-fused",
+      "identity": "8b8f9ee4d16b6f6e91c74d34e27e87c0b41d068dcf0133d3fa4b7257d50325ab",
+      "kind": "query",
+      "line": 182,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the preserved side"
+    },
+    {
+      "file": "suites/dense_count_join/nested-hash-join-on-the-preserved-side.slt",
+      "id": "dense_count_join/nested-hash-join-on-the-preserved-side/002-unfused",
+      "identity": "eed41f60ee390ea9b5e950be9e24a7887086cd1269f5efa6956e156648667f70",
+      "kind": "query",
+      "line": 182,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested hash join on the preserved side"
+    },
+    {
+      "file": "suites/dense_count_join/group-by-having-subquery-on-the-counted-side.slt",
+      "id": "dense_count_join/group-by-having-subquery-on-the-counted-side/001-fused",
+      "identity": "8a03c624ca816999bbca973b371bc5bee291f2cf8d112d652e2f47f9e970f20e",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/group-by-having-subquery-on-the-counted-side.slt",
+      "id": "dense_count_join/group-by-having-subquery-on-the-counted-side/001-unfused",
+      "identity": "a749f0c68b4c4219b0ab5fa068fb261d844ec21ff5165b1d40db63e8dfbed96f",
+      "kind": "query",
+      "line": 192,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/group-by-having-subquery-on-the-counted-side.slt",
+      "id": "dense_count_join/group-by-having-subquery-on-the-counted-side/002-fused",
+      "identity": "619cc3b1fac7d39f97a748a699ac982899ae330ff7eeb617507b1fb080ee35a6",
+      "kind": "query",
+      "line": 193,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/group-by-having-subquery-on-the-counted-side.slt",
+      "id": "dense_count_join/group-by-having-subquery-on-the-counted-side/002-unfused",
+      "identity": "d3fa6a755b13d562001afa51a546d3b0b8b1336d50eafaf148466ffc33a68590",
+      "kind": "query",
+      "line": 193,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side"
+    },
+    {
+      "file": "suites/dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join.slt",
+      "id": "dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join/001",
+      "identity": "0b79f1e7a6bc20fd9deb0a1559750ba64163fe3add2c0860378b8f5dbcbc145f",
+      "kind": "query",
+      "line": 206,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: merge fusion under a streaming root feeding the join"
+    },
+    {
+      "file": "suites/dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join.slt",
+      "id": "dense_count_join/merge-fusion-under-a-streaming-root-feeding-the-join/002",
+      "identity": "31cb7c5b60d6479f7e27b87c247e301f94bc54da2d2e8469722401e351d55f92",
+      "kind": "query",
+      "line": 210,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: merge fusion under a streaming root feeding the join"
+    },
+    {
+      "file": "suites/dense_count_join/right-join-orientation-with-a-nested-preserved-input.slt",
+      "id": "dense_count_join/right-join-orientation-with-a-nested-preserved-input/001-fused",
+      "identity": "7b8cb99921428f2c16e1c588bbcd212458e24fcb5614fd583f2fd96c00a4bc2c",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: RIGHT-join orientation with a nested preserved input"
+    },
+    {
+      "file": "suites/dense_count_join/right-join-orientation-with-a-nested-preserved-input.slt",
+      "id": "dense_count_join/right-join-orientation-with-a-nested-preserved-input/001-unfused",
+      "identity": "9857b8913c014a395f3588f25a19c1eb5b1a55455f339380cebb428bc1a840db",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: RIGHT-join orientation with a nested preserved input"
+    },
+    {
+      "file": "suites/dense_count_join/nested-inputs-that-are-empty-at-runtime.slt",
+      "id": "dense_count_join/nested-inputs-that-are-empty-at-runtime/001-fused",
+      "identity": "b526804fef17645ce82c82b08aaf4d6ea94a53998fa11562a963befefb0554fd",
+      "kind": "query",
+      "line": 230,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested inputs that are empty at runtime"
+    },
+    {
+      "file": "suites/dense_count_join/nested-inputs-that-are-empty-at-runtime.slt",
+      "id": "dense_count_join/nested-inputs-that-are-empty-at-runtime/001-unfused",
+      "identity": "15e5de33e1b6de678dda46070236fb51cc1baf98839b8d259823e6b7757137cc",
+      "kind": "query",
+      "line": 230,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: nested inputs that are empty at runtime"
+    },
+    {
+      "file": "suites/dense_count_join/delim-join-below-the-preserved-input-s-root.slt",
+      "id": "dense_count_join/delim-join-below-the-preserved-input-s-root/001-fused",
+      "identity": "0860bdf5449f544544466600e511c7dabde41c997ce6fc5bb139b734e511823d",
+      "kind": "query",
+      "line": 248,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: delim join below the preserved input's root"
+    },
+    {
+      "file": "suites/dense_count_join/delim-join-below-the-preserved-input-s-root.slt",
+      "id": "dense_count_join/delim-join-below-the-preserved-input-s-root/001-unfused",
+      "identity": "e3423c926ac55ae6474e2963dd3b5ff5087d35d17dc143439a85531a4872a065",
+      "kind": "query",
+      "line": 248,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: delim join below the preserved input's root"
+    },
+    {
+      "file": "suites/dense_count_join/matched-key-with-only-null-count-arguments.slt",
+      "id": "dense_count_join/matched-key-with-only-null-count-arguments/001-fused",
+      "identity": "0237960754e5d217438700b759c58b6284bd3018077d35924d8907d5e9b9eb11",
+      "kind": "query",
+      "line": 264,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
+    },
+    {
+      "file": "suites/dense_count_join/matched-key-with-only-null-count-arguments.slt",
+      "id": "dense_count_join/matched-key-with-only-null-count-arguments/001-unfused",
+      "identity": "e2ea3bf1c929aae9743fe49f930fe58b66fa3dcfb8635cf15e3a3f4bf60cda6e",
+      "kind": "query",
+      "line": 264,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
+    },
+    {
+      "file": "suites/dense_count_join/matched-key-with-only-null-count-arguments.slt",
+      "id": "dense_count_join/matched-key-with-only-null-count-arguments/002-fused",
+      "identity": "bb93264c4b918cb69e7662e2e023eb302bf9af6fb1d7a854acb2d0a8c6a7a0f0",
+      "kind": "query",
+      "line": 266,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
+    },
+    {
+      "file": "suites/dense_count_join/matched-key-with-only-null-count-arguments.slt",
+      "id": "dense_count_join/matched-key-with-only-null-count-arguments/002-unfused",
+      "identity": "329ab7d7c6f911bbbd786cba410337b897cf218a0853ecc8da5b00a96f088e96",
+      "kind": "query",
+      "line": 266,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
+    },
+    {
+      "file": "suites/dense_count_join/matched-key-with-only-null-count-arguments.slt",
+      "id": "dense_count_join/matched-key-with-only-null-count-arguments/003",
+      "identity": "3f8596f50a8cdf06ac504e7a115d93fd1fa20a5cd8815d43172084f9a2ff6ecc",
+      "kind": "query",
+      "line": 270,
+      "source": "test/cpp/integration/test_gpu_execution_dense_count_join.cpp",
+      "suite": "dense_count_join",
+      "test": "gpu_execution dense count-join: matched key with only NULL COUNT arguments"
+    },
+    {
       "file": "suites/cast_date/plain-t-foldedpredicates-01.slt",
       "id": "cast_date/plain-t-foldedpredicates-01/ids",
       "identity": "6c91bed61687babf31e49d86b09a2c1a31d23e29b8e6d9687b77b1e1c21b1048",

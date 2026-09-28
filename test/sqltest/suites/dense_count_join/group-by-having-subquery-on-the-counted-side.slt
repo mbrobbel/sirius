@@ -1,0 +1,122 @@
+# gpu_execution dense count-join: GROUP BY + HAVING subquery on the counted side
+include ../../fixtures/migrated/dense_count_join.slt
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:192
+# sirius: id = "dense_count_join/group-by-having-subquery-on-the-counted-side/001-fused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(t.o_cust) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	1
+3	0
+4	0
+5	1
+6	0
+7	0
+8	0
+NULL	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:192
+# sirius: id = "dense_count_join/group-by-having-subquery-on-the-counted-side/001-unfused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(t.o_cust) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	1
+3	0
+4	0
+5	1
+6	0
+7	0
+8	0
+NULL	0
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:193
+# sirius: id = "dense_count_join/group-by-having-subquery-on-the-counted-side/002-fused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(*) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	1
+2	1
+3	2
+4	1
+5	1
+6	1
+7	1
+8	1
+NULL	2
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:193
+# sirius: id = "dense_count_join/group-by-having-subquery-on-the-counted-side/002-unfused"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(*) AS c_count
+FROM
+  cust
+  LEFT JOIN (SELECT o_cust FROM ord GROUP BY o_cust HAVING count(*) > 1) t ON c_id = t.o_cust
+GROUP BY
+  c_id;
+----
+1	1
+2	1
+3	2
+4	1
+5	1
+6	1
+7	1
+8	1
+NULL	2
+
+onlyif sirius
+statement ok
+SET enable_dense_count_join = true;
