@@ -1,0 +1,26 @@
+include ../../fixtures/migrated/cast_date.slt
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:237
+# sirius: id = "cast_date/plain-t-foldedpredicates-28/ids"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "plain"]
+query ? rowsort
+SELECT
+  id
+FROM
+  t
+WHERE
+  d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '1' YEAR;
+----
+
+# Original predicate: test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp:237
+# sirius: id = "cast_date/plain-t-foldedpredicates-28/aggregate"
+# sirius: tags = ["integration", "cast_date", "fused_scan_filter", "plain"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(id)
+FROM
+  t
+WHERE
+  d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '1' YEAR;
+----

@@ -781,6 +781,506 @@
       "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 00:00:00'"
     },
     {
+      "file": "suites/cast_date/plain-t-foldedpredicates-08.slt",
+      "id": "cast_date/plain-t-foldedpredicates-08/ids",
+      "identity": "4bfdbca8a712e955df7fe321fd21691b52840330da54c1e0992a01acd377162d",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-08.slt",
+      "id": "cast_date/plain-t-foldedpredicates-08/aggregate",
+      "identity": "16f5a1d04893b2158c46654c46e322e273378ddb94b448cebbf1c02ae226d1a6",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-09.slt",
+      "id": "cast_date/plain-t-foldedpredicates-09/ids",
+      "identity": "a7b7ce71a138aacedf6a9b76c72233ca71922bdd63bc1cbae0efe8b9c6fb6db8",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-09.slt",
+      "id": "cast_date/plain-t-foldedpredicates-09/aggregate",
+      "identity": "1e01c7dfd8961a9e8e4b2f2193948c5103b566283142b4c9fb5be71b38c16731",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-10.slt",
+      "id": "cast_date/plain-t-foldedpredicates-10/ids",
+      "identity": "1ad615cf107d043b63267ddaa68ed1ef45c5c9840f593bf1f12cbd01e0d0fa6b",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-10.slt",
+      "id": "cast_date/plain-t-foldedpredicates-10/aggregate",
+      "identity": "fac7b4715dce0811b81a61cfbaf575af3c50d509bc23f13d026cd185fa7f1e96",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-11.slt",
+      "id": "cast_date/plain-t-foldedpredicates-11/ids",
+      "identity": "7fecdc3c43de44ccf6d93b65dbfd827e41fe93506ab7656bded11f1a966b1b78",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-11.slt",
+      "id": "cast_date/plain-t-foldedpredicates-11/aggregate",
+      "identity": "9568cf7b66e6ad38fb4c372f65585f5bb0e43bfacf441aa1bedcf46bc17bc714",
+      "kind": "query",
+      "line": 217,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-12.slt",
+      "id": "cast_date/plain-t-foldedpredicates-12/ids",
+      "identity": "62ac8fc986c48ffffd9f57d01ca0f3315341593028cce96473ee77238dd24f04",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-12.slt",
+      "id": "cast_date/plain-t-foldedpredicates-12/aggregate",
+      "identity": "3089b9b435e1c0fac5947799836a9d1458a09a623530f5f2d98f502bc7cbdca8",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-13.slt",
+      "id": "cast_date/plain-t-foldedpredicates-13/ids",
+      "identity": "063828402a6e104d770033d4d6f0b011d6a32a7c43fb5a2a1df243cc8c5e9f27",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-13.slt",
+      "id": "cast_date/plain-t-foldedpredicates-13/aggregate",
+      "identity": "352afa518bff7f211609d9caff000a77d8275bf4289c877da9a4c6b3b6db8abb",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-14.slt",
+      "id": "cast_date/plain-t-foldedpredicates-14/ids",
+      "identity": "bf1a8cda255f5df6354e8e45f443a165d0bf66124d3fd287b6ef339381e8f68a",
+      "kind": "query",
+      "line": 220,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-14.slt",
+      "id": "cast_date/plain-t-foldedpredicates-14/aggregate",
+      "identity": "7776ca9380dd7b87952893de32c359ce5b255f1c7fd606d535e311af64f26e6c",
+      "kind": "query",
+      "line": 220,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-15.slt",
+      "id": "cast_date/plain-t-foldedpredicates-15/ids",
+      "identity": "9ab20f19dc78ced1587700e7c0431775b1e7f175c645f8bfeb484256acf5f927",
+      "kind": "query",
+      "line": 221,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-15.slt",
+      "id": "cast_date/plain-t-foldedpredicates-15/aggregate",
+      "identity": "69904ae4c21314427e2d7ce93f70ff277a94264a39218595e1fcf29bae3b45a2",
+      "kind": "query",
+      "line": 221,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-16.slt",
+      "id": "cast_date/plain-t-foldedpredicates-16/ids",
+      "identity": "8a8fba242110eef9e43c7e277adc9caa071d41021df850ef0a092f11641a244f",
+      "kind": "query",
+      "line": 222,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-16.slt",
+      "id": "cast_date/plain-t-foldedpredicates-16/aggregate",
+      "identity": "dacf354c8ec60801a587aaa637b871528f7ed04e75e7d9d2a0bf1264b25f673b",
+      "kind": "query",
+      "line": 222,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-17.slt",
+      "id": "cast_date/plain-t-foldedpredicates-17/ids",
+      "identity": "5fe5b3bb9ce05b81ae0c7a44e5da346b3e29ca6c0a62db37ddecb09990b3e480",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-17.slt",
+      "id": "cast_date/plain-t-foldedpredicates-17/aggregate",
+      "identity": "de75457909fe008fd3831b0479aa6b7a7c6effa3c900c3d2a582890b2f2ae245",
+      "kind": "query",
+      "line": 223,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1998-09-20 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-18.slt",
+      "id": "cast_date/plain-t-foldedpredicates-18/ids",
+      "identity": "6b506b06335cae7519458f6e699d0ff6406a8aa9947728ad738b56d705efa846",
+      "kind": "query",
+      "line": 224,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-19 23:59:59.999999'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-18.slt",
+      "id": "cast_date/plain-t-foldedpredicates-18/aggregate",
+      "identity": "aa85ab9e1000decb92de8a0b94d313daf7f3ed2e851c4c51474547838b1d8c90",
+      "kind": "query",
+      "line": 224,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-19 23:59:59.999999'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-19.slt",
+      "id": "cast_date/plain-t-foldedpredicates-19/ids",
+      "identity": "4a61a8536d57066c7a410a38a28f8e35ad31e075832db6e90b8577d28eeb4984",
+      "kind": "query",
+      "line": 225,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-19 23:59:59.999999'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-19.slt",
+      "id": "cast_date/plain-t-foldedpredicates-19/aggregate",
+      "identity": "30a4d6c2f2f5649cfb450d25e1632472c07bdb514c662bc93040b6afe4e2a404",
+      "kind": "query",
+      "line": 225,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  TIMESTAMP '1998-09-19 23:59:59.999999'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-20.slt",
+      "id": "cast_date/plain-t-foldedpredicates-20/ids",
+      "identity": "087968ce6aa87bc38fb24d6a85dc8fcfb0d63a31b2a82d5265ac566018ddc76a",
+      "kind": "query",
+      "line": 227,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 00:00:00' >= d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-20.slt",
+      "id": "cast_date/plain-t-foldedpredicates-20/aggregate",
+      "identity": "21d5936b4ba14bca046f6b315417d800db26beca4cbefba07fba56ec97e280e7",
+      "kind": "query",
+      "line": 227,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 00:00:00' >= d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-21.slt",
+      "id": "cast_date/plain-t-foldedpredicates-21/ids",
+      "identity": "eae4fa26c65fe8985773c9a5f26a746442256076d983341990c352432307924c",
+      "kind": "query",
+      "line": 228,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 00:00:00' <  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-21.slt",
+      "id": "cast_date/plain-t-foldedpredicates-21/aggregate",
+      "identity": "8c46eaa79c8c6f7049d8ad46a1ee5575cc1016b2cd5eedb93677632a26b4649e",
+      "kind": "query",
+      "line": 228,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 00:00:00' <  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-22.slt",
+      "id": "cast_date/plain-t-foldedpredicates-22/ids",
+      "identity": "a10be77fadc64ec685ed97154a4dab5911a855d886602110084676625894320c",
+      "kind": "query",
+      "line": 229,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 12:00:00' >  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-22.slt",
+      "id": "cast_date/plain-t-foldedpredicates-22/aggregate",
+      "identity": "479ffbc7d1457239dc362de7d19c6869a44281ef6a155180be434d6311594f17",
+      "kind": "query",
+      "line": 229,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 12:00:00' >  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-23.slt",
+      "id": "cast_date/plain-t-foldedpredicates-23/ids",
+      "identity": "d9a750d451bafd77b21a7c3409d6bc3fc0b6ed80cebed2a9780ddcc74fc1f0bc",
+      "kind": "query",
+      "line": 230,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 12:00:00' =  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-23.slt",
+      "id": "cast_date/plain-t-foldedpredicates-23/aggregate",
+      "identity": "f91907f29e4b3bb517f947e2bb78e57a15fd134ce0ddccf19e9623f84cb43df1",
+      "kind": "query",
+      "line": 230,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / TIMESTAMP '1998-09-20 12:00:00' =  d"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-24.slt",
+      "id": "cast_date/plain-t-foldedpredicates-24/ids",
+      "identity": "a251e9fb5afe968fac9a7781a7fbc816610b4391e12553468c6a0cd83f3f66d1",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1969-12-31 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-24.slt",
+      "id": "cast_date/plain-t-foldedpredicates-24/aggregate",
+      "identity": "aff577c7f9b07dcc2479e8ca41dd81f952e282eb05a833e646dfedaec114d2fe",
+      "kind": "query",
+      "line": 232,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1969-12-31 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-25.slt",
+      "id": "cast_date/plain-t-foldedpredicates-25/ids",
+      "identity": "b9e1514dfc59fa15e5098781014e1e2a25485deb1641cd565573e05c53f38924",
+      "kind": "query",
+      "line": 233,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1969-12-31 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-25.slt",
+      "id": "cast_date/plain-t-foldedpredicates-25/aggregate",
+      "identity": "1a39833e3c4c3a87f23e1c73e34bea9fe7c34ab53d1cf3bebddfe1afe990b5b1",
+      "kind": "query",
+      "line": 233,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1969-12-31 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-26.slt",
+      "id": "cast_date/plain-t-foldedpredicates-26/ids",
+      "identity": "0fe597e5061f95d3cb0ff0676cf9db000b56e126bbee23f37903ba9a6a0e4fcf",
+      "kind": "query",
+      "line": 234,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1969-12-31 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-26.slt",
+      "id": "cast_date/plain-t-foldedpredicates-26/aggregate",
+      "identity": "80737a08eb20cfff5574e89efda781239dbbaf29ea92147c8f14ae515ffc5c2c",
+      "kind": "query",
+      "line": 234,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1969-12-31 00:00:00.000001'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-27.slt",
+      "id": "cast_date/plain-t-foldedpredicates-27/ids",
+      "identity": "b9fdf5793c6c350cb08b7bda7d87713ea379b2ce04f0a7c979bb8541675f67e1",
+      "kind": "query",
+      "line": 235,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1969-12-31 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-27.slt",
+      "id": "cast_date/plain-t-foldedpredicates-27/aggregate",
+      "identity": "1e0d3dc7421e0499a17b96f2121f90e6ecf433fdd852e4a37cbc3a9292ec46f3",
+      "kind": "query",
+      "line": 235,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= TIMESTAMP '1969-12-31 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-28.slt",
+      "id": "cast_date/plain-t-foldedpredicates-28/ids",
+      "identity": "27053224dba790e1d646a5c477a92e36f2eba5d723122288e81f23b799c2bfb4",
+      "kind": "query",
+      "line": 237,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '1' YEAR"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-28.slt",
+      "id": "cast_date/plain-t-foldedpredicates-28/aggregate",
+      "identity": "69a633ad5f867595f8cd5dae4d8279e1548cb6526f98d5bf58bed7618790b985",
+      "kind": "query",
+      "line": 237,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '1' YEAR"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-29.slt",
+      "id": "cast_date/plain-t-foldedpredicates-29/ids",
+      "identity": "fd428cdceb4ed97dfc59a1533acaccaaa54837512c2aee669d0127d2383f07af",
+      "kind": "query",
+      "line": 238,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d BETWEEN DATE '1994-01-01' AND DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-29.slt",
+      "id": "cast_date/plain-t-foldedpredicates-29/aggregate",
+      "identity": "177b3caec108d4643eb6c49db121ecd4038732da8c70cdca2f108f08b9522e59",
+      "kind": "query",
+      "line": 238,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d BETWEEN DATE '1994-01-01' AND DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-30.slt",
+      "id": "cast_date/plain-t-foldedpredicates-30/ids",
+      "identity": "da8d4fbfd34cc3527ca2ee116e482bb26d61b35727b2f5e4d216242fc114ed48",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '3' MONTH"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-30.slt",
+      "id": "cast_date/plain-t-foldedpredicates-30/aggregate",
+      "identity": "b57ed195214c961a600bd9240f08c748a45f914708523f0f392500a8d1eed92d",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '3' MONTH"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-31.slt",
+      "id": "cast_date/plain-t-foldedpredicates-31/ids",
+      "identity": "55cc36b0cd1321e77203ad72691670ebe23e8271eb85cc8d898f42105bbae6c5",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-31.slt",
+      "id": "cast_date/plain-t-foldedpredicates-31/aggregate",
+      "identity": "6f933e718530c56885421a04caada17918eb1599c7b5d26b2a801e171832491b",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-32.slt",
+      "id": "cast_date/plain-t-foldedpredicates-32/ids",
+      "identity": "e8863ccdaece8be60659ab58488cfc2624abc005b9c4715a0702c2024afafa5b",
+      "kind": "query",
+      "line": 243,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-32.slt",
+      "id": "cast_date/plain-t-foldedpredicates-32/aggregate",
+      "identity": "016ff375bb663ffaeb56c12563a2601ac08ba3f9e389de031d82c4fff201ef75",
+      "kind": "query",
+      "line": 243,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  DATE '1998-09-20'"
+    },
+    {
       "file": "suites/cast_date/native-pin-t-foldedpredicates-01.slt",
       "id": "cast_date/native-pin-t-foldedpredicates-01/ids",
       "identity": "d2b69761b7cf12b911695a7e987545ecc3a2e6db74d3667459b4d35afe955da2",
@@ -2059,6 +2559,186 @@
       "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
       "suite": "cast_date",
       "test": "kFoldedPredicates / parquet-pin / d =  DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-01.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-01/ids",
+      "identity": "3effb37bd851529e2dc3e2ed3f5e891d85a62b0815379a6bb4785447c619e28c",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-01.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-01/aggregate",
+      "identity": "cb17c7b4bcfea897708b3eccbb827e104b438eba951e579e9dae720628100cd4",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-02.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-02/ids",
+      "identity": "8c21b57d29832f987c1627a00a6e8fa519d8786257bb2907e08451ba0445022e",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-02.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-02/aggregate",
+      "identity": "30cb3b61949430aff4aa70617e049a6187dc97029c61dae09f92ee5ac8ad24a7",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-03.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-03/ids",
+      "identity": "d65cc5c43b55d96b1140f61b25a1b93d93bf55ec2487b318ad9005f9f7976833",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-03.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-03/aggregate",
+      "identity": "6b94926ea53d58ea8198805d0908c5f604d0fa42047f6e47e963a1ba9e9e7e95",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-04.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-04/ids",
+      "identity": "e009d366c5a73f9954d9c0717b9409b2917bcd61130f2c5e3911a7171c8c024b",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-04.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-04/aggregate",
+      "identity": "be84ca8d86018c0f6e6ecc1ea4d68499594116a151c8ef38f4acac4ceaa27dce",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-05.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-05/ids",
+      "identity": "e243350dcee8b075138149b3e2363faeb5773d9d0e1e2eaa8348d3ad1e943f37",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-05.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-05/aggregate",
+      "identity": "58c239bff3327f66ec2132435446cab9af9a98389bf3786131027547f9b581a4",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-06.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-06/ids",
+      "identity": "f1c12553957e6ac22f263f03c70ee1d2ab9a8153a2337a23c24aeda25b548fd4",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-06.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-06/aggregate",
+      "identity": "86add755fe3e8a44484f0a94d43a33bbddcb514f81a5416c25920cabe71d3ccc",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-07.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-07/ids",
+      "identity": "492481f8500ac933ed0da1ee4e06737a5a0c4dd8f204c89b8dcac4a89470740d",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-07.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-07/aggregate",
+      "identity": "0bbc775caba6f81e576d0d67e34c5bfb08fe6f8be4f843249c83652b9716bc6f",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-08.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-08/ids",
+      "identity": "ba354c2094e8903b671a5970488c0a0293fe3155e54ca0936f7b48c2f006202a",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-08.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-08/aggregate",
+      "identity": "7ca47711acc44c6c2e7359fbba3311ff09449a4da8d936e580c326f6ab9a6da1",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-09.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-09/ids",
+      "identity": "ab92086baeee17600ea5e88dd4111cb6d350c115760ee39f4f6c88b7b536498b",
+      "kind": "query",
+      "line": 258,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= TIMESTAMP_NS '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t_inf-finiteconstantsoninfinityrows-09.slt",
+      "id": "cast_date/plain-t_inf-finiteconstantsoninfinityrows-09/aggregate",
+      "identity": "7e505fce3d4826b029446a8aae45363532dc8ae6380c98609003bebf244c4b48",
+      "kind": "query",
+      "line": 258,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / plain / d <= TIMESTAMP_NS '1998-09-20 00:00:00'"
     },
     {
       "file": "suites/cast_date/native-pin-t_inf-finiteconstantsoninfinityrows-01.slt",
