@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-// GPU-vs-CPU correctness for NULL keys in joins (issue #1095): equi-joins never
+// GPU execution coverage for NULL keys in joins (issue #1095): equi-joins never
 // match NULL keys (NULL != NULL), NULL-padding for LEFT/RIGHT/FULL OUTER, and
 // NULL handling in SEMI/ANTI (EXISTS / NOT EXISTS) and MARK (IN) joins.
 //
-// Every query goes through the shared file-backed GpuExecutionFixture, which
-// runs it once on the GPU (asserting a real GPU execution with no fallback) and
-// once on DuckDB CPU, then compares the results (order-insensitive).
+// Every query verifies GPU execution without fallback. Result comparisons live
+// in test/sqltest/suites/join_nulls/.
 
 #include <catch.hpp>
 #include <duckdb.hpp>
@@ -52,30 +51,30 @@ TEST_CASE_METHOD(JoinNullFixture,
                  "[integration][gpu_execution][join][nulls]")
 {
   // NULL = NULL is UNKNOWN, so rows with a NULL key (l.3, r.4) never join.
-  compare_gpu_vs_cpu("SELECT l.id AS lid, r.id AS rid FROM l JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT l.id AS lid, r.id AS rid FROM l JOIN r ON l.k = r.k");
   // Explicit: a NULL-keyed left row joins nothing.
-  compare_gpu_vs_cpu("SELECT l.id FROM l JOIN r ON l.k = r.k WHERE l.k IS NULL");
+  require_gpu_execution("SELECT l.id FROM l JOIN r ON l.k = r.k WHERE l.k IS NULL");
 }
 
 TEST_CASE_METHOD(JoinNullFixture,
                  "gpu_execution LEFT join NULL-pads unmatched (including NULL-key) rows",
                  "[integration][gpu_execution][join][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT l.id AS lid, r.id AS rid FROM l LEFT JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT l.id AS lid, r.id AS rid FROM l LEFT JOIN r ON l.k = r.k");
 }
 
 TEST_CASE_METHOD(JoinNullFixture,
                  "gpu_execution RIGHT join NULL-pads unmatched (including NULL-key) rows",
                  "[integration][gpu_execution][join][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT l.id AS lid, r.id AS rid FROM l RIGHT JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT l.id AS lid, r.id AS rid FROM l RIGHT JOIN r ON l.k = r.k");
 }
 
 TEST_CASE_METHOD(JoinNullFixture,
                  "gpu_execution FULL OUTER join NULL-pads both sides",
                  "[integration][gpu_execution][join][nulls]")
 {
-  compare_gpu_vs_cpu("SELECT l.id AS lid, r.id AS rid FROM l FULL OUTER JOIN r ON l.k = r.k");
+  require_gpu_execution("SELECT l.id AS lid, r.id AS rid FROM l FULL OUTER JOIN r ON l.k = r.k");
 }
 
 TEST_CASE_METHOD(JoinNullFixture,
@@ -84,8 +83,8 @@ TEST_CASE_METHOD(JoinNullFixture,
 {
   // EXISTS/NOT EXISTS use the join key equality (NULL != NULL), so the NULL-key
   // left row is absent from SEMI and present in ANTI.
-  compare_gpu_vs_cpu("SELECT l.id FROM l WHERE EXISTS (SELECT 1 FROM r WHERE r.k = l.k)");
-  compare_gpu_vs_cpu("SELECT l.id FROM l WHERE NOT EXISTS (SELECT 1 FROM r WHERE r.k = l.k)");
+  require_gpu_execution("SELECT l.id FROM l WHERE EXISTS (SELECT 1 FROM r WHERE r.k = l.k)");
+  require_gpu_execution("SELECT l.id FROM l WHERE NOT EXISTS (SELECT 1 FROM r WHERE r.k = l.k)");
 }
 
 TEST_CASE_METHOD(JoinNullFixture,
@@ -97,9 +96,9 @@ TEST_CASE_METHOD(JoinNullFixture,
   //
   // The full build side contains a NULL, so an unmatched non-NULL probe (l.k=30)
   // yields NULL, never FALSE -- this exercises TRUE and NULL.
-  compare_gpu_vs_cpu("SELECT l.id, l.k IN (SELECT k FROM r) AS m FROM l");
+  require_gpu_execution("SELECT l.id, l.k IN (SELECT k FROM r) AS m FROM l");
   // A NULL-free build side lets an unmatched non-NULL probe produce FALSE: l.k=30
   // is absent from {10,20,40} with no NULL present, so the mark is FALSE (while
   // l.k=NULL is still NULL and matches are TRUE) -- this exercises FALSE.
-  compare_gpu_vs_cpu("SELECT l.id, l.k IN (SELECT k FROM r WHERE k IS NOT NULL) AS m FROM l");
+  require_gpu_execution("SELECT l.id, l.k IN (SELECT k FROM r WHERE k IS NOT NULL) AS m FROM l");
 }
