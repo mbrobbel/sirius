@@ -1,0 +1,9 @@
+storage = ["native", "parquet"]
+fixtures = ["tpcds"]
+
+[import]
+extensions = ["tpcds"]
+schema = ["fixtures/prepare/tpcds-schema.sql"]
+expected_queries = 99
+provenance = "DuckDB v1.5.5 tpcds_queries()"
+source = { kind = "database", query = "SELECT query FROM tpcds_queries() ORDER BY query_nr" }
