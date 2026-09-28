@@ -1,0 +1,17 @@
+# Migrated from test/cpp/integration/test_gpu_execution_join_nulls.cpp:88
+# gpu_execution SEMI / ANTI join (EXISTS / NOT EXISTS) with NULL keys
+include ../../fixtures/migrated/join_nulls/596278c1b896b669.slt
+
+# sirius: id = "join_nulls/semi-anti-join-exists-not-exists-with-null-keys/002"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "nulls"]
+query ? rowsort
+SELECT
+  l.id
+FROM
+  l
+WHERE
+  NOT EXISTS (SELECT 1 FROM r WHERE r.k = l.k);
+----
+3
+4

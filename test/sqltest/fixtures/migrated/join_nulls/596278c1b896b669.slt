@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE l (
+  id INTEGER,
+  k INTEGER
+);
+
+statement ok
+CREATE TABLE r (
+  id INTEGER,
+  k INTEGER
+);
+
+statement ok
+INSERT INTO l VALUES
+  (1, 10),
+  (2, 20),
+  (3, NULL),
+  (4, 30),
+  (5, 10);
+
+statement ok
+INSERT INTO r VALUES
+  (1, 10),
+  (2, 20),
+  (3, 20),
+  (4, NULL),
+  (5, 40);
+
+statement ok
+CHECKPOINT;

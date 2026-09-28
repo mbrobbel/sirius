@@ -1,0 +1,19 @@
+# Migrated from test/cpp/integration/test_gpu_execution_join_nulls.cpp:104
+# gpu_execution MARK join (IN) emits TRUE/FALSE/NULL
+include ../../fixtures/migrated/join_nulls/596278c1b896b669.slt
+
+# sirius: id = "join_nulls/mark-join-in-emits-true-false-null/002"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "nulls"]
+query ?? rowsort
+SELECT
+  l.id,
+  l.k IN (SELECT k FROM r WHERE k IS NOT NULL) AS m
+FROM
+  l;
+----
+1	true
+2	true
+3	NULL
+4	false
+5	true
