@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE big AS SELECT i AS id, CASE WHEN i < 70000 THEN NULL ELSE i END AS c FROM range(80000) AS t (i);
+
+statement ok
+CHECKPOINT;

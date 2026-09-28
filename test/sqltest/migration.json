@@ -109,6 +109,156 @@
       "source": "test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp",
       "suite": "aggregate_nulls",
       "test": "gpu_execution grouped aggregates over a wholly-NULL column"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-column-projection-preserves-nulls-001.slt",
+      "id": "allnull_scan/wholly-null-column-projection-preserves-nulls/001",
+      "identity": "fb6c8035f0d110037bb7700b096e0f311dabac077308ef430267baef04941079",
+      "kind": "query",
+      "line": 69,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL column projection preserves NULLs"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-column-is-not-null-filters-001.slt",
+      "id": "allnull_scan/wholly-null-column-is-not-null-filters/001",
+      "identity": "c54fae9bedb34cdc9bf762d54c45ad4da429ca43f4af86a669d5a84b1b0b3211",
+      "kind": "query",
+      "line": 77,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL column IS [NOT] NULL filters"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-column-is-not-null-filters-002.slt",
+      "id": "allnull_scan/wholly-null-column-is-not-null-filters/002",
+      "identity": "485d14acd9324c193c03e59fb0001988f15a750a008ac446d946660f1f9150c2",
+      "kind": "query",
+      "line": 78,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL column IS [NOT] NULL filters"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-column-is-not-null-filters-003.slt",
+      "id": "allnull_scan/wholly-null-column-is-not-null-filters/003",
+      "identity": "36c51de6dacf3d8e76fdc405985a3de14eb4ea98a869bc8bdcb36ad5ae16eef2",
+      "kind": "query",
+      "line": 79,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL column IS [NOT] NULL filters"
+    },
+    {
+      "file": "suites/allnull_scan/partially-null-column-keeps-its-valid-rows-001.slt",
+      "id": "allnull_scan/partially-null-column-keeps-its-valid-rows/001",
+      "identity": "b2dd2fedcb4895c826cdbd34ee991e16eaf722e3e088b798344d08e11ea72f8c",
+      "kind": "query",
+      "line": 87,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution partially-NULL column keeps its valid rows"
+    },
+    {
+      "file": "suites/allnull_scan/partially-null-column-keeps-its-valid-rows-002.slt",
+      "id": "allnull_scan/partially-null-column-keeps-its-valid-rows/002",
+      "identity": "669f075e3c3b4ce12c43ddf3e6fa1b4281c6560d778e28bdafec0419f5a89d80",
+      "kind": "query",
+      "line": 88,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution partially-NULL column keeps its valid rows"
+    },
+    {
+      "file": "suites/allnull_scan/partially-null-column-keeps-its-valid-rows-003.slt",
+      "id": "allnull_scan/partially-null-column-keeps-its-valid-rows/003",
+      "identity": "e1a32009e98e367909359b19fccde6c9a28588406aa624457c0c7acb49b0c933",
+      "kind": "query",
+      "line": 89,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution partially-NULL column keeps its valid rows"
+    },
+    {
+      "file": "suites/allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group-001.slt",
+      "id": "allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group/001",
+      "identity": "5501a29db5bb4672de84eb4f8f908a12e5bc0f5cf876f5025b5052d0af482d0a",
+      "kind": "query",
+      "line": 114,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution constant-valued run then all-NULL run in one row group"
+    },
+    {
+      "file": "suites/allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group-002.slt",
+      "id": "allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group/002",
+      "identity": "e9e40f5153bbab10657e062150bd2dd24e2724ba5b8dd2d1d848e8271ff7a3f7",
+      "kind": "query",
+      "line": 115,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution constant-valued run then all-NULL run in one row group"
+    },
+    {
+      "file": "suites/allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group-003.slt",
+      "id": "allnull_scan/constant-valued-run-then-all-null-run-in-one-row-group/003",
+      "identity": "16729722122d9d11c703fc3ef956982488de125d037755aa20798c34f86bd36c",
+      "kind": "query",
+      "line": 116,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution constant-valued run then all-NULL run in one row group"
+    },
+    {
+      "file": "suites/allnull_scan/large-null-run-then-valid-run-column-001.slt",
+      "id": "allnull_scan/large-null-run-then-valid-run-column/001",
+      "identity": "6425dc4f7c46bceadcaea5458360839f2194bca6cf70afdbcd4901ec1f6b29c3",
+      "kind": "query",
+      "line": 142,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution large NULL-run then valid-run column"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-column-spanning-multiple-row-groups-001.slt",
+      "id": "allnull_scan/wholly-null-column-spanning-multiple-row-groups/001",
+      "identity": "64865bd137367d820da5db2ba99a66472c275bc01a1babb362978202a13c397a",
+      "kind": "query",
+      "line": 164,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL column spanning multiple row groups"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-varchar-column-001.slt",
+      "id": "allnull_scan/wholly-null-varchar-column/001",
+      "identity": "7fbf673ba5ee3cd24d33f1722366ee0c8680b2d2ee977c89866b21a787cace1c",
+      "kind": "query",
+      "line": 185,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL VARCHAR column"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-varchar-column-002.slt",
+      "id": "allnull_scan/wholly-null-varchar-column/002",
+      "identity": "1529ff428262d1b261abcc249998e684bde2b22cb5f1fa273e2c897516da7d5d",
+      "kind": "query",
+      "line": 186,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL VARCHAR column"
+    },
+    {
+      "file": "suites/allnull_scan/wholly-null-varchar-column-003.slt",
+      "id": "allnull_scan/wholly-null-varchar-column/003",
+      "identity": "9b0a80f86c6c21ef4ee66945a929ae83d41b101b3747819fb7d580cae2405e83",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/integration/test_gpu_execution_allnull_scan.cpp",
+      "suite": "allnull_scan",
+      "test": "gpu_execution wholly-NULL VARCHAR column"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",
