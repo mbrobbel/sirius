@@ -1,0 +1,74 @@
+statement ok
+CREATE TABLE vs_enn AS SELECT i AS id, [i, i, i]::FLOAT[3] AS vec FROM range(3000) t (i);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  pin_table(name => 'vs_enn', tier => 'gpu', format => 'duckdb');
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  vs_enn ORDER BY array_distance(vec, [0.0, 0.0, 0.0]::FLOAT[3]) LIMIT 25;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  id
+FROM
+  sirius_knn_search('vs_enn', 'vec', [0.0, 0.0, 0.0]::FLOAT[3], k => 25, output_columns => ['id'], use_index => false);
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:285
+# sirius: id = "vector_search/enn-l2/001"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  *
+FROM
+  search_result;
+----
+
+onlyif duckdb
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  array_distance(vec, [2990.0, 2990.0, 2990.0]::FLOAT[3]) AS distance
+FROM
+  vs_enn ORDER BY array_distance(vec, [2990.0, 2990.0, 2990.0]::FLOAT[3]) LIMIT 15;
+
+onlyif sirius
+statement ok
+CREATE OR REPLACE VIEW search_result AS
+SELECT
+  distance
+FROM
+  sirius_knn_search('vs_enn', 'vec', [2990.0, 2990.0, 2990.0]::FLOAT[3], k => 15, output_columns => ['id'], use_index => false) ORDER BY distance;
+
+# Original query: test/cpp/integration/test_gpu_execution_vector_search.cpp:299
+# sirius: id = "vector_search/enn-l2/002"
+# sirius: tags = ["integration", "vector_search", "explicit_gpu_function"]
+# sirius: execution = "allow_fallback"
+# sirius: float_tolerance = { absolute = 0.001, relative = 0.0001 }
+query ? nosort
+SELECT
+  *
+FROM
+  search_result ORDER BY distance;
+----
+
+onlyif sirius
+statement ok
+SELECT
+  *
+FROM
+  unpin_table('vs_enn');
