@@ -1,0 +1,50 @@
+# gpu_execution dense count-join: COUNT(*) and nullable COUNT(col) semantics
+include ../../fixtures/migrated/dense_count_join.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:74
+# sirius: id = "dense_count_join/count-and-nullable-count-col-semantics/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(*) AS c_count
+FROM
+  cust
+  LEFT JOIN ord ON c_id = o_cust
+GROUP BY
+  c_id;
+----
+1	1
+2	2
+3	2
+4	1
+5	3
+6	1
+7	1
+8	1
+NULL	2
+
+# Original query: test/cpp/integration/test_gpu_execution_dense_count_join.cpp:76
+# sirius: id = "dense_count_join/count-and-nullable-count-col-semantics/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "dense_count_join"]
+query ?? rowsort
+SELECT
+  c_id,
+  count(o_val) AS c_count
+FROM
+  cust
+  LEFT JOIN ord ON c_id = o_cust
+GROUP BY
+  c_id;
+----
+1	0
+2	1
+3	2
+4	0
+5	2
+6	0
+7	0
+8	0
+NULL	0
