@@ -1,0 +1,2 @@
+storage = ["native"]
+fixtures = ["legacy-tpch", "legacy-tpch-goldens"]
