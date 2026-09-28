@@ -1,0 +1,72 @@
+# mvcc guards: own-transaction inserts decline; commit serves, rollback resumes
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(50000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+statement ok
+BEGIN TRANSACTION;
+
+statement ok
+INSERT INTO t VALUES
+  (900001),
+  (900002);
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:294
+# sirius: id = "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+# sirius: execution = "allow_fallback"
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+statement ok
+ROLLBACK;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:297
+# sirius: id = "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+statement ok
+BEGIN TRANSACTION;
+
+statement ok
+INSERT INTO t VALUES
+  (900001),
+  (900002);
+
+statement ok
+COMMIT;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:302
+# sirius: id = "pin_mvcc_delete/guards-own-transaction-inserts-decline-commit-serves-rollback-resumes/003"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  max(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

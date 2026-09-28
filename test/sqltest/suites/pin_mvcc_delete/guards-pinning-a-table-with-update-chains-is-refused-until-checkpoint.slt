@@ -1,0 +1,40 @@
+# mvcc guards: pinning a table with update chains is refused until CHECKPOINT
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k, (range * 2)::INTEGER AS v FROM range(50000);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+UPDATE t
+SET
+  v = v + 1
+WHERE
+  k < 10;
+
+onlyif sirius
+statement error update chains
+CALL pin_table(format='duckdb', name='t', tier='gpu');
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:348
+# sirius: id = "pin_mvcc_delete/guards-pinning-a-table-with-update-chains-is-refused-until-checkpoint/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ? rowsort
+SELECT
+  sum(v)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
