@@ -114,6 +114,10 @@ pub struct Manifest {
     #[serde(default)]
     pub axes: BTreeMap<Name, BTreeMap<Name, AxisChoice>>,
     pub runs: BTreeMap<Name, Run>,
+    #[serde(default)]
+    pub fixtures: BTreeMap<Name, Fixture>,
+    #[serde(default)]
+    pub sources: BTreeMap<Name, Source>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
@@ -134,9 +138,14 @@ struct SuiteSpec {
     #[serde(default)]
     scratch_directories: Vec<FixturePath>,
     #[serde(default)]
+    fixture_files: BTreeMap<FixturePath, Name>,
+    #[serde(default)]
     checkpoint: Checkpoint,
     #[serde(default)]
     storage: Choices,
+    #[serde(default)]
+    fixtures: Vec<Name>,
+    import: Option<Import>,
 }
 
 impl SuiteSpec {
@@ -157,9 +166,12 @@ pub struct Suite {
     pub profile: Option<Name>,
     pub minimum_gpus: Option<NonZeroUsize>,
     pub scratch_directories: Vec<FixturePath>,
+    pub fixture_files: BTreeMap<FixturePath, Name>,
     pub checkpoint: Checkpoint,
     pub directory: PathBuf,
     pub storage: Vec<Name>,
+    pub fixtures: Vec<Name>,
+    pub import: Option<Import>,
 }
 
 impl Suite {
@@ -170,9 +182,11 @@ impl Suite {
             profile: self.profile.clone(),
             minimum_gpus: self.minimum_gpus,
             scratch_directories: self.scratch_directories.clone(),
-
+            fixture_files: self.fixture_files.clone(),
             checkpoint: self.checkpoint,
             storage: Choices::Names(self.storage.clone()),
+            fixtures: self.fixtures.clone(),
+            import: None,
         };
         fs::write(path, toml::to_string(&spec)?)?;
         Ok(())
@@ -184,6 +198,8 @@ impl Suite {
 
             checkpoint: self.checkpoint,
             scratch_directories: self.scratch_directories.clone(),
+            fixture_files: self.fixture_files.clone(),
+            fixtures: self.fixtures.clone(),
         }
     }
 }
@@ -193,16 +209,36 @@ pub struct ScriptSetup {
     pub substitutions: crate::substitutions::Substitutions,
     pub checkpoint: Checkpoint,
     pub scratch_directories: Vec<FixturePath>,
+    pub fixture_files: BTreeMap<FixturePath, Name>,
+    pub fixtures: Vec<Name>,
 }
 
 impl ScriptSetup {
-    fn from_spec(spec: &SuiteSpec) -> Result<Self> {
+    fn from_spec(spec: &SuiteSpec, fixtures: &BTreeMap<Name, Fixture>) -> Result<Self> {
         crate::substitutions::validate(&spec.substitutions, false)?;
+        references(&spec.fixtures, fixtures, "fixture", false)?;
+        let mut required = spec.fixtures.clone();
+        for (path, name) in &spec.fixture_files {
+            ensure!(fixtures.contains_key(name), "unknown fixture {name}");
+            if !required.contains(name) {
+                required.push(name.clone());
+            }
+            for other in spec.fixture_files.keys() {
+                ensure!(
+                    path == other || !path.as_ref().starts_with(other),
+                    "fixture copy destinations must not overlap: {} and {}",
+                    path.as_ref().display(),
+                    other.as_ref().display()
+                );
+            }
+        }
         Ok(Self {
             substitutions: spec.substitutions.clone(),
 
             checkpoint: spec.checkpoint,
             scratch_directories: spec.scratch_directories.clone(),
+            fixture_files: spec.fixture_files.clone(),
+            fixtures: required,
         })
     }
 }
@@ -399,6 +435,87 @@ pub struct AxisChoice {
     pub reference_settings: Settings,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Fixture {
+    Sql(SqlFixture),
+    Files(FileFixture),
+}
+
+impl Fixture {
+    pub fn extensions(&self) -> &[Name] {
+        match self {
+            Self::Sql(fixture) => &fixture.extensions,
+            Self::Files(fixture) => &fixture.extensions,
+        }
+    }
+
+    pub fn sources(&self) -> Vec<&Name> {
+        match self {
+            Self::Sql(fixture) => fixture.sources.iter().collect(),
+            Self::Files(fixture) => fixture
+                .files
+                .values()
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect(),
+        }
+    }
+
+    pub fn outputs(&self) -> Vec<PathBuf> {
+        match self {
+            Self::Sql(fixture) => fixture
+                .tables
+                .iter()
+                .map(|table| PathBuf::from(format!("{table}.parquet")))
+                .collect(),
+            Self::Files(fixture) => fixture.files.keys().map(|path| path.0.clone()).collect(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ParquetCompression {
+    #[default]
+    Zstd,
+    Snappy,
+}
+
+impl ParquetCompression {
+    fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+
+    pub fn sql(self) -> &'static str {
+        match self {
+            Self::Zstd => "ZSTD",
+            Self::Snappy => "SNAPPY",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SqlFixture {
+    #[serde(default, skip_serializing_if = "ParquetCompression::is_default")]
+    pub compression: ParquetCompression,
+    #[serde(default)]
+    pub extensions: Vec<Name>,
+    pub sql: Vec<PathBuf>,
+    pub tables: Vec<Name>,
+    #[serde(default)]
+    pub sources: Vec<Name>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FileFixture {
+    pub files: BTreeMap<FixturePath, Name>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<Name>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(try_from = "PathBuf", into = "PathBuf")]
 pub struct FixturePath(PathBuf);
@@ -429,6 +546,87 @@ impl AsRef<Path> for FixturePath {
     fn as_ref(&self) -> &Path {
         &self.0
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Source {
+    Pinned(PinnedSource),
+    Provided(ProvidedSource),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PinnedSource {
+    pub sha256: Digest,
+    #[serde(flatten)]
+    pub location: SourceLocation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ProvidedSource {
+    Provided,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SourceLocation {
+    File {
+        path: PathBuf,
+    },
+    Download {
+        url: String,
+        compression: Compression,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Compression {
+    None,
+    Gzip,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct Digest(String);
+impl TryFrom<String> for Digest {
+    type Error = anyhow::Error;
+    fn try_from(value: String) -> Result<Self> {
+        ensure!(
+            value.len() == 64 && value.bytes().all(|c| c.is_ascii_hexdigit()),
+            "expected a SHA-256 digest"
+        );
+        Ok(Self(value.to_ascii_lowercase()))
+    }
+}
+impl From<Digest> for String {
+    fn from(value: Digest) -> Self {
+        value.0
+    }
+}
+impl AsRef<str> for Digest {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Import {
+    #[serde(default)]
+    pub extensions: Vec<Name>,
+    pub schema: Vec<PathBuf>,
+    pub source: QuerySource,
+    pub expected_queries: NonZeroUsize,
+    pub provenance: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum QuerySource {
+    Database { query: String },
+    SqlLines { path: PathBuf },
 }
 
 pub struct Config {
@@ -584,6 +782,29 @@ impl Config {
                 choices.resolve(values, &format!("choice for {axis}"))?;
             }
         }
+        for (name, fixture) in &config.manifest.fixtures {
+            let sources: Vec<_> = fixture.sources().into_iter().cloned().collect();
+            references(&sources, &config.manifest.sources, "source", false)?;
+            match fixture {
+                Fixture::Sql(fixture) => {
+                    ensure!(
+                        !fixture.sql.is_empty() && !fixture.tables.is_empty(),
+                        "fixture {name} needs SQL and exported tables"
+                    );
+                    ensure!(
+                        fixture.tables.iter().collect::<BTreeSet<_>>().len()
+                            == fixture.tables.len(),
+                        "duplicate table in fixture {name}"
+                    );
+                    for sql in &fixture.sql {
+                        ensure!(config.path(sql)?.is_file(), "fixture SQL must be a file");
+                    }
+                }
+                Fixture::Files(fixture) => {
+                    ensure!(!fixture.files.is_empty(), "fixture {name} needs files")
+                }
+            }
+        }
         for profile in config.manifest.profiles.values() {
             ensure!(
                 config.path(&profile.config)?.is_file(),
@@ -622,7 +843,7 @@ impl Config {
             directory.display()
         );
         let spec = SuiteSpec::load(&directory)?;
-        ScriptSetup::from_spec(&spec)?;
+        let setup = ScriptSetup::from_spec(&spec, &self.manifest.fixtures)?;
         if let Some(profile) = &spec.profile {
             references(
                 std::slice::from_ref(profile),
@@ -632,6 +853,14 @@ impl Config {
             )?;
         }
         let storage = spec.storage.resolve(&self.manifest.storage, "storage")?;
+        if let Some(import) = &spec.import {
+            for path in &import.schema {
+                ensure!(self.path(path)?.is_file(), "import schema must be a file");
+            }
+            if let QuerySource::SqlLines { path } = &import.source {
+                ensure!(self.path(path)?.is_file(), "query source must be a file");
+            }
+        }
         ensure!(
             !self.suites.contains_key(&name),
             "duplicate discovered suite {name}"
@@ -644,10 +873,12 @@ impl Config {
                 profile: spec.profile,
                 minimum_gpus: spec.minimum_gpus,
                 scratch_directories: spec.scratch_directories,
-
+                fixture_files: spec.fixture_files,
                 checkpoint: spec.checkpoint,
                 directory,
                 storage,
+                fixtures: setup.fixtures,
+                import: spec.import,
             },
         );
         Ok(())
@@ -667,7 +898,9 @@ impl Config {
             .into_iter()
             .flat_map(Path::ancestors)
             .find(|directory| directory.join("suite.toml").is_file())
-            .map(|directory| ScriptSetup::from_spec(&SuiteSpec::load(directory)?))
+            .map(|directory| {
+                ScriptSetup::from_spec(&SuiteSpec::load(directory)?, &self.manifest.fixtures)
+            })
             .transpose()
             .map(Option::unwrap_or_default)
     }

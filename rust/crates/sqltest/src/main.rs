@@ -1,5 +1,6 @@
 mod config;
 mod corpus;
+mod fixtures;
 mod name;
 mod report;
 mod result;
@@ -26,6 +27,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Run(run::RunArgs),
+    Prepare(fixtures::PrepareArgs),
     Complete(snapshot::CompleteArgs),
     /// Format SQLLogicTest snippets with sqlparser's DuckDB formatter.
     Format(format::FormatArgs),
@@ -35,6 +37,13 @@ enum Commands {
         previous: Option<PathBuf>,
         #[arg(long)]
         output: Option<PathBuf>,
+    },
+    /// Regenerate suites from query sources declared in suite.toml.
+    Import {
+        #[arg(long, default_value = "test/sqltest")]
+        root: PathBuf,
+        #[arg(long, default_value = "all")]
+        suite: config::Selection,
     },
     #[command(hide = true)]
     Worker {
@@ -59,9 +68,11 @@ fn main() {
 fn execute() -> Result<bool> {
     match Cli::parse().command {
         Commands::Run(args) => return run::execute(&args),
+        Commands::Prepare(args) => fixtures::prepare(&args)?,
         Commands::Complete(args) => snapshot::complete(&args)?,
         Commands::Format(args) => return format::execute(&args),
         Commands::Worker { socket, extension } => worker::run(&socket, extension.as_deref())?,
+        Commands::Import { root, suite } => fixtures::import(&root, &suite)?,
         Commands::Report {
             input,
             previous,

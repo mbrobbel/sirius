@@ -36,9 +36,8 @@ pub fn complete(args: &CompleteArgs) -> Result<()> {
     let setup = config.script_setup_for(&file)?;
     let fixtures = std::path::absolute(&args.fixtures)?;
     let directory = tempfile::tempdir()?;
-    for path in &setup.scratch_directories {
-        std::fs::create_dir_all(directory.path().join(path))?;
-    }
+    crate::fixtures::verify(&config, &fixtures, &setup.fixtures)?;
+    crate::fixtures::stage(&config, &setup, &fixtures, directory.path())?;
     let mut worker = Worker::start(
         directory.path(),
         None,
