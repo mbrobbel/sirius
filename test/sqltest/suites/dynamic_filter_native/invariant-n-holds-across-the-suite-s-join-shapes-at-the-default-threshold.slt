@@ -1,0 +1,51 @@
+# Invariant N holds across the suite's join shapes at the default threshold
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:209
+# sirius: id = "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN (SELECT p_partkey FROM part WHERE p_partkey > 1 GROUP BY p_partkey) p ON l_partkey = p_partkey;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:210
+# sirius: id = "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/002"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN (SELECT p_partkey FROM part WHERE p_size = 15 AND p_container = 'SM BOX' GROUP BY p_partkey) p ON l_partkey = p_partkey;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:211
+# sirius: id = "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/003"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ??? rowsort
+SELECT
+  count(*),
+  min(l_orderkey),
+  max(l_orderkey)
+FROM
+  lineitem
+  JOIN part ON l_partkey = p_partkey
+WHERE
+  p_size = 15 AND p_container = 'SM BOX';
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:215
+# sirius: id = "dynamic_filter_native/invariant-n-holds-across-the-suite-s-join-shapes-at-the-default-threshold/004"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(l.l_orderkey)
+FROM
+  lineitem l
+  JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o ON l.l_orderkey = o.o_orderkey;
+----

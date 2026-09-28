@@ -1,0 +1,18 @@
+# opt-in zone map rides the post-decode AST row-mask path
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET enable_dynamic_zone_map_filter = true;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:133
+# sirius: id = "dynamic_filter_native/opt-in-zone-map-rides-the-post-decode-ast-row-mask-path/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(l.l_orderkey)
+FROM
+  lineitem l
+  JOIN (SELECT o_orderkey FROM orders WHERE o_orderkey / 100 = 50) o ON l.l_orderkey = o.o_orderkey;
+----

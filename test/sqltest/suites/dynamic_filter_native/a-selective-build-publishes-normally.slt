@@ -1,0 +1,13 @@
+# a selective build publishes normally
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:184
+# sirius: id = "dynamic_filter_native/a-selective-build-publishes-normally/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN (SELECT p_partkey FROM part WHERE p_size = 15 AND p_container = 'SM BOX' GROUP BY p_partkey) p ON l_partkey = p_partkey;
+----
