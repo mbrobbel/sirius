@@ -1,0 +1,64 @@
+# mvcc guards: a transaction older than the pin falls back until it commits
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(100000);
+
+statement ok
+CHECKPOINT;
+
+connection reader
+statement ok
+BEGIN TRANSACTION;
+
+connection reader
+statement ok
+SELECT
+  count(*)
+FROM
+  t;
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k < 500;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:246
+# sirius: id = "pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+connection reader
+query ? rowsort
+SELECT
+  count(k)
+FROM
+  t;
+----
+100000
+
+connection reader
+statement ok
+COMMIT;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:260
+# sirius: id = "pin_mvcc_delete/guards-a-transaction-older-than-the-pin-falls-back-until-it-commits/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+# sirius: snapshot = true
+connection reader
+query ? rowsort
+SELECT
+  count(k)
+FROM
+  t;
+----
+99500
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

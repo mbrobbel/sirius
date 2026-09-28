@@ -1,0 +1,48 @@
+# mvcc delete: pre-pin checkpointed tombstones are filtered
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(300000);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k % 1000 = 7;
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:125
+# sirius: id = "pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:126
+# sirius: id = "pin_mvcc_delete/delete-pre-pin-checkpointed-tombstones-are-filtered/002"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ? rowsort
+SELECT
+  k
+FROM
+  t
+WHERE
+  k < 3000;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

@@ -1,0 +1,33 @@
+# mvcc delete: host-tier pins mask deletes too
+# Checkpoints are explicit so pin images and transaction snapshots remain intact.
+
+statement ok
+CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(300000);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'host');
+
+statement ok
+DELETE FROM
+  t
+WHERE
+  k IN (5, 2048, 122880) OR k % 70000 = 3;
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_delete.cpp:167
+# sirius: id = "pin_mvcc_delete/delete-host-tier-pins-mask-deletes-too/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "delete"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(k)
+FROM
+  t;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
