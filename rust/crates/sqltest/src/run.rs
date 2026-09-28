@@ -257,6 +257,15 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
         .as_ref()
         .map(|p| -> Result<_> { Ok(serde_json::from_slice(&fs::read(p)?)?) })
         .transpose()?;
+    let fixture_hashes: std::collections::BTreeMap<_, _> = scripts
+        .keys()
+        .map(|name| {
+            (
+                name.clone(),
+                crate::fixtures::verify(&config, &fixtures, &config.suites[name].fixtures),
+            )
+        })
+        .collect();
     report.save(&output, previous.as_ref())?;
     for target in &plan.targets {
         let suite = &config.suites[&target.suite];
@@ -272,6 +281,7 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
         ))?);
         let storage = &config.manifest.storage[&target.storage];
         let profile_config = config.path(&profile.config)?;
+        let fixture_hash = &fixture_hashes[&target.suite];
         for script in &scripts[&target.suite] {
             let Some(last_selected) = script.steps.iter().rposition(
                 |step| matches!(step, Step::Query(case) if selected(case, selector.as_ref())),
@@ -290,15 +300,19 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                     profile.gpus
                 ));
             }
+            if let Err(error) = fixture_hash {
+                abort = Some(format!("fixture unavailable: {error:#}"));
+            }
             let worker_profile = profile_config.clone();
             let pair = if abort.is_none() {
                 (|| -> Result<_> {
                     for worker in ["reference", "sirius"] {
-                        let directory = work.join(worker);
-                        fs::create_dir_all(&directory)?;
-                        for path in &suite.scratch_directories {
-                            fs::create_dir_all(directory.join(path))?;
-                        }
+                        crate::fixtures::stage(
+                            &config,
+                            &suite.script_setup(),
+                            &fixtures,
+                            &work.join(worker),
+                        )?;
                     }
                     let reference = Worker::start(
                         &work.join("reference"),
@@ -517,14 +531,19 @@ pub fn execute(args: &RunArgs) -> Result<bool> {
                             serde_json::to_vec_pretty(case)?,
                         )?;
                         let fingerprint = corpus::hash(format!(
-                            "{}:{}:{}",
+                            "{}:{}:{}:{}",
                             script.fingerprint,
+                            fixture_hash
+                                .as_ref()
+                                .map(String::as_str)
+                                .unwrap_or("unavailable"),
                             corpus::file_hash(&profile_config)?,
                             serde_json::to_string(&(
                                 storage,
                                 checkpoint,
                                 &profile.environment,
                                 &suite.scratch_directories,
+                                &suite.fixture_files,
                                 &suite.substitutions,
                                 &target.settings,
                                 &target.reference_settings,

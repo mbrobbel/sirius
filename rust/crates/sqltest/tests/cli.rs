@@ -476,6 +476,107 @@ fn ambiguous_floats_are_a_harness_limitation() {
 }
 
 #[test]
+fn manifest_recipes_drive_new_suites_and_storage_modes() {
+    let dir = corpus();
+    let root = dir.path();
+    let path = root.join("sqltest.toml");
+    let manifest = fs::read_to_string(&path).unwrap();
+    fs::write(
+        &path,
+        format!("{manifest}\n[fixtures.tiny]\nsql = [\"tiny.sql\"]\ntables = [\"numbers\"]\n"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "storage = [\"cached\", \"external\"]\nfixtures = [\"tiny\"]\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("tiny.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(3);\n",
+    )
+    .unwrap();
+    fs::write(root.join("suites/regressions/recipe.slt"), "statement ok\nCREATE __RELATION__ numbers AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/tiny/numbers.parquet');\n\n# sirius: id = \"custom/recipe\"\nquery I\nSELECT count(*) FROM numbers;\n----\n").unwrap();
+    let fixtures = root.join("data");
+    assert!(
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["prepare", "--root"])
+            .arg(root)
+            .arg("--output")
+            .arg(&fixtures)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let (passed, report) = run(
+        root,
+        "recipes",
+        &[
+            "--fixtures",
+            fixtures.to_str().unwrap(),
+            "--axis",
+            "backend=all",
+        ],
+    );
+    assert!(passed, "{report}");
+    let cases = report["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 2);
+    assert_eq!(cases[0]["profile"], "desktop");
+    assert_eq!(cases[0]["storage"], "cached");
+    assert_eq!(cases[1]["storage"], "external");
+    fs::write(
+        root.join("tiny.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(4);\n",
+    )
+    .unwrap();
+    let (passed, report) = run(
+        root,
+        "stale-recipe",
+        &["--fixtures", fixtures.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert_eq!(report["cases"][0]["outcome"], "infrastructure_failure");
+    assert!(
+        report["cases"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("recipe changed")
+    );
+}
+
+#[test]
+fn dry_run_checks_references_before_starting_workers() {
+    let dir = corpus();
+    fs::write(
+        dir.path().join("suites/regressions/query.slt"),
+        "# sirius: id = \"custom/query\"\nquery I\nSELECT 1;\n----\n",
+    )
+    .unwrap();
+    let dry_run = || {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(dir.path())
+            .output()
+            .unwrap()
+    };
+    let good = dry_run();
+    assert!(good.status.success());
+    let plan: Value = serde_json::from_slice(&good.stdout).unwrap();
+    assert_eq!(plan["cases"], 1);
+    let path = dir.path().join("sqltest.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)
+            .unwrap()
+            .replace("profile = \"desktop\"", "profile = \"typo\""),
+    )
+    .unwrap();
+    let bad = dry_run();
+    assert_eq!(bad.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("unknown profile typo"));
+}
+
+#[test]
 fn suite_gpu_requirement_filters_incompatible_profiles() {
     let dir = corpus();
     let root = dir.path();
@@ -814,6 +915,353 @@ fn formatting_directories_includes_sql_and_is_idempotent() {
 }
 
 #[test]
+fn file_fixtures_preserve_bytes_and_verify_cached_contents() {
+    use sha2::{Digest, Sha256};
+    let dir = corpus();
+    let root = dir.path();
+    let source = b"n\r\n1\r\n2\r\n";
+    let hash = format!("{:x}", Sha256::digest(source));
+    fs::write(root.join("original.csv"), source).unwrap();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[sources.original]\nkind = \"file\"\npath = \"original.csv\"\nsha256 = \"{hash}\"\n\n[fixtures.copied]\nfiles = {{ \"inputs/numbers.csv\" = \"original\" }}\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "fixtures = [\"copied\"]\n",
+    )
+    .unwrap();
+    fs::write(root.join("suites/regressions/copied.slt"), "# sirius: id = \"copied/sum\"\n# sirius: snapshot = true\nquery I\nSELECT sum(n) FROM read_csv('__FIXTURE_ROOT__/copied/inputs/numbers.csv');\n----\n3\n").unwrap();
+    let data = root.join("data");
+    let result = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["prepare", "--root"])
+        .arg(root)
+        .arg("--output")
+        .arg(&data)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let copied = data.join("copied/inputs/numbers.csv");
+    assert_eq!(fs::read(&copied).unwrap(), source);
+    let (passed, report) = run(root, "copied", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed, "{report}");
+    fs::write(&copied, "n\n999\n").unwrap();
+    let (passed, report) = run(
+        root,
+        "corrupt-copy",
+        &["--fixtures", data.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert_eq!(report["cases"][0]["outcome"], "infrastructure_failure");
+    assert!(
+        report["cases"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("checksum mismatch")
+    );
+    assert_eq!(fs::read(root.join("original.csv")).unwrap(), source);
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest)
+            .unwrap()
+            .replace("inputs/numbers.csv", "../escaped.csv"),
+    )
+    .unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["run", "--dry-run", "--root"])
+        .arg(root)
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(2));
+}
+
+#[test]
+fn staged_fixtures_preserve_relative_paths_and_worker_isolation() {
+    use sha2::{Digest, Sha256};
+    let dir = corpus();
+    let root = dir.path();
+    let source = b"n\r\n1\r\n2\r\n";
+    let hash = format!("{:x}", Sha256::digest(source));
+    fs::write(root.join("original.csv"), source).unwrap();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[sources.original]\nkind = \"file\"\npath = \"original.csv\"\nsha256 = \"{hash}\"\n[fixtures.copied]\nextensions = [\"parquet\"]\nfiles = {{ \"inputs/numbers.csv\" = \"original\" }}\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    let suite = root.join("suites/regressions/suite.toml");
+    fs::write(&suite, "fixture_files = { corpus = \"copied\" }\n").unwrap();
+    let file = root.join("suites/regressions/copied.slt");
+    let sql = "# sirius: id = \"copied/sum\"\nquery I\nSELECT sum(n) FROM read_csv('corpus/inputs/numbers.csv');\n----\n";
+    fs::write(&file, sql).unwrap();
+    let data = root.join("data");
+    assert!(
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["prepare", "--root"])
+            .arg(root)
+            .arg("--output")
+            .arg(&data)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let (passed, report) = run(root, "staged", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed, "{report}");
+    let artifacts = root
+        .join("staged")
+        .join(report["cases"][0]["artifacts"].as_str().unwrap());
+    let saved: toml::Value =
+        toml::from_str(&fs::read_to_string(artifacts.join("suite.toml")).unwrap()).unwrap();
+    assert_eq!(saved["fixture_files"]["corpus"].as_str(), Some("copied"));
+    assert!(
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .arg("complete")
+            .arg(artifacts.join("repro.slt"))
+            .arg("--root")
+            .arg(root)
+            .arg("--fixtures")
+            .arg(&data)
+            .status()
+            .unwrap()
+            .success()
+    );
+    fs::write(&file, format!("statement ok\nCOPY (SELECT CASE WHEN contains('__TEST_DIR__', '/reference') THEN 99 ELSE 3 END AS n) TO 'corpus/inputs/numbers.csv' (FORMAT CSV, HEADER true);\n\n{sql}")).unwrap();
+    let (passed, report) = run(root, "isolated", &["--fixtures", data.to_str().unwrap()]);
+    assert!(!passed);
+    assert_eq!(report["cases"][0]["outcome"], "mismatch");
+    assert_eq!(
+        fs::read(data.join("copied/inputs/numbers.csv")).unwrap(),
+        source
+    );
+    for invalid in [
+        "fixture_files = { \"../escape\" = \"copied\" }",
+        "fixture_files = { a = \"copied\", \"a/b\" = \"copied\" }",
+        "fixture_files = { a = \"missing\" }",
+    ] {
+        fs::write(&suite, invalid).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .args(["run", "--dry-run", "--root"])
+            .arg(root)
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2), "{invalid}");
+    }
+}
+
+#[test]
+fn provided_sources_require_bindings_and_record_input_hashes() {
+    use sha2::{Digest, Sha256};
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[sources.local]\nkind = \"provided\"\n[fixtures.local]\nfiles = {{ \"data.csv\" = \"local\" }}\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "fixtures = [\"local\"]\n",
+    )
+    .unwrap();
+    fs::write(root.join("suites/regressions/query.slt"), "# sirius: id = \"local/data\"\nquery I\nSELECT sum(n) FROM read_csv('__FIXTURE_ROOT__/local/data.csv');\n----\n3\n").unwrap();
+    let data = root.join("data");
+    let source = root.join("input.csv");
+    let binding = format!("local={}", source.display());
+    let prepare = |bind: bool| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"));
+        command
+            .args(["prepare", "--download", "--root"])
+            .arg(root)
+            .arg("--output")
+            .arg(&data);
+        if bind {
+            command.arg("--source").arg(&binding);
+        }
+        command.output().unwrap()
+    };
+    let missing = prepare(false);
+    assert_eq!(missing.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("explicit --source local=PATH"));
+    let bytes = b"n\n1\n2\n";
+    fs::write(&source, bytes).unwrap();
+    let prepared = prepare(true);
+    assert!(
+        prepared.status.success(),
+        "{}",
+        String::from_utf8_lossy(&prepared.stderr)
+    );
+    let cached: Value =
+        serde_json::from_slice(&fs::read(data.join("manifest.json")).unwrap()).unwrap();
+    assert_eq!(
+        cached["datasets"]["local"]["provided_sources"]["local"],
+        format!("{:x}", Sha256::digest(bytes))
+    );
+    fs::write(&source, "n\n100\n").unwrap();
+    let changed = prepare(true);
+    assert_eq!(changed.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&changed.stderr).contains("differs from the prepared input"));
+    fs::remove_file(&source).unwrap();
+    assert!(prepare(false).status.success());
+    let (passed, report) = run(root, "cached", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed, "{report}");
+}
+
+#[test]
+fn declared_sources_preserve_checksums_for_files_and_downloads() {
+    use sha2::{Digest, Sha256};
+    use std::io::{BufRead, Write};
+    let csv = b"n\n1\n2\n";
+    let hash = format!("{:x}", Sha256::digest(csv));
+    for download in [false, true] {
+        let dir = corpus();
+        let root = dir.path();
+        fs::write(root.join("input.csv"), csv).unwrap();
+        let mut server = None;
+        let source = if download {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let url = format!("http://{}/input.csv.gz", listener.local_addr().unwrap());
+            server = Some(std::thread::spawn(move || {
+                let mut gzip =
+                    flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+                gzip.write_all(csv).unwrap();
+                let compressed = gzip.finish().unwrap();
+                let (mut socket, _) = listener.accept().unwrap();
+                socket
+                    .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+                    .unwrap();
+                let mut request = std::io::BufReader::new(&mut socket);
+                loop {
+                    let mut line = String::new();
+                    assert!(request.read_line(&mut line).unwrap() > 0);
+                    if line == "\r\n" {
+                        break;
+                    }
+                }
+                write!(
+                    socket,
+                    "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    compressed.len()
+                )
+                .unwrap();
+                socket.write_all(&compressed).unwrap();
+            }));
+            format!("kind = \"download\"\nurl = \"{url}\"\ncompression = \"gzip\"\n")
+        } else {
+            "kind = \"file\"\npath = \"input.csv\"\n".into()
+        };
+        let manifest = root.join("sqltest.toml");
+        let mut text = fs::read_to_string(&manifest).unwrap();
+        text.push_str(&format!("\n[sources.input]\nsha256 = \"{hash}\"\n{source}\n[fixtures.input]\nsources = [\"input\"]\nsql = [\"input.sql\"]\ntables = [\"numbers\"]\n"));
+        fs::write(&manifest, text).unwrap();
+        fs::write(
+            root.join("input.sql"),
+            "CREATE TABLE numbers AS SELECT * FROM read_csv('__SOURCE_input__', header=true);",
+        )
+        .unwrap();
+        fs::write(
+            root.join("suites/regressions/suite.toml"),
+            "fixtures = [\"input\"]\n",
+        )
+        .unwrap();
+        fs::write(root.join("suites/regressions/input.slt"), "statement ok\nCREATE TABLE numbers AS SELECT * FROM read_parquet('__FIXTURE_ROOT__/input/numbers.parquet');\n\n# sirius: id = \"source/sum\"\n# sirius: snapshot = true\nquery I\nSELECT sum(n) FROM numbers;\n----\n3\n").unwrap();
+        let output = root.join("data");
+        let prepare = || {
+            Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+                .args(["prepare", "--download", "--root"])
+                .arg(root)
+                .arg("--output")
+                .arg(&output)
+                .output()
+                .unwrap()
+        };
+        let result = prepare();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        if let Some(server) = server {
+            server.join().unwrap();
+        }
+        let (passed, report) = run(root, "sources", &["--fixtures", output.to_str().unwrap()]);
+        assert!(passed, "{report}");
+        // Remove only the fixture metadata to force source verification again.
+        fs::remove_file(output.join("manifest.json")).unwrap();
+        if download {
+            fs::write(output.join("sources").join(&hash), "corrupt").unwrap();
+        } else {
+            fs::write(root.join("input.csv"), "corrupt").unwrap();
+        }
+        let result = prepare();
+        assert_eq!(result.status.code(), Some(2));
+        assert!(String::from_utf8_lossy(&result.stderr).contains("checksum mismatch"));
+        assert!(!output.join("manifest.json").exists());
+    }
+}
+
+#[test]
+fn suite_substitutions_complete_run_and_replay_as_literals() {
+    let dir = corpus();
+    let root = dir.path();
+    let suite = root.join("suites/regressions/suite.toml");
+    let manifest = r#"storage = ["cached"]
+[substitutions.ROOT]
+duckdb = "__TEST_DIR__/it's data"
+sirius = "unavailable-for-cpu"
+"#;
+    fs::write(&suite, manifest).unwrap();
+    let file = root.join("suites/regressions/literals.slt");
+    fs::write(&file, "statement ok\nCOPY (SELECT 42 AS n) TO '__ROOT__.parquet' (FORMAT PARQUET);\n\n# sirius: id = \"substitutions/literal\"\nquery I\nSELECT n FROM read_parquet('__ROOT__.parquet');\n----\n").unwrap();
+    let complete = |path: &Path| {
+        Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+            .arg("complete")
+            .arg(path)
+            .arg("--root")
+            .arg(root)
+            .output()
+            .unwrap()
+    };
+    let completed = complete(&file);
+    assert!(
+        completed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&completed.stderr)
+    );
+    let text = fs::read_to_string(&file).unwrap();
+    assert!(text.contains("42\n"));
+    assert!(text.contains("__ROOT__"));
+    let (passed, report) = run(root, "substitutions", &[]);
+    assert!(passed, "{report}");
+    let case = &report["cases"][0];
+    let artifacts = root
+        .join("substitutions")
+        .join(case["artifacts"].as_str().unwrap());
+    let saved: toml::Value =
+        toml::from_str(&fs::read_to_string(artifacts.join("suite.toml")).unwrap()).unwrap();
+    assert_eq!(
+        saved["substitutions"]["ROOT"]["duckdb"].as_str(),
+        Some("__TEST_DIR__/it's data")
+    );
+    for name in ["repro.sql", "reference-repro.sql"] {
+        let sql = fs::read_to_string(artifacts.join(name)).unwrap();
+        assert!(sql.contains("/it''s data.parquet'"));
+        assert!(!sql.contains("__ROOT__"));
+        assert!(!sql.contains("unavailable-for-cpu"));
+    }
+    assert!(complete(&artifacts.join("repro.slt")).status.success());
+    let binding = format!("replay={}", artifacts.display());
+    let (passed, replay) = run(
+        root,
+        "replayed",
+        &["--suite-dir", &binding, "--suite", "replay"],
+    );
+    assert!(passed, "{replay}");
+    fs::write(
+        &suite,
+        manifest.replace("unavailable-for-cpu", "different-sirius-root"),
+    )
+    .unwrap();
+    let (passed, changed) = run(root, "changed-substitutions", &[]);
+    assert!(passed);
+    assert_ne!(case["fingerprint"], changed["cases"][0]["fingerprint"]);
+}
+
+#[test]
 fn invalid_substitutions_fail_before_execution() {
     let dir = corpus();
     let root = dir.path();
@@ -853,4 +1301,69 @@ fn invalid_substitutions_fail_before_execution() {
             String::from_utf8_lossy(&output.stderr)
         );
     }
+}
+
+#[test]
+fn fixture_compression_preserves_requested_parquet_encoding() {
+    let dir = corpus();
+    let root = dir.path();
+    let manifest = root.join("sqltest.toml");
+    fs::write(&manifest, format!("{}\n[fixtures.standard]\nsql = ['fixture.sql']\ntables = ['numbers']\n[fixtures.snappy]\nsql = ['fixture.sql']\ntables = ['numbers']\ncompression = 'snappy'\n", fs::read_to_string(&manifest).unwrap())).unwrap();
+    fs::write(
+        root.join("fixture.sql"),
+        "CREATE TABLE numbers AS SELECT * FROM range(20);",
+    )
+    .unwrap();
+    fs::write(
+        root.join("suites/regressions/suite.toml"),
+        "fixtures = ['standard', 'snappy']\n",
+    )
+    .unwrap();
+    let data = root.join("data");
+    let prepared = Command::new(env!("CARGO_BIN_EXE_sirius-sqltest"))
+        .args(["prepare", "--root"])
+        .arg(root)
+        .arg("--output")
+        .arg(&data)
+        .output()
+        .unwrap();
+    assert!(
+        prepared.status.success(),
+        "{}",
+        String::from_utf8_lossy(&prepared.stderr)
+    );
+    let connection = duckdb::Connection::open_in_memory().unwrap();
+    for (fixture, expected) in [("standard", "ZSTD"), ("snappy", "SNAPPY")] {
+        let path = data.join(fixture).join("numbers.parquet");
+        let compression: String = connection
+            .query_row(
+                "SELECT DISTINCT compression FROM parquet_metadata(?)",
+                [path.to_str().unwrap()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(compression, expected);
+    }
+    fs::write(root.join("suites/regressions/encoding.slt"), "# sirius: id = \"encoding\"\nquery I\nSELECT count(*) FROM read_parquet('__FIXTURE_ROOT__/snappy/numbers.parquet');\n----\n").unwrap();
+    let (passed, _) = run(root, "encoded", &["--fixtures", data.to_str().unwrap()]);
+    assert!(passed);
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest)
+            .unwrap()
+            .replace("compression = 'snappy'", "compression = 'zstd'"),
+    )
+    .unwrap();
+    let (passed, report) = run(
+        root,
+        "changed-encoding",
+        &["--fixtures", data.to_str().unwrap()],
+    );
+    assert!(!passed);
+    assert!(
+        report["cases"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("recipe changed")
+    );
 }
