@@ -18,9 +18,8 @@
  * @file test_gpu_execution_multi_format.cpp
  * @brief Integration tests for multi-format scan support through gpu_execution.
  *
- * Each test runs the query through both GPU and CPU and compares results. The live
- * content covers hive-partitioned parquet scans; the CSV section (read_csv via the
- * generic duckdb_scan path) is currently disabled.
+ * C++ checks execution routes and internal state. SQL suites compare results
+ * for Parquet, Hive, Iceberg, and CSV scans.
  */
 
 #include "yyjson.hpp"
@@ -91,7 +90,7 @@ enum class gpu_route {
 };
 
 /**
- * @brief Base fixture providing compare_gpu_vs_cpu for multi-format tests.
+ * @brief Base fixture asserting execution routes for multi-format tests.
  */
 class MultiFormatFixtureBase {
  public:
@@ -220,6 +219,50 @@ class MultiFormatFixtureBase {
     }
   }
 
+  using query_result = duckdb::unique_ptr<duckdb::MaterializedQueryResult>;
+
+  std::pair<query_result, query_result> require_execution_routes(const std::string& query,
+                                                                 gpu_route route)
+  {
+    // Enable transparent GPU execution
+    con->Query("SET gpu_execution = true;");
+    auto before_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
+
+    // Run on GPU (transparent — plain SQL goes through Sirius optimizer hook)
+    auto gpu_result = con->Query(query);
+    REQUIRE(gpu_result);
+    if (gpu_result->HasError()) {
+      UNSCOPED_INFO("transparent GPU execution error: " << gpu_result->GetError());
+    }
+    REQUIRE_FALSE(gpu_result->HasError());
+    auto after_gpu_stats = sirius::test::get_transparent_execution_stats(*con);
+    require_route(before_gpu_stats, after_gpu_stats, route);
+
+    // Run on CPU (disable transparent execution)
+    con->Query("SET gpu_execution = false;");
+    auto cpu_result = con->Query(query);
+    con->Query("SET gpu_execution = true;");
+    REQUIRE(cpu_result);
+    REQUIRE_FALSE(cpu_result->HasError());
+    auto after_cpu_stats = sirius::test::get_transparent_execution_stats(*con);
+    sirius::test::require_transparent_execution_delta(after_gpu_stats, after_cpu_stats, 0, 0, 0);
+
+    REQUIRE(gpu_result->ColumnCount() == cpu_result->ColumnCount());
+    REQUIRE(gpu_result->RowCount() == cpu_result->RowCount());
+    REQUIRE(gpu_result->names == cpu_result->names);
+    REQUIRE(gpu_result->types.size() == cpu_result->types.size());
+    for (duckdb::idx_t c = 0; c < gpu_result->types.size(); ++c) {
+      CHECK(gpu_result->types[c] == cpu_result->types[c]);
+    }
+
+    return {std::move(gpu_result), std::move(cpu_result)};
+  }
+
+  void require_gpu_execution(const std::string& query)
+  {
+    require_execution_routes(query, gpu_route::gpu);
+  }
+
   std::unique_ptr<duckdb::DuckDB> db;
   std::unique_ptr<duckdb::Connection> con;
   std::unique_ptr<sirius_config_env_guard> config_guard;
@@ -282,15 +325,15 @@ TEST_CASE_METHOD(ParquetCountCarrierFixture,
 {
   SECTION("count star includes rows with a null carrier")
   {
-    compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("flat.parquet"));
+    require_gpu_execution("SELECT count(*) FROM " + scan("flat.parquet"));
   }
   SECTION("predicate on a non-carrier column")
   {
-    compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("flat.parquet") + " WHERE id >= 129");
+    require_gpu_execution("SELECT count(*) FROM " + scan("flat.parquet") + " WHERE id >= 129");
   }
   SECTION("all-pruned data predicate")
   {
-    compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("flat.parquet") + " WHERE id < 0");
+    require_gpu_execution("SELECT count(*) FROM " + scan("flat.parquet") + " WHERE id < 0");
   }
 }
 
@@ -298,326 +341,49 @@ TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet counts remain correct with an entirely null carrier column",
                  "[integration][scan][parquet][gpu][carrier]")
 {
-  compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("null_carrier.parquet"));
-  compare_gpu_vs_cpu("SELECT count(id) FROM " + scan("null_carrier.parquet"));
+  require_gpu_execution("SELECT count(*) FROM " + scan("null_carrier.parquet"));
+  require_gpu_execution("SELECT count(id) FROM " + scan("null_carrier.parquet"));
 }
 
 TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet partition-only grouped counts match the CPU oracle",
                  "[integration][scan][parquet][gpu][carrier]")
 {
-  compare_gpu_vs_cpu("SELECT part, count(*) FROM " + scan("hive/part=*/*.parquet", true) +
-                     " GROUP BY part ORDER BY part");
+  require_gpu_execution("SELECT part, count(*) FROM " + scan("hive/part=*/*.parquet", true) +
+                        " GROUP BY part ORDER BY part");
 }
 
 TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet multi-file count star matches the CPU oracle",
                  "[integration][scan][parquet][gpu][carrier]")
 {
-  compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("parts/*.parquet"));
+  require_gpu_execution("SELECT count(*) FROM " + scan("parts/*.parquet"));
 }
 
 TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet partition counts tolerate a missing non-output carrier candidate",
                  "[integration][scan][parquet][gpu][carrier][schema_evolution]")
 {
-  compare_gpu_vs_cpu("SELECT part, count(*) FROM read_parquet(" +
-                     scratch.file_literal("evolved/part=*/*.parquet") +
-                     ", hive_partitioning=true, union_by_name=true) GROUP BY part ORDER BY part");
+  require_gpu_execution(
+    "SELECT part, count(*) FROM read_parquet(" + scratch.file_literal("evolved/part=*/*.parquet") +
+    ", hive_partitioning=true, union_by_name=true) GROUP BY part ORDER BY part");
 }
 
 TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet all-varchar count star matches the CPU oracle",
                  "[integration][scan][parquet][gpu][carrier]")
 {
-  compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("strings.parquet"));
+  require_gpu_execution("SELECT count(*) FROM " + scan("strings.parquet"));
 }
 
 TEST_CASE_METHOD(ParquetCountCarrierFixture,
                  "parquet empty-file count star matches the CPU oracle",
                  "[integration][scan][parquet][gpu][carrier]")
 {
-  compare_gpu_vs_cpu("SELECT count(*) FROM " + scan("empty.parquet"));
+  require_gpu_execution("SELECT count(*) FROM " + scan("empty.parquet"));
 }
 
-/**
- * @brief CSV test fixture.
- *
- * Generates CSV files from the existing parquet test data into a temp directory,
- * then creates views using read_csv(). This tests the generic duckdb_scan path
- * that routes non-parquet table functions through DuckDB's scan infrastructure.
- */
-// class GPUExecutionCSVFixture : public MultiFormatFixtureBase {
-//  public:
-//   GPUExecutionCSVFixture()
-//   {
-//     auto parquet_dir = fs::path(__FILE__).parent_path() / "data/parquet";
-//     csv_dir          = fs::temp_directory_path() / "sirius_test_csv";
-//     fs::create_directories(csv_dir);
-
-//     // Export parquet to CSV
-//     std::vector<std::string> tables = {
-//       "nation", "region", "customer", "orders", "lineitem", "part", "partsupp", "supplier"};
-
-//     for (const auto& tbl : tables) {
-//       auto pq_path  = parquet_dir / (tbl + ".parquet");
-//       auto csv_path = csv_dir / (tbl + ".csv");
-//       if (!fs::exists(pq_path)) continue;
-
-//       auto result = con->Query("COPY (SELECT * FROM read_parquet('" + pq_path.string() +
-//                                "')) TO '" + csv_path.string() + "' (HEADER, DELIMITER ',');");
-//       REQUIRE(result);
-//       REQUIRE_FALSE(result->HasError());
-//     }
-
-//     // Create views from CSV files
-//     for (const auto& tbl : tables) {
-//       auto csv_path = csv_dir / (tbl + ".csv");
-//       if (!fs::exists(csv_path)) continue;
-
-//       auto result = con->Query("CREATE VIEW " + tbl + " AS SELECT * FROM read_csv('" +
-//                                csv_path.string() + "');");
-//       REQUIRE(result);
-//       REQUIRE_FALSE(result->HasError());
-//     }
-//   }
-
-//   ~GPUExecutionCSVFixture() { fs::remove_all(csv_dir); }
-
-//   fs::path csv_dir;
-// };
-
-// //===----------------------------------------------------------------------===//
-// // CSV Scan tests
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - scan single column",
-//                  "[.][integration][gpu_execution][csv][scan]")
-// {
-//   compare_gpu_vs_cpu("select n_nationkey from nation;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - scan multiple columns",
-//                  "[.][integration][gpu_execution][csv][scan]")
-// {
-//   compare_gpu_vs_cpu("select n_nationkey, n_regionkey, n_name from nation;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - scan all columns",
-//                  "[.][integration][gpu_execution][csv][scan]")
-// {
-//   compare_gpu_vs_cpu("select * from region;");
-// }
-
-// //===----------------------------------------------------------------------===//
-// // CSV Filter tests (exercises BoundConstantExpression with various types)
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - filter integer equality",
-//                  "[.][integration][gpu_execution][csv][filter]")
-// {
-//   compare_gpu_vs_cpu("select n_nationkey, n_name from nation where n_regionkey = 1;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - filter string equality",
-//                  "[.][integration][gpu_execution][csv][filter]")
-// {
-//   compare_gpu_vs_cpu("select r_regionkey from region where r_name = 'EUROPE';");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - filter date comparison",
-//                  "[.][integration][gpu_execution][csv][filter]")
-// {
-//   // This tests the TIMESTAMP_DAYS constant materializer fix
-//   compare_gpu_vs_cpu(
-//     "select o_orderkey, o_totalprice from orders "
-//     "where o_orderdate >= date '1995-01-01' and o_orderdate < date '1995-04-01';");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - filter date between",
-//                  "[.][integration][gpu_execution][csv][filter]")
-// {
-//   // DuckDB may rewrite >= AND < to BETWEEN, exercising the BoundBetweenExpression path
-//   compare_gpu_vs_cpu(
-//     "select o_orderkey from orders "
-//     "where o_orderdate between date '1995-01-01' and date '1995-03-31';");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - filter float comparison",
-//                  "[.][integration][gpu_execution][csv][filter]")
-// {
-//   // CSV reads DECIMAL columns as DOUBLE — tests FLOAT64 filter path
-//   compare_gpu_vs_cpu("select l_orderkey from lineitem where l_discount > 0.05;", 0.001f);
-// }
-
-// //===----------------------------------------------------------------------===//
-// // CSV Aggregation tests
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - group by with sum",
-//                  "[.][integration][gpu_execution][csv][aggregate]")
-// {
-//   compare_gpu_vs_cpu("select n_regionkey, count(*) as cnt from nation group by n_regionkey;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - aggregate with float columns",
-//                  "[.][integration][gpu_execution][csv][aggregate]")
-// {
-//   // Tests SUM/AVG on DOUBLE (CSV-inferred type)
-//   compare_gpu_vs_cpu(
-//     "select l_returnflag, sum(l_quantity) as sum_qty, avg(l_extendedprice) as avg_price "
-//     "from lineitem group by l_returnflag;",
-//     0.01f);
-// }
-
-// //===----------------------------------------------------------------------===//
-// // CSV Join tests
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - inner join",
-//                  "[.][integration][gpu_execution][csv][join]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select n.n_name, r.r_name from nation n inner join region r "
-//     "on n.n_regionkey = r.r_regionkey;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - multi table join",
-//                  "[.][integration][gpu_execution][csv][join]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select c.c_name, n.n_name from customer c "
-//     "inner join nation n on c.c_nationkey = n.n_nationkey "
-//     "inner join region r on n.n_regionkey = r.r_regionkey "
-//     "where r.r_name = 'EUROPE' "
-//     "order by c.c_name limit 10;");
-// }
-
-// //===----------------------------------------------------------------------===//
-// // CSV TPC-H representative queries
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - tpch q1 pricing summary",
-//                  "[.][integration][gpu_execution][csv][tpch]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select l_returnflag, l_linestatus, "
-//     "sum(l_quantity) as sum_qty, "
-//     "sum(l_extendedprice) as sum_base_price, "
-//     "sum(l_extendedprice * (1 - l_discount)) as sum_disc_price "
-//     "from lineitem "
-//     "where l_shipdate <= date '1998-09-02' "
-//     "group by l_returnflag, l_linestatus "
-//     "order by l_returnflag, l_linestatus;",
-//     0.01f);
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - tpch q3 shipping priority",
-//                  "[.][integration][gpu_execution][csv][tpch]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select l_orderkey, "
-//     "sum(l_extendedprice * (1 - l_discount)) as revenue, "
-//     "o_orderdate, o_shippriority "
-//     "from customer "
-//     "inner join orders on c_custkey = o_custkey "
-//     "inner join lineitem on l_orderkey = o_orderkey "
-//     "where c_mktsegment = 'BUILDING' "
-//     "and o_orderdate < date '1995-03-15' "
-//     "and l_shipdate > date '1995-03-15' "
-//     "group by l_orderkey, o_orderdate, o_shippriority "
-//     "order by revenue desc limit 10;",
-//     0.01f);
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - tpch q4 order priority",
-//                  "[.][integration][gpu_execution][csv][tpch]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select o_orderpriority, count(*) as order_count "
-//     "from orders "
-//     "where o_orderdate >= date '1996-10-01' "
-//     "and o_orderdate < date '1997-01-01' "
-//     "and exists ( "
-//     "  select * from lineitem "
-//     "  where l_orderkey = o_orderkey "
-//     "  and l_commitdate < l_receiptdate "
-//     ") "
-//     "group by o_orderpriority "
-//     "order by o_orderpriority;");
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - tpch q6 revenue forecast",
-//                  "[.][integration][gpu_execution][csv][tpch]")
-// {
-//   // Tests date + float filters together (the original "Unknown cudf type: 12" trigger)
-//   compare_gpu_vs_cpu(
-//     "select sum(l_extendedprice * l_discount) as revenue "
-//     "from lineitem "
-//     "where l_shipdate >= date '1997-01-01' "
-//     "and l_shipdate < date '1998-01-01' "
-//     "and l_discount between 0.07 - 0.01 and 0.07 + 0.01 "
-//     "and l_quantity < 25;",
-//     0.01f);
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - tpch q10 returned item reporting",
-//                  "[.][integration][gpu_execution][csv][tpch]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select c_custkey, c_name, "
-//     "sum(l_extendedprice * (1 - l_discount)) as revenue, "
-//     "c_acctbal, n_name, c_address, c_phone, c_comment "
-//     "from customer inner join orders on c_custkey = o_custkey "
-//     "inner join lineitem on l_orderkey = o_orderkey "
-//     "inner join nation on c_nationkey = n_nationkey "
-//     "where o_orderdate >= date '1993-07-01' "
-//     "and o_orderdate < date '1993-10-01' "
-//     "and l_returnflag = 'R' "
-//     "group by c_custkey, c_name, c_acctbal, c_phone, n_name, c_address, c_comment "
-//     "order by revenue desc limit 20;",
-//     0.01f);
-// }
-
-// //===----------------------------------------------------------------------===//
-// // CSV Order By / Limit tests
-// //===----------------------------------------------------------------------===//
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - order by with limit",
-//                  "[.][integration][gpu_execution][csv][order]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select o_orderkey, o_totalprice, o_orderdate "
-//     "from orders order by o_totalprice desc limit 10;",
-//     0.01f);
-// }
-
-// TEST_CASE_METHOD(GPUExecutionCSVFixture,
-//                  "gpu_execution csv - order by date column",
-//                  "[.][integration][gpu_execution][csv][order]")
-// {
-//   compare_gpu_vs_cpu(
-//     "select o_orderkey, o_orderdate from orders "
-//     "where o_orderstatus = 'F' order by o_orderdate limit 10;");
-// }
+// CSV result comparisons are in test/sqltest/suites/csv_disabled.
 
 //===----------------------------------------------------------------------===//
 // Iceberg scan tests
@@ -627,18 +393,15 @@ TEST_CASE_METHOD(ParquetCountCarrierFixture,
 // rot went unnoticed. They are now unhidden, unskipped, and a missing iceberg extension is a
 // hard failure rather than a WARN-and-return.
 //
-// Every case asserts three things: the rows are right, DuckDB's own reader agrees, and the
-// query took the route it is supposed to take. The literal row expectations matter as much as
-// the GPU-vs-CPU comparison — an engine that drops deletes and a reader that drops deletes
-// agree with each other perfectly.
+// C++ asserts execution routes and internal state. The iceberg SQL suite compares
+// DuckDB and Sirius results against each other and the original literal expectations.
 //===----------------------------------------------------------------------===//
 
 /**
  * @brief Iceberg test fixture.
  *
  * Loads the community iceberg extension and resolves the fixture tables under
- * test/cpp/integration/data/. Tests compare gpu_execution against DuckDB's native iceberg
- * reader and against literal expected rows.
+ * test/cpp/integration/data/. Tests assert GPU and fallback execution routes.
  */
 class GPUExecutionIcebergFixture : public MultiFormatFixtureBase {
  public:
@@ -830,13 +593,7 @@ class GPUExecutionIcebergFixture : public MultiFormatFixtureBase {
     REQUIRE(delete_file_count(table_path) == expected);
   }
 
-  /**
-   * @brief Run a query on the GPU and assert route, oracle agreement, and literal rows.
-   *
-   * `expected` is compared as stringified rows in sorted order, so it works for any result
-   * shape. It is not redundant with the GPU-vs-CPU check: if DuckDB's reader ever stops
-   * applying deletes, a GPU that also ignores them would still match it.
-   */
+  /// Assert the candidate route and that disabling GPU execution reaches only DuckDB.
   void expect_iceberg_rows(const std::string& query,
                            gpu_route route,
                            std::vector<std::vector<std::string>> expected)
@@ -876,6 +633,38 @@ class GPUExecutionIcebergFixture : public MultiFormatFixtureBase {
 
     REQUIRE(gpu_rows == cpu_rows);
     REQUIRE(gpu_rows == expected);
+  }
+
+  void require_iceberg_execution(const std::string& query, gpu_route route)
+  {
+    INFO("query: " << query);
+
+    con->Query("SET gpu_execution = true;");
+    auto before     = sirius::test::get_transparent_execution_stats(*con);
+    auto gpu_result = con->Query(query);
+    REQUIRE(gpu_result);
+    if (gpu_result->HasError()) {
+      UNSCOPED_INFO("transparent GPU execution error: " << gpu_result->GetError());
+    }
+    REQUIRE_FALSE(gpu_result->HasError());
+    require_route(before, sirius::test::get_transparent_execution_stats(*con), route);
+
+    auto const before_cpu = sirius::test::get_transparent_execution_stats(*con);
+    con->Query("SET gpu_execution = false;");
+    auto cpu_result = con->Query(query);
+    con->Query("SET gpu_execution = true;");
+    REQUIRE(cpu_result);
+    if (cpu_result->HasError()) {
+      UNSCOPED_INFO("DuckDB reader error: " << cpu_result->GetError());
+    }
+    REQUIRE_FALSE(cpu_result->HasError());
+    // Prove the oracle is actually DuckDB. `gpu_execution=false` disables transparent
+    // interception but does NOT unload Sirius (only SIRIUS_DISABLE=1 does), so "we set the flag"
+    // is not evidence — zero rebinds, zero fallbacks and zero GPU executions is. Without this,
+    // a comparison against an oracle that had quietly stayed on the GPU would be the engine
+    // agreeing with itself.
+    sirius::test::require_transparent_execution_delta(
+      before_cpu, sirius::test::get_transparent_execution_stats(*con), 0, 0, 0);
   }
 
   /**
@@ -944,10 +733,9 @@ class GPUExecutionIcebergFixture : public MultiFormatFixtureBase {
 // it, and no tag expresses "expected to hang". They now decline at PLAN time, so they are safe
 // to run in-process and are wired up below.
 //
-// run_conformance.py still covers all four, and still matters: it asserts LIVENESS by issuing a
-// second query on the same connection, which is the observable difference between "declined at
-// plan time" and "fell back at runtime". A route assertion here cannot see that, and a hang here
-// would stall the suite rather than report.
+// The SQL conformance suites assert connection liveness with a second query in the same
+// worker. Their query timeouts isolate a poisoned connection without stalling the suite.
+// C++ retains the execution-route assertions.
 //===----------------------------------------------------------------------===//
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -984,9 +772,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // The narrowest statement of what works: a V2 table with a live positional delete, named by
   // snapshot, applying its deletes on the GPU.
   require_delete_files(v2_path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count;",
-                      kPositionalDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count;",
+                            kPositionalDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1000,10 +787,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // able to read this table -- asserted rather than assumed.
   require_session_can_read(conf_append_only_path);
   REQUIRE(delete_file_count(conf_append_only_path) == 0);
-  expect_iceberg_rows(
-    "SELECT id, name FROM " + pinned_scan(conf_append_only_path) + " ORDER BY id;",
-    gpu_route::gpu,
-    {{"1", "a"}, {"2", "b"}, {"3", "c"}});
+  require_iceberg_execution(
+    "SELECT id, name FROM " + pinned_scan(conf_append_only_path) + " ORDER BY id;", gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1070,10 +855,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_session_can_read(conf_drop_readd_path);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT id, x, y FROM iceberg_scan('" + conf_drop_readd_path + "') ORDER BY id;",
-    gpu_route::plan_fallback,
-    {{"1", "10", "NULL"}, {"2", "20", "NULL"}});
+    gpu_route::plan_fallback);
 }
 
 // Pinned, unlike the case above: these schema changes arrived WITH new snapshots, so both forms
@@ -1089,10 +873,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_session_can_read(conf_rename_col_path);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT id, value FROM " + pinned_scan(conf_rename_col_path) + " ORDER BY id;",
-    gpu_route::plan_fallback,
-    {{"1", "old_a"}, {"2", "old_b"}, {"3", "new_c"}, {"4", "new_d"}});
+    gpu_route::plan_fallback);
 }
 
 // An ADD keeps ids contiguous too (1,2,3 over three columns), so the gap test misses it for the
@@ -1103,10 +886,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_session_can_read(conf_add_column_path);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT id, a, b FROM " + pinned_scan(conf_add_column_path) + " ORDER BY id;",
-    gpu_route::plan_fallback,
-    {{"1", "10", "NULL"}, {"2", "20", "NULL"}, {"3", "30", "300"}, {"4", "40", "400"}});
+    gpu_route::plan_fallback);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1119,9 +901,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   REQUIRE(delete_file_count(v1_path) == 0);  // append-only: nothing for the gate to catch
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(v1_path) + " ORDER BY count;",
-                      gpu_route::gpu,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(v1_path) + " ORDER BY count;",
+                            gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1134,9 +915,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // a name-resolving GPU scan return the SAME rows here, so only the route catches it.
   auto const path =
     (get_project_root() / "test/cpp/integration/data/iceberg_v1_no_field_ids").string();
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
-                      gpu_route::plan_fallback,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
+                            gpu_route::plan_fallback);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1148,9 +928,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // just returns the file's narrower type. Only comparing the TYPE catches it.
   auto const path =
     (get_project_root() / "test/cpp/integration/data/iceberg_v1_promoted_type").string();
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
-                      gpu_route::plan_fallback,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
+                            gpu_route::plan_fallback);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1170,9 +949,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // Declining a valid layout is the gate's fail-closed bias, and DuckDB returns the right rows.
   auto const path =
     (get_project_root() / "test/cpp/integration/data/iceberg_v1_reordered").string();
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
-                      gpu_route::plan_fallback,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
+                            gpu_route::plan_fallback);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1184,13 +962,11 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   //
   // On the append-only table on purpose: with no deletes at all, the decline can only be about the
   // missing snapshot identity.
-  expect_iceberg_rows("SELECT fruit, count FROM iceberg_scan('" + v1_path + "') ORDER BY count;",
-                      kUnpinnedRoute,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution(
+    "SELECT fruit, count FROM iceberg_scan('" + v1_path + "') ORDER BY count;", kUnpinnedRoute);
 
   // And the connection still answers a GPU query afterwards — the liveness half of the point.
-  expect_iceberg_rows(
-    "SELECT count(*) FROM " + pinned_scan(v1_path) + ";", gpu_route::gpu, {{"3"}});
+  require_iceberg_execution("SELECT count(*) FROM " + pinned_scan(v1_path) + ";", gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1198,29 +974,26 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   // On an append-only table the path rewrite is harmless to the rows, so only the route shows it.
-  expect_iceberg_rows("SELECT fruit, count FROM iceberg_scan('" + v1_path +
-                        "', snapshot_from_id = " + std::to_string(current_snapshot_id(v1_path)) +
-                        ", allow_moved_paths = true) ORDER BY count;",
-                      gpu_route::plan_fallback,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution(
+    "SELECT fruit, count FROM iceberg_scan('" + v1_path + "', snapshot_from_id = " +
+      std::to_string(current_snapshot_id(v1_path)) + ", allow_moved_paths = true) ORDER BY count;",
+    gpu_route::plan_fallback);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "gpu_execution iceberg - V1 count(*)",
                  "[integration][gpu_execution][iceberg]")
 {
-  expect_iceberg_rows(
-    "SELECT count(*) FROM " + pinned_scan(v1_path) + ";", gpu_route::gpu, {{"3"}});
+  require_iceberg_execution("SELECT count(*) FROM " + pinned_scan(v1_path) + ";", gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "gpu_execution iceberg - V1 filter and order by",
                  "[integration][gpu_execution][iceberg]")
 {
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(v1_path) + " WHERE count > 1 ORDER BY count;",
-    gpu_route::gpu,
-    {{"banana", "2"}, {"cherry", "3"}});
+    gpu_route::gpu);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1235,9 +1008,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg][virtual_columns]")
 {
   require_delete_files(v2_path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count;",
-                      kPositionalDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count;",
+                            kPositionalDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1263,8 +1035,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   require_delete_files(v2_path, 1);
   // 5 data rows minus 2 deleted. A count that reads row counts from parquet footers without
   // applying deletes returns 5 — this is the case that catches it.
-  expect_iceberg_rows(
-    "SELECT count(*) FROM " + pinned_scan(v2_path) + ";", kPositionalDeleteRoute, {{"3"}});
+  require_iceberg_execution("SELECT count(*) FROM " + pinned_scan(v2_path) + ";",
+                            kPositionalDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1272,9 +1044,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_delete_files(v2_path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count DESC;",
-                      kPositionalDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution(
+    "SELECT fruit, count FROM " + pinned_scan(v2_path) + " ORDER BY count DESC;",
+    kPositionalDeleteRoute);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1300,9 +1072,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergEqualityDeleteFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_delete_files(eq_path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(eq_path) + " ORDER BY count;",
-                      kEqualityDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(eq_path) + " ORDER BY count;",
+                            kEqualityDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergEqualityDeleteFixture,
@@ -1310,8 +1081,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergEqualityDeleteFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_delete_files(eq_path, 1);
-  expect_iceberg_rows(
-    "SELECT count(*) FROM " + pinned_scan(eq_path) + ";", kEqualityDeleteRoute, {{"3"}});
+  require_iceberg_execution("SELECT count(*) FROM " + pinned_scan(eq_path) + ";",
+                            kEqualityDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergEqualityDeleteFixture,
@@ -1365,10 +1136,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergEqEdgeCaseFixture,
   require_delete_files(single_col_path, 1);
   // The key is the fruit column alone (field_id=1); count is not part of it.
   // Delete entries "banana" and "date" must match on fruit regardless of count.
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(single_col_path) + " ORDER BY count;",
-    kEqualityDeleteRoute,
-    {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+    kEqualityDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergEqEdgeCaseFixture,
@@ -1377,10 +1147,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergEqEdgeCaseFixture,
 {
   // Two separate one-row equality-delete files — exercises the concatenate/deduplicate path.
   require_delete_files(multi_del_path, 2);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(multi_del_path) + " ORDER BY count;",
-    kEqualityDeleteRoute,
-    {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+    kEqualityDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergEqEdgeCaseFixture,
@@ -1425,10 +1194,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergEqEdgeCaseFixture,
   // loses elderberry/5. Exercises applying one delete set across per-file boundaries — the
   // same boundary the GPU path's one-file-per-batch coalescing rule exists to protect.
   require_delete_files(multi_data_path, 1);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(multi_data_path) + " ORDER BY count;",
-    kEqualityDeleteRoute,
-    {{"apple", "1"}, {"cherry", "3"}, {"date", "4"}, {"fig", "6"}});
+    kEqualityDeleteRoute);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1454,9 +1222,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergDVFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_delete_files(dv_path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(dv_path) + " ORDER BY count;",
-                      kDeletionVectorRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(dv_path) + " ORDER BY count;",
+                            kDeletionVectorRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergDVFixture,
@@ -1464,8 +1231,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergDVFixture,
                  "[integration][gpu_execution][iceberg]")
 {
   require_delete_files(dv_path, 1);
-  expect_iceberg_rows(
-    "SELECT count(*) FROM " + pinned_scan(dv_path) + ";", kDeletionVectorRoute, {{"3"}});
+  require_iceberg_execution("SELECT count(*) FROM " + pinned_scan(dv_path) + ";",
+                            kDeletionVectorRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergDVFixture,
@@ -1522,10 +1289,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergDVReplacedFixture,
   // so a reader that ignores `status` and lets the last entry win returns 1 row rather than 3 —
   // resurrecting rows the table deleted and dropping rows it kept.
   REQUIRE(delete_file_count(dv_replaced_path) == 2);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(dv_replaced_path) + " ORDER BY count;",
-    kDeletionVectorRoute,
-    {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+    kDeletionVectorRoute);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1563,17 +1329,9 @@ TEST_CASE_METHOD(
   // the corruption never shows up in a count. Sirius declining is what keeps that answer from
   // being produced on the GPU and reported as ours.
   REQUIRE(delete_file_count(dv_misbound_path) == 2);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(dv_misbound_path) + " ORDER BY count;",
-    gpu_route::plan_fallback,
-    {{"apple", "1"},
-     {"banana", "2"},
-     {"cherry", "3"},
-     {"date", "4"},
-     {"fig", "6"},
-     {"honeydew", "8"},
-     {"indian fig", "9"},
-     {"jackfruit", "10"}});
+    gpu_route::plan_fallback);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1604,10 +1362,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergRetiredFixture,
   // which is the whole point: the table looks like it has a delete file and must behave as
   // though it does not. A status-blind reader returns 3 of these 5 rows.
   require_delete_files(pos_retired_path, 1);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(pos_retired_path) + " ORDER BY count;",
-    gpu_route::gpu,
-    {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}, {"date", "4"}, {"elderberry", "5"}});
+    gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergRetiredFixture,
@@ -1619,10 +1376,9 @@ TEST_CASE_METHOD(GPUExecutionIcebergRetiredFixture,
   // and the gate must not keep refusing over it. Getting this wrong costs performance rather
   // than correctness, which is exactly why the rows alone would never reveal it.
   require_delete_files(eq_retired_path, 1);
-  expect_iceberg_rows(
+  require_iceberg_execution(
     "SELECT fruit, count FROM " + pinned_scan(eq_retired_path) + " ORDER BY count;",
-    gpu_route::gpu,
-    {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}, {"date", "4"}, {"elderberry", "5"}});
+    gpu_route::gpu);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1653,7 +1409,7 @@ TEST_CASE_METHOD(GPUExecutionIcebergRetiredFixture,
 // path's observable behaviour right now is "correct answer, then a dead session" — not something
 // worth pinning a test to.
 //
-// When the engine deadlock is fixed, run this through expect_iceberg_rows with
+// When the engine deadlock is fixed, run this through require_iceberg_execution with
 // gpu_route::runtime_fallback. When the GPU learns to inject typed NULLs for missing columns
 // (the MISSING entry kind in scan_plan), it becomes gpu_route::gpu.
 //===----------------------------------------------------------------------===//
@@ -1697,19 +1453,16 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // assertion is what distinguishes that from quietly handing the table back to DuckDB, since
   // both return the same three rows.
   require_delete_files(path, 1);
-  expect_iceberg_rows("SELECT * FROM " + pinned_scan(path) + " ORDER BY count;",
-                      kPositionalDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"elderberry", "5"}});
+  require_iceberg_execution("SELECT * FROM " + pinned_scan(path) + " ORDER BY count;",
+                            kPositionalDeleteRoute);
 
   // Snapshot 1 predates the delete: all 5 rows, and — the point of this case — the gate must
   // probe the SAME snapshot the scan reads, so this one runs on the GPU. A gate that ignored
   // snapshot_from_id would see the table's delete file and needlessly decline.
   auto const snap1_args = ", snapshot_from_id = 9400000000000001";
   REQUIRE(delete_file_count(path, snap1_args) == 0);
-  expect_iceberg_rows(
-    "SELECT * FROM iceberg_scan('" + path + "'" + snap1_args + ") ORDER BY count;",
-    gpu_route::gpu,
-    {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}, {"date", "4"}, {"elderberry", "5"}});
+  require_iceberg_execution(
+    "SELECT * FROM iceberg_scan('" + path + "'" + snap1_args + ") ORDER BY count;", gpu_route::gpu);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1721,9 +1474,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
   // The re-inserted banana/4 must survive: its data sequence number is above the delete's, and
   // an implementation that matches on key alone would wrongly drop it.
   require_delete_files(path, 1);
-  expect_iceberg_rows("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
-                      kEqualityDeleteRoute,
-                      {{"apple", "1"}, {"cherry", "3"}, {"banana", "4"}, {"date", "5"}});
+  require_iceberg_execution("SELECT fruit, count FROM " + pinned_scan(path) + " ORDER BY count;",
+                            kEqualityDeleteRoute);
 }
 
 TEST_CASE_METHOD(GPUExecutionIcebergFixture,
@@ -1732,9 +1484,8 @@ TEST_CASE_METHOD(GPUExecutionIcebergFixture,
 {
   auto path = (get_project_root() / "test/cpp/integration/data/iceberg_deflate_manifest").string();
   REQUIRE(delete_file_count(path) == 0);
-  expect_iceberg_rows("SELECT * FROM " + pinned_scan(path) + " ORDER BY count;",
-                      gpu_route::gpu,
-                      {{"apple", "1"}, {"banana", "2"}, {"cherry", "3"}});
+  require_iceberg_execution("SELECT * FROM " + pinned_scan(path) + " ORDER BY count;",
+                            gpu_route::gpu);
 }
 
 //===----------------------------------------------------------------------===//
@@ -1795,9 +1546,6 @@ class HivePartitionDataset {
 
   struct watchdog_result {
     bool timed_out{false};
-    duckdb::idx_t row_count{0};
-    duckdb::idx_t column_count{0};
-    std::vector<std::vector<std::string>> rows;
     std::string error;
   };
 
@@ -1811,29 +1559,10 @@ class HivePartitionDataset {
     return "read_parquet(" + sirius::test::sql_literal(flat_path) + ")";
   }
 
-  static std::vector<std::string> split_row(std::string const& line)
-  {
-    std::vector<std::string> parts;
-    std::stringstream ss(line);
-    std::string part;
-    while (std::getline(ss, part, '\t')) {
-      parts.push_back(std::move(part));
-    }
-    return parts;
-  }
-
   static void write_watchdog_result(fs::path const& path, watchdog_result const& result)
   {
     std::ofstream out(path);
-    out << "ERROR\t" << result.error << "\n";
-    out << "SHAPE\t" << result.row_count << "\t" << result.column_count << "\n";
-    for (auto const& row : result.rows) {
-      out << "ROW";
-      for (auto const& value : row) {
-        out << '\t' << value;
-      }
-      out << "\n";
-    }
+    out << result.error;
   }
 
   static void write_watchdog_config(fs::path const& path)
@@ -1876,22 +1605,8 @@ class HivePartitionDataset {
       result.error = "watchdog child did not write a result file";
       return result;
     }
-    std::string line;
-    while (std::getline(in, line)) {
-      auto parts = split_row(line);
-      if (parts.empty()) { continue; }
-      if (parts[0] == "ERROR") {
-        if (parts.size() > 1) { result.error = parts[1]; }
-      } else if (parts[0] == "SHAPE") {
-        if (parts.size() >= 3) {
-          result.row_count    = static_cast<duckdb::idx_t>(std::stoull(parts[1]));
-          result.column_count = static_cast<duckdb::idx_t>(std::stoull(parts[2]));
-        }
-      } else if (parts[0] == "ROW") {
-        parts.erase(parts.begin());
-        result.rows.push_back(std::move(parts));
-      }
-    }
+    result.error =
+      std::string{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
     return result;
   }
 
@@ -1948,15 +1663,13 @@ class HivePartitionDataset {
     return out;
   }
 
-  void require_gpu_rows(std::string const& query,
-                        std::vector<std::vector<std::string>> const& expected_rows)
+  void require_gpu_execution(std::string const& query)
   {
     auto result = run_gpu_query_with_watchdog(query, std::chrono::seconds{60});
     INFO(query);
     INFO(result.error);
     REQUIRE_FALSE(result.timed_out);
     REQUIRE(result.error.empty());
-    CHECK(result.rows == expected_rows);
   }
 
   sirius::test::scratch_dir scratch;
@@ -2047,11 +1760,6 @@ TEST_CASE("gpu_execution hive partition watchdog child runner",
         out.error = "query returned nullptr";
       } else if (result->HasError()) {
         out.error = result->GetError();
-      } else {
-        out.row_count      = result->RowCount();
-        out.column_count   = result->ColumnCount();
-        auto& materialized = result->Cast<duckdb::MaterializedQueryResult>();
-        out.rows           = MultiFormatFixtureBase::collect_rows(materialized);
       }
     }
 
@@ -2077,22 +1785,21 @@ TEST_CASE_METHOD(HivePartitionDataset,
                  "gpu_execution hive partition count star completes under watchdog",
                  "[gpu_execution][hive_partition][count_star][watchdog]")
 {
-  SECTION("hive count star") { require_gpu_rows("SELECT count(*) FROM " + hive_scan(), {{"3"}}); }
+  SECTION("hive count star") { require_gpu_execution("SELECT count(*) FROM " + hive_scan()); }
 
   SECTION("flat count star control")
   {
-    require_gpu_rows("SELECT count(*) FROM " + flat_scan(), {{"3"}});
+    require_gpu_execution("SELECT count(*) FROM " + flat_scan());
   }
 
   SECTION("partition-filtered count star")
   {
-    require_gpu_rows("SELECT count(*) FROM " + hive_scan() + " WHERE year = 2024", {{"2"}});
+    require_gpu_execution("SELECT count(*) FROM " + hive_scan() + " WHERE year = 2024");
   }
 
   SECTION("partition column select")
   {
-    require_gpu_rows("SELECT year FROM " + hive_scan() + " ORDER BY year",
-                     {{"2024"}, {"2024"}, {"2025"}});
+    require_gpu_execution("SELECT year FROM " + hive_scan() + " ORDER BY year");
   }
 }
 
@@ -2102,38 +1809,44 @@ TEST_CASE_METHOD(GPUExecutionEscapedHivePartitionFixture,
 {
   SECTION("projects a space-escaped partition column")
   {
-    compare_gpu_vs_cpu("SELECT city FROM " + partition_scan("space/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT city FROM " +
+                                                  partition_scan("space/city=*/*.parquet"));
   }
 
   SECTION("projects data and a space-escaped partition column")
   {
-    compare_gpu_vs_cpu("SELECT id, city FROM " + partition_scan("space/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT id, city FROM " +
+                                                  partition_scan("space/city=*/*.parquet"));
   }
 
   SECTION("unescapes a slash")
   {
-    compare_gpu_vs_cpu("SELECT city FROM " + partition_scan("slash/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT city FROM " +
+                                                  partition_scan("slash/city=*/*.parquet"));
   }
 
   SECTION("unescapes a percent sign")
   {
-    compare_gpu_vs_cpu("SELECT city FROM " + partition_scan("percent/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT city FROM " +
+                                                  partition_scan("percent/city=*/*.parquet"));
   }
 
   SECTION("unescapes multiple sequences in one value")
   {
-    compare_gpu_vs_cpu("SELECT city FROM " + partition_scan("multiple/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT city FROM " +
+                                                  partition_scan("multiple/city=*/*.parquet"));
   }
 
   SECTION("unescapes every partition column")
   {
-    compare_gpu_vs_cpu("SELECT id, city, dept FROM " +
-                       partition_scan("two_columns/city=*/dept=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution(
+      "SELECT id, city, dept FROM " + partition_scan("two_columns/city=*/dept=*/*.parquet"));
   }
 
   SECTION("preserves an unescaped partition value")
   {
-    compare_gpu_vs_cpu("SELECT id, city FROM " + partition_scan("plain/city=*/*.parquet"));
+    MultiFormatFixtureBase::require_gpu_execution("SELECT id, city FROM " +
+                                                  partition_scan("plain/city=*/*.parquet"));
   }
 }
 
@@ -2145,8 +1858,8 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT * FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true) ORDER BY id");
+  MultiFormatFixtureBase::require_gpu_execution("SELECT * FROM read_parquet('" + hive_path +
+                                                "', hive_partitioning=true) ORDER BY id");
 }
 
 TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
@@ -2157,8 +1870,9 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT * FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true) WHERE id >= 2 ORDER BY id");
+  MultiFormatFixtureBase::require_gpu_execution(
+    "SELECT * FROM read_parquet('" + hive_path +
+    "', hive_partitioning=true) WHERE id >= 2 ORDER BY id");
 }
 
 TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
@@ -2169,8 +1883,9 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT id, name, year FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true) WHERE year = 2024 ORDER BY id");
+  MultiFormatFixtureBase::require_gpu_execution(
+    "SELECT id, name, year FROM read_parquet('" + hive_path +
+    "', hive_partitioning=true) WHERE year = 2024 ORDER BY id");
 }
 
 TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
@@ -2181,8 +1896,9 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT year, SUM(amount) as total FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true) GROUP BY year ORDER BY year");
+  MultiFormatFixtureBase::require_gpu_execution(
+    "SELECT year, SUM(amount) as total FROM read_parquet('" + hive_path +
+    "', hive_partitioning=true) GROUP BY year ORDER BY year");
 }
 
 TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
@@ -2193,8 +1909,9 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT year, month, amount, name, id FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true) ORDER BY id");
+  MultiFormatFixtureBase::require_gpu_execution(
+    "SELECT year, month, amount, name, id FROM read_parquet('" + hive_path +
+    "', hive_partitioning=true) ORDER BY id");
 }
 
 TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
@@ -2205,8 +1922,8 @@ TEST_CASE_METHOD(GPUExecutionHivePartitionFixture,
     WARN("hive extension not available — skipping");
     return;
   }
-  compare_gpu_vs_cpu("SELECT SUM(amount) as total FROM read_parquet('" + hive_path +
-                     "', hive_partitioning=true)");
+  MultiFormatFixtureBase::require_gpu_execution("SELECT SUM(amount) as total FROM read_parquet('" +
+                                                hive_path + "', hive_partitioning=true)");
 }
 
 TEST_CASE_METHOD(MultiFormatFixtureBase,
