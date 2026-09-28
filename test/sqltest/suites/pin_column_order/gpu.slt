@@ -1,0 +1,24 @@
+statement ok
+COPY (SELECT range AS k, DATE '1990-01-01' + CAST(range AS INTEGER) AS a, DATE '1990-01-01' + CAST(range * 2 AS INTEGER) AS b FROM range(100000)) TO '__TEST_DIR__/kab.parquet' (FORMAT PARQUET);
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/kab.parquet', tier = 'gpu', name = 'colorder', cols = ['k', 'a', 'b']);
+
+# Original query: test/cpp/integration/test_pin_table_column_order.cpp:175
+# sirius: id = "pin_column_order/gpu/001"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  read_parquet('__TEST_DIR__/kab.parquet')
+WHERE
+  k >= 0 AND a < b;
+----
+99999
+
+onlyif sirius
+statement ok
+CALL unpin_table('colorder');
