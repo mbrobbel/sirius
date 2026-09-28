@@ -88,6 +88,14 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 suites = "all"
 axes = { gpu = "all", storage = "all", optimizers = "all" }
 
+[sources.tpch-original]
+kind = "file"
+path = "../cpp/integration/data/duckdb/integration.duckdb"
+sha256 = "3f8114e22324a5b8f1457ad13d9e2aa2c1720b5514061cef7ecd7608c397b841"
+
+[fixtures.tpch-native-original]
+files = { "integration.duckdb" = "tpch-original" }
+
 [fixtures.tpch-parquet-original]
 files = {"customer.parquet" = "tpch-parquet-customer", "lineitem.parquet" = "tpch-parquet-lineitem", "nation.parquet" = "tpch-parquet-nation", "orders.parquet" = "tpch-parquet-orders", "part.parquet" = "tpch-parquet-part", "partsupp.parquet" = "tpch-parquet-partsupp", "region.parquet" = "tpch-parquet-region", "supplier.parquet" = "tpch-parquet-supplier"}
 

@@ -1,0 +1,17 @@
+# selective membership filter on the probe scan
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:110
+# sirius: id = "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ??? rowsort
+SELECT
+  count(*),
+  min(l_orderkey),
+  max(l_orderkey)
+FROM
+  lineitem
+  JOIN part ON l_partkey = p_partkey
+WHERE
+  p_size = 15 AND p_container = 'SM BOX';
+----

@@ -1,0 +1,13 @@
+# a domain-covering build publishes nothing
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:171
+# sirius: id = "dynamic_filter_native/a-domain-covering-build-publishes-nothing/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN (SELECT p_partkey FROM part WHERE p_partkey > 1 GROUP BY p_partkey) p ON l_partkey = p_partkey;
+----

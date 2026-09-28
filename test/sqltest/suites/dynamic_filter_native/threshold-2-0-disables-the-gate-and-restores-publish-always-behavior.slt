@@ -1,0 +1,17 @@
+# threshold 2.0 disables the gate and restores publish-always behavior
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET dynamic_filter_domain_coverage_threshold = 2.0;
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:197
+# sirius: id = "dynamic_filter_native/threshold-2-0-disables-the-gate-and-restores-publish-always-behavior/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN (SELECT p_partkey FROM part WHERE p_partkey > 1 GROUP BY p_partkey) p ON l_partkey = p_partkey;
+----

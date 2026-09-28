@@ -1,0 +1,15 @@
+# membership filter composed with a probe-side static filter
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_dynamic_filter_native.cpp:120
+# sirius: id = "dynamic_filter_native/membership-filter-composed-with-a-probe-side-static-filter/001"
+# sirius: tags = ["integration", "dynamic_filter", "tpch"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  lineitem
+  JOIN part ON l_partkey = p_partkey
+WHERE
+  p_size = 15 AND p_container = 'SM BOX' AND l_quantity < 10;
+----
