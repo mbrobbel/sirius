@@ -1,0 +1,17 @@
+# gpu_execution - order by multipartition
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET max_sort_partition_bytes = 1024;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2942
+# sirius: id = "tpch_integration_native/order-by-multipartition/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  l_orderkey,
+  l_partkey
+FROM
+  lineitem ORDER BY l_orderkey;
+----

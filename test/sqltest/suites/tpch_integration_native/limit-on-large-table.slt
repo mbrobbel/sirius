@@ -1,0 +1,12 @@
+# gpu_execution - limit on large table
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:750
+# sirius: id = "tpch_integration_native/limit-on-large-table/001"
+# sirius: tags = ["integration", "gpu_execution", "limit", "limit_multi_batch"]
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem LIMIT 100;
+----

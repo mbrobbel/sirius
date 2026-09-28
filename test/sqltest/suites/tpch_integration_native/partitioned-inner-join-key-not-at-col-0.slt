@@ -1,0 +1,19 @@
+# gpu_execution - partitioned inner join (key not at col 0)
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 1;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2150
+# sirius: id = "tpch_integration_native/partitioned-inner-join-key-not-at-col-0/001"
+# sirius: tags = ["integration", "tpch"]
+query ??? rowsort
+SELECT
+  n.n_nationkey,
+  n.n_regionkey,
+  r.r_name
+FROM
+  nation n
+  JOIN region r ON n.n_regionkey = r.r_regionkey;
+----

@@ -1,0 +1,13 @@
+# gpu_execution - right anti join 2
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2038
+# sirius: id = "tpch_integration_native/right-anti-join-2/001"
+# sirius: tags = ["integration", "gpu_execution", "antijoin"]
+query ? rowsort
+SELECT
+  r.r_regionkey
+FROM
+  region r
+  ANTI JOIN nation n ON r.r_regionkey = n.n_nationkey;
+----

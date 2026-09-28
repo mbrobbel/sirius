@@ -1,0 +1,13 @@
+# gpu_execution - scan with varchar column
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3075
+# sirius: id = "tpch_integration_native/scan-with-varchar-column/001"
+# sirius: tags = ["integration", "gpu_execution", "order_by_types", "varchar"]
+query ?? rowsort
+SELECT
+  n_nationkey,
+  n_name
+FROM
+  nation;
+----

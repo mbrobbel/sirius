@@ -1,0 +1,23 @@
+# gpu_execution - oversized values source falls back before GPU materialization
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET scan_task_batch_size = 64;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4766
+# sirius: id = "tpch_integration_native/oversized-values-source-falls-back-before-gpu-materialization/001"
+# sirius: tags = ["integration", "tpch", "fallback"]
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+query I nosort
+SELECT
+  sum(length(s))
+FROM
+  (
+    VALUES
+      ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'),
+      ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  ) t (s);
+----
+256
