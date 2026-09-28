@@ -1,0 +1,21 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:100
+# gpu_execution grouped SUM/AVG over NULL values
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/grouped-sum-avg-over-null-values/001"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ??? rowsort
+SELECT
+  g,
+  SUM(d),
+  AVG(d)
+FROM
+  agg_n
+GROUP BY
+  g;
+----
+1	3.00	1.5
+2	5.00	5.0
+3	NULL	NULL
+NULL	10.00	10.0

@@ -1,0 +1,20 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:109
+# gpu_execution grouped COUNT(DISTINCT) ignores NULLs
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/grouped-count-distinct-ignores-nulls/001"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ?? rowsort
+SELECT
+  g,
+  COUNT(DISTINCT v)
+FROM
+  agg_n
+GROUP BY
+  g;
+----
+1	2
+2	1
+3	0
+NULL	2

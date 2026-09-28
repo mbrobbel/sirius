@@ -1,0 +1,15 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:116
+# gpu_execution ungrouped COUNT(DISTINCT) falls back to CPU
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/ungrouped-count-distinct-falls-back-to-cpu/001"
+# sirius: execution = "allow_fallback"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ? rowsort
+SELECT
+  COUNT(DISTINCT v)
+FROM
+  agg_n;
+----
+5
