@@ -9281,6 +9281,76 @@
       "test": "S3 mix: filter-above-join"
     },
     {
+      "file": "suites/runtime_fallback/basic.slt",
+      "id": "runtime_fallback/basic/001",
+      "identity": "ac89de8c0a76d2436233c9419d1d3aaec2de83be67f44245e4795c8acab650f6",
+      "kind": "query",
+      "line": 297,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: basic"
+    },
+    {
+      "file": "suites/runtime_fallback/basic.slt",
+      "id": "runtime_fallback/basic/002",
+      "identity": "75d42afad73c1215abbbea4225107bb2d3a20c2e3a00cee9d0ae517c663a2c8d",
+      "kind": "query",
+      "line": 307,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: basic"
+    },
+    {
+      "file": "suites/runtime_fallback/uncommitted.slt",
+      "id": "runtime_fallback/uncommitted/001",
+      "identity": "e715dd5c970a55077074a21e0831d9b241b9f8b3863e2b48a953aa0d576ee1c4",
+      "kind": "query",
+      "line": 334,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: sees own uncommitted writes"
+    },
+    {
+      "file": "suites/runtime_fallback/uncommitted.slt",
+      "id": "runtime_fallback/uncommitted/002",
+      "identity": "189709df9c00147ac6259354f32a426ba5caea9aaab4cdb1b1225df65378acb2",
+      "kind": "query",
+      "line": 338,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: sees own uncommitted writes"
+    },
+    {
+      "file": "suites/runtime_fallback/snapshot.slt",
+      "id": "runtime_fallback/snapshot/001",
+      "identity": "1328eb6a8f90fd6e0ac2bd8948b6fdcfb6be2dcf429803354eea1f3d7269abb3",
+      "kind": "query",
+      "line": 355,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: snapshot is stable across a concurrent commit"
+    },
+    {
+      "file": "suites/runtime_fallback/snapshot.slt",
+      "id": "runtime_fallback/snapshot/002",
+      "identity": "3de5c232ade5866bde52142df705d97ee50f3ca245f629e7485dfb4914339768",
+      "kind": "query",
+      "line": 362,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: snapshot is stable across a concurrent commit"
+    },
+    {
+      "file": "suites/runtime_fallback/snapshot.slt",
+      "id": "runtime_fallback/snapshot/003",
+      "identity": "391319aa8e335291aefd6563466d7ca3b3598b1a28d3faeb861ffd818b6e82fa",
+      "kind": "query",
+      "line": 366,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "runtime_fallback",
+      "test": "runtime fallback: snapshot is stable across a concurrent commit"
+    },
+    {
       "file": "suites/partition_memory/repeated-join.slt",
       "id": "partition_memory/repeated-join/001",
       "identity": "cd6b72aff389da621161f34ccb51c80dae62f341241dd9265e891494a667560b",
