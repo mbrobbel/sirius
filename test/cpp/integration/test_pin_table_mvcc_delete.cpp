@@ -21,7 +21,7 @@
 // the pin does not cover — must decline at plan time into a clean transparent
 // CPU fallback (counters {0 rebinds, 1 fallback, 0 executions}) with correct
 // results, never the MVCC-blind disk-native read. Cache-served queries keep
-// the {1, 0, 1} signature compare_gpu_vs_cpu asserts.
+// the {1, 0, 1} signature require_gpu_execution asserts.
 //
 // Walk-based guards for unpinned tables (#1143) remain disabled in the
 // planner. UPDATE statements on pinned tables are rejected before execution
@@ -42,8 +42,8 @@ namespace {
 
 /// Run @p query under gpu_execution=true expecting the plan-time guard to
 /// decline (transparent CPU fallback: {0 rebinds, 1 fallback, 0 executions})
-/// and the results to match a plain CPU run.
-void expect_fallback_matches_cpu(sirius::test::GpuExecutionFixture& fx, const std::string& query)
+/// Result comparisons live in the pin_mvcc_delete SQL suite.
+void require_plan_fallback(sirius::test::GpuExecutionFixture& fx, const std::string& query)
 {
   fx.con->Query("SET gpu_execution = true;");
   auto before     = sirius::test::get_transparent_execution_stats(*fx.con);
@@ -53,18 +53,6 @@ void expect_fallback_matches_cpu(sirius::test::GpuExecutionFixture& fx, const st
   REQUIRE_FALSE(gpu_result->HasError());
   auto after = sirius::test::get_transparent_execution_stats(*fx.con);
   sirius::test::require_transparent_execution_delta(before, after, 0, 1, 0);
-
-  fx.con->Query("SET gpu_execution = false;");
-  auto cpu_result = fx.con->Query(query);
-  fx.con->Query("SET gpu_execution = true;");
-  REQUIRE(cpu_result);
-  REQUIRE_FALSE(cpu_result->HasError());
-
-  auto gpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    gpu_result->Cast<duckdb::MaterializedQueryResult>());
-  auto cpu_rows = sirius::test::GpuExecutionFixture::collect_rows(
-    cpu_result->Cast<duckdb::MaterializedQueryResult>());
-  REQUIRE(gpu_rows == cpu_rows);
 }
 
 /// A second connection to the same database instance (concurrent-writer /
@@ -104,8 +92,8 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
     "DELETE FROM t WHERE k IN (0, 31, 32, 2047, 2048, 122879, 122880, 122881, 299999) "
     "OR k % 50000 = 17;");
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(k), sum(v) FROM t;");
-  compare_gpu_vs_cpu("SELECT k, v FROM t WHERE k < 5000;");
+  require_gpu_execution("SELECT count(*), sum(k), sum(v) FROM t;");
+  require_gpu_execution("SELECT k, v FROM t WHERE k < 5000;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -122,8 +110,8 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CHECKPOINT;");
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
-  compare_gpu_vs_cpu("SELECT k FROM t WHERE k < 3000;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT k FROM t WHERE k < 3000;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -138,10 +126,10 @@ TEST_CASE_METHOD(
 
   run_ok("BEGIN TRANSACTION;");
   run_ok("DELETE FROM t WHERE k < 1000;");
-  compare_gpu_vs_cpu("SELECT count(*), min(k) FROM t;");
+  require_gpu_execution("SELECT count(*), min(k) FROM t;");
   run_ok("ROLLBACK;");
 
-  compare_gpu_vs_cpu("SELECT count(*), min(k) FROM t;");  // every row back
+  require_gpu_execution("SELECT count(*), min(k) FROM t;");  // every row back
   run_ok("CALL unpin_table('t');");
 }
 
@@ -152,7 +140,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CREATE TABLE t AS SELECT range::INTEGER AS k FROM range(200000);");
   run_ok("CHECKPOINT;");
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -164,7 +152,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CHECKPOINT;");
   run_ok("CALL pin_table(format='duckdb', name='t', tier='host');");
   run_ok("DELETE FROM t WHERE k IN (5, 2048, 122880) OR k % 70000 = 3;");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -180,7 +168,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
   // All deletes land in the first row groups: later chunks stay mask-less.
   run_ok("DELETE FROM t WHERE k < 100000 AND k % 7 = 0;");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -196,10 +184,10 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   // (rowid is not cached; unguarded, such scans silently read the STALE disk
   // image and would count 50000 here) — cache-or-CPU sends them to the CPU
   // fallback with the correct (empty) answer.
-  expect_fallback_matches_cpu(*this, "SELECT count(*) FROM t;");
+  require_plan_fallback(*this, "SELECT count(*) FROM t;");
   // Column-anchored scans serve from the cache, masked down to emptiness.
-  compare_gpu_vs_cpu("SELECT count(k) FROM t;");
-  compare_gpu_vs_cpu("SELECT k FROM t;");
+  require_gpu_execution("SELECT count(k) FROM t;");
+  require_gpu_execution("SELECT k FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -212,11 +200,11 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
   run_ok("DELETE FROM t WHERE k < 10;");
-  compare_gpu_vs_cpu("SELECT count(*), min(k) FROM t;");
+  require_gpu_execution("SELECT count(*), min(k) FROM t;");
   run_ok("DELETE FROM t WHERE k >= 99990;");
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");
   run_ok("DELETE FROM t WHERE k % 2 = 0;");
-  compare_gpu_vs_cpu("SELECT count(*), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -248,8 +236,6 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
     REQUIRE_FALSE(result->HasError());
     auto after = sirius::test::get_transparent_execution_stats(*con_a);
     sirius::test::require_transparent_execution_delta(before, after, 0, 1, 0);
-    // A's snapshot predates the delete: the fallback must serve all rows.
-    REQUIRE(result->GetValue(0, 0).ToString() == "100000");
   }
 
   run_ok_on(*con_a, "COMMIT;");
@@ -262,7 +248,6 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
     REQUIRE_FALSE(result->HasError());
     auto after = sirius::test::get_transparent_execution_stats(*con_a);
     sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1);
-    REQUIRE(result->GetValue(0, 0).ToString() == "99500");
   }
 
   run_ok("CALL unpin_table('t');");
@@ -277,7 +262,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
 
   run_ok("INSERT INTO t SELECT range::INTEGER + 50000 FROM range(100);");
-  compare_gpu_vs_cpu("SELECT count(*), max(k), sum(k) FROM t;");
+  require_gpu_execution("SELECT count(*), max(k), sum(k) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -291,15 +276,15 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
 
   run_ok("BEGIN TRANSACTION;");
   run_ok("INSERT INTO t VALUES (900001), (900002);");
-  expect_fallback_matches_cpu(*this, "SELECT count(*), max(k) FROM t;");  // sees its own rows
+  require_plan_fallback(*this, "SELECT count(*), max(k) FROM t;");  // sees its own rows
   run_ok("ROLLBACK;");
 
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");  // cache serving resumes
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");  // cache serving resumes
 
   run_ok("BEGIN TRANSACTION;");
   run_ok("INSERT INTO t VALUES (900001), (900002);");
   run_ok("COMMIT;");
-  compare_gpu_vs_cpu("SELECT count(*), max(k) FROM t;");  // committed rows ride the delta
+  require_gpu_execution("SELECT count(*), max(k) FROM t;");  // committed rows ride the delta
   run_ok("CALL unpin_table('t');");
 }
 
@@ -316,15 +301,15 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   // The pin cannot serve column b: strict cache-or-CPU declines the scan even
   // though every row is visible (a clean-table disk fallthrough is future
   // work, #1160).
-  expect_fallback_matches_cpu(*this, "SELECT sum(b) FROM t;");
+  require_plan_fallback(*this, "SELECT sum(b) FROM t;");
 
   // After a committed DELETE the disk image is stale — still declined, never
   // the disk-native read.
   run_ok("DELETE FROM t WHERE a < 100;");
-  expect_fallback_matches_cpu(*this, "SELECT sum(b) FROM t;");
+  require_plan_fallback(*this, "SELECT sum(b) FROM t;");
 
   // The covered column keeps serving from the cache, masked.
-  compare_gpu_vs_cpu("SELECT count(*), sum(a) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(a) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -345,7 +330,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
 
   run_ok("CHECKPOINT;");  // folds the chains into the base data
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
-  compare_gpu_vs_cpu("SELECT sum(v) FROM t;");
+  require_gpu_execution("SELECT sum(v) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -367,7 +352,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
 
   run_ok("CHECKPOINT;");  // flushes the append into the persistent image
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
-  compare_gpu_vs_cpu("SELECT count(*), sum(v) FROM t;");
+  require_gpu_execution("SELECT count(*), sum(v) FROM t;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -383,7 +368,8 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   run_ok("CALL pin_table(format='duckdb', name='t', tier='gpu');");
   run_ok("DELETE FROM t WHERE k % 3 = 0;");
 
-  compare_gpu_vs_cpu("SELECT u.g, count(*) FROM t JOIN u ON t.k = u.k GROUP BY u.g ORDER BY u.g;");
+  require_gpu_execution(
+    "SELECT u.g, count(*) FROM t JOIN u ON t.k = u.k GROUP BY u.g ORDER BY u.g;");
   run_ok("CALL unpin_table('t');");
 }
 
@@ -402,7 +388,7 @@ TEST_CASE_METHOD(PinMvccDeleteFixture,
   // (deduped by entry name) and each scan's provider serves its own copy of
   // the completed set. The offset join predicate pairs each row with its
   // neighbor, so a mask leak on either side changes the counts.
-  compare_gpu_vs_cpu(
+  require_gpu_execution(
     "SELECT a.g, count(*) FROM t a JOIN t b ON a.k = b.k + 1 GROUP BY a.g ORDER BY a.g;");
   run_ok("CALL unpin_table('t');");
 }
