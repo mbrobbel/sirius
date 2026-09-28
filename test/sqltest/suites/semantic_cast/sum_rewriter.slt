@@ -1,0 +1,58 @@
+include ../../fixtures/migrated/sum_rewriter.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:251
+# sirius: id = "semantic_cast/sum_rewriter/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "sum_rewriter"]
+query ? rowsort
+SELECT
+  SUM(ResolutionWidth + 1)
+FROM
+  hits;
+----
+3203
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:252
+# sirius: id = "semantic_cast/sum_rewriter/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "sum_rewriter"]
+query ?? rowsort
+SELECT
+  grp,
+  SUM(ResolutionWidth + 1)
+FROM
+  hits
+GROUP BY
+  grp;
+----
+1	3202
+2	1
+3	NULL
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:253
+# sirius: id = "semantic_cast/sum_rewriter/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "sum_rewriter"]
+query ? rowsort
+SELECT
+  SUM(ResolutionWidth + 1)
+FROM
+  hits
+WHERE
+  grp = 3;
+----
+NULL
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:254
+# sirius: id = "semantic_cast/sum_rewriter/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "sum_rewriter"]
+query ? rowsort
+SELECT
+  SUM(ResolutionWidth + 1)
+FROM
+  hits
+WHERE
+  grp = 99;
+----
+NULL

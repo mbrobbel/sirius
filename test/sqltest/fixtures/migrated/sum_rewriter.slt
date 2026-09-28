@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE hits (
+  ResolutionWidth INTEGER,
+  grp INTEGER
+);
+
+statement ok
+INSERT INTO hits VALUES
+  (1920, 1),
+  (1280, 1),
+  (NULL, 1),
+  (-1, 2),
+  (0, 2),
+  (NULL, 3);
+
+statement ok
+CREATE TEMPORARY TABLE optimizer_check (
+  enabled BOOLEAN CHECK (enabled)
+);
+
+onlyif sirius
+statement count 1
+INSERT INTO optimizer_check SELECT
+  NOT contains(current_setting('disabled_optimizers'), 'sum_rewriter');
+
+statement ok
+DROP TABLE optimizer_check;
+
+statement ok
+CHECKPOINT;

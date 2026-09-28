@@ -1,0 +1,8 @@
+include ../../fixtures/migrated/semantic_cast.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:116
+# sirius: execution = "allow_fallback"
+# sirius: id = "semantic_cast/cast_smallint_date/001"
+# sirius: tags = ["integration", "cast", "cast_smallint_date"]
+query error Unimplemented type for cast
+SELECT CAST(s AS DATE) FROM cast_t;

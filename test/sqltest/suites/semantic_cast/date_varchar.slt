@@ -1,0 +1,16 @@
+include ../../fixtures/migrated/semantic_cast.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_semantic_cast_fallback.cpp:218
+# sirius: execution = "allow_fallback"
+# sirius: id = "semantic_cast/date_varchar/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "cast", "date_varchar"]
+query ? rowsort
+SELECT
+  CAST(d AS VARCHAR)
+FROM
+  cast_t;
+----
+"1970-01-02"
+"2024-06-15"
+NULL
