@@ -10,6 +10,7 @@ mod worker;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use sirius_sqltest_format as format;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -26,6 +27,8 @@ struct Cli {
 enum Commands {
     Run(run::RunArgs),
     Complete(snapshot::CompleteArgs),
+    /// Format SQLLogicTest snippets with sqlparser's DuckDB formatter.
+    Format(format::FormatArgs),
     Report {
         input: PathBuf,
         #[arg(long)]
@@ -57,6 +60,7 @@ fn execute() -> Result<bool> {
     match Cli::parse().command {
         Commands::Run(args) => return run::execute(&args),
         Commands::Complete(args) => snapshot::complete(&args)?,
+        Commands::Format(args) => return format::execute(&args),
         Commands::Worker { socket, extension } => worker::run(&socket, extension.as_deref())?,
         Commands::Report {
             input,

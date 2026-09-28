@@ -3837,10 +3837,22 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "sirius-sqltest-format",
  "sqllogictest",
  "sqlparser",
  "tempfile",
  "toml 0.8.23",
+ "walkdir",
+]
+
+[[package]]
+name = "sirius-sqltest-format"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "sqllogictest",
+ "sqlparser",
  "walkdir",
 ]
 
