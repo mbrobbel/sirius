@@ -46,6 +46,7 @@ repos:
             ^test/cpp/integration/data/iceberg_conformance/.*\.json$
           )
       - id: mixed-line-ending
+        exclude: '^test/sqltest/(suites|fixtures|upstream)/.*\.(slt|sql)$'
       - id: pretty-format-json
         args: [--autofix]
         # The iceberg conformance corpus is verbatim pyiceberg output, and that is the whole
@@ -55,7 +56,7 @@ repos:
         # further from the reference implementation. check-json still validates these files.
         exclude: '^test/cpp/integration/data/iceberg_conformance/.*\.json$'
       - id: trailing-whitespace
-        exclude: 'test/sql/clickbench-sirius\.test'
+        exclude: '^test/sqltest/(suites|fixtures|upstream)/.*\.(slt|sql)$'
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
@@ -64,6 +65,7 @@ repos:
     rev: 0.7.1
     hooks:
       - id: fix-smartquotes
+        exclude: '^test/sqltest/(suites|fixtures|upstream)/.*\.(slt|sql)$'
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v20.1.4
     hooks:
@@ -74,6 +76,8 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
+        # SQL literals and expected results are test data, including misspellings.
+        exclude: '^test/sqltest/(suites|fixtures|upstream)/.*\.(slt|sql)$'
         args:
           [
             "--write-changes",
@@ -89,6 +93,12 @@ repos:
           [--line-width  220, --disabled-codes=C0307, --suppress-decorations]
   - repo: local
     hooks:
+      - id: sqltest-format
+        name: format SQL test snippets
+        entry: pixi run --quiet --environment default --manifest-path tools/sqltest/pixi.toml sqlformat
+        language: system
+        files: ^test/sqltest/(suites|fixtures)/.*\.(slt|sql)$
+        require_serial: true
       - id: rumdl
         name: rumdl check --fix
         entry: pixi run --locked rumdl check --fix
