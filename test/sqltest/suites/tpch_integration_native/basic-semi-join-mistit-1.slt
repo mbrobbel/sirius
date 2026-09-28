@@ -1,0 +1,13 @@
+# gpu_execution - basic semi join mistit 1
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1767
+# sirius: id = "tpch_integration_native/basic-semi-join-mistit-1/001"
+# sirius: tags = ["integration", "gpu_execution", "semijoin"]
+query ? rowsort
+SELECT
+  n.n_regionkey
+FROM
+  nation n
+  SEMI JOIN customer c ON n.n_nationkey = c.c_custkey;
+----

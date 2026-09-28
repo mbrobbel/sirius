@@ -1,0 +1,14 @@
+# gpu_execution - aggregate over empty result
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4660
+# sirius: id = "tpch_integration_native/aggregate-over-empty-result/001"
+# sirius: tags = ["integration", "gpu_execution", "gpu_values"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  nation
+WHERE
+  1 = 0;
+----

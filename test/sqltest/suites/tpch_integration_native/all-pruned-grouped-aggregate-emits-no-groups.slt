@@ -1,0 +1,17 @@
+# gpu_execution - all-pruned grouped aggregate emits no groups
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:4069
+# sirius: id = "tpch_integration_native/all-pruned-grouped-aggregate-emits-no-groups/001"
+# sirius: tags = ["integration", "gpu_execution", "empty_result", "all_pruned"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(*) AS c
+FROM
+  nation
+WHERE
+  n_regionkey = 99
+GROUP BY
+  n_regionkey ORDER BY n_regionkey;
+----

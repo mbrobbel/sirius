@@ -1,0 +1,17 @@
+# gpu_execution - count distinct: mixed with min and count
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3276
+# sirius: id = "tpch_integration_native/count-distinct-mixed-with-min-and-count/001"
+# sirius: tags = ["integration", "gpu_execution", "group_by", "count_distinct"]
+query ???? rowsort
+SELECT
+  n_regionkey,
+  count(DISTINCT n_nationkey),
+  min(n_nationkey),
+  count(*)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

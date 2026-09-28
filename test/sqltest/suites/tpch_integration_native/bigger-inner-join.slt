@@ -1,0 +1,20 @@
+# gpu_execution - bigger inner join
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2199
+# sirius: id = "tpch_integration_native/bigger-inner-join/001"
+# sirius: tags = ["integration", "gpu_execution", "bigger_join"]
+query ???????? rowsort
+SELECT
+  l.l_orderkey,
+  l.l_linenumber,
+  l.l_quantity,
+  l.l_partkey,
+  o.o_orderkey,
+  o.o_totalprice,
+  o.o_custkey,
+  o_comment
+FROM
+  lineitem l
+  JOIN orders o ON l.l_orderkey = o.o_orderkey ORDER BY l.l_orderkey, l.l_linenumber LIMIT 5000;
+----

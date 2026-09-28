@@ -1,0 +1,19 @@
+# gpu_execution - count distinct: multi-partition forced, customer table
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 1000;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3341
+# sirius: id = "tpch_integration_native/count-distinct-multi-partition-forced-customer-table/001"
+# sirius: tags = ["integration", "tpch"]
+query ?? rowsort
+SELECT
+  c_nationkey,
+  count(DISTINCT c_mktsegment)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----

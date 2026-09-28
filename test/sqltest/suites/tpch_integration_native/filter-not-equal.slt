@@ -1,0 +1,14 @@
+# gpu_execution - filter not equal
+include ../../fixtures/migrated/tpch-native-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:525
+# sirius: id = "tpch_integration_native/filter-not-equal/001"
+# sirius: tags = ["integration", "gpu_execution", "filter"]
+query ? rowsort
+SELECT
+  r_regionkey
+FROM
+  region
+WHERE
+  r_regionkey <> 3;
+----

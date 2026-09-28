@@ -1,0 +1,21 @@
+# gpu_execution - count distinct: multi-partition forced, mixed aggregations parquet
+include ../../fixtures/migrated/tpch-native-original.slt
+
+onlyif sirius
+statement ok
+SET hash_partition_bytes = 1000;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3371
+# sirius: id = "tpch_integration_native/count-distinct-multi-partition-forced-mixed-aggregations-parquet/001"
+# sirius: tags = ["integration", "tpch"]
+query ???? rowsort
+SELECT
+  c_nationkey,
+  count(DISTINCT c_mktsegment),
+  min(c_custkey),
+  count(*)
+FROM
+  customer
+GROUP BY
+  c_nationkey;
+----
