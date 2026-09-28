@@ -1,0 +1,103 @@
+statement ok
+ATTACH '__TEST_DIR__/zm_native.duckdb' AS zm_native;
+
+statement ok
+CREATE TABLE zm_native.zm_native_t AS SELECT range AS k, range * 2 AS v FROM range(4000000);
+
+statement ok
+CHECKPOINT zm_native;
+
+statement ok
+DETACH zm_native;
+
+statement ok
+ATTACH '__TEST_DIR__/zm_native.duckdb' AS zm_native;
+
+statement ok
+USE zm_native;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 'zm_native_t', tier = 'host');
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:187
+# sirius: id = "pin_zone_map_native/host/001"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  count(*),
+  sum(v)
+FROM
+  zm_native_t
+WHERE
+  k >= 3500000;
+----
+500000	3749999500000
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:192
+# sirius: id = "pin_zone_map_native/host/002"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  zm_native_t;
+----
+4000000
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:198
+# sirius: id = "pin_zone_map_native/host/003"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  zm_native_t
+WHERE
+  k >= 40000000;
+----
+0
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:203
+# sirius: id = "pin_zone_map_native/host/004"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  k
+FROM
+  zm_native_t
+WHERE
+  k < 0;
+----
+
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = false;
+
+# Original query: test/cpp/integration/test_pin_table_zone_map_pruning.cpp:208
+# sirius: id = "pin_zone_map_native/host/005"
+# sirius: tags = ["integration", "pin_table"]
+# sirius: snapshot = true
+query ?? rowsort
+SELECT
+  count(*),
+  sum(v)
+FROM
+  zm_native_t
+WHERE
+  k >= 3500000;
+----
+500000	3749999500000
+
+onlyif sirius
+statement ok
+SET enable_pinned_zone_map_pruning = true;
+
+onlyif sirius
+statement ok
+CALL unpin_table('zm_native_t');
