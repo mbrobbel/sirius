@@ -1,0 +1,14 @@
+# gpu_execution csv - filter string equality
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:421
+# sirius: id = "csv_disabled/filter-string-equality"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ? rowsort
+SELECT
+  r_regionkey
+FROM
+  region
+WHERE
+  r_name = 'EUROPE';
+----

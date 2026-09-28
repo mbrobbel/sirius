@@ -1,0 +1,22 @@
+# gpu_execution csv - tpch q3 shipping priority
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:523
+# sirius: id = "csv_disabled/tpch-q3-shipping-priority"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+# sirius: float_tolerance = { absolute = 0.01, relative = 0.0 }
+query ???? rowsort
+SELECT
+  l_orderkey,
+  sum(l_extendedprice * (1 - l_discount)) AS revenue,
+  o_orderdate,
+  o_shippriority
+FROM
+  customer
+  INNER JOIN orders ON c_custkey = o_custkey
+  INNER JOIN lineitem ON l_orderkey = o_orderkey
+WHERE
+  c_mktsegment = 'BUILDING' AND o_orderdate < DATE '1995-03-15' AND l_shipdate > DATE '1995-03-15'
+GROUP BY
+  l_orderkey, o_orderdate, o_shippriority ORDER BY revenue DESC LIMIT 10;
+----

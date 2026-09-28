@@ -1,0 +1,15 @@
+# gpu_execution csv - filter float comparison
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:448
+# sirius: id = "csv_disabled/filter-float-comparison"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+# sirius: float_tolerance = { absolute = 0.001, relative = 0.0 }
+query ? rowsort
+SELECT
+  l_orderkey
+FROM
+  lineitem
+WHERE
+  l_discount > 0.05;
+----

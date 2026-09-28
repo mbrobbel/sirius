@@ -1,0 +1,15 @@
+# gpu_execution csv - group by with sum
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:460
+# sirius: id = "csv_disabled/group-by-with-sum"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(*) AS cnt
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

@@ -1,0 +1,4 @@
+profile = "integration-one-gpu"
+storage = ["native"]
+checkpoint = "explicit"
+fixtures = ["tpch-parquet-original"]

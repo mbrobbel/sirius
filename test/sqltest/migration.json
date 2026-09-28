@@ -3839,6 +3839,196 @@
       "source": "test/cpp/integration/test_compressed_materialization_partition.cpp",
       "suite": "compressed_materialization_partition",
       "test": "gpu_execution - narrow group keys cross the aggregate exchange"
+    },
+    {
+      "file": "suites/csv_disabled/scan-single-column.slt",
+      "id": "csv_disabled/scan-single-column",
+      "identity": "4d783c167d2aa2db68361526bd9ed70a5d38fe77c35e91023200d5ab6cd2e14d",
+      "kind": "query",
+      "line": 389,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - scan single column"
+    },
+    {
+      "file": "suites/csv_disabled/scan-multiple-columns.slt",
+      "id": "csv_disabled/scan-multiple-columns",
+      "identity": "750d4ab52982d977aac3876eb7ff1faaedb6bf9180233a878ad9f1640f83aecf",
+      "kind": "query",
+      "line": 396,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - scan multiple columns"
+    },
+    {
+      "file": "suites/csv_disabled/scan-all-columns.slt",
+      "id": "csv_disabled/scan-all-columns",
+      "identity": "5ef836861e5b6859505a0ba014bc76a1e430102323b8c8be38ad0b4a0dd86b1b",
+      "kind": "query",
+      "line": 403,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - scan all columns"
+    },
+    {
+      "file": "suites/csv_disabled/filter-integer-equality.slt",
+      "id": "csv_disabled/filter-integer-equality",
+      "identity": "8dc8976afec41b246ac92c3d7326684b45ae0bed5dc2c64069e403a199cc3144",
+      "kind": "query",
+      "line": 414,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - filter integer equality"
+    },
+    {
+      "file": "suites/csv_disabled/filter-string-equality.slt",
+      "id": "csv_disabled/filter-string-equality",
+      "identity": "c5642207438d19a3d35c75c73b58125e5f3bcdc9334c49d4a94b3b9584e11b98",
+      "kind": "query",
+      "line": 421,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - filter string equality"
+    },
+    {
+      "file": "suites/csv_disabled/filter-date-comparison.slt",
+      "id": "csv_disabled/filter-date-comparison",
+      "identity": "dadbfbc7e0663053b5874a02ab6d62ed1f1b893cbd011570c9cb10ef06bc6f9e",
+      "kind": "query",
+      "line": 428,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - filter date comparison"
+    },
+    {
+      "file": "suites/csv_disabled/filter-date-between.slt",
+      "id": "csv_disabled/filter-date-between",
+      "identity": "fc922916aa67b6145e63587b8d169c176a450f7ab5d1ebe9a1918dba7b80c404",
+      "kind": "query",
+      "line": 438,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - filter date between"
+    },
+    {
+      "file": "suites/csv_disabled/filter-float-comparison.slt",
+      "id": "csv_disabled/filter-float-comparison",
+      "identity": "0938eee634a3e4fabedb9e7376523366f00e8bf4e2987d8c96ecafb75f1a987c",
+      "kind": "query",
+      "line": 448,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - filter float comparison"
+    },
+    {
+      "file": "suites/csv_disabled/group-by-with-sum.slt",
+      "id": "csv_disabled/group-by-with-sum",
+      "identity": "4a5cd6e2ae334959c47fb8d69261b2aba7db61b10aafc12b6df3d0db21a937e1",
+      "kind": "query",
+      "line": 460,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - group by with sum"
+    },
+    {
+      "file": "suites/csv_disabled/aggregate-with-float-columns.slt",
+      "id": "csv_disabled/aggregate-with-float-columns",
+      "identity": "7cf54c11223330b21cfcad7e6d426de89464936bde665c2f6d034eb051d12ef1",
+      "kind": "query",
+      "line": 467,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - aggregate with float columns"
+    },
+    {
+      "file": "suites/csv_disabled/inner-join.slt",
+      "id": "csv_disabled/inner-join",
+      "identity": "30d9e6d0d947519c937dc535a9e6e82ccc3fa91f838bf9626fb07295bf1a502a",
+      "kind": "query",
+      "line": 482,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - inner join"
+    },
+    {
+      "file": "suites/csv_disabled/multi-table-join.slt",
+      "id": "csv_disabled/multi-table-join",
+      "identity": "1017ec7c9e470c40bc228ee4c1453d610a0f6e87733391df2ea9836b99bb3c8c",
+      "kind": "query",
+      "line": 491,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - multi table join"
+    },
+    {
+      "file": "suites/csv_disabled/tpch-q1-pricing-summary.slt",
+      "id": "csv_disabled/tpch-q1-pricing-summary",
+      "identity": "bb28eb49b1306a033ad10348baacfb695dc4284892d8d503982094a67a77dd21",
+      "kind": "query",
+      "line": 507,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - tpch q1 pricing summary"
+    },
+    {
+      "file": "suites/csv_disabled/tpch-q3-shipping-priority.slt",
+      "id": "csv_disabled/tpch-q3-shipping-priority",
+      "identity": "5e3b00d83f9f9105fb0ca3a2d42e7157d96564c2e0b054bc3a08b4fd4a8a928f",
+      "kind": "query",
+      "line": 523,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - tpch q3 shipping priority"
+    },
+    {
+      "file": "suites/csv_disabled/tpch-q4-order-priority.slt",
+      "id": "csv_disabled/tpch-q4-order-priority",
+      "identity": "fdb70caaf0c5a69b4df3bf2d05b0b6f29b010f78c7386bdb0f81ecc9879379ba",
+      "kind": "query",
+      "line": 542,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - tpch q4 order priority"
+    },
+    {
+      "file": "suites/csv_disabled/tpch-q6-revenue-forecast.slt",
+      "id": "csv_disabled/tpch-q6-revenue-forecast",
+      "identity": "d75bfc81353134bf5630c8815972971bca0811765db063a91770f414c046bfbb",
+      "kind": "query",
+      "line": 560,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - tpch q6 revenue forecast"
+    },
+    {
+      "file": "suites/csv_disabled/tpch-q10-returned-item-reporting.slt",
+      "id": "csv_disabled/tpch-q10-returned-item-reporting",
+      "identity": "815fb82bbfe53ad935b7d048043e7f67392405119920f24f9841152d2047b341",
+      "kind": "query",
+      "line": 575,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - tpch q10 returned item reporting"
+    },
+    {
+      "file": "suites/csv_disabled/order-by-with-limit.slt",
+      "id": "csv_disabled/order-by-with-limit",
+      "identity": "f66cc487949b9275b47abb809845e8771da5d7751e106b3512e2fa765136f5bf",
+      "kind": "query",
+      "line": 598,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - order by with limit"
+    },
+    {
+      "file": "suites/csv_disabled/order-by-date-column.slt",
+      "id": "csv_disabled/order-by-date-column",
+      "identity": "f59527ed9378aead6bdedd1a07c10f40dc1209ac2e6875eea1ef826ad7f6442c",
+      "kind": "query",
+      "line": 608,
+      "source": "test/cpp/integration/test_gpu_execution_multi_format.cpp",
+      "suite": "csv_disabled",
+      "test": "gpu_execution csv - order by date column"
     }
   ],
   "source_revision": "9e372e558abbfef5f2c67a21f78ccf531e6ed9b3",

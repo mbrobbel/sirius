@@ -1,0 +1,14 @@
+# gpu_execution csv - inner join
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:482
+# sirius: id = "csv_disabled/inner-join"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+query ?? rowsort
+SELECT
+  n.n_name,
+  r.r_name
+FROM
+  nation n
+  INNER JOIN region r ON n.n_regionkey = r.r_regionkey;
+----

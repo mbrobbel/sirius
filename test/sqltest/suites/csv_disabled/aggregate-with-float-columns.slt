@@ -1,0 +1,17 @@
+# gpu_execution csv - aggregate with float columns
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:467
+# sirius: id = "csv_disabled/aggregate-with-float-columns"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+# sirius: float_tolerance = { absolute = 0.01, relative = 0.0 }
+query ??? rowsort
+SELECT
+  l_returnflag,
+  sum(l_quantity) AS sum_qty,
+  avg(l_extendedprice) AS avg_price
+FROM
+  lineitem
+GROUP BY
+  l_returnflag;
+----
