@@ -1,0 +1,50 @@
+# pin_table type drift - no-drift control: matching natives still cache-serve; tier = gpu.
+# Pin narrowing and cache-serving counters remain asserted in C++.
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+statement ok
+CREATE TABLE drift_t AS SELECT (10000 + range)::INTEGER AS a FROM range(100);
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 'drift_t', tier = 'gpu');
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original test: test/cpp/integration/test_pin_table_type_drift.cpp:185
+# sirius: id = "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/gpu/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "pin_table", "type_drift", "gpu"]
+query ? rowsort
+SELECT
+  count(a)
+FROM
+  drift_t;
+----
+100
+
+# Original test: test/cpp/integration/test_pin_table_type_drift.cpp:185
+# sirius: id = "pin_type_drift/no-drift-control-matching-natives-still-cache-serve/gpu/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "pin_table", "type_drift", "gpu"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  drift_t
+WHERE
+  a >= 10050;
+----
+50
+
+onlyif sirius
+statement ok
+CALL unpin_table('drift_t');
