@@ -1,0 +1,4 @@
+storage = ["parquet"]
+profile = "partition-memory-2gpu"
+checkpoint = "explicit"
+scratch_directories = ["dim", "fact"]
