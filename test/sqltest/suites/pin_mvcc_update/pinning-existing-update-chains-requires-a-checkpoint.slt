@@ -1,0 +1,41 @@
+# mvcc update guard: pinning existing update chains requires a checkpoint
+
+statement ok
+CREATE TABLE t AS SELECT 1::INTEGER AS k, 10::INTEGER AS v;
+
+statement ok
+CHECKPOINT;
+
+statement ok
+UPDATE t
+SET
+  v = 99
+WHERE
+  k = 1;
+
+onlyif sirius
+statement error (?s)has in-memory update chains.*run CHECKPOINT before pinning
+CALL pin_table(format='duckdb', name='t', tier='gpu');
+
+statement ok
+CHECKPOINT;
+
+onlyif sirius
+statement ok
+CALL pin_table(format = 'duckdb', name = 't', tier = 'gpu');
+
+# Original query: test/cpp/integration/test_pin_table_mvcc_update.cpp:208
+# sirius: id = "pin_mvcc_update/pinning-existing-update-chains-requires-a-checkpoint/001"
+# sirius: tags = ["integration", "pin_table", "mvcc", "update"]
+# sirius: snapshot = true
+query I
+SELECT
+  v
+FROM
+  t;
+----
+99
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
