@@ -1,0 +1,505 @@
+include ../../fixtures/migrated/operator_mgpu/build-probe.slt
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/003"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/004"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/005"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/006"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/007"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9
+
+# Original query: test/cpp/operator/test_physical_hash_join_mgpu.cpp:323
+# sirius: id = "operator_mgpu_hash_join/repeat-build-probe/008"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ?? nosort
+SELECT
+  probe.k,
+  build.v AS build_v
+FROM
+  read_parquet('__TEST_DIR__/probe/*.parquet') AS probe
+  JOIN read_parquet('__TEST_DIR__/build/*.parquet') AS build ON probe.k = build.k ORDER BY probe.k LIMIT 50;
+----
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+0	0
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+1	3
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+2	6
+3	9
+3	9

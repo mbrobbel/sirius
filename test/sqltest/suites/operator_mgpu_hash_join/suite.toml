@@ -1,0 +1,4 @@
+storage = ["parquet"]
+profile = "operator-mgpu-partitioned"
+checkpoint = "explicit"
+scratch_directories = ["build", "probe"]

@@ -6711,6 +6711,106 @@
       "test": "grouped_aggregate_merge - count(*)-only aggregate across two GPUs"
     },
     {
+      "file": "suites/operator_mgpu_hash_join/build-probe.slt",
+      "id": "operator_mgpu_hash_join/build-probe/001",
+      "identity": "5cc950bc2703e2a7f47b61ac318cab9049db177365daceb1f87972d23e9bcd17",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - BUILD_PROBE probe-heavy join across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/build-probe.slt",
+      "id": "operator_mgpu_hash_join/build-probe/002",
+      "identity": "d668784e665f209f353821929e4fe5e93dacd7b426bd8980cadb8e85b8f33f9e",
+      "kind": "query",
+      "line": 187,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - BUILD_PROBE probe-heavy join across two GPUs"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/001",
+      "identity": "6e14de82f6dfcd5d74b5402314a3d79794ac759ae99681ab9327df0318238cfc",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/002",
+      "identity": "18ea81f6872a07b9c1a4d904ef1133ea0812e7f2c70790b58827bec826d1a287",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/003",
+      "identity": "707928f051fdd89ce69e225d74b9c54a4f2685aef683288b8d8a702f6de6906e",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/004",
+      "identity": "5786f4b557d4fc60c120f2621d839ec3d446d34fa6809fca02b9721174ab4ce2",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/005",
+      "identity": "c1f50f562847b83bd0b45d37f30e856a341f39a52f88437597a1ffa6eee8827a",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/006",
+      "identity": "dfe4a4d87b9e76ab85d12700fd400611e4fd48f76c469809c14b9cff62d9ee2a",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/007",
+      "identity": "9623615fba42523cf993dc967c6979eda9a05cb23e4e9709f5f10e0e27bd2a5b",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
+      "file": "suites/operator_mgpu_hash_join/repeat-build-probe.slt",
+      "id": "operator_mgpu_hash_join/repeat-build-probe/008",
+      "identity": "7972037f5bcb1aab9d33dea19006b4289ecfa07327dee962e1783c6e95854ddd",
+      "kind": "query",
+      "line": 323,
+      "source": "test/cpp/operator/test_physical_hash_join_mgpu.cpp",
+      "suite": "operator_mgpu_hash_join",
+      "test": "physical_hash_join - repeated BUILD_PROBE queries don't wedge on leftover state"
+    },
+    {
       "file": "suites/operator_mgpu_broadcast/replicate.slt",
       "id": "operator_mgpu_broadcast/replicate/001",
       "identity": "f477652c850baa25879678ec92c7c90cc8e375b1d28ad3bf537b861b0622acbc",
