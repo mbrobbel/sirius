@@ -18,6 +18,11 @@ gpus = 2
 config = "profiles/two-gpu.yaml"
 environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
 
+[fixtures.tpch]
+extensions = ["tpch"]
+sql = ["fixtures/prepare/tpch.sql"]
+tables = ["customer", "lineitem", "nation", "orders", "part", "partsupp", "region", "supplier"]
+
 [axes.gpu.one]
 profile = "one-gpu"
 
@@ -46,8 +51,12 @@ axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.correctness]
 suites = "all"
-exclude_suites = []
+exclude_suites = ["tpch"]
 profile = "integration-one-gpu"
+
+[runs.benchmarks]
+suites = ["tpch"]
+axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
