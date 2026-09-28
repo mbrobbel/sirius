@@ -1,0 +1,131 @@
+include ../../fixtures/migrated/operator_mgpu/aggregate-high-cardinality.slt
+
+# Original query: test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp:114
+# sirius: id = "operator_mgpu_aggregate/high-cardinality/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ??? nosort
+SELECT
+  k,
+  SUM(v) AS sum_v,
+  COUNT(*) AS cnt
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet')
+GROUP BY
+  k ORDER BY k LIMIT 50;
+----
+0	0	8
+1	16	8
+2	32	8
+3	48	8
+4	64	8
+5	80	8
+6	96	8
+7	112	8
+8	128	8
+9	144	8
+10	160	8
+11	176	8
+12	192	8
+13	208	8
+14	224	8
+15	240	8
+16	256	8
+17	272	8
+18	288	8
+19	304	8
+20	320	8
+21	336	8
+22	352	8
+23	368	8
+24	384	8
+25	400	8
+26	416	8
+27	432	8
+28	448	8
+29	464	8
+30	480	8
+31	496	8
+32	512	8
+33	528	8
+34	544	8
+35	560	8
+36	576	8
+37	592	8
+38	608	8
+39	624	8
+40	640	8
+41	656	8
+42	672	8
+43	688	8
+44	704	8
+45	720	8
+46	736	8
+47	752	8
+48	768	8
+49	784	8
+
+# Original query: test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp:114
+# sirius: id = "operator_mgpu_aggregate/high-cardinality/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ??? nosort
+SELECT
+  k,
+  SUM(v) AS sum_v,
+  COUNT(*) AS cnt
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet')
+GROUP BY
+  k ORDER BY k LIMIT 50;
+----
+0	0	8
+1	16	8
+2	32	8
+3	48	8
+4	64	8
+5	80	8
+6	96	8
+7	112	8
+8	128	8
+9	144	8
+10	160	8
+11	176	8
+12	192	8
+13	208	8
+14	224	8
+15	240	8
+16	256	8
+17	272	8
+18	288	8
+19	304	8
+20	320	8
+21	336	8
+22	352	8
+23	368	8
+24	384	8
+25	400	8
+26	416	8
+27	432	8
+28	448	8
+29	464	8
+30	480	8
+31	496	8
+32	512	8
+33	528	8
+34	544	8
+35	560	8
+36	576	8
+37	592	8
+38	608	8
+39	624	8
+40	640	8
+41	656	8
+42	672	8
+43	688	8
+44	704	8
+45	720	8
+46	736	8
+47	752	8
+48	768	8
+49	784	8

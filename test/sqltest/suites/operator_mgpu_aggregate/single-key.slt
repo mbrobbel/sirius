@@ -1,0 +1,33 @@
+include ../../fixtures/migrated/operator_mgpu/aggregate-single-key.slt
+
+# Original query: test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp:165
+# sirius: id = "operator_mgpu_aggregate/single-key/001"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ??? nosort
+SELECT
+  k,
+  SUM(v) AS sum_v,
+  COUNT(*) AS cnt
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet')
+GROUP BY
+  k ORDER BY k;
+----
+0	1999996000000	4000000
+
+# Original query: test/cpp/operator/test_physical_grouped_aggregate_merge_mgpu.cpp:165
+# sirius: id = "operator_mgpu_aggregate/single-key/002"
+# sirius: snapshot = true
+# sirius: tags = ["operator", "multi_gpu", "repeated_query"]
+query ??? nosort
+SELECT
+  k,
+  SUM(v) AS sum_v,
+  COUNT(*) AS cnt
+FROM
+  read_parquet('__TEST_DIR__/input/*.parquet')
+GROUP BY
+  k ORDER BY k;
+----
+0	1999996000000	4000000
