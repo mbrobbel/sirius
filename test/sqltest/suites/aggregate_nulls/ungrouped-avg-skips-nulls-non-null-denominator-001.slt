@@ -1,0 +1,16 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:129
+# gpu_execution ungrouped AVG skips NULLs (non-null denominator)
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/ungrouped-avg-skips-nulls-non-null-denominator/001"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ??? rowsort
+SELECT
+  AVG(v),
+  AVG(d),
+  AVG(f)
+FROM
+  agg_n;
+----
+67.0	4.5	4.75

@@ -1,0 +1,21 @@
+# Migrated from test/cpp/integration/test_gpu_execution_aggregate_nulls.cpp:149
+# gpu_execution grouped aggregates over a wholly-NULL column
+include ../../fixtures/migrated/aggregate_nulls/1a60eafc9978d9af.slt
+
+# sirius: id = "aggregate_nulls/grouped-aggregates-over-a-wholly-null-column/001"
+# sirius: snapshot = true
+# sirius: tags = ["aggregate", "gpu_execution", "integration", "nulls"]
+query ??? rowsort
+SELECT
+  g,
+  SUM(allnull),
+  COUNT(allnull)
+FROM
+  agg_n
+GROUP BY
+  g;
+----
+1	NULL	0
+2	NULL	0
+3	NULL	0
+NULL	NULL	0
