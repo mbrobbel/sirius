@@ -1,0 +1,21 @@
+# gpu_execution csv - tpch q1 pricing summary
+include ../../fixtures/migrated/csv.slt
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:507
+# sirius: id = "csv_disabled/tpch-q1-pricing-summary"
+# sirius: tags = ["csv", "integration", "previously-disabled"]
+# sirius: float_tolerance = { absolute = 0.01, relative = 0.0 }
+query ????? rowsort
+SELECT
+  l_returnflag,
+  l_linestatus,
+  sum(l_quantity) AS sum_qty,
+  sum(l_extendedprice) AS sum_base_price,
+  sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price
+FROM
+  lineitem
+WHERE
+  l_shipdate <= DATE '1998-09-02'
+GROUP BY
+  l_returnflag, l_linestatus ORDER BY l_returnflag, l_linestatus;
+----
