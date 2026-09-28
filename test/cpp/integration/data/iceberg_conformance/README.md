@@ -29,26 +29,29 @@ not paper over it by re-recording from our own engine.
 
 ## Running
 
+After preparing fixtures with the [SQL runner](../../../../sqltest/README.md):
+
 ```bash
-python3 test/cpp/integration/data/iceberg_conformance/run_conformance.py \
-        test/cpp/integration/data/iceberg_conformance \
-        --duckdb build/release/duckdb
+pixi run --manifest-path tools/sqltest/pixi.toml sqltest run \
+  --run correctness --suite iceberg --select conformance- \
+  --extension build/release/extension/sirius/sirius.duckdb_extension \
+  --output runs/iceberg-conformance-001
 ```
 
-Each case runs in its **own process behind a timeout**, and each issues a *second* query
-on the same connection. Both matter: a runtime GPU fallback poisons its connection, so
-the next GPU query on it hangs forever. Process isolation means one hung case cannot
-stall or mask the others — which is also why the deadlocking cases below cannot yet live
-in the Catch2 suite, where a hang has no timeout and would stall the whole run.
+Each case runs in its own worker with 90-second query timeouts and checks a
+second query on the same connection. Explicit checkpoints keep a checkpoint
+from intervening between the scan and liveness probe. The SQL snapshots preserve
+pyiceberg's expected rows; C++ retains execution-route assertions. The standard
+SQL correctness run also includes these cases.
 
 ## Cases
 
 | case | field IDs | what it catches | status |
 |---|---|---|---|
 | `append_only` | id=1, name=2 | baseline — no evolution, no deletes. If this ever declines, the gate is over-refusing | runs on GPU, matches |
-| `drop_readd` | id=1, x=2, **y=4** | `y` dropped and re-added under the same name, so it is a NEW field id. The old data file holds the ORIGINAL `y` at field id 3, so the new column must read NULL. Resolving by name returns the old values | **returns wrong rows** |
-| `rename_col` | id=1, value=2 | renamed column keeps its field id; the old data file carries the ORIGINAL name. Name resolution fails loudly, takes the runtime fallback | **deadlocks** |
-| `add_column` | id=1, a=2, **b=3** | column added after the first data file was written; absent from that file, must read NULL. This is the case a `max(field_id) > column_count` pre-filter MISSES | **deadlocks** |
+| `drop_readd` | id=1, x=2, **y=4** | `y` dropped and re-added under the same name, so it is a NEW field id. The old data file holds the ORIGINAL `y` at field id 3, so the new column must read NULL. Resolving by name returns the old values | snapshot and liveness checked |
+| `rename_col` | id=1, value=2 | renamed column keeps its field id; the old data file carries the ORIGINAL name. Name resolution fails loudly, takes the runtime fallback | snapshot and liveness checked |
+| `add_column` | id=1, a=2, **b=3** | column added after the first data file was written; absent from that file, must read NULL. This is the case a `max(field_id) > column_count` pre-filter MISSES | snapshot and liveness checked |
 
 `file_uri` — a table whose manifests carry absolute `file://` URIs, the shape Java and
 Spark writers emit — is deliberately **not** in this corpus: it cannot be expressed with
