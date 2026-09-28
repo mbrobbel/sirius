@@ -1,0 +1,35 @@
+--- a/cpp/src/mr/detail/fixed_size_memory_resource_impl.cpp
++++ b/cpp/src/mr/detail/fixed_size_memory_resource_impl.cpp
+@@ -34,7 +34,7 @@
+     block_size_{align_up(block_size, rmm::CUDA_ALLOCATION_ALIGNMENT)},
+     upstream_chunk_size_{block_size_ * blocks_to_preallocate}
+ {
+-  this->insert_blocks(std::move(blocks_from_upstream(cuda_stream_legacy)), cuda_stream_legacy);
++  this->insert_blocks(blocks_from_upstream(cuda_stream_legacy), cuda_stream_legacy);
+ }
+ 
+ fixed_size_memory_resource_impl::~fixed_size_memory_resource_impl() { release(); }
+--- a/cpp/src/mr/detail/sam_headroom_memory_resource_impl.cpp
++++ b/cpp/src/mr/detail/sam_headroom_memory_resource_impl.cpp
+@@ -38,7 +38,9 @@
+ 
+   if (gpu_portion != 0) {
+ #if defined(CUDART_VERSION) && CUDART_VERSION >= 13000
+-    cudaMemLocation location{cudaMemLocationTypeDevice, rmm::get_current_cuda_device().value()};
++    cudaMemLocation location{};
++    location.type = cudaMemLocationTypeDevice;
++    location.id   = rmm::get_current_cuda_device().value();
+     RMM_CUDA_TRY(cudaMemAdvise(pointer, gpu_portion, cudaMemAdviseSetPreferredLocation, location));
+ #else
+     RMM_CUDA_TRY(cudaMemAdvise(pointer,
+@@ -49,7 +51,9 @@
+   }
+   if (cpu_portion != 0) {
+ #if defined(CUDART_VERSION) && CUDART_VERSION >= 13000
+-    cudaMemLocation location{cudaMemLocationTypeHost, 0};
++    cudaMemLocation location{};
++    location.type = cudaMemLocationTypeHost;
++    location.id   = 0;
+     RMM_CUDA_TRY(cudaMemAdvise(static_cast<char*>(pointer) + gpu_portion,
+                                cpu_portion,
+                                cudaMemAdviseSetPreferredLocation,

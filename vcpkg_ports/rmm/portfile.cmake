@@ -9,6 +9,8 @@ vcpkg_from_github(
   v${VERSION}
   SHA512
   0ea7efa882e13431c4faba60bbc805522436735ed91922987448aa5e64137b44937b66fc2d6bcf8658f2bda71f90fcc0f369cc384cdd481848cbefb5b30c0836
+  PATCHES
+  fix-clang-warnings.patch
   HEAD_REF
   main)
 
