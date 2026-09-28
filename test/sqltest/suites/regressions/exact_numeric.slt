@@ -1,0 +1,21 @@
+statement ok
+CREATE TABLE numbers (
+  i BIGINT,
+  d DECIMAL(38,4)
+);
+
+statement ok
+INSERT INTO numbers VALUES
+  (9007199254740993, 99999999999999999999999999999999.1234),
+  (-9007199254740993, -0.0001),
+  (NULL, NULL);
+
+# sirius: id = "regressions/exact_numeric"
+# sirius: tags = ["integer", "decimal", "null", "ordering"]
+query ?? nosort
+SELECT
+  i,
+  d
+FROM
+  numbers ORDER BY i NULLS FIRST;
+----
