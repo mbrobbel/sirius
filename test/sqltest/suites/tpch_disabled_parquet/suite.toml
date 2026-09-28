@@ -1,0 +1,3 @@
+storage = ["parquet"]
+checkpoint = "explicit"
+fixtures = ["tpch-parquet-original"]
