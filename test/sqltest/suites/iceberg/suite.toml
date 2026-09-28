@@ -1,0 +1,3 @@
+storage = ["parquet"]
+fixture_files = { "test/cpp/integration/data" = "iceberg-original" }
+checkpoint = "explicit"

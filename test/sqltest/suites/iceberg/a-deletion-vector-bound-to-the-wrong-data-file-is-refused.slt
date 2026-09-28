@@ -1,0 +1,47 @@
+# gpu_execution iceberg - a deletion vector bound to the wrong data file is refused
+
+statement ok
+LOAD avro;
+
+statement ok
+LOAD iceberg;
+
+statement ok
+SET unsafe_enable_version_guessing = true;
+
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+INSERT INTO fixture_check SELECT
+  count(*) = 2
+FROM
+  iceberg_metadata('__TEST_DIR__/test/cpp/integration/data/iceberg_v3_dv_misbound')
+WHERE
+  content <> 'EXISTING';
+
+# Original case: test/cpp/integration/test_gpu_execution_multi_format.cpp:1465
+# sirius: id = "iceberg/a-deletion-vector-bound-to-the-wrong-data-file-is-refused/001"
+# sirius: tags = ["integration", "iceberg"]
+# sirius: snapshot = true
+# sirius: execution = "allow_fallback"
+query ?? rowsort
+SELECT
+  fruit,
+  count
+FROM
+  iceberg_scan('__TEST_DIR__/test/cpp/integration/data/iceberg_v3_dv_misbound', snapshot_from_id = 7000000000000000001) ORDER BY count;
+----
+"apple"	1
+"banana"	2
+"cherry"	3
+"date"	4
+"fig"	6
+"honeydew"	8
+"indian fig"	9
+"jackfruit"	10
+
+statement ok
+DROP TABLE fixture_check;
