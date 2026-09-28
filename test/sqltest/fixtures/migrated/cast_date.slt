@@ -1,0 +1,90 @@
+statement ok
+CREATE TABLE t (
+  id INTEGER,
+  d DATE
+);
+
+statement ok
+INSERT INTO t VALUES
+  (1, DATE '1998-09-19'),
+  (2, DATE '1998-09-20'),
+  (3, DATE '1998-09-20'),
+  (4, DATE '1998-09-21'),
+  (5, DATE '1998-12-01'),
+  (6, DATE '1993-12-31'),
+  (7, DATE '1994-01-01'),
+  (8, DATE '1994-12-31'),
+  (9, DATE '1995-01-01'),
+  (10, DATE '1969-12-31'),
+  (11, DATE '1970-01-01'),
+  (12, NULL),
+  (13, DATE '2262-04-11');
+
+statement ok
+CREATE TABLE t_inf (
+  id INTEGER,
+  d DATE
+);
+
+statement ok
+INSERT INTO t_inf VALUES
+  (1, DATE '-infinity'),
+  (2, DATE '1969-12-31'),
+  (3, DATE '1998-09-20'),
+  (4, DATE '1998-09-21'),
+  (5, NULL),
+  (6, DATE '2262-04-11'),
+  (7, DATE 'infinity');
+
+statement ok
+CREATE TABLE t_far (
+  id INTEGER,
+  d DATE
+);
+
+statement ok
+INSERT INTO t_far VALUES
+  (1, DATE '2000-01-01'),
+  (2, DATE '300000-01-01');
+
+statement ok
+CHECKPOINT;
+
+statement ok
+COPY (SELECT * FROM t WHERE d IS NOT NULL) TO '__TEST_DIR__/t.parquet' (FORMAT PARQUET);
+
+statement ok
+CREATE VIEW p_t AS
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/t.parquet');
+
+statement ok
+COPY (SELECT line FROM (VALUES (1, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed'), (2, '---'), (3, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed')) AS plan (position, line) ORDER BY position) TO '__TEST_DIR__/p_t.txt' (FORMAT CSV, HEADER FALSE, DELIMITER '|');
+
+statement ok
+COPY (SELECT * FROM t_inf WHERE d IS NOT NULL) TO '__TEST_DIR__/t_inf.parquet' (FORMAT PARQUET);
+
+statement ok
+CREATE VIEW p_t_inf AS
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/t_inf.parquet');
+
+statement ok
+COPY (SELECT line FROM (VALUES (1, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed'), (2, '---'), (3, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed')) AS plan (position, line) ORDER BY position) TO '__TEST_DIR__/p_t_inf.txt' (FORMAT CSV, HEADER FALSE, DELIMITER '|');
+
+statement ok
+COPY (SELECT * FROM t_far WHERE d IS NOT NULL) TO '__TEST_DIR__/t_far.parquet' (FORMAT PARQUET);
+
+statement ok
+CREATE VIEW p_t_far AS
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/t_far.parquet');
+
+statement ok
+COPY (SELECT line FROM (VALUES (1, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed'), (2, '---'), (3, 'input -> bitpack -> chunk_min, chunk_count, chunk_bits, packed')) AS plan (position, line) ORDER BY position) TO '__TEST_DIR__/p_t_far.txt' (FORMAT CSV, HEADER FALSE, DELIMITER '|');
