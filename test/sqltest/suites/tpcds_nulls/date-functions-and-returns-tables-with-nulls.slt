@@ -1,0 +1,69 @@
+# gpu_execution tpcds date functions and returns tables with NULLs
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:326
+# sirius: id = "tpcds_nulls/date-functions-and-returns-tables-with-nulls/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  year(d.d_date) AS y,
+  count(*)
+FROM
+  web_sales ws
+  LEFT JOIN date_dim d ON ws.ws_ship_date_sk = d.d_date_sk
+GROUP BY
+  year(d.d_date);
+----
+1998	1004
+1999	1464
+2000	1318
+2001	1562
+2002	1333
+2003	527
+NULL	4
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:330
+# sirius: id = "tpcds_nulls/date-functions-and-returns-tables-with-nulls/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(sr_return_amt)
+FROM
+  store_returns;
+----
+2810	2706
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:331
+# sirius: id = "tpcds_nulls/date-functions-and-returns-tables-with-nulls/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ???? rowsort
+SELECT
+  sr_store_sk,
+  count(sr_return_amt),
+  min(sr_return_amt),
+  max(sr_return_amt)
+FROM
+  store_returns
+GROUP BY
+  sr_store_sk;
+----
+1	2667	0.00	11514.45
+NULL	39	0.00	5959.04
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:334
+# sirius: id = "tpcds_nulls/date-functions-and-returns-tables-with-nulls/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_returns
+WHERE
+  sr_customer_sk IS NULL;
+----
+103

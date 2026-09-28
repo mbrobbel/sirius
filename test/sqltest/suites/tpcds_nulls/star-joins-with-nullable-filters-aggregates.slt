@@ -1,0 +1,67 @@
+# gpu_execution tpcds star joins with nullable filters/aggregates
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:219
+# sirius: id = "tpcds_nulls/star-joins-with-nullable-filters-aggregates/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  sum(ss.ss_quantity)
+FROM
+  store_sales ss
+  JOIN item i ON ss.ss_item_sk = i.i_item_sk
+WHERE
+  i.i_current_price IS NOT NULL;
+----
+28810	1397502
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:223
+# sirius: id = "tpcds_nulls/star-joins-with-nullable-filters-aggregates/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ???? rowsort
+SELECT
+  i.i_category,
+  count(*),
+  min(ss.ss_sales_price),
+  max(ss.ss_sales_price)
+FROM
+  store_sales ss
+  JOIN item i ON ss.ss_item_sk = i.i_item_sk
+GROUP BY
+  i.i_category;
+----
+"Books"	3761	0.00	188.67
+"Children"	2773	0.00	187.38
+"Electronics"	3258	0.00	184.67
+"Home"	2154	0.00	181.16
+"Jewelry"	2782	0.00	185.66
+"Men"	3923	0.00	183.48
+"Music"	2697	0.00	180.38
+"Shoes"	2098	0.00	177.37
+"Sports"	1979	0.00	187.87
+"Women"	3385	0.00	184.93
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:227
+# sirius: id = "tpcds_nulls/star-joins-with-nullable-filters-aggregates/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ??? rowsort
+SELECT
+  d.d_year,
+  count(*),
+  sum(ss.ss_quantity)
+FROM
+  store_sales ss
+  JOIN date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
+GROUP BY
+  d.d_year;
+----
+1998	5525	278443
+1999	5360	261514
+2000	5670	282459
+2001	5796	285961
+2002	5190	255543
+2003	61	2931

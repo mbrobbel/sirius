@@ -1,0 +1,494 @@
+# gpu_execution tpcds LEFT JOIN NULL-pads unmatched rows
+include ../../fixtures/migrated/tpcds_nulls.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:192
+# sirius: id = "tpcds_nulls/left-join-null-pads-unmatched-rows/001"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(c.c_customer_sk)
+FROM
+  store_sales ss
+  LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk;
+----
+28810	27613
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:195
+# sirius: id = "tpcds_nulls/left-join-null-pads-unmatched-rows/002"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales ss
+  LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk
+WHERE
+  c.c_customer_sk IS NULL;
+----
+1197
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:199
+# sirius: id = "tpcds_nulls/left-join-null-pads-unmatched-rows/003"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  c.c_current_addr_sk,
+  count(*)
+FROM
+  store_sales ss
+  LEFT JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk
+GROUP BY
+  c.c_current_addr_sk;
+----
+1	38
+100	79
+101	40
+102	47
+103	67
+104	97
+106	38
+107	45
+108	76
+109	59
+110	122
+111	72
+112	31
+113	98
+114	120
+115	64
+117	100
+118	43
+119	187
+12	96
+121	33
+122	126
+123	31
+125	24
+126	8
+127	13
+128	62
+129	55
+13	107
+130	50
+132	58
+134	44
+135	13
+136	37
+139	132
+14	43
+140	47
+141	24
+142	91
+144	105
+145	82
+146	20
+147	34
+148	164
+149	47
+15	46
+150	85
+154	67
+155	104
+156	26
+157	61
+158	76
+159	95
+16	214
+160	50
+163	82
+164	11
+165	82
+166	69
+167	96
+168	53
+169	115
+17	211
+170	65
+171	12
+172	115
+173	64
+174	66
+175	39
+177	93
+179	99
+18	56
+180	93
+181	38
+183	86
+184	45
+185	67
+186	34
+187	34
+188	92
+189	69
+19	31
+191	24
+192	102
+194	30
+195	48
+196	54
+197	31
+198	56
+2	74
+20	220
+200	72
+201	115
+202	32
+203	37
+204	106
+205	100
+206	30
+207	20
+208	57
+21	70
+210	36
+211	68
+212	15
+213	45
+214	31
+215	30
+216	54
+217	62
+218	62
+219	82
+22	59
+221	57
+223	18
+224	125
+225	72
+226	85
+227	168
+228	126
+229	8
+23	78
+230	138
+231	28
+232	54
+233	30
+234	30
+235	79
+236	107
+237	21
+239	43
+24	52
+240	58
+241	171
+242	9
+243	119
+244	118
+245	129
+246	43
+247	75
+248	20
+249	47
+25	74
+251	40
+252	43
+253	144
+254	39
+255	28
+256	64
+257	28
+26	13
+260	41
+261	20
+262	65
+263	16
+264	253
+265	69
+266	52
+267	49
+268	14
+269	21
+27	30
+271	8
+272	149
+273	43
+274	106
+275	19
+276	19
+277	89
+278	21
+279	60
+28	23
+281	82
+282	47
+283	12
+285	49
+286	76
+287	29
+288	68
+289	54
+29	45
+290	14
+291	62
+294	76
+295	51
+296	77
+298	12
+299	47
+3	25
+30	102
+300	56
+301	130
+302	43
+305	32
+306	315
+307	191
+308	41
+310	113
+311	34
+312	14
+313	38
+314	72
+315	31
+316	86
+317	8
+318	48
+32	80
+320	29
+321	38
+322	56
+324	91
+327	21
+329	69
+33	119
+330	74
+331	85
+332	44
+333	23
+334	7
+335	47
+336	42
+337	108
+339	42
+340	208
+341	60
+343	33
+344	112
+346	28
+347	36
+348	53
+349	10
+35	20
+350	47
+352	48
+353	155
+354	182
+355	59
+357	9
+358	54
+359	165
+360	95
+361	73
+362	20
+363	23
+364	14
+365	24
+366	156
+367	31
+368	89
+369	163
+37	16
+371	109
+372	23
+373	52
+374	85
+375	17
+376	26
+377	191
+378	36
+379	43
+380	40
+381	20
+382	66
+383	76
+384	20
+385	52
+386	50
+387	10
+388	182
+39	84
+390	92
+391	41
+392	140
+394	67
+395	27
+396	9
+397	8
+398	74
+399	41
+4	100
+40	121
+401	24
+402	52
+403	60
+406	66
+408	91
+409	108
+41	64
+410	135
+411	190
+412	14
+413	147
+414	15
+415	26
+416	165
+418	24
+419	54
+42	90
+420	137
+421	35
+423	35
+424	68
+425	38
+427	30
+429	29
+43	29
+430	50
+431	45
+432	15
+433	27
+434	20
+435	9
+436	40
+438	30
+439	114
+44	88
+440	145
+441	53
+442	39
+443	112
+444	19
+446	95
+448	72
+45	40
+450	30
+451	38
+453	74
+454	8
+455	40
+456	79
+457	8
+458	47
+459	68
+46	24
+460	209
+461	11
+462	22
+463	187
+464	89
+465	20
+466	113
+467	74
+468	39
+469	135
+47	19
+470	120
+473	115
+474	85
+475	61
+476	106
+477	145
+478	12
+479	60
+48	87
+480	128
+481	97
+483	12
+485	28
+486	8
+487	50
+489	127
+49	32
+490	77
+491	26
+492	104
+493	49
+494	71
+495	56
+496	30
+497	24
+498	65
+499	113
+5	96
+50	104
+500	74
+51	90
+52	111
+53	127
+54	70
+57	99
+58	115
+59	32
+6	71
+60	40
+61	53
+62	64
+63	44
+65	57
+66	129
+67	59
+69	134
+7	13
+70	39
+71	23
+72	61
+73	55
+74	124
+75	46
+76	70
+77	43
+78	19
+79	8
+8	29
+80	28
+81	120
+82	68
+84	128
+85	51
+86	10
+87	74
+88	86
+89	9
+90	19
+91	72
+92	19
+93	41
+94	141
+95	121
+96	26
+97	96
+98	124
+NULL	1197
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:204
+# sirius: id = "tpcds_nulls/left-join-null-pads-unmatched-rows/004"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(d.d_date_sk)
+FROM
+  web_sales ws
+  LEFT JOIN date_dim d ON ws.ws_ship_date_sk = d.d_date_sk;
+----
+7212	7208
+
+# Original query: test/cpp/integration/test_gpu_execution_tpcds_nulls.cpp:210
+# sirius: id = "tpcds_nulls/left-join-null-pads-unmatched-rows/005"
+# sirius: snapshot = true
+# sirius: tags = ["integration", "tpcds", "nulls"]
+query ? rowsort
+SELECT
+  count(*)
+FROM
+  store_sales ss
+  JOIN customer c ON ss.ss_customer_sk = c.c_customer_sk;
+----
+27613
