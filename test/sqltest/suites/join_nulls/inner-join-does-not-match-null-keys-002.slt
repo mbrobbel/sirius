@@ -1,0 +1,16 @@
+# Migrated from test/cpp/integration/test_gpu_execution_join_nulls.cpp:57
+# gpu_execution INNER join does not match NULL keys
+include ../../fixtures/migrated/join_nulls/596278c1b896b669.slt
+
+# sirius: id = "join_nulls/inner-join-does-not-match-null-keys/002"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "nulls"]
+query ? rowsort
+SELECT
+  l.id
+FROM
+  l
+  JOIN r ON l.k = r.k
+WHERE
+  l.k IS NULL;
+----

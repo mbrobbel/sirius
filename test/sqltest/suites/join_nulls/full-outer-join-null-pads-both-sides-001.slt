@@ -1,0 +1,23 @@
+# Migrated from test/cpp/integration/test_gpu_execution_join_nulls.cpp:78
+# gpu_execution FULL OUTER join NULL-pads both sides
+include ../../fixtures/migrated/join_nulls/596278c1b896b669.slt
+
+# sirius: id = "join_nulls/full-outer-join-null-pads-both-sides/001"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "join", "nulls"]
+query ?? rowsort
+SELECT
+  l.id AS lid,
+  r.id AS rid
+FROM
+  l
+  FULL JOIN r ON l.k = r.k;
+----
+1	1
+2	2
+2	3
+3	NULL
+4	NULL
+5	1
+NULL	4
+NULL	5
