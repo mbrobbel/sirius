@@ -1,0 +1,4 @@
+storage = ["parquet"]
+profile = "operator-mgpu-q11"
+checkpoint = "explicit"
+scratch_directories = ["nation", "partsupp", "supplier"]
