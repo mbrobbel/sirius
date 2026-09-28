@@ -1,0 +1,17 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q11"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT
+  MobilePhoneModel,
+  COUNT(DISTINCT UserID) AS u
+FROM
+  hits
+WHERE
+  MobilePhoneModel <> ''
+GROUP BY
+  MobilePhoneModel ORDER BY u DESC, 1, 2 LIMIT 10;
+----

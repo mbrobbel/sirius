@@ -1,6 +1,12 @@
 {
   "adaptation": "Top-level ordered/limited queries append output-column ordinals as tie breakers. Original SQL is retained under upstream/.",
   "suites": {
+    "clickbench": {
+      "duckdb_version": "v1.5.5",
+      "queries_sha256": "e1e0f4207927d8205a5b7f1387e66c3826a33c36032bc2eaf846c07550d44008",
+      "runtime_sha256": "fc23f12e376c47be520f75221288281906e7942e8fd6f6ce4849198ba60d0405",
+      "source": "ClickHouse/ClickBench@9699b7a36a208a65028394e5f39f40e21bda2d91/duckdb/queries.sql"
+    },
     "tpcds": {
       "duckdb_version": "v1.5.5",
       "queries_sha256": "dc30bf08f08740451612ee790047b3a1582ef6e4fa4062cb0f4508c14a844afe",

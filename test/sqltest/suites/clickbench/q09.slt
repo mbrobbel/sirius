@@ -1,0 +1,15 @@
+# Source and license: ../../upstream/README.md
+include ../../fixtures/clickbench.slt
+
+# sirius: id = "clickbench/q09"
+# sirius: tags = ["clickbench"]
+
+query ?? nosort
+SELECT
+  RegionID,
+  COUNT(DISTINCT UserID) AS u
+FROM
+  hits
+GROUP BY
+  RegionID ORDER BY u DESC, 1, 2 LIMIT 10;
+----
