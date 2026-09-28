@@ -9851,6 +9851,226 @@
       "test": "physical_hash_join - broadcast BUILD_PROBE publishes dynamic filters across two GPUs"
     },
     {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q01",
+      "identity": "c014b6a513c7ed81a770bfbe2d63e88f200fc70ce4661d2ae007e04810123a0e",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q02",
+      "identity": "212e8c70cf1120a1e8b971dedd24f28061b751c5ce9a5d1f8e75a46cb097ad08",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q03",
+      "identity": "c78c650394c87ee773dba9463b80919db5a109733acde6ca25a2e91ddb006c79",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q04",
+      "identity": "fb7c42643daf3688234f4baecc7e00ff45797a0f5ed9fd48a450a21423b8f7fe",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q05",
+      "identity": "3042dcbf8b931b1f5dc7a6acb34fc7d69e50500252abc28b309bb538f8ff57ce",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q06",
+      "identity": "22a3dae9cc298fda3add36e6711ef83be2a15bc9eada5a9f0acd5077d29715ea",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q07",
+      "identity": "770e5d19d4904ddd45ea67d28a6cacb5015503916c00fec2686a7e8bea2a9c71",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q08",
+      "identity": "50a38523c9796b05b0baa09e5bcfe862333761b9a8f55ec476c9e2cb9f2af5c7",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q09",
+      "identity": "bbad264fba0600b45cf1ce5bdd8ab0aaff0d940abc5654edcd31b127840dda93",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q10",
+      "identity": "d7b07dc8347b4d8e41c348b1c541f0c76dfea494e58a141dc08058e649b57a2f",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q11",
+      "identity": "fae523d0ad6be86892cd7716b25ce183c4c038409f64796c676338a1550086b6",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q12",
+      "identity": "7542678c433f460f4c24c8adc68c523856593413099aed366e63cf9476f5cfe6",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q13",
+      "identity": "0f16f748c81eee132c859b2c3d4e7738d983b93c174de47f5c10681003152910",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q14",
+      "identity": "7f3327824231487f918be6bf2b76eaeb7a013bc409054c36bdfc7642243ebbfb",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q15",
+      "identity": "fd18d2277241d64db2adeb6627337075599aff3743a3992ec929a1473441031e",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q16",
+      "identity": "df37ccbb8fe1e46de783f8a269834ebf5c9cd8d7c6a70e38b905e0be513e7beb",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q17",
+      "identity": "d1745fb15b977ec0b3110942647af4209a84732a4c2984c18d5f94c24ae62bf4",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q18",
+      "identity": "836b3903f07c888a44cb2550bc09d2d0c86c6cc996ee8c641e17a6a0c0de2370",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q19",
+      "identity": "593b0754687bf90be14b606944253899bb78046e660674ef7981240190328b67",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q20",
+      "identity": "1422ffbc132629e9ef4a94b4f34bc9556b011e8b553c1c70d4706bb7779a8c89",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q21",
+      "identity": "d7afe2c8c8397289c9b67895c0c81a499d3827aa12656fc176671370c0f491d8",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
+      "file": "suites/s3_tpch/queries.slt",
+      "id": "s3_tpch/q22",
+      "identity": "1f4f13ce7223c29de80e545c15dd3a3d04f444c0140f7ddfd6baf882f0e4a6d5",
+      "kind": "query",
+      "line": 383,
+      "source": "test/cpp/integration/test_s3_tpch.cpp",
+      "suite": "s3_tpch",
+      "test": "transparent S3 TPC-H Q1-Q22 match the tiny local CPU oracle"
+    },
+    {
       "file": "suites/s3_surface/transparent.slt",
       "id": "s3_surface/transparent/001",
       "identity": "855cac77cc4af38b4ff9db97ffdcfbfcbe5077a63f3f5353f5878887d2c7dc88",
