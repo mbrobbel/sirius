@@ -1,0 +1,58 @@
+include ../../fixtures/migrated/compressed_materialization_partition/fact.slt
+include ../../fixtures/migrated/compressed_materialization_partition/dim.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/fact.parquet', tier = 'host', name = 't');
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/dim.parquet', tier = 'host', name = 'dm');
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:313
+# sirius: id = "compressed_materialization_partition/join-host/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ?? rowsort
+SELECT
+  SUM(t.v) AS sv,
+  SUM(t.d) AS sd
+FROM
+  t
+  JOIN dm ON t.k = dm.k
+WHERE
+  dm.x < 50;
+----
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:329
+# sirius: id = "compressed_materialization_partition/join-host/002"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ?? rowsort
+SELECT
+  SUM(t.v) AS sv,
+  SUM(t.d) AS sd
+FROM
+  t
+  JOIN dm ON t.k = dm.k
+WHERE
+  dm.x < 50;
+----
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL unpin_table('dm');
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');

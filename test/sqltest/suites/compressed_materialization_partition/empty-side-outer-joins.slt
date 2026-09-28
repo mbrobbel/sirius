@@ -1,0 +1,104 @@
+include ../../fixtures/migrated/compressed_materialization_partition/fact.slt
+include ../../fixtures/migrated/compressed_materialization_partition/dim.slt
+include ../../fixtures/migrated/compressed_materialization_partition/gap.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/fact.parquet', tier = 'host', name = 't');
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/dim.parquet', tier = 'host', name = 'dm');
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/gap.parquet', tier = 'host', name = 'g');
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:420
+# sirius: id = "compressed_materialization_partition/empty-side-outer-joins/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  COUNT(*) AS c,
+  COUNT(a.v) AS cav,
+  COUNT(b.x) AS cbx
+FROM
+  (
+    SELECT
+      *
+    FROM
+      g
+    WHERE
+      k = 50000
+  ) a
+  FULL JOIN dm b ON a.k = b.k;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:420
+# sirius: id = "compressed_materialization_partition/empty-side-outer-joins/002"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  COUNT(*) AS c,
+  COUNT(a.v) AS cav,
+  COUNT(b.x) AS cbx
+FROM
+  (
+    SELECT
+      *
+    FROM
+      g
+    WHERE
+      k = 50000
+  ) a
+  RIGHT JOIN dm b ON a.k = b.k;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:420
+# sirius: id = "compressed_materialization_partition/empty-side-outer-joins/003"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  COUNT(*) AS c,
+  COUNT(a.v) AS cav,
+  COUNT(t.v) AS ctv
+FROM
+  t
+  LEFT JOIN (SELECT * FROM g WHERE k = 50000) a ON t.k = a.k;
+----
+
+# Original query: test/cpp/integration/test_compressed_materialization_partition.cpp:420
+# sirius: id = "compressed_materialization_partition/empty-side-outer-joins/004"
+# sirius: tags = ["integration", "parquet", "compressed_materialization", "partition"]
+query ??? rowsort
+SELECT
+  COUNT(*) AS c,
+  COUNT(a.v) AS cav,
+  COUNT(b.x) AS cbx
+FROM
+  (
+    SELECT
+      *
+    FROM
+      g
+    WHERE
+      k = 50000
+  ) a
+  FULL JOIN dm b ON a.k IS NOT DISTINCT FROM b.k;
+----
+
+onlyif sirius
+statement ok
+CALL unpin_table('g');
+
+onlyif sirius
+statement ok
+CALL unpin_table('dm');
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
