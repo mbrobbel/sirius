@@ -4201,6 +4201,16 @@
       "test": "mvcc guards: an ARRAY with a non-fixed-width child is refused"
     },
     {
+      "file": "suites/pin_mvcc_update/pinning-existing-update-chains-requires-a-checkpoint.slt",
+      "id": "pin_mvcc_update/pinning-existing-update-chains-requires-a-checkpoint/001",
+      "identity": "5aee1adb66756e83e7ffbb8bcc1e19ae2f91db4249f2b79cf024fe0e6c6c8cba",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_pin_table_mvcc_update.cpp",
+      "suite": "pin_mvcc_update",
+      "test": "mvcc update guard: pinning existing update chains requires a checkpoint"
+    },
+    {
       "file": "suites/dynamic_filter_native/selective-membership-filter-on-the-probe-scan.slt",
       "id": "dynamic_filter_native/selective-membership-filter-on-the-probe-scan/001",
       "identity": "03aa41e526b4ede11ef311dcb19efcfd097dd0429481186383e471cf8556e70b",
