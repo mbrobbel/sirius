@@ -1,0 +1,102 @@
+# gpu_execution array - unsigned integer element widths 1/2/4/8 bytes
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_u8 (
+  id INTEGER,
+  a UTINYINT[3]
+);
+
+statement ok
+INSERT INTO arr_u8 VALUES
+  (1, [0, 1, 255]),
+  (2, [128, 200, 254]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:179
+# sirius: id = "array/unsigned-integer-element-widths-1-2-4-8-bytes/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_u8;
+----
+
+statement ok
+CREATE TABLE arr_u16 (
+  id INTEGER,
+  a USMALLINT[2]
+);
+
+statement ok
+INSERT INTO arr_u16 VALUES
+  (1, [0, 65535]),
+  (2, [32768, 40000]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:184
+# sirius: id = "array/unsigned-integer-element-widths-1-2-4-8-bytes/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_u16;
+----
+
+statement ok
+CREATE TABLE arr_u32 (
+  id INTEGER,
+  a UINTEGER[2]
+);
+
+statement ok
+INSERT INTO arr_u32 VALUES
+  (1, [0, 4294967295]),
+  (2, [2147483648, 3000000000]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:189
+# sirius: id = "array/unsigned-integer-element-widths-1-2-4-8-bytes/003"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_u32;
+----
+
+statement ok
+CREATE TABLE arr_u64 (
+  id INTEGER,
+  a UBIGINT[2]
+);
+
+statement ok
+INSERT INTO arr_u64 VALUES
+  (1, [0, 18446744073709551615]),
+  (2, [9223372036854775808, 10000000000000000000]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:196
+# sirius: id = "array/unsigned-integer-element-widths-1-2-4-8-bytes/004"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_u64;
+----

@@ -1,0 +1,40 @@
+# gpu_execution array - fully NULL array column
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_allnull (
+  id INTEGER,
+  a INTEGER[3]
+);
+
+statement ok
+INSERT INTO arr_allnull SELECT
+  range::INTEGER,
+  NULL::INTEGER[3]
+FROM
+  range(3000);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:106
+# sirius: id = "array/fully-null-array-column/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_allnull ORDER BY id;
+----
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:107
+# sirius: id = "array/fully-null-array-column/002"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  count(*),
+  count(a)
+FROM
+  arr_allnull;
+----

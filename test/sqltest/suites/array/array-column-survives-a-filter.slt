@@ -1,0 +1,31 @@
+# gpu_execution array - array column survives a filter
+# Preserve setup and query order from the C++ execution test.
+
+statement ok
+CREATE TABLE arr_filter (
+  id INTEGER,
+  a INTEGER[2]
+);
+
+statement ok
+INSERT INTO arr_filter VALUES
+  (1, [1, 1]),
+  (2, [2, 2]),
+  (3, [3, 3]),
+  (4, [4, 4]);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_array.cpp:502
+# sirius: id = "array/array-column-survives-a-filter/001"
+# sirius: tags = ["integration", "array"]
+query ?? rowsort
+SELECT
+  id,
+  a
+FROM
+  arr_filter
+WHERE
+  id >= 3;
+----
