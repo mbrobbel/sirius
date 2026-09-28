@@ -14569,6 +14569,56 @@
       "test": "gpu_execution - pinned zone maps prune clustered duckdb-native chunks end to end"
     },
     {
+      "file": "suites/transparent/simple-filter.slt",
+      "id": "transparent/simple-filter",
+      "identity": "0a1f8fbfa706475e2794a7fb29460204a92037f9f16697a0b2d8b487dd607a53",
+      "kind": "query",
+      "line": 172,
+      "source": "test/cpp/integration/test_transparent_execution.cpp",
+      "suite": "transparent",
+      "test": "transparent execution: simple filter"
+    },
+    {
+      "file": "suites/transparent/aggregation.slt",
+      "id": "transparent/aggregation",
+      "identity": "668d2f38f360740ee3b4aea8a015f7241908ce51ce1255776b06924084e40c2e",
+      "kind": "query",
+      "line": 180,
+      "source": "test/cpp/integration/test_transparent_execution.cpp",
+      "suite": "transparent",
+      "test": "transparent execution: aggregation"
+    },
+    {
+      "file": "suites/transparent/statistics-propagated-aggregates.slt",
+      "id": "transparent/statistics-propagated-aggregates",
+      "identity": "4b0b9b65a69a77e357b342e17691e546d2793896f5c5eb65a2024d4d7e27970e",
+      "kind": "query",
+      "line": 193,
+      "source": "test/cpp/integration/test_transparent_execution.cpp",
+      "suite": "transparent",
+      "test": "transparent execution: statistics-propagated aggregates"
+    },
+    {
+      "file": "suites/transparent/join.slt",
+      "id": "transparent/join",
+      "identity": "d0affb67f2e37e7a7ad43f5a5e2a3af255ce853d186df1cb47792c32637ec3ab",
+      "kind": "query",
+      "line": 202,
+      "source": "test/cpp/integration/test_transparent_execution.cpp",
+      "suite": "transparent",
+      "test": "transparent execution: join"
+    },
+    {
+      "file": "suites/transparent/top-n.slt",
+      "id": "transparent/top-n",
+      "identity": "f5086d35b4ec24af5b57fe0c2442d47d216a9dec09c1f95508ad823fd0292cfc",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_transparent_execution.cpp",
+      "suite": "transparent",
+      "test": "transparent execution: top-N"
+    },
+    {
       "file": "suites/fallback_mix/projection-round.slt",
       "id": "fallback_mix/projection-round/001",
       "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
