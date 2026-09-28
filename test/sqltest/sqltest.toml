@@ -1273,6 +1273,10 @@ extensions = ["avro", "iceberg"]
 "iceberg_v3_dv_replaced/metadata/v1.metadata.json" = "iceberg-46126f6caa63"
 "iceberg_v3_dv_replaced/metadata/version-hint.text" = "iceberg-38fecacae164"
 
+[profiles.pin-column-order]
+gpus = 1
+config = "profiles/pin-column-order.yaml"
+
 [profiles.pin-column-merge]
 gpus = 1
 config = "profiles/pin-column-merge.yaml"
