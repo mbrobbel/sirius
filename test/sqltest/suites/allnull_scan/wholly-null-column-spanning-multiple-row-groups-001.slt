@@ -1,0 +1,16 @@
+# Migrated from test/cpp/integration/test_gpu_execution_allnull_scan.cpp:164
+# gpu_execution wholly-NULL column spanning multiple row groups
+include ../../fixtures/migrated/allnull_scan/d41fa1c6bae0c960.slt
+
+# sirius: id = "allnull_scan/wholly-null-column-spanning-multiple-row-groups/001"
+# sirius: snapshot = true
+# sirius: tags = ["allnull", "gpu_execution", "integration", "nulls", "scan"]
+query ??? rowsort
+SELECT
+  COUNT(*),
+  COUNT(n),
+  SUM(n)
+FROM
+  big_null;
+----
+130001	0	NULL

@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE ans (
+  id INTEGER,
+  n_int INTEGER,
+  n_big BIGINT,
+  n_dbl DOUBLE,
+  n_dec DECIMAL(10,2),
+  n_date DATE,
+  part INTEGER
+);
+
+statement ok
+INSERT INTO ans SELECT
+  i,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  CASE
+    WHEN i % 2 = 0 THEN
+      i
+    ELSE
+      NULL
+  END
+FROM
+  range(1, 9) AS t (i);
+
+statement ok
+CHECKPOINT;
