@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:210
+# gpu_execution concat() ignores NULL arguments
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/concat-ignores-null-arguments/002"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  concat(s, s) AS r
+FROM
+  nt;
+----
+1	"appleapple"
+2	""
+3	"appleapple"
+4	""
+5	"bananabanana"
+6	""
+7	"appleapple"
+8	"cherrycherry"

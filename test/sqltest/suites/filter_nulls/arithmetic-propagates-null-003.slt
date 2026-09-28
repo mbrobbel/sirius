@@ -1,0 +1,22 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:180
+# gpu_execution arithmetic propagates NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/arithmetic-propagates-null/003"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  dec * 2 AS r
+FROM
+  nt;
+----
+1	21.00
+2	NULL
+3	40.00
+4	NULL
+5	60.50
+6	-10.00
+7	21.00
+8	80.00

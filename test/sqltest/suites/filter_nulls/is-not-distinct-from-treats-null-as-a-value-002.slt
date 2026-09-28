@@ -1,0 +1,20 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:113
+# gpu_execution IS [NOT] DISTINCT FROM treats NULL as a value
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/is-not-distinct-from-treats-null-as-a-value/002"
+# sirius: snapshot = true
+# sirius: tags = ["filter", "gpu_execution", "integration", "nulls"]
+query ? rowsort
+SELECT
+  id
+FROM
+  nt
+WHERE
+  i IS DISTINCT FROM 10;
+----
+2
+4
+5
+6
+8

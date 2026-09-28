@@ -1,0 +1,27 @@
+# Migrated from test/cpp/integration/test_gpu_execution_filter_nulls.cpp:171
+# gpu_execution COALESCE / NULLIF / CASE projections propagate NULL
+include ../../fixtures/migrated/filter_nulls/28a0fdc319651024.slt
+
+# sirius: id = "filter_nulls/coalesce-nullif-case-projections-propagate-null/006"
+# sirius: snapshot = true
+# sirius: tags = ["gpu_execution", "integration", "nulls", "projection"]
+query ?? rowsort
+SELECT
+  id,
+  CASE
+    WHEN b > 0 THEN
+      b
+    ELSE
+      NULL
+  END AS c
+FROM
+  nt;
+----
+1	100
+2	NULL
+3	NULL
+4	100
+5	200
+6	NULL
+7	100
+8	NULL
