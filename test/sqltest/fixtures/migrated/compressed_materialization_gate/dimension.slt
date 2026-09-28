@@ -1,0 +1,29 @@
+statement ok
+CREATE TEMPORARY TABLE fixture_check (
+  ok BOOLEAN NOT NULL CHECK (ok)
+);
+
+statement ok
+COPY (SELECT (range * 7) % 301 AS k FROM range(1200)) TO '__TEST_DIR__/gate_dim.parquet' (FORMAT PARQUET, ROW_GROUP_SIZE 400);
+
+statement ok
+INSERT INTO fixture_check SELECT
+  list(row_group_num_rows ORDER BY row_group_id) = [1200]
+FROM
+  (
+    SELECT DISTINCT
+      row_group_id,
+      row_group_num_rows
+    FROM
+      parquet_metadata('__TEST_DIR__/gate_dim.parquet')
+  );
+
+statement ok
+DROP TABLE fixture_check;
+
+statement ok
+CREATE VIEW o AS
+SELECT
+  *
+FROM
+  read_parquet('__TEST_DIR__/gate_dim.parquet');

@@ -58,7 +58,7 @@ settings = { disabled_optimizers = "join_order,build_side_probe_side" }
 
 [runs.local]
 suites = "all"
-exclude_suites = []
+exclude_suites = ["compressed_materialization_gate"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = ["default"] }
 
 [runs.smoke]
@@ -76,12 +76,12 @@ axes = { gpu = ["one"], storage = "all", optimizers = ["default"] }
 
 [runs.matrix]
 suites = "all"
-exclude_suites = []
+exclude_suites = ["compressed_materialization_gate"]
 axes = { gpu = ["one", "two"], storage = "all", optimizers = ["default"] }
 
 [runs.optimizer-sweep]
 suites = "all"
-exclude_suites = []
+exclude_suites = ["compressed_materialization_gate"]
 axes = { gpu = ["one"], storage = ["native"], optimizers = "all" }
 
 [runs.full-sweep]
@@ -103,3 +103,15 @@ environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1", SIRIUS_EXP_FUSED_SCAN_FILTER =
 
 [axes.gpu.integration-two]
 profile = "integration-two-gpu"
+
+[profiles.compressed-materialization-gate]
+gpus = 1
+config = "profiles/compressed-materialization-gate.yaml"
+environment = { SIRIUS_ENABLE_TEST_OPTIONS = "1" }
+
+[axes.gpu.compressed-gate]
+profile = "compressed-materialization-gate"
+
+[runs.compressed-gate]
+suites = ["compressed_materialization_gate"]
+profile = "compressed-materialization-gate"

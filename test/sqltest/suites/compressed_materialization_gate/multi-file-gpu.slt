@@ -1,0 +1,51 @@
+include ../../fixtures/migrated/compressed_materialization_gate/multi.slt
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL pin_table('__TEST_DIR__/multi/*.parquet', tier = 'gpu', name = 't');
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:423
+# sirius: id = "compressed_materialization_gate/multi-file-gpu/001"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ???? rowsort
+SELECT
+  k,
+  v,
+  d,
+  d + CAST('0.00' AS DECIMAL(3,2)) AS d_copy
+FROM
+  t
+WHERE
+  k <= 150 ORDER BY k, v;
+----
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original query: test/cpp/integration/test_compressed_materialization_gate.cpp:441
+# sirius: id = "compressed_materialization_gate/multi-file-gpu/002"
+# sirius: tags = ["integration", "parquet", "compressed_materialization"]
+query ???? rowsort
+SELECT
+  k,
+  v,
+  d,
+  d + CAST('0.00' AS DECIMAL(3,2)) AS d_copy
+FROM
+  t
+WHERE
+  k <= 150 ORDER BY k, v;
+----
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = true;
+
+onlyif sirius
+statement ok
+CALL unpin_table('t');
