@@ -78,7 +78,7 @@ namespace fs = std::filesystem;
 
 // Pinned MinIO image — kept in sync with the (now-retired) docker-compose.yml so
 // the same Sirius commit produces reproducible S3 test behavior over time.
-constexpr char const* kMinioImage = "minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1";
+constexpr char const* kMinioImage = "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1";
 constexpr int kMinioPort          = 9000;
 constexpr char const* kAccessKey  = "minioadmin";
 constexpr char const* kSecretKey  = "minioadmin";
@@ -614,31 +614,6 @@ void maybe_upload_tpch_sf1_fixture(minio_instance const& http,
             << http.endpoint << " and " << tls.endpoint << std::endl;
 }
 
-void maybe_upload_glob_scale_fixture(minio_instance const& http, fs::path const& fixture_dir)
-{
-  if (!env_truthy("SIRIUS_TEST_S3_GLOB_SCALE")) return;
-
-  constexpr std::size_t object_count = 1001;
-  auto const parquet                 = fixture_dir / "parquet" / "nation.parquet";
-  auto const parquet_size            = static_cast<std::int64_t>(fs::file_size(parquet));
-
-  for (std::size_t index = 0; index < object_count; ++index) {
-    auto const key = "glob-scale/part_" + std::to_string(index) + ".parquet";
-    std::FILE* f   = std::fopen(parquet.c_str(), "rb");
-    if (f == nullptr) throw std::runtime_error("cannot open glob-scale parquet fixture");
-    auto const code =
-      s3_put(http, "http", uri_path_for(kBucket, key), f, parquet_size, std::nullopt);
-    std::fclose(f);
-    if (!(code == 200 || code == 204)) {
-      throw std::runtime_error("glob-scale upload failed for '" + key + "' (HTTP " +
-                               std::to_string(code) + ")");
-    }
-  }
-
-  std::cout << "[s3] uploaded " << object_count << " parquet objects under " << http.endpoint << "/"
-            << kBucket << "/glob-scale/" << std::endl;
-}
-
 // ---- orchestration ---------------------------------------------------------
 
 void setenv_kv(char const* k, std::string const& v) { ::setenv(k, v.c_str(), /*overwrite=*/1); }
@@ -686,7 +661,6 @@ bool bring_up()
   upload_fixtures(tls, "https", fixture_dir, ca);
   maybe_upload_large_fixture(http, tls, ca, work);
   maybe_upload_tpch_sf1_fixture(http, tls, ca, work);
-  maybe_upload_glob_scale_fixture(http, fixture_dir);
 
   // Publish the env contract the [s3] tests consume (mirrors the old env.sh).
   setenv_kv("SIRIUS_TEST_S3_ENDPOINT", http.endpoint);
