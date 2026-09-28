@@ -4,6 +4,10 @@ Catch2 tests cover REST range reads, retries, cache reads, scan-manager
 `create_datasource`, `describe_parquet`, and SQL over S3. Loopback routing
 tests run in the default unit suite.
 
+Additional CPU/Sirius result comparisons are available in the [SQL corpus](../../../sqltest/README.md).
+Its `s3`, `s3-sf1`, and `s3-pagination` runs supplement the C++ tests.
+C++ migration remains deferred until fuzz integration.
+
 ## Running the gates
 
 `SIRIUS_BUILD_S3_TESTS` defaults to `ON`, including the MinIO harness. CMake
