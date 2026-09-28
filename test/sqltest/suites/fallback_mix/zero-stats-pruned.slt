@@ -1,0 +1,14 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:617
+# sirius: id = "fallback_mix/zero-stats-pruned/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? rowsort
+SELECT
+  round(id)
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet')
+WHERE
+  id > 10000;
+----

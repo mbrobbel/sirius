@@ -4561,6 +4561,296 @@
       "test": "gpu_execution - narrow group keys cross the aggregate exchange"
     },
     {
+      "file": "suites/fallback_mix/projection-round.slt",
+      "id": "fallback_mix/projection-round/001",
+      "identity": "d124ae53021e5bb7c85bd2f266fa33e61fbe9f7c0e58bdabcd10269858e37a5d",
+      "kind": "query",
+      "line": 570,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: projection-round"
+    },
+    {
+      "file": "suites/fallback_mix/projection-struct-extract.slt",
+      "id": "fallback_mix/projection-struct-extract/001",
+      "identity": "a90b8c1742364aaf3d6e4040be4ade76ecda15dc9ec49529335a3ddd0c2fd134",
+      "kind": "query",
+      "line": 572,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: projection-struct-extract"
+    },
+    {
+      "file": "suites/fallback_mix/projection-list-extract.slt",
+      "id": "fallback_mix/projection-list-extract/001",
+      "identity": "9c152e62d6e9a75b0226a6efb4f656b2f4ce197bf2c7dba7d03668172f691a16",
+      "kind": "query",
+      "line": 574,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: projection-list-extract"
+    },
+    {
+      "file": "suites/fallback_mix/order-round.slt",
+      "id": "fallback_mix/order-round/001",
+      "identity": "d5170eb000a0ed5dedec4881b67dd9e395be0533cce8c55b6cb365ab80d3959c",
+      "kind": "query",
+      "line": 576,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: order-round"
+    },
+    {
+      "file": "suites/fallback_mix/topn-round.slt",
+      "id": "fallback_mix/topn-round/001",
+      "identity": "7648aaa9f6f15fdf36f26fa413a947b1416d0ac5830a69cb33a069b176deb372",
+      "kind": "query",
+      "line": 579,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: topn-round"
+    },
+    {
+      "file": "suites/fallback_mix/aggregate-child-projection.slt",
+      "id": "fallback_mix/aggregate-child-projection/001",
+      "identity": "13adccf951ca256a24ed6501011ce4e859fc6afb3ece23c10406c9dfca2a6dee",
+      "kind": "query",
+      "line": 582,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: aggregate-child-projection"
+    },
+    {
+      "file": "suites/fallback_mix/join-round.slt",
+      "id": "fallback_mix/join-round/001",
+      "identity": "e357d8bfa72cad237512958946bd897974deb843d5d291560f08781275053d3d",
+      "kind": "query",
+      "line": 587,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: join-round"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/001",
+      "identity": "71a34cddd0189023a0f7972409ca6248840f4a1f75781cd55ee34620e4743212",
+      "kind": "query",
+      "line": 591,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/002",
+      "identity": "5e7a397154fe3772c6391f01e5e32e1a27e3e2f8858ed66c3cc2a4554d3e9efb",
+      "kind": "query",
+      "line": 592,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/003",
+      "identity": "fabb8b085d6d292410c3a54854bfde319b4fa7227eff06377f6afdc93ba84b36",
+      "kind": "query",
+      "line": 594,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/004",
+      "identity": "ac34ad386a349545bdc04ec8653c9d36e43a682a7b72984f110f1f336cac030d",
+      "kind": "query",
+      "line": 596,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/005",
+      "identity": "24464e98b7f938e42cd2fcdd83cc93d43f1350abd4f222bda7a008210307f883",
+      "kind": "query",
+      "line": 597,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/006",
+      "identity": "679e340845a40aae3b3086476ce6945101630c10c31ac73d0964383ee217f070",
+      "kind": "query",
+      "line": 599,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/007",
+      "identity": "16c1fed6e1584bc850a1d5331b39bde9b4898411df35750643fda3021de7a7a2",
+      "kind": "query",
+      "line": 600,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/regression-bundle.slt",
+      "id": "fallback_mix/regression-bundle/008",
+      "identity": "3517b655315b3d61dc18755cdf5ff9e1b1e3eb58b26468ad1a87e5007fd73f1d",
+      "kind": "query",
+      "line": 601,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: regression-bundle"
+    },
+    {
+      "file": "suites/fallback_mix/parquet-is-not-null.slt",
+      "id": "fallback_mix/parquet-is-not-null/001",
+      "identity": "8af2a2944e648c5065bb0ef278d972fa934f2eb6a12f3941ea9b06061c31f2e8",
+      "kind": "query",
+      "line": 603,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: parquet-is-not-null"
+    },
+    {
+      "file": "suites/fallback_mix/native-is-not-null.slt",
+      "id": "fallback_mix/native-is-not-null/001",
+      "identity": "d1e16dd2bff742570b8ce35c5a195b72204970c1ad7c5fc9e72e10ef2a97fca4",
+      "kind": "query",
+      "line": 605,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: native-is-not-null"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/001",
+      "identity": "19abd6918912d04d85ce2f0826cb31d9e1a40f1fb66d36a36a2706eb7648e463",
+      "kind": "query",
+      "line": 608,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/002",
+      "identity": "46bb900022f5d3dc62afd831e65b1fc3d43078d46aaeeb5cc51e8d8a58d49ead",
+      "kind": "query",
+      "line": 609,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/003",
+      "identity": "78568a3f8f57cc194e03e7d90ba9f12e4cba71a7bfb2116129af0ccd37fe901d",
+      "kind": "query",
+      "line": 608,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/004",
+      "identity": "bd0d3cd0e8192ed77688ab87d7f74d6ad48503a248be86af64118f474f13728a",
+      "kind": "query",
+      "line": 609,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/005",
+      "identity": "46e197ffecbc6141740aebf4595bfe6e45cb9070016d505f00b13b900169cc3e",
+      "kind": "query",
+      "line": 608,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/006",
+      "identity": "89cc54e6a03711d5082952aebfd60a6fd482285e0427a6f36dcb8409ac6ef2bb",
+      "kind": "query",
+      "line": 609,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/nested-sort-regression.slt",
+      "id": "fallback_mix/nested-sort-regression/007",
+      "identity": "3a74c04e14114cfb8390545e56022858f2de4250cf86c3a2adc49a78815330c7",
+      "kind": "query",
+      "line": 611,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: nested-sort-regression"
+    },
+    {
+      "file": "suites/fallback_mix/zero-limit.slt",
+      "id": "fallback_mix/zero-limit/001",
+      "identity": "75b8d7ef863b87851066034609798137b4c41e1f95eca9f4b8d23ff7a666ac17",
+      "kind": "query",
+      "line": 613,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: zero-limit"
+    },
+    {
+      "file": "suites/fallback_mix/zero-empty.slt",
+      "id": "fallback_mix/zero-empty/001",
+      "identity": "ee192fa3254cb392abb2f82b50a21df51aa6e9f103a2475ea00bcf65f4fcc14d",
+      "kind": "query",
+      "line": 615,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: zero-empty"
+    },
+    {
+      "file": "suites/fallback_mix/zero-stats-pruned.slt",
+      "id": "fallback_mix/zero-stats-pruned/001",
+      "identity": "5ac4c93ab499ba92c5f0d197c4e187929e7b65cea6c844e205f1704de65f05a7",
+      "kind": "query",
+      "line": 617,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: zero-stats-pruned"
+    },
+    {
+      "file": "suites/fallback_mix/filter-above-join.slt",
+      "id": "fallback_mix/filter-above-join/001",
+      "identity": "cee60162256abac2838f2fb9c40cf14f1bb83cd5d323f72ff512e27230433a33",
+      "kind": "query",
+      "line": 796,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: filter-above-join"
+    },
+    {
+      "file": "suites/fallback_mix/filter-above-join.slt",
+      "id": "fallback_mix/filter-above-join/002",
+      "identity": "1e42742035d34cd0ab99b16a596c58af7a059a4c3cba39b0fc0ededf4296b3f1",
+      "kind": "query",
+      "line": 799,
+      "source": "test/cpp/integration/test_transparent_runtime_fallback.cpp",
+      "suite": "fallback_mix",
+      "test": "S3 mix: filter-above-join"
+    },
+    {
       "file": "suites/csv_disabled/scan-single-column.slt",
       "id": "csv_disabled/scan-single-column",
       "identity": "4d783c167d2aa2db68361526bd9ed70a5d38fe77c35e91023200d5ab6cd2e14d",

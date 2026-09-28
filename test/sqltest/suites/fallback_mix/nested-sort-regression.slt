@@ -1,0 +1,83 @@
+include ../../fixtures/migrated/fallback_mix.slt
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:608
+# sirius: id = "fallback_mix/nested-sort-regression/001"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY st;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:609
+# sirius: id = "fallback_mix/nested-sort-regression/002"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY st LIMIT 5;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:608
+# sirius: id = "fallback_mix/nested-sort-regression/003"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY li;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:609
+# sirius: id = "fallback_mix/nested-sort-regression/004"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY li LIMIT 5;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:608
+# sirius: id = "fallback_mix/nested-sort-regression/005"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY mp;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:609
+# sirius: id = "fallback_mix/nested-sort-regression/006"
+# sirius: tags = ["integration", "fallback"]
+# sirius: execution = "allow_fallback"
+query ? rowsort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY mp LIMIT 5;
+----
+
+# Original query: test/cpp/integration/test_transparent_runtime_fallback.cpp:611
+# sirius: id = "fallback_mix/nested-sort-regression/007"
+# sirius: tags = ["integration", "fallback"]
+# sirius: snapshot = true
+query ? nosort
+SELECT
+  id
+FROM
+  read_parquet('__TEST_DIR__/nested.parquet') ORDER BY id LIMIT 5;
+----
+-100
+-99
+-98
+-97
+-96
