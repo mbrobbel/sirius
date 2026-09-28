@@ -1,0 +1,13 @@
+# gpu_execution - cast to decimal different scales parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3206
+# sirius: id = "tpch_integration_parquet/cast-to-decimal-different-scales-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "cast", "decimal"]
+query ?? rowsort
+SELECT
+  CAST(n_nationkey AS DECIMAL(9,0)) AS d0,
+  CAST(n_nationkey AS DECIMAL(9,4)) AS d4
+FROM
+  nation;
+----

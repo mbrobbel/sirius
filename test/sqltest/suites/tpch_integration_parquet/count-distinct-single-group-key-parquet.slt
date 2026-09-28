@@ -1,0 +1,15 @@
+# gpu_execution - count distinct: single group key parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3250
+# sirius: id = "tpch_integration_parquet/count-distinct-single-group-key-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "group_by", "count_distinct"]
+query ?? rowsort
+SELECT
+  n_regionkey,
+  count(DISTINCT n_nationkey)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

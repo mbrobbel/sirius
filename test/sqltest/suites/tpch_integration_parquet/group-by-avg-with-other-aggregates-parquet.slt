@@ -1,0 +1,17 @@
+# gpu_execution - group by avg with other aggregates parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:2806
+# sirius: id = "tpch_integration_parquet/group-by-avg-with-other-aggregates-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "group_by", "avg"]
+query ???? rowsort
+SELECT
+  n_regionkey,
+  avg(n_nationkey),
+  sum(n_nationkey),
+  count(*)
+FROM
+  nation
+GROUP BY
+  n_regionkey;
+----

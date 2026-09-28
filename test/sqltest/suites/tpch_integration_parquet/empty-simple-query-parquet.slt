@@ -1,0 +1,17 @@
+# gpu_execution - empty simple query parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3455
+# sirius: id = "tpch_integration_parquet/empty-simple-query-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "empty_result"]
+query ???? rowsort
+SELECT
+  l_linestatus,
+  l_orderkey,
+  l_comment,
+  l_receiptdate
+FROM
+  lineitem
+WHERE
+  l_linestatus = 'J' AND l_orderkey = 1;
+----

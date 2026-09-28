@@ -1,0 +1,13 @@
+# gpu_execution - anti join build_probe large probe parquet
+include ../../fixtures/migrated/tpch-parquet-original.slt
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:1952
+# sirius: id = "tpch_integration_parquet/anti-join-build-probe-large-probe-parquet/001"
+# sirius: tags = ["integration", "gpu_execution", "parquet", "antijoin"]
+query ? rowsort
+SELECT
+  count(*) AS n
+FROM
+  orders o
+  ANTI JOIN (SELECT c_custkey FROM customer WHERE c_nationkey < 3) c ON o.o_custkey = c.c_custkey;
+----
