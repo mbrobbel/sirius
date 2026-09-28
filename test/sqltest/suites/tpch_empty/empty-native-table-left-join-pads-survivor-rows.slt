@@ -1,0 +1,51 @@
+# gpu_execution - empty native table left join pads survivor rows
+
+statement ok
+ATTACH '__FIXTURE_ROOT__/tpch-native-original/integration.duckdb' AS tpch (READ_ONLY);
+
+statement ok
+CREATE TABLE e (
+  i INTEGER
+);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3936
+# sirius: id = "tpch_empty/empty-native-table-left-join-pads-survivor-rows"
+# sirius: tags = ["integration", "tpch", "empty_result"]
+# sirius: snapshot = true
+# sirius: timeout = 30
+query II nosort
+SELECT
+  n.n_nationkey,
+  e.i
+FROM
+  tpch.nation n
+  LEFT JOIN e ON n.n_nationkey = e.i ORDER BY n.n_nationkey;
+----
+0	NULL
+1	NULL
+2	NULL
+3	NULL
+4	NULL
+5	NULL
+6	NULL
+7	NULL
+8	NULL
+9	NULL
+10	NULL
+11	NULL
+12	NULL
+13	NULL
+14	NULL
+15	NULL
+16	NULL
+17	NULL
+18	NULL
+19	NULL
+20	NULL
+21	NULL
+22	NULL
+23	NULL
+24	NULL

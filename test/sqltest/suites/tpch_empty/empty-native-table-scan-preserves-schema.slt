@@ -1,0 +1,24 @@
+# gpu_execution - empty native table scan preserves schema
+
+statement ok
+ATTACH '__FIXTURE_ROOT__/tpch-native-original/integration.duckdb' AS tpch (READ_ONLY);
+
+statement ok
+CREATE TABLE e (
+  i INTEGER
+);
+
+statement ok
+CHECKPOINT;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3922
+# sirius: id = "tpch_empty/empty-native-table-scan-preserves-schema"
+# sirius: tags = ["integration", "tpch", "empty_result"]
+# sirius: snapshot = true
+# sirius: timeout = 30
+query I nosort
+SELECT
+  i
+FROM
+  e;
+----

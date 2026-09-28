@@ -1,0 +1,32 @@
+# gpu_execution - empty parquet count identity
+
+statement ok
+ATTACH '__FIXTURE_ROOT__/tpch-native-original/integration.duckdb' AS tpch (READ_ONLY);
+
+statement ok
+CREATE TABLE e (
+  i INTEGER
+);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+COPY (SELECT 1 AS i WHERE false) TO '__TEST_DIR__/empty.parquet' (FORMAT PARQUET);
+
+onlyif sirius
+statement ok
+SET enable_compressed_materialization = false;
+
+# Original query: test/cpp/integration/test_gpu_execution_tpch.cpp:3983
+# sirius: id = "tpch_empty/empty-parquet-count-identity"
+# sirius: tags = ["integration", "tpch", "empty_result"]
+# sirius: snapshot = true
+# sirius: timeout = 30
+query I nosort
+SELECT
+  count(*) AS c
+FROM
+  read_parquet('__TEST_DIR__/empty.parquet');
+----
+0
