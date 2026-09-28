@@ -641,6 +641,146 @@
       "test": "gpu_execution array - many rows span multiple scan batches"
     },
     {
+      "file": "suites/cast_date/plain-t-foldedpredicates-01.slt",
+      "id": "cast_date/plain-t-foldedpredicates-01/ids",
+      "identity": "6c91bed61687babf31e49d86b09a2c1a31d23e29b8e6d9687b77b1e1c21b1048",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-01.slt",
+      "id": "cast_date/plain-t-foldedpredicates-01/aggregate",
+      "identity": "5ccf60de569793bf676baf66890cc1de684ba401ae522e7ccc22b3fce7be7cf9",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-02.slt",
+      "id": "cast_date/plain-t-foldedpredicates-02/ids",
+      "identity": "fc95ed731d7706c0db1b4b2f034617fda08fb08bef58402197dc364ceeaad48d",
+      "kind": "query",
+      "line": 206,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-02.slt",
+      "id": "cast_date/plain-t-foldedpredicates-02/aggregate",
+      "identity": "662d85d5357c3ef32a4138e97c0459f63b8ee6da1ffe7ddd19799d241736b757",
+      "kind": "query",
+      "line": 206,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-03.slt",
+      "id": "cast_date/plain-t-foldedpredicates-03/ids",
+      "identity": "8bcc24a976f9825a7c35245828a7458a1ba24903d04a1c12d3f47dcc77d3555c",
+      "kind": "query",
+      "line": 207,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-03.slt",
+      "id": "cast_date/plain-t-foldedpredicates-03/aggregate",
+      "identity": "312a3bd675dea226927d1099fab45e69451482a5e46cd490459f04c2226d14d3",
+      "kind": "query",
+      "line": 207,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-04.slt",
+      "id": "cast_date/plain-t-foldedpredicates-04/ids",
+      "identity": "83f953be13ea53cdcc466a69d7bd1b5f551fdb74369e6c45aa3b32303b002a35",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-04.slt",
+      "id": "cast_date/plain-t-foldedpredicates-04/aggregate",
+      "identity": "4d9e27412dba34a3c901955698af6c61222cc2665ab421a103205815c4a387af",
+      "kind": "query",
+      "line": 208,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d >  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-05.slt",
+      "id": "cast_date/plain-t-foldedpredicates-05/ids",
+      "identity": "0f25c3041d7d4c9dcd6ccfcdd16e0720015b578c94fb8c1363a0308f9767b88b",
+      "kind": "query",
+      "line": 209,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-05.slt",
+      "id": "cast_date/plain-t-foldedpredicates-05/aggregate",
+      "identity": "3b103c762193816205d1eee4ad8e537bf6201348ded4a6a4a2da4e086b79123a",
+      "kind": "query",
+      "line": 209,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d =  DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-06.slt",
+      "id": "cast_date/plain-t-foldedpredicates-06/ids",
+      "identity": "a62958f5d68129e1f2f2cc529b8498ae0a9d60627f910e2b1530952d0cd8a1f9",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-06.slt",
+      "id": "cast_date/plain-t-foldedpredicates-06/aggregate",
+      "identity": "59ec5eb912adddf02d182c92d58a656d5df3bf43d5da8fa0b3d20a64611ec642",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-07.slt",
+      "id": "cast_date/plain-t-foldedpredicates-07/ids",
+      "identity": "2442a6591120ea6157cd875f675caa46ab21b834548a60df24697e1f701f0614",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/plain-t-foldedpredicates-07.slt",
+      "id": "cast_date/plain-t-foldedpredicates-07/aggregate",
+      "identity": "26eeaef9dd0d64fecde5c0f6c947ed39dc512cbf3ef71f017efdd6eae7e93bea",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / plain / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
       "file": "suites/cast_date/native-pin-t-foldedpredicates-01.slt",
       "id": "cast_date/native-pin-t-foldedpredicates-01/ids",
       "identity": "d2b69761b7cf12b911695a7e987545ecc3a2e6db74d3667459b4d35afe955da2",
@@ -1841,6 +1981,86 @@
       "test": "kFoldedPredicates / parquet-pin / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '1' YEAR"
     },
     {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-29.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-29/ids",
+      "identity": "2c41fe96aeb310100a0b4dcf29656165d2de626520b1f27e6a637902b5b4968e",
+      "kind": "query",
+      "line": 238,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d BETWEEN DATE '1994-01-01' AND DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-29.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-29/aggregate",
+      "identity": "a759e15040c341c2f5b1a50db16d66b06481bc2e6164582082ed036a97b072aa",
+      "kind": "query",
+      "line": 238,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d BETWEEN DATE '1994-01-01' AND DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-30.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-30/ids",
+      "identity": "50d981e84152ec13300e9d5599224a89f26a72e2649a09eaead27d9d049cfc1c",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '3' MONTH"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-30.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-30/aggregate",
+      "identity": "5630605bcfc0746ffa0bc3ca8a18a18d08a8a63837b02b63f8daa57e2f7e0d83",
+      "kind": "query",
+      "line": 240,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d >= DATE '1994-01-01' AND d < DATE '1994-01-01' + INTERVAL '3' MONTH"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-31.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-31/ids",
+      "identity": "781d474b3a922729e4dc085fe86d83526548fe9364eec93c83213aaba3909bff",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d <= DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-31.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-31/aggregate",
+      "identity": "776a161b96c6d9ab30966935caaa55e7b527c89039ac535e5bb11af222a21672",
+      "kind": "query",
+      "line": 242,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d <= DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-32.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-32/ids",
+      "identity": "9a2d9ad62e2bcb77c2fefc4d384b48b3854b40b917cc0621561d341a36d924b0",
+      "kind": "query",
+      "line": 243,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d =  DATE '1998-09-20'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t-foldedpredicates-32.slt",
+      "id": "cast_date/parquet-pin-t-foldedpredicates-32/aggregate",
+      "identity": "ed66705baf6095c8caaea9a65d5b8ab646d0c45154bd11584a6265e3f695756e",
+      "kind": "query",
+      "line": 243,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFoldedPredicates / parquet-pin / d =  DATE '1998-09-20'"
+    },
+    {
       "file": "suites/cast_date/native-pin-t_inf-finiteconstantsoninfinityrows-01.slt",
       "id": "cast_date/native-pin-t_inf-finiteconstantsoninfinityrows-01/ids",
       "identity": "03475627213417379d455123d18eee63c0db5d560fbdfd1465d186d0dc28b759",
@@ -2019,6 +2239,466 @@
       "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
       "suite": "cast_date",
       "test": "kFiniteConstantsOnInfinityRows / native-pin / d <= TIMESTAMP_NS '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-01.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-01/ids",
+      "identity": "459860649b63f51bc2e01589a900a433053daaf90be770d6bf9dca87f336c701",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-01.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-01/aggregate",
+      "identity": "f97c183a855e388077cfc4a71f6a70bf78495288f26d1cc8ddb028afebe3023c",
+      "kind": "query",
+      "line": 211,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-02.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-02/ids",
+      "identity": "c60eb87e062c0d495fdc7184c737207b812b845367854d600eaa735f5571e264",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-02.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-02/aggregate",
+      "identity": "32ec3ead73168241a883e256ba4f9bf811196be32e3b56cde991bbe1ee2445b2",
+      "kind": "query",
+      "line": 212,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-03.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-03/ids",
+      "identity": "68ed927731a389c0fe6c23e82f3fcb8f08ebbf465612025a06ef6b85a78e60cf",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-03.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-03/aggregate",
+      "identity": "3c8f23db6557771215a8791fe67c81468d9c0377b4c21a91ed57e4aec70c4404",
+      "kind": "query",
+      "line": 213,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >= TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-04.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-04/ids",
+      "identity": "d82942483ea0825975c38f51b329cc46d26e98c0ac77705db64876b74d5e6396",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-04.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-04/aggregate",
+      "identity": "4f02568d31fe18dc6194c10b737ab89e71065fdea4520a36be36fe442c02a8fb",
+      "kind": "query",
+      "line": 214,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-05.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-05/ids",
+      "identity": "26fb89c111d9fca7d4871d4b29e291ef2eb39a4a0646aa72b50400a25858cf6c",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-05.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-05/aggregate",
+      "identity": "0a6956e4491383909145a8a17740fd55693e24236071eb205f9df8beb76ab524",
+      "kind": "query",
+      "line": 215,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d =  TIMESTAMP '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-06.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-06/ids",
+      "identity": "f9c00caf695bc7f4cf68f7ea5ef6a843a8d5c05cb4737c325e315d4f9bef175d",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-06.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-06/aggregate",
+      "identity": "89fc152998ff010fde58d01e477e70c0dcda903aad0e855a5ad9d1239b737b67",
+      "kind": "query",
+      "line": 219,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d >= TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-07.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-07/ids",
+      "identity": "a343da883542a64fba57526c07a0efc9017f8c00fe7cc127b3759f67458e21be",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-07.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-07/aggregate",
+      "identity": "aa82ae837cad0bb88538da59d12cbf9f64f66877c261bfad7ed54fa57a7f7f13",
+      "kind": "query",
+      "line": 218,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <  TIMESTAMP '1998-09-20 12:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-08.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-08/ids",
+      "identity": "b972939a4927d405e3c10465d06cc4cd754baa0cb61fd3ab19fd56c106d820ac",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-08.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-08/aggregate",
+      "identity": "34ba13e11bea463b19cea80dd012dc5503f11ea443d0a2c96c32958f7219f5b4",
+      "kind": "query",
+      "line": 205,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= DATE '1998-12-01' - INTERVAL '72' DAY"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-09.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-09/ids",
+      "identity": "715d2ce2ee6a64adbffdbdf0e75e6a9901d07bb3de412a22d5a524c5a566ce47",
+      "kind": "query",
+      "line": 258,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= TIMESTAMP_NS '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-09.slt",
+      "id": "cast_date/parquet-pin-t_inf-finiteconstantsoninfinityrows-09/aggregate",
+      "identity": "60da951629bbf7b19d52b57b4171ecf2f4810899f9af55880bfa7e8efe143350",
+      "kind": "query",
+      "line": 258,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kFiniteConstantsOnInfinityRows / parquet-pin / d <= TIMESTAMP_NS '1998-09-20 00:00:00'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-01.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-01/ids",
+      "identity": "e51f2cec495e91893b5c71f0e88d5a5133a0867079ccffc7f9ae800123f5b860",
+      "kind": "query",
+      "line": 268,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-01.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-01/aggregate",
+      "identity": "b794f0fdb155d728a7443ba7aa65993f0f9a2b58d3fb8428255d39befab4ae71",
+      "kind": "query",
+      "line": 268,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-02.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-02/ids",
+      "identity": "53240175c043e89847d9a9971e55ae9abd49b7f0df2bf1d757b1be83539ad5f1",
+      "kind": "query",
+      "line": 269,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-02.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-02/aggregate",
+      "identity": "03f75383c5ec6b9f9bf19aa386e268b214a5a1f0dcd97fe34b4d4618d79fef55",
+      "kind": "query",
+      "line": 269,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-03.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-03/ids",
+      "identity": "3aa22136fa0cf58eb0ff7a322755021c121e75f20cbc7448ea31352f0692f54e",
+      "kind": "query",
+      "line": 270,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-03.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-03/aggregate",
+      "identity": "b98a6eaaace6446a08582d4815239a290a953a476c599b3330d0574240554465",
+      "kind": "query",
+      "line": 270,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-04.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-04/ids",
+      "identity": "068878c92f003f6629fff28d4a0d8507de044d367257f6e1235e87f83cef87ee",
+      "kind": "query",
+      "line": 271,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-04.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-04/aggregate",
+      "identity": "c094a6631cf1125351da8d249b1317dc68ed5af36ecb66b54b9f37237c4de97f",
+      "kind": "query",
+      "line": 271,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-05.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-05/ids",
+      "identity": "724ef13dc56cd1721ec8160ca0b367f542e1038901830a7754fd993ad93ae12d",
+      "kind": "query",
+      "line": 272,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d =  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-05.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-05/aggregate",
+      "identity": "9c18a48ed5306dad46904825b25297c61fcc9652deba032bddfc69b752f063d9",
+      "kind": "query",
+      "line": 272,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d =  TIMESTAMP 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-06.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-06/ids",
+      "identity": "d827668aaa10104c58945f1ad5f13f29416d98df8a8c8da9c78261e456c38a95",
+      "kind": "query",
+      "line": 273,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / TIMESTAMP 'infinity' > d"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-06.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-06/aggregate",
+      "identity": "d2474a77c32529ab1bfe192b31d7bb977d2761a1ce64fce87455a4f12ffaf5a6",
+      "kind": "query",
+      "line": 273,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / TIMESTAMP 'infinity' > d"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-07.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-07/ids",
+      "identity": "e0692d52d18bb56573590eccdb183d7056cb67186c1e3848484f8416a3f86b70",
+      "kind": "query",
+      "line": 275,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-07.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-07/aggregate",
+      "identity": "a71a3609049db86f0ded120c5a2a3928bd59f500da2f0acd14380e0bb23b7e07",
+      "kind": "query",
+      "line": 275,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-08.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-08/ids",
+      "identity": "3dbc055028614b19dae90a6f3278a32a73287ef9f54954e84508ee5eadcb8603",
+      "kind": "query",
+      "line": 276,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-08.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-08/aggregate",
+      "identity": "d24f16635f3bd6828748d622e0df6f051d91f412fcf2aa5fbd851f9276e439f5",
+      "kind": "query",
+      "line": 276,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-09.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-09/ids",
+      "identity": "3a8924f9d84fb8eac280ff0ec3f2ce9c3b7f02a70add9f2f87e07e23d4c7460a",
+      "kind": "query",
+      "line": 277,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-09.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-09/aggregate",
+      "identity": "6cb75f05d60873df0b11b8a53632b5bb160cb94773fbf15ce7393e391019c09d",
+      "kind": "query",
+      "line": 277,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-10.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-10/ids",
+      "identity": "f04e5df3c8e659003f59d6a4eb2c7ca54dce5f681141b8e3c6a7aab38a50862a",
+      "kind": "query",
+      "line": 278,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-10.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-10/aggregate",
+      "identity": "9f8f5a2a8f42caa677bd81caac39ac5622e44e38e901fbb4001933580112994c",
+      "kind": "query",
+      "line": 278,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-11.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-11/ids",
+      "identity": "528919bc2394dbbf6d858daac9ff8960172c8cfe313adbddbcc17f3f436c7145",
+      "kind": "query",
+      "line": 279,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d =  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-11.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-11/aggregate",
+      "identity": "f3f1d3d35b40ac3b4d18edfd14f51992ce5879a58c79e7537318b784db0b9fdc",
+      "kind": "query",
+      "line": 279,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d =  TIMESTAMP '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-12.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-12/ids",
+      "identity": "94bc392b4963d9dcffd36616a7920f5c10f23c917b0a1ccc67ee34ae8bf06224",
+      "kind": "query",
+      "line": 284,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP_NS 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-12.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-12/aggregate",
+      "identity": "b3ba948f8900e19d9c41d643838f2ebd4007baf5f66484d9baf00ad3a5c9d37e",
+      "kind": "query",
+      "line": 284,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <  TIMESTAMP_NS 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-13.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-13/ids",
+      "identity": "bd81dfa03d8905afe43590173c564d781aef5cb01161b4cf687ef037e72dc20b",
+      "kind": "query",
+      "line": 285,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP_NS '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-13.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-13/aggregate",
+      "identity": "32b89fa1d57bfad109b427f0bb866bbb794aad63c2ab26fecae3c619e7bbf132",
+      "kind": "query",
+      "line": 285,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d >= TIMESTAMP_NS '-infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-14.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-14/ids",
+      "identity": "ee61afcc900d04989d7b2946661553055e16a2da5d4a0a8bd5480dc2a2e27da9",
+      "kind": "query",
+      "line": 286,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP_S 'infinity'"
+    },
+    {
+      "file": "suites/cast_date/parquet-pin-t_inf-infinityconstants-14.slt",
+      "id": "cast_date/parquet-pin-t_inf-infinityconstants-14/aggregate",
+      "identity": "11e03e34a4b99a22eb4bf5d283d8f3f3e2f94db3ba8451a1a69b586947cc35f6",
+      "kind": "query",
+      "line": 286,
+      "source": "test/cpp/integration/test_gpu_execution_cast_date_predicates.cpp",
+      "suite": "cast_date",
+      "test": "kInfinityConstants / parquet-pin / d <= TIMESTAMP_S 'infinity'"
     },
     {
       "file": "suites/cast_date/beyond-timestamp-range-01.slt",
