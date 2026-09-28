@@ -1,0 +1,3 @@
+profile = "compressed-materialization-gate"
+storage = ["parquet"]
+scratch_directories = ["multi"]
