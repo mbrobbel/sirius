@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "description": "GNU OpenMP runtime for embedding in shared libraries.",
+  "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+  "name": "gomp",
+  "supports": "linux",
+  "version": "15.3.0"
+}

@@ -13,6 +13,7 @@
     "catch2",
     "cudf",
     "cuvs",
+    "gomp",
     "raft",
     "cuco",
     "nvrtc",

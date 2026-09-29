@@ -22,6 +22,15 @@ if(NOT TARGET cuvs::cuvs)
                                               cuvs::cuvs_static)
 endif()
 
+# Embed a PIC OpenMP runtime in vcpkg builds of the loadable extension.
+if(VCPKG_BUILD)
+  find_package(gomp CONFIG REQUIRED)
+  get_target_property(_cuvs_links cuvs::cuvs_static INTERFACE_LINK_LIBRARIES)
+  string(REPLACE "OpenMP::OpenMP_CXX" "gomp::gomp" _cuvs_links "${_cuvs_links}")
+  set_target_properties(cuvs::cuvs_static PROPERTIES INTERFACE_LINK_LIBRARIES
+                                                     "${_cuvs_links}")
+endif()
+
 # Static NVRTC (vcpkg overlay port). Statically linking the runtime JIT compiler
 # keeps libnvrtc.so out of the distributed extension's runtime dependencies.
 # Like cuco/nvcomp, this is gated on the vcpkg build: the overlay port provides
