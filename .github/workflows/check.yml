@@ -19,9 +19,18 @@ on:
       - main
   pull_request:
   merge_group:
+  schedule:
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+    inputs:
+      include-nightly:
+        description: Include cuDF nightly with stable builds; failures affect checks on the selected branch
+        type: boolean
+        default: false
 
 jobs:
   lint:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     env:
       # CPU runner: no GPU/driver, so pixi can't detect `__cuda` to match the
@@ -67,11 +76,11 @@ jobs:
       CARGO_INCREMENTAL: "0"
       RUSTC_WRAPPER: sccache
       # CPU build runners have no GPU/driver; assert `__cuda` so the CUDA-pinned
-      # platform resolves. Both default and vcpkg target CUDA 13.
+      # platform resolves. All environments here target CUDA 13.
       CONDA_OVERRIDE_CUDA: "13"
     strategy:
       matrix:
-        # Keep stable in job names so existing check contexts stay unchanged.
+        # Keep the channel in job names to preserve existing check contexts.
         build:
           - arch: x64
             compiler: gcc
@@ -79,34 +88,51 @@ jobs:
             environment: default
             cudf-channel: stable
             run-on-pr: true
+            run-on-schedule: false
           - arch: x64
             compiler: clang
             build-type: debug
             environment: default
             cudf-channel: stable
             run-on-pr: true
+            run-on-schedule: false
           - arch: arm64
             compiler: gcc
             build-type: release
             environment: default
             cudf-channel: stable
             run-on-pr: false
+            run-on-schedule: false
           - arch: arm64
             compiler: clang
             build-type: debug
             environment: default
             cudf-channel: stable
             run-on-pr: false
+            run-on-schedule: false
           - arch: x64
             compiler: gcc
             build-type: release
             environment: vcpkg
             cudf-channel: stable
             run-on-pr: false
+            run-on-schedule: false
+          - arch: arm64
+            compiler: gcc
+            build-type: release
+            environment: default
+            cudf-channel: nightly
+            run-on-pr: false
+            run-on-schedule: true
         exclude:
-          # On PRs, drop rows marked merge/main-only; on merge_group/main, match nothing.
+          # PRs use the small matrix; schedules run nightly only.
           - build:
               run-on-pr: ${{ case(github.event_name == 'pull_request', false, 'no-match') }}
+          - build:
+              run-on-schedule: ${{ case(github.event_name == 'schedule', false, 'no-match') }}
+          # Other events exclude nightly unless a manual run requests it.
+          - build:
+              run-on-schedule: ${{ case(github.event_name != 'schedule' && !(github.event_name == 'workflow_dispatch' && inputs.include-nightly), true, 'no-match') }}
       fail-fast: false
     name: build (${{ matrix.build.arch }}, ${{ matrix.build.compiler }}, ${{ matrix.build.build-type }}, ${{ matrix.build.environment }}, ${{ matrix.build.cudf-channel }})
     runs-on: >-
@@ -135,8 +161,10 @@ jobs:
         with:
           cache: false
           pixi-version: v0.71.1
-          activate-environment: ${{ matrix.build.environment != 'vcpkg' }}
-          environments: ${{ matrix.build.environment }}
+          activate-environment: ${{ matrix.build.environment != 'vcpkg' && matrix.build.cudf-channel != 'nightly' }}
+          environments: >-
+            ${{ matrix.build.cudf-channel == 'nightly' && 'nightly-runner'
+              || matrix.build.environment }}
 
       - name: Configure cache backends
         run: |
@@ -159,7 +187,7 @@ jobs:
 
       - run: |
           set -o pipefail
-          make ${{ case(matrix.build.compiler == 'gcc', matrix.build.build-type, format('clang-{0}', matrix.build.build-type)) }} -j$(nproc) 2>&1 | tee /tmp/build.log
+          ${{ case(matrix.build.cudf-channel == 'nightly', 'pixi run -e nightly-runner nightly-run', '') }} make ${{ case(matrix.build.compiler == 'gcc', matrix.build.build-type, format('clang-{0}', matrix.build.build-type)) }} -j$(nproc) 2>&1 | tee /tmp/build.log
         if: matrix.build.environment != 'vcpkg'
         env:
           CUDAARCHS: "100"
@@ -253,8 +281,14 @@ jobs:
     if: always()
     steps:
       - name: All checks ok
-        if: ${{ needs.lint.result == 'success' && needs.build.result == 'success' }}
+        if: >-
+          needs.build.result == 'success' &&
+          (needs.lint.result == 'success' ||
+            (github.event_name == 'schedule' && needs.lint.result == 'skipped'))
         run: exit 0
       - name: Some checks failed
-        if: ${{ !(needs.lint.result == 'success' && needs.build.result == 'success') }}
+        if: >-
+          !(needs.build.result == 'success' &&
+            (needs.lint.result == 'success' ||
+              (github.event_name == 'schedule' && needs.lint.result == 'skipped')))
         run: exit 1

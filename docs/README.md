@@ -14,8 +14,8 @@
     <img src="https://github.com/sirius-db/sirius/actions/workflows/check.yml/badge.svg?event=merge_group" alt="Merge queue build status"/>
   </a>
   cuDF nightly:
-  <a href="https://github.com/sirius-db/sirius/actions/workflows/cudf-nightly.yml?query=event%3Aschedule">
-    <img src="https://github.com/sirius-db/sirius/actions/workflows/cudf-nightly.yml/badge.svg?event=schedule" alt="cuDF nightly build status"/>
+  <a href="https://github.com/sirius-db/sirius/actions/workflows/check.yml?query=event%3Aschedule">
+    <img src="https://github.com/sirius-db/sirius/actions/workflows/check.yml/badge.svg?event=schedule" alt="cuDF nightly build status"/>
   </a>
 </p>
 
