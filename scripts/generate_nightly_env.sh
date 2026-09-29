@@ -21,4 +21,9 @@ sed \
   -e '/^# .*nightly cudf/d' \
   "$REPO_ROOT/pixi.toml" > "$TARGET_DIR/pixi.toml"
 
+if ! grep -Fq 'channels = ["rapidsai-nightly", "conda-forge"]' "$TARGET_DIR/pixi.toml"; then
+  echo "Failed to select the rapidsai-nightly channel" >&2
+  exit 1
+fi
+
 echo "Generated $TARGET_DIR/pixi.toml"
