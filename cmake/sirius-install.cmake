@@ -1,7 +1,8 @@
 if(VCPKG_BUILD AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  install(FILES "${CMAKE_CURRENT_LIST_DIR}/sirius-cuda-fatbin.ld"
-          DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
-          COMPONENT sirius_library)
+  install(
+    FILES "${CMAKE_CURRENT_LIST_DIR}/sirius-cuda-fatbin.ld"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
+    COMPONENT sirius_library)
 endif()
 
 install(
@@ -18,20 +19,37 @@ write_basic_package_version_file(
   VERSION "${PROJECT_VERSION}"
   COMPATIBILITY SameMinorVersion)
 
-install(
-  TARGETS sirius_shared
-  EXPORT sirius-targets
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT sirius_library
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT sirius_library
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT sirius_library)
-install(
-  EXPORT sirius-targets
-  FILE sirius-targets.cmake
-  NAMESPACE sirius::
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
-  COMPONENT sirius_library)
+if(SIRIUS_BUILD_SHARED)
+  install(
+    TARGETS sirius_shared
+    EXPORT sirius-targets
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT sirius_library
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT sirius_library
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT sirius_library)
+  install(
+    EXPORT sirius-targets
+    FILE sirius-targets.cmake
+    NAMESPACE sirius::
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
+    COMPONENT sirius_library)
+endif()
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/sirius-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/sirius-config-version.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
   COMPONENT sirius_library)
+
+if(SIRIUS_BUILD_STATIC)
+  configure_file(
+    cmake/sirius-static-targets.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/sirius-static-targets.cmake" @ONLY)
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT sirius_library)
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/sirius-static-targets.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/sirius"
+    COMPONENT sirius_library)
+endif()

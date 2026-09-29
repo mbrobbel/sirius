@@ -24,6 +24,11 @@ project(
 include(GNUInstallDirs)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+option(SIRIUS_BUILD_SHARED "Build the shared Sirius library" ON)
+option(SIRIUS_BUILD_STATIC "Build a self-contained static Sirius archive" OFF)
+if(NOT SIRIUS_BUILD_SHARED AND NOT SIRIUS_BUILD_STATIC)
+  message(FATAL_ERROR "Enable at least one Sirius library output")
+endif()
 option(SIRIUS_BUILD_TESTS "Build Sirius C++ tests" OFF)
 
 # Set CUDA architecture
@@ -117,6 +122,7 @@ include(cmake/sirius-substrait.cmake)
 include(cmake/sirius-targets.cmake)
 
 include(cmake/sirius-install.cmake)
+include(cmake/sirius-duckdb-build.cmake)
 
 if(ENABLE_STREAM_CHECK)
   message(

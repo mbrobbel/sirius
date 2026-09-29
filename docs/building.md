@@ -6,6 +6,14 @@ The repository root is the Sirius CMake project. It owns the engine libraries;
 DuckDB is a temporary source dependency behind the provider described below.
 No DuckDB extension helper creates a Sirius library target.
 
+| Target | Output | Dependencies |
+| --- | --- | --- |
+| `sirius_shared` | `libsirius.so` | Shared dependencies from the Conda environment |
+| `sirius_static` | `libsirius.a` | Bundled static dependencies from vcpkg and the CUDA toolkit |
+
+The static package retains only platform and NVIDIA driver runtime dependencies.
+The Conda and vcpkg presets use separate build directories and dependency sets.
+
 ```bash
 pixi run cmake -S . -B build/sirius -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=75 \
@@ -28,8 +36,29 @@ DuckDB as the root must be removed before using the new root presets.
 
 `sirius-duckdb/` contains only extension entrypoints and packaging metadata. It
 uses the installed Sirius package and DuckDB's extension build helpers. It does
-not compile engine, CUDA, or Rust sources. Loading the extension requires the
+not compile engine, CUDA, or Rust sources. The shared wrapper requires the
 installed Sirius library and its runtime dependencies.
+
+## Static distribution builds
+
+The vcpkg and `ci-release` presets build a combined `libsirius.a` containing the
+engine and its static dependencies. The separate extension build consumes it
+with `find_package(sirius CONFIG REQUIRED COMPONENTS static)` and
+`sirius::sirius_static`. Select this mode with `SIRIUS_DUCKDB_LINKAGE=static`.
+No engine sources are compiled by the extension build.
+
+The vcpkg ports build cuVS and RAFT with OpenMP disabled, so the extension
+does not require `libgomp.so`.
+
+`make ci-release` stages the bundled extension at
+`build/ci-release/extension/sirius/sirius.duckdb_extension`, matching the
+distribution workflow. The artifact check rejects runtime search paths and
+shared dependencies other than platform libraries and the NVIDIA driver.
+
+For direct CMake builds, enable `SIRIUS_BUILD_STATIC` with static dependencies,
+build `sirius_static`, and install the `sirius_library` component.
+`SIRIUS_BUILD_SHARED=OFF` skips the shared library. The installed static package
+uses the CUDA toolkit's driver stubs for host linking; it does not compile CUDA.
 
 ## Shared implementation objects
 

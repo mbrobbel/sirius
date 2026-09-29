@@ -95,6 +95,14 @@ if(BUILD_WITH_CTRACK)
 endif()
 
 pkg_check_modules(NUMA REQUIRED IMPORTED_TARGET numa)
+if(SIRIUS_BUILD_STATIC)
+  # Import cuCascade's NUMA dependency where the archive collector can see it.
+  block()
+  list(PREPEND CMAKE_MODULE_PATH
+       "${CMAKE_CURRENT_SOURCE_DIR}/cucascade/cmake/Modules")
+  find_package(Numa REQUIRED)
+  endblock()
+endif()
 pkg_check_modules(LIBURING REQUIRED IMPORTED_TARGET liburing)
 if(VCPKG_BUILD)
   # The CMake target includes curl's private static dependencies.

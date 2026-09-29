@@ -79,6 +79,12 @@ jobs:
         with:
           version: v0.18.0
 
+      - name: Test static archive packaging
+        run: |
+          cmake -S test/cmake/static_bundle -B build/static-bundle-test -G Ninja
+          cmake --build build/static-bundle-test
+          ctest --test-dir build/static-bundle-test --output-on-failure
+
       - name: Build
         env:
           CUDAARCHS: "75" # 75 for T4 capability; 89 for L4 capability

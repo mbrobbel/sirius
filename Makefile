@@ -15,21 +15,24 @@
 CMAKE ?= cmake
 DUCKDB_DIR ?= duckdb
 TEST_BUILD_TARGET ?= sirius_unittest
-MAIN_BUILD_TARGETS ?= sirius_shared
+MAIN_BUILD_TARGETS ?= sirius_library
 DUCKDB_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo
+ifeq ($(BUILD_SHELL),0)
+DUCKDB_BUILD_TARGETS := duckdb_local_extension_repo
+endif
 
 BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 
 .PHONY: all release debug reldebug relwithdebinfo debug-release \
 	legacy-release \
 	clang-release clang-debug clang-relwithdebinfo clang-asan clang-tsan \
-	ci-release configure_ci set_duckdb_version \
+	vcpkg-release ci-release configure_ci set_duckdb_version \
 	test test_release test_debug test_reldebug test_ci-release clean list-presets \
 	s3-test s3-test-large s3-tpch \
 	s3-test-aws s3-test-aws-sigv4 s3-test-aws-broker \
 	slot-gate-test
 
-# The driver installs Sirius before configuring the independent extension build.
+# Install Sirius before configuring the independent extension build.
 CMAKE_INPUTS := CMakePresets.json cmake/CMakePresets.json CMakeLists.txt $(wildcard cmake/*.cmake)
 
 all: release
@@ -37,47 +40,61 @@ all: release
 build/%/build.ninja: $(CMAKE_INPUTS)
 	$(CMAKE) --preset $* -DSIRIUS_DUCKDB_SOURCE_DIR="$(abspath $(DUCKDB_DIR))"
 
+define build_split
+	$(CMAKE) --build build/$@ --target $(1)
+	$(CMAKE) --install build/$@ --prefix "$(CURDIR)/build/$@/install" --component sirius_library
+	$(CMAKE) -S "$(DUCKDB_DIR)" -B build/$@/sirius-duckdb -G Ninja -C build/$@/sirius-duckdb-cache.cmake -DBUILD_SHELL=$(if $(filter 0,$(BUILD_SHELL)),OFF,ON)
+	$(CMAKE) --build build/$@/sirius-duckdb --target $(DUCKDB_BUILD_TARGETS)
+endef
+
 release: build/release/build.ninja
-	python3 scripts/build-split.py release --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 debug: build/debug/build.ninja
-	python3 scripts/build-split.py debug --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 reldebug: relwithdebinfo
 
 debug-release: relwithdebinfo
 
 relwithdebinfo: build/relwithdebinfo/build.ninja
-	python3 scripts/build-split.py relwithdebinfo --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 legacy-release: build/legacy-release/build.ninja
-	python3 scripts/build-split.py legacy-release --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(MAIN_BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(MAIN_BUILD_TARGETS))
 
 clang-release: build/clang-release/build.ninja
-	python3 scripts/build-split.py clang-release --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 clang-debug: build/clang-debug/build.ninja
-	python3 scripts/build-split.py clang-debug --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 clang-relwithdebinfo: build/clang-relwithdebinfo/build.ninja
-	python3 scripts/build-split.py clang-relwithdebinfo --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 # AddressSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   ASAN_OPTIONS="protect_shadow_gap=0:detect_leaks=0:halt_on_error=0:abort_on_error=1" \
 #     ./build/clang-asan/test/cpp/sirius_unittest
 clang-asan: build/clang-asan/build.ninja
-	python3 scripts/build-split.py clang-asan --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
 
 # ThreadSanitizer build (RelWithDebInfo + clang). Run inside `pixi shell` (so
 # llvm-symbolizer is auto-detected on PATH) with:
 #   TSAN_OPTIONS="suppressions=$$PWD/tsan.supp:ignore_noninstrumented_modules=1:halt_on_error=0:history_size=7:detect_deadlocks=0" \
 #     ./build/clang-tsan/test/cpp/sirius_unittest
 clang-tsan: build/clang-tsan/build.ninja
-	python3 scripts/build-split.py clang-tsan --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(BUILD_TARGETS))
+
+vcpkg-release: build/vcpkg-release/build.ninja
+	$(call build_split,$(BUILD_TARGETS))
 
 ci-release: build/ci-release/build.ninja
-	python3 scripts/build-split.py ci-release --cmake "$(CMAKE)" --duckdb-dir "$(DUCKDB_DIR)" --targets $(BUILD_TARGETS) --extension-targets $(DUCKDB_BUILD_TARGETS)
+	$(call build_split,$(MAIN_BUILD_TARGETS))
+	$(CMAKE) -DEXTENSION="$(CURDIR)/build/ci-release/sirius-duckdb/extension/sirius/sirius.duckdb_extension" -P sirius-duckdb/cmake/check-static-extension.cmake
+	$(CMAKE) -E make_directory build/ci-release/extension/sirius
+	$(CMAKE) -E copy_if_different build/ci-release/sirius-duckdb/extension/sirius/sirius.duckdb_extension build/ci-release/extension/sirius/
+	$(CMAKE) -E copy_directory build/ci-release/sirius-duckdb/repository build/ci-release/repository
 
 configure_ci:
 	@echo "configure_ci step is skipped for this extension build..."
@@ -97,6 +114,7 @@ test_reldebug: relwithdebinfo
 	./build/relwithdebinfo/test/cpp/sirius_unittest
 
 test_ci-release: ci-release
+	$(CMAKE) --build build/ci-release --target $(TEST_BUILD_TARGET)
 	./build/ci-release/test/cpp/sirius_unittest
 
 clean:
