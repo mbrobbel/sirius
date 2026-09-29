@@ -1,0 +1,11 @@
+# name: test/sql/sirius.test
+# description: Sirius extension loads in DuckDB
+# group: [sql]
+
+statement ok
+LOAD sirius;
+
+query T
+SELECT extension_name FROM duckdb_extensions() WHERE extension_name = 'sirius' AND loaded;
+----
+sirius
