@@ -50,6 +50,22 @@ No engine sources are compiled by the extension build.
 The vcpkg ports build cuVS and RAFT with OpenMP disabled, so the extension
 does not require `libgomp.so`.
 
+RAPIDS dependencies default to their full supported GPU architecture set. To
+shorten a local static build, select architectures for both the dependencies and
+Sirius itself, for example:
+
+```bash
+pixi run -e vcpkg env VCPKG_CUDA_ARCHITECTURES=120 \
+  cmake --preset vcpkg-release -DCMAKE_CUDA_ARCHITECTURES=120
+```
+
+`VCPKG_CUDA_ARCHITECTURES` accepts the same semicolon-separated architecture list
+as CMake (quote lists in the shell), or `RAPIDS`. Keep the dependency set at least
+as broad as Sirius's `CMAKE_CUDA_ARCHITECTURES`; an SM120-only package requires an
+SM120 GPU. The raw environment value participates in the triplet's binary cache
+key for every port, so changing it rebuilds dependencies. Use one spelling
+consistently: an unset override and explicit `RAPIDS` have separate cache keys.
+
 `make ci-release` stages the bundled extension at
 `build/ci-release/extension/sirius/sirius.duckdb_extension`, matching the
 distribution workflow. The artifact check rejects runtime search paths and
