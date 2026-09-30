@@ -94,6 +94,12 @@ if(BUILD_WITH_CTRACK)
 
 endif()
 
+if(VCPKG_BUILD)
+  set(_sirius_pkg_config_path "$ENV{PKG_CONFIG_PATH}")
+  set(ENV{PKG_CONFIG_PATH}
+      "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/pkgconfig:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/pkgconfig:$ENV{PKG_CONFIG_PATH}"
+  )
+endif()
 pkg_check_modules(NUMA REQUIRED IMPORTED_TARGET numa)
 if(SIRIUS_BUILD_STATIC)
   # Import cuCascade's NUMA dependency where the archive collector can see it.
@@ -111,6 +117,10 @@ if(VCPKG_BUILD)
 else()
   pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
   set(SIRIUS_CURL_TARGET PkgConfig::CURL)
+endif()
+
+if(VCPKG_BUILD)
+  set(ENV{PKG_CONFIG_PATH} "${_sirius_pkg_config_path}")
 endif()
 
 # cuCascade - GPU Memory Reservation Library (submodule)

@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Init build submodules
-        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
+        run: git submodule update --init --depth=1 --jobs 4 duckdb sirius-duckdb/duckdb substrait cucascade
 
       - name: Init vcpkg with full history for version overrides
         if: matrix.build.environment == 'vcpkg'
@@ -179,7 +179,7 @@ jobs:
           grep -E '(FAILED:|: error:|: fatal error:)' /tmp/build.log | head -60 >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Python DuckDB version check
+      - name: DuckDB host and distribution revision check
         if: >-
           matrix.build.arch == 'x64' && matrix.build.compiler == 'gcc'
           && matrix.build.build-type == 'release' && matrix.build.environment == 'default'
@@ -188,14 +188,23 @@ jobs:
           pixi run python - <<'PY'
           import json
           from pathlib import Path
+          import re
+          import subprocess
 
-          import duckdb
+          def revision(path):
+              return subprocess.check_output(["git", "-C", path, "rev-parse", "HEAD"], text=True).strip()
 
-          presets = json.loads(Path("cmake/CMakePresets.json").read_text())
-          base = next(preset for preset in presets["configurePresets"] if preset["name"] == "base")
-          expected = base["cacheVariables"]["OVERRIDE_GIT_DESCRIBE"]
-          actual = duckdb.sql("SELECT version()").fetchone()[0]
-          assert actual == expected, f"Python DuckDB {actual} does not match Sirius DuckDB {expected}"
+          expected = revision("duckdb")
+          assert revision("sirius-duckdb/duckdb") == expected
+          distribution = Path(".github/workflows/distribution.yml").read_text()
+          pins = re.findall(r"^ +duckdb_version: *(\S+) *$", distribution, re.MULTILINE)
+          assert pins and all(pin == expected for pin in pins), (pins, expected)
+          output = subprocess.check_output([
+              "build/release/sirius-duckdb/duckdb", "-json", "-c",
+              "SELECT source_id FROM pragma_version()"
+          ], text=True)
+          actual = json.loads(output)[0]["source_id"]
+          assert len(actual) >= 7 and expected.startswith(actual), (actual, expected)
           PY
 
       # Rust bindings (sirius-sys + sirius) — fmt/clippy + build/link the test.

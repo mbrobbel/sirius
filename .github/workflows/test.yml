@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Init build submodules
-        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
+        run: git submodule update --init --depth=1 --jobs 4 duckdb sirius-duckdb/duckdb substrait cucascade
 
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
@@ -170,9 +170,8 @@ jobs:
         # band. avro comes in as an iceberg dependency but is named explicitly so a failure
         # says which extension is missing.
         #
-        # This resolves only because OVERRIDE_GIT_DESCRIBE (cmake/CMakePresets.json) gives the
-        # build a real DuckDB version. Against the dummy v0.0.1 a shallow submodule would
-        # otherwise produce, there is no extension repository to install from.
+        # Development hosts require published extension builds for their exact source revision.
+        # Provision matching builds separately if that revision is absent from the repository.
         run: |
           for attempt in 1 2 3; do
             if ./build/release/sirius-duckdb/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
@@ -188,18 +187,11 @@ jobs:
         env:
           SIRIUS_CONFIG_FILE: ${{ github.workspace }}/test/cpp/integration/integration.yaml
         run: |
-          LD_LIBRARY_PATH="$PWD/build/release/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" timeout 60s python - <<'PY'
-          from pathlib import Path
-
-          import duckdb
-
-          extension = Path("build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension").resolve()
-          with duckdb.connect(config={"allow_unsigned_extensions": "true"}) as connection:
-              connection.execute(f"LOAD '{extension}'")
-              assert connection.execute("SELECT current_setting('gpu_execution')").fetchone() == (True,)
-              connection.execute("CREATE TABLE smoke AS SELECT i::INTEGER AS i FROM range(100) t(i)")
-              assert connection.execute("SELECT sum(i) FROM smoke").fetchone() == (4950,)
-          PY
+          LD_LIBRARY_PATH="$PWD/build/release/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" timeout 120s \
+            python test/scripts/v2_extension_smoke.py \
+              --duckdb build/release/sirius-duckdb/duckdb \
+              --extension build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension \
+              --output build/v2-smoke
 
       # Two Catch2 shards per GPU. Each shard sees only its assigned GPU; [multi_gpu]
       # tests run afterwards with all GPUs. Declaration order keeps tests using
