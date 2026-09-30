@@ -64,12 +64,10 @@ partition_barrier_fixture make_partition_barrier_fixture(duckdb::JoinType join_t
       1);
   };
 
-  duckdb::JoinCondition condition;
-  condition.left =
-    duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType::INTEGER, 0);
-  condition.right =
-    duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType::INTEGER, 0);
-  condition.comparison = duckdb::ExpressionType::COMPARE_EQUAL;
+  duckdb::JoinCondition condition(
+    duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType::INTEGER, 0),
+    duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType::INTEGER, 0),
+    duckdb::ExpressionType::COMPARE_EQUAL);
   duckdb::vector<duckdb::JoinCondition> conditions;
   conditions.push_back(std::move(condition));
 

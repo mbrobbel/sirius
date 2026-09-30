@@ -339,9 +339,9 @@ class SiriusContext : public ClientContextState {
   /// \brief Called on each execute of a reusable prepared statement. Requests a
   /// rebind for Sirius-backed plans so GPU eligibility is re-decided with current
   /// stats.
-  RebindQueryInfo OnExecutePrepared(ClientContext& context,
-                                    PreparedStatementCallbackInfo& info,
-                                    RebindQueryInfo current_rebind) final;
+  RebindQueryInfo OnRebindPreparedStatement(ClientContext& context,
+                                            BindPreparedStatementCallbackInfo& info,
+                                            RebindQueryInfo current_rebind) final;
 
   /// \brief Initialize the Sirius context with the given configuration.
   void initialize(const sirius::sirius_config& config);

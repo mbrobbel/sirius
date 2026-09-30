@@ -64,7 +64,7 @@ class sirius_physical_table_scan : public sirius_physical_operator {
   //! Table scan that immediately projects out filter columns that are unused in the remainder of
   //! the query plan
   sirius_physical_table_scan(duckdb::vector<sirius::logical_type> types,
-                             duckdb::TableFunction function,
+                             duckdb::BoundTableFunction function,
                              duckdb::unique_ptr<duckdb::FunctionData> bind_data,
                              duckdb::vector<sirius::logical_type> returned_types,
                              duckdb::vector<duckdb::ColumnIndex> column_ids,
@@ -77,7 +77,7 @@ class sirius_physical_table_scan : public sirius_physical_operator {
                              duckdb::virtual_column_map_t virtual_columns);
 
   //! The table function
-  duckdb::TableFunction function;
+  duckdb::BoundTableFunction function;
   //! Bind data of the function
   duckdb::unique_ptr<duckdb::FunctionData> bind_data;
   //! The types of ALL columns that can be returned by the table function

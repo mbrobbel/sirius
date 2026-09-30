@@ -57,17 +57,18 @@ bool gpu_execution_enabled(const duckdb::ClientContext& context)
 /// Guards against quadratic blow-up: an N-branch disjunction derives one N-child OR per table.
 constexpr std::size_t kMaxDerivedDisjuncts = 16;
 
-void collect_table_indexes(duckdb::Expression const& expr, std::unordered_set<duckdb::idx_t>& out)
+void collect_table_indexes(duckdb::Expression const& expr,
+                           std::unordered_set<duckdb::TableIndex>& out)
 {
   duckdb::ExpressionIterator::VisitExpression<duckdb::BoundColumnRefExpression>(
     expr, [&out](duckdb::BoundColumnRefExpression const& colref) {
-      out.insert(colref.binding.table_index);
+      out.insert(colref.Binding().table_index);
     });
 }
 
 bool references_multiple_tables(duckdb::Expression const& expr)
 {
-  std::unordered_set<duckdb::idx_t> tables;
+  std::unordered_set<duckdb::TableIndex> tables;
   collect_table_indexes(expr, tables);
   return tables.size() > 1;
 }
@@ -75,7 +76,7 @@ bool references_multiple_tables(duckdb::Expression const& expr)
 /// The single-table conjuncts of one OR branch, grouped by table index. Ordered so the derived
 /// predicates - and therefore the plan - are deterministic.
 using per_table_conjuncts =
-  std::map<duckdb::idx_t, duckdb::vector<duckdb::unique_ptr<duckdb::Expression>>>;
+  std::map<duckdb::TableIndex, duckdb::vector<duckdb::unique_ptr<duckdb::Expression>>>;
 
 /// AND-decompose @p expr; every leaf that restricts exactly one table is filed under that table in
 /// @p conjuncts.
@@ -83,7 +84,7 @@ void extract_single_table_conjuncts(duckdb::Expression const& expr, per_table_co
 {
   if (expr.GetExpressionClass() == duckdb::ExpressionClass::BOUND_CONJUNCTION &&
       expr.GetExpressionType() == duckdb::ExpressionType::CONJUNCTION_AND) {
-    for (auto const& child : expr.Cast<duckdb::BoundConjunctionExpression>().children) {
+    for (auto const& child : expr.Cast<duckdb::BoundConjunctionExpression>().GetChildren()) {
       extract_single_table_conjuncts(*child, conjuncts);
     }
     return;
@@ -94,7 +95,7 @@ void extract_single_table_conjuncts(duckdb::Expression const& expr, per_table_co
   // This is stricter than DuckDB's own JoinDependentFilterRule, which only checks volatility.
   if (expr.IsVolatile() || expr.CanThrow() || expr.HasSubquery() || expr.HasParameter()) { return; }
 
-  std::unordered_set<duckdb::idx_t> tables;
+  std::unordered_set<duckdb::TableIndex> tables;
   collect_table_indexes(expr, tables);
   if (tables.size() != 1) { return; }
 
@@ -109,7 +110,7 @@ duckdb::unique_ptr<duckdb::Expression> conjoin(
   auto result =
     duckdb::make_uniq<duckdb::BoundConjunctionExpression>(duckdb::ExpressionType::CONJUNCTION_AND);
   for (auto const& conjunct : conjuncts) {
-    result->children.push_back(conjunct->Copy());
+    result->GetChildrenMutable().push_back(conjunct->Copy());
   }
   return result;
 }
@@ -126,13 +127,13 @@ void derive_join_dependent_filters(duckdb::LogicalFilter& filter)
       continue;
     }
     auto const& disjunction   = expression->Cast<duckdb::BoundConjunctionExpression>();
-    std::size_t const num_alt = disjunction.children.size();
+    std::size_t const num_alt = disjunction.GetChildren().size();
     if (num_alt < 2 || num_alt > kMaxDerivedDisjuncts) { continue; }
 
     // A disjunction confined to one table is already pushable as it stands; there is nothing to
     // derive. Only a branch spanning several tables hides a single-table restriction.
     bool spans_multiple_tables = false;
-    for (auto const& branch : disjunction.children) {
+    for (auto const& branch : disjunction.GetChildren()) {
       if (references_multiple_tables(*branch)) {
         spans_multiple_tables = true;
         break;
@@ -142,7 +143,7 @@ void derive_join_dependent_filters(duckdb::LogicalFilter& filter)
 
     std::vector<per_table_conjuncts> per_branch(num_alt);
     for (std::size_t i = 0; i < num_alt; i++) {
-      extract_single_table_conjuncts(*disjunction.children[i], per_branch[i]);
+      extract_single_table_conjuncts(*disjunction.GetChildren()[i], per_branch[i]);
     }
 
     for (auto const& entry : per_branch[0]) {
@@ -191,7 +192,7 @@ void derive_join_dependent_filters(duckdb::LogicalFilter& filter)
           every_branch_restricts_further = false;
           break;
         }
-        restriction->children.push_back(conjoin(varying));
+        restriction->GetChildrenMutable().push_back(conjoin(varying));
       }
       if (!every_branch_restricts_further) { continue; }
 
@@ -293,7 +294,12 @@ void sirius_optimizer_hook(duckdb::OptimizerExtensionInput& input,
   // Plan-copy failures make the query ineligible for GPU execution. Optimizer
   // hooks must not throw, so log a readable message and decline the plan.
   try {
-    conn_state->set_captured_plan(copy_logical_plan(*plan, context));
+    auto const* captured = plan.get();
+    if (plan->type == duckdb::LogicalOperatorType::LOGICAL_EXECUTE) {
+      if (plan->children.size() != 1) { return; }
+      captured = plan->children[0].get();
+    }
+    conn_state->set_captured_plan(copy_logical_plan(*captured, context));
   } catch (duckdb::NotImplementedException& e) {
     // Plan not serializable — skip GPU. Logged because a silent skip here is
     // indistinguishable from "GPU ran and was slow": the query still returns correct

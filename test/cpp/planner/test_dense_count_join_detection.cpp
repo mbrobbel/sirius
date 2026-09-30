@@ -31,6 +31,7 @@
 #include <duckdb/function/aggregate/distributive_functions.hpp>
 #include <duckdb/function/aggregate_function.hpp>
 #include <duckdb/main/config.hpp>
+#include <duckdb/main/settings.hpp>
 #include <duckdb/optimizer/optimizer.hpp>
 #include <duckdb/parser/parser.hpp>
 #include <duckdb/planner/expression/bound_aggregate_expression.hpp>
@@ -136,7 +137,9 @@ duckdb::BoundAggregateExpression* find_first_count(duckdb::LogicalOperator& op)
         continue;
       }
       auto& bound = expression->Cast<duckdb::BoundAggregateExpression>();
-      if (bound.function.name == "count" || bound.function.name == "count_star") { return &bound; }
+      if (bound.Function().GetName() == "count" || bound.Function().GetName() == "count_star") {
+        return &bound;
+      }
     }
   }
   for (auto& child : op.children) {
@@ -149,7 +152,7 @@ bool spoof_first_count_callback(duckdb::LogicalOperator& op)
 {
   auto* bound = find_first_count(op);
   if (bound == nullptr) { return false; }
-  bound->function.update = spoof_count_update;
+  bound->FunctionMutable().GetCallbacks().update = spoof_count_update;
   return true;
 }
 
@@ -157,12 +160,9 @@ bool replace_first_count_with_internal_count_star(duckdb::LogicalOperator& op)
 {
   auto* bound = find_first_count(op);
   if (bound == nullptr) { return false; }
-  bound->function      = duckdb::CountStarFun::GetFunction();
-  bound->function.name = "count_star";
-  bound->function.catalog_name.clear();
-  bound->function.schema_name.clear();
-  bound->children.clear();
-  bound->bind_info.reset();
+  bound->FunctionMutable() = duckdb::BoundAggregateFunction(duckdb::CountStarFun::GetFunction());
+  bound->GetChildrenMutable().clear();
+  bound->BindInfoMutable().reset();
   return true;
 }
 
@@ -170,8 +170,8 @@ bool assign_non_system_count_provenance(duckdb::LogicalOperator& op)
 {
   auto* bound = find_first_count(op);
   if (bound == nullptr) { return false; }
-  bound->function.catalog_name = "user_catalog";
-  bound->function.schema_name  = "main";
+  bound->FunctionMutable().SetQualifiedName(
+    duckdb::QualifiedName("user_catalog", "main", bound->Function().GetName()));
   return true;
 }
 
@@ -199,7 +199,7 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator> generate_sirius_plan(
 
     auto plan = std::move(planner.plan);
 
-    if (context.config.enable_optimizer) {
+    if (duckdb::Settings::Get<duckdb::EnableOptimizerSetting>(context)) {
       Optimizer optimizer(*planner.binder, context);
       plan = optimizer.Optimize(std::move(plan));
     }
@@ -207,7 +207,8 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator> generate_sirius_plan(
     plan->ResolveOperatorTypes();
 
     ColumnBindingResolver resolver;
-    ColumnBindingResolver::Verify(*plan);
+    duckdb::ColumnBindingResolver verifier(true);
+    verifier.VisitOperator(*plan);
     resolver.VisitOperator(*plan);
     if (options.mutate) { REQUIRE(options.mutate(*plan)); }
 
@@ -340,13 +341,13 @@ void require_q13_counted_filter(sirius::op::sirius_physical_operator* preserved,
                                 sirius::op::sirius_physical_operator* counted)
 {
   auto const& preserved_scan = require_native_scan(preserved, "cust", false);
-  CHECK((preserved_scan.table_filters == nullptr || preserved_scan.table_filters->filters.empty()));
+  CHECK((preserved_scan.table_filters == nullptr || !preserved_scan.table_filters->HasFilters()));
 
   auto const& counted_scan = require_native_scan(counted, "ord", true);
   REQUIRE(counted_scan.table_filters != nullptr);
-  REQUIRE(counted_scan.table_filters->filters.size() == 1);
-  auto const& [column_index, filter] = *counted_scan.table_filters->filters.begin();
-  REQUIRE(filter != nullptr);
+  REQUIRE(counted_scan.table_filters->FilterCount() == 1);
+  auto const& entry       = *counted_scan.table_filters->begin();
+  auto const column_index = entry.GetIndex().GetIndex();
   REQUIRE(column_index < counted_scan.column_ids.size());
   REQUIRE(counted_scan.column_ids[column_index].HasPrimaryIndex());
   CHECK(counted_scan.column_ids[column_index].GetPrimaryIndex() == 2);

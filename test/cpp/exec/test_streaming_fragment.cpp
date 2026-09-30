@@ -187,7 +187,7 @@ TEST_CASE_METHOD(fragment_fixture,
   // The answer the chain must reproduce.
   auto expected = con->Query(std::string("SELECT count(*) FROM (") + kLeafQuery + ") t");
   REQUIRE_FALSE(expected->HasError());
-  auto const expected_rows = expected->GetValue(0, 0).GetValue<std::int64_t>();
+  auto const expected_rows = expected->Collection().GetValue(0, 0).GetValue<std::int64_t>();
 
   auto sirius_ctx = con->context->registered_state->Get<duckdb::SiriusContext>("sirius_state");
   REQUIRE(sirius_ctx != nullptr);
@@ -336,10 +336,8 @@ TEST_CASE_METHOD(fragment_fixture,
         auto result = engine.get_result();
         REQUIRE(result != nullptr);
         REQUIRE_FALSE(result->HasError());
-        auto materialized =
-          duckdb::unique_ptr_cast<duckdb::QueryResult, duckdb::MaterializedQueryResult>(
-            std::move(result));
-        rows = materialized->RowCount();
+        auto materialized = std::move(result);
+        rows              = materialized->RowCount();
       },
       window.query_id());
     window.finish();
@@ -379,7 +377,7 @@ TEST_CASE_METHOD(fragment_fixture,
   auto expected = con->Query("SELECT count(*) FROM (" + leaf + ") t");
   REQUIRE_FALSE(expected->HasError());
   auto const expected_rows =
-    static_cast<std::size_t>(expected->GetValue(0, 0).GetValue<std::int64_t>());
+    static_cast<std::size_t>(expected->Collection().GetValue(0, 0).GetValue<std::int64_t>());
   REQUIRE(expected_rows > 0);
 
   auto sirius_ctx = con->context->registered_state->Get<duckdb::SiriusContext>("sirius_state");

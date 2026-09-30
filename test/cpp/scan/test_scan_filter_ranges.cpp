@@ -31,6 +31,7 @@
 #include <duckdb/common/types/date.hpp>
 #include <duckdb/planner/filter/constant_filter.hpp>
 #include <helper/type_conversions.hpp>
+#include <utils/table_filter_test_utils.hpp>
 
 #include <cstdint>
 #include <limits>
@@ -54,8 +55,9 @@ struct filter_fixture {
 
   void push(duckdb::ExpressionType comparison, duckdb::Value constant)
   {
-    filters.PushFilter(duckdb::ColumnIndex(0),
-                       duckdb::make_uniq<duckdb::ConstantFilter>(comparison, std::move(constant)));
+    filters.PushFilter(duckdb::ProjectionIndex(0),
+                       sirius::test::constant_filter(
+                         comparison, std::move(constant), sirius::to_duckdb(returned_types[0])));
   }
 
   [[nodiscard]] scan_filter_analysis analyze() const

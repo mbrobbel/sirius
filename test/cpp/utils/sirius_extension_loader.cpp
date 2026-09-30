@@ -31,6 +31,4 @@ void ExtensionHelper::LoadAllExtensions(DuckDB& db)
   }
 }
 
-vector<string> ExtensionHelper::LoadedExtensionTestPaths() { return {}; }
-
 }  // namespace duckdb

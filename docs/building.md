@@ -21,8 +21,8 @@ pixi run cmake -S . -B build/sirius -G Ninja \
 pixi run cmake --build build/sirius --target sirius_shared
 pixi run cmake --install build/sirius --prefix "$PWD/build/install" --component sirius_library
 
-pixi run cmake -S duckdb -B build/sirius-duckdb -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+pixi run cmake -S sirius-duckdb/duckdb -B build/sirius-duckdb -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
   -DEXTENSION_STATIC_BUILD=ON \
   -DDUCKDB_EXTENSION_CONFIGS="$PWD/sirius-duckdb/extension_config.cmake" \
   -Dsirius_DIR="$PWD/build/install/lib/cmake/sirius"

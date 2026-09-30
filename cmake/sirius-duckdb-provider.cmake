@@ -10,10 +10,6 @@ if(NOT EXISTS "${SIRIUS_DUCKDB_SOURCE_DIR}/src/include/duckdb.hpp")
       "Initialize the DuckDB submodule or set SIRIUS_DUCKDB_SOURCE_DIR")
 endif()
 
-set(OVERRIDE_GIT_DESCRIBE
-    "v1.5.6"
-    CACHE STRING "DuckDB version used by the source dependency")
-
 function(sirius_add_duckdb_source)
   # Keep DuckDB options scoped to its dependency build.
   set(DUCKDB_EXTENSION_CONFIGS "")
@@ -40,3 +36,8 @@ set_target_properties(
     INTERFACE_COMPILE_DEFINITIONS "${_duckdb_definitions}"
     INTERFACE_LINK_LIBRARIES
     "duckdb_static;core_functions_extension;parquet_extension")
+
+function(sirius_link_duckdb_extensions target)
+  set(DUCKDB_MODULE_BASE_DIR "${SIRIUS_DUCKDB_SOURCE_DIR}")
+  duckdb_link_extensions(${target} core_functions parquet)
+endfunction()

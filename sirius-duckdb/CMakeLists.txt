@@ -36,14 +36,8 @@ install(
   ARCHIVE DESTINATION "${INSTALL_LIB_DIR}")
 
 if(SIRIUS_DUCKDB_LINKAGE STREQUAL "static")
-  # Host registration must precede the standalone loader in the combined
-  # archive.
-  target_link_libraries(
-    sirius_extension
-    "$<BUILD_INTERFACE:$<TARGET_OBJECTS:duckdb_generated_extension_loader>>")
   get_target_property(links sirius_loadable_extension LINK_LIBRARIES)
-  list(REMOVE_ITEM links "-Wl,--exclude-libs,ALL" duckdb_static
-       dummy_static_extension_loader)
+  list(REMOVE_ITEM links "-Wl,--exclude-libs,ALL" duckdb_static)
   set_target_properties(
     sirius_loadable_extension
     PROPERTIES LINK_LIBRARIES "${links}"

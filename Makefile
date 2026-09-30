@@ -14,6 +14,7 @@
 
 CMAKE ?= cmake
 DUCKDB_DIR ?= duckdb
+SIRIUS_DUCKDB_DIR ?= sirius-duckdb/duckdb
 TEST_BUILD_TARGET ?= sirius_unittest
 MAIN_BUILD_TARGETS ?= sirius_library
 DUCKDB_BUILD_TARGETS ?= duckdb duckdb_local_extension_repo
@@ -42,7 +43,7 @@ build/%/build.ninja: $(CMAKE_INPUTS)
 define build_split
 	$(CMAKE) --build build/$@ --target $(1)
 	$(CMAKE) --install build/$@ --prefix "$(CURDIR)/build/$@/install" --component sirius_library
-	$(CMAKE) -S "$(DUCKDB_DIR)" -B build/$@/sirius-duckdb -G Ninja -C build/$@/sirius-duckdb-cache.cmake -DBUILD_SHELL=$(if $(filter 0,$(BUILD_SHELL)),OFF,ON)
+	$(CMAKE) -S "$(SIRIUS_DUCKDB_DIR)" -B build/$@/sirius-duckdb -G Ninja -C build/$@/sirius-duckdb-cache.cmake -DBUILD_SHELL=$(if $(filter 0,$(BUILD_SHELL)),OFF,ON)
 	$(CMAKE) --build build/$@/sirius-duckdb --target $(DUCKDB_BUILD_TARGETS)
 endef
 

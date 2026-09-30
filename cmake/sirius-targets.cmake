@@ -164,10 +164,7 @@ target_include_directories(
   sirius_shared PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_features(sirius_shared PUBLIC cxx_std_20)
-target_link_libraries(
-  sirius_shared
-  PRIVATE sirius::duckdb_dependency
-          "$<LINK_LIBRARY:WHOLE_ARCHIVE,dummy_static_extension_loader>")
+target_link_libraries(sirius_shared PRIVATE sirius::duckdb_dependency)
 set_target_properties(sirius_shared PROPERTIES LINKER_TYPE LLD)
 
 # Keep embedded DuckDB globals separate from the host's DuckDB instance.
@@ -176,8 +173,7 @@ target_link_options(
   PRIVATE
   "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duckdb_static>"
   "LINKER:--exclude-libs,$<TARGET_FILE_NAME:core_functions_extension>"
-  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:parquet_extension>"
-  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:dummy_static_extension_loader>")
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:parquet_extension>")
 
 # Discard unused sections pulled in by whole archives.
 target_link_options(sirius_shared PRIVATE "LINKER:--gc-sections")
@@ -233,6 +229,6 @@ if(SIRIUS_BUILD_STATIC)
   include("${CMAKE_CURRENT_LIST_DIR}/sirius-static-bundle.cmake")
   sirius_add_static_bundle(
     sirius_static "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a" sirius_core
-    dummy_static_extension_loader CUDA::cudart_static)
+    CUDA::cudart_static)
   add_dependencies(sirius_library sirius_static)
 endif()

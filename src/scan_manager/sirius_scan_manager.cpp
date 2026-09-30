@@ -3249,7 +3249,7 @@ cached_scan_plan build_cached_scan_plan(pinned_entry const& entry,
     plan.survivor_chunk_indices.push_back(c);
   }
   if (n_chunks == 0 || !entry.zone_maps.has_stats() || table_filters == nullptr ||
-      table_filters->filters.empty() || column_ids == nullptr) {
+      !table_filters->HasFilters() || column_ids == nullptr) {
     return plan;
   }
 
@@ -3267,8 +3267,9 @@ cached_scan_plan build_cached_scan_plan(pinned_entry const& entry,
     std::size_t entry_pos;
   };
   std::vector<usable_filter> usable;
-  for (auto const& [col_idx, filter] : table_filters->filters) {
-    if (!filter) { continue; }
+  for (auto const& filter_entry : *table_filters) {
+    auto const col_idx = filter_entry.GetIndex().GetIndex();
+    auto const* filter = &filter_entry.Filter();
     if (col_idx >= column_ids->size()) { continue; }  // defensive
     auto const& column_id = (*column_ids)[col_idx];
     // rowid / empty / virtual sentinels have no storage stats.
@@ -3281,7 +3282,7 @@ cached_scan_plan build_cached_scan_plan(pinned_entry const& entry,
     auto const pos = it->second;
     if (pos >= entry.zone_maps.column_count()) { continue; }  // absent for this column
     if (!filter_safe_for_stats(*filter, entry.zone_maps.column_type(pos))) { continue; }
-    usable.push_back({filter.get(), pos});
+    usable.push_back({filter, pos});
   }
   if (usable.empty()) { return plan; }
 

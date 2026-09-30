@@ -1,9 +1,8 @@
-# When changing the duckdb submodule, also update OVERRIDE_GIT_DESCRIBE
-# in cmake/CMakePresets.json and the DuckDB package in pixi.toml.
+# Keep the engine and wrapper DuckDB gitlinks on the same revision.
 [submodule "duckdb"]
 	path = duckdb
 	url = https://github.com/duckdb/duckdb.git
-	branch = v1.5-variegata
+	branch = v2.0-cyanoptera
 	ignore = dirty
 [submodule "substrait"]
 	path = substrait

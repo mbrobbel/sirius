@@ -84,7 +84,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(parquet_benchmark duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(parquet_benchmark)
 
 target_link_options(parquet_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -122,7 +122,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(prefetch_benchmark duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(prefetch_benchmark)
 
 target_link_options(prefetch_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -163,8 +163,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(prefetch_hybrid_scan_benchmark
-                      duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(prefetch_hybrid_scan_benchmark)
 
 target_link_options(prefetch_hybrid_scan_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -202,7 +201,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(columnar_parquet_poc duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(columnar_parquet_poc)
 
 target_link_options(columnar_parquet_poc PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -240,7 +239,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(retirer_benchmark duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(retirer_benchmark)
 
 target_link_options(retirer_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -279,7 +278,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(s3_throughput_test duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(s3_throughput_test)
 
 target_link_options(s3_throughput_test PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -320,8 +319,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(s3_autotune_throughput_bench
-                      duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(s3_autotune_throughput_bench)
 
 target_link_options(s3_autotune_throughput_bench PRIVATE
                     "LINKER:--allow-multiple-definition")
@@ -360,8 +358,7 @@ target_link_libraries(
   cuCascade::cucascade_cudf
   PkgConfig::LIBURING
   PkgConfig::NUMA)
-target_link_libraries(range_prefetch_benchmark
-                      duckdb_generated_extension_loader)
+sirius_link_duckdb_extensions(range_prefetch_benchmark)
 
 target_link_options(range_prefetch_benchmark PRIVATE
                     "LINKER:--allow-multiple-definition")

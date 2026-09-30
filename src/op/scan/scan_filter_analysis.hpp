@@ -27,7 +27,7 @@
 // duckdb
 #include <duckdb/common/types.hpp>
 #include <duckdb/planner/expression.hpp>
-#include <duckdb/planner/table_filter.hpp>
+#include <duckdb/planner/table_filter_set.hpp>
 
 // standard library
 #include <cstddef>
@@ -99,8 +99,7 @@ struct scan_filter_analysis {
  * depends on the session time zone; both keep the residual filter.
  *
  * Filters that do not restrict the emitted rows are skipped WITHOUT clearing
- * coverage — OPTIONAL_FILTER and IS_NOT_NULL, which
- * @ref convert_table_filters_to_expression also drops, and @p
+ * coverage — OPTIONAL_FILTER and @p
  * skip_primary_indices (hive partitions, enforced at file-list level). Any other
  * unconvertible conjunct clears only @c ranges_cover_whole_filter.
  *
