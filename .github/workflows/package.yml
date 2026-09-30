@@ -145,7 +145,8 @@ jobs:
         run: |
           packages=("$PWD"/build/conda/sirius-*.conda)
           [[ ${#packages[@]} -eq 1 ]]
-          pixi add --feature tidy --platform cuda13 "${packages[0]}"
+          read -r sirius_sha _ < <(sha256sum "${packages[0]}")
+          pixi add --feature tidy --platform cuda13 "sirius[url=file://${packages[0]},sha256=$sirius_sha]"
 
       - name: Run extension SQL tests
         run: |
