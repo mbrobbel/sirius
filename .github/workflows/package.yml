@@ -1,0 +1,44 @@
+name: Package Sirius
+
+on:
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  package:
+    runs-on: [self-hosted, ubuntu-24.04, cpu-xl]
+    timeout-minutes: 60
+    env:
+      CONDA_OVERRIDE_CUDA: "13.4"
+      SIRIUS_BUILD_ID: ${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize build dependencies
+        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
+
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.81.0
+          run-install: false
+          cache: false
+
+      - name: Build and test the shared package
+        run: |
+          pixi exec --spec rattler-build=0.76.1 -- rattler-build build \
+            --recipe packaging/conda --channel rapidsai --channel conda-forge \
+            --output-dir build/conda
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sirius-conda-cuda13
+          path: |
+            build/conda/linux-64/
+            build/conda/noarch/
+          if-no-files-found: error
+          retention-days: 1

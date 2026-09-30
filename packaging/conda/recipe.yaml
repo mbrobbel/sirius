@@ -1,0 +1,95 @@
+context:
+  version: "0.0.0"
+  build_id: ${{ env.get("SIRIUS_BUILD_ID") }}
+
+package:
+  name: sirius
+  version: ${{ version }}
+
+source:
+  path: ../..
+
+build:
+  number: 0
+  string: cuda${{ cuda_compiler_version | split('.') | first }}_${{ hash }}_${{ build_number }}_${{ build_id }}
+  skip: not linux
+  script:
+    file: build.sh
+    env:
+      SIRIUS_CMAKE_ARGS: ${{ env.get("SIRIUS_CMAKE_ARGS", default="") }}
+  dynamic_linking:
+    overlinking_behavior: error
+    missing_dso_allowlist:
+      - "**/libcuda.so*"
+      - "**/libnvidia-ml.so*"
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('cuda') }}
+    - ${{ stdlib('c') }}
+    - cmake >=3.30.4
+    - ninja
+    - make
+    - git
+    - pkg-config
+    - python
+    - rust >=1.88
+    - lld
+    - libclang
+    - clang
+  host:
+    - cuda-version ${{ cuda_compiler_version }}.*
+    - cuda-cudart-dev
+    - cuda-driver-dev
+    - cuda-nvml-dev
+    - cuda-nvrtc-dev
+    - libcurand-dev
+    - libnvcomp-dev
+    - libcudf ==26.08.01
+    - libcuvs ==26.08.01
+    - libraft-headers ==26.08.00
+    - librmm ==26.08.00
+    - libkvikio ==26.08.00
+    - libnuma
+    - liburing
+    - libcurl
+    - openssl
+    - yaml-cpp
+    - spdlog 1.8.*
+    - libabseil
+    - croaring
+    - zlib
+    - catch2 3.*
+  run:
+    - __cuda >=${{ cuda_compiler_version | split('.') | first }}
+    - libcuvs ==26.08.01
+    - libkvikio ==26.08.00
+  run_exports:
+    - ${{ pin_subpackage('sirius', exact=true) }}
+
+tests:
+  - package_contents:
+      files:
+        - lib/libsirius.so.0
+        - lib/cmake/sirius/sirius-config.cmake
+        - include/sirius/duckdb.hpp
+        - include/sirius/ffi.hpp
+  - script:
+      - cmake -S test/cmake/installed_consumer -B consumer -G Ninja -DCMAKE_PREFIX_PATH="$PREFIX"
+      - cmake --build consumer
+    requirements:
+      run:
+        - ${{ compiler('cxx') }}
+        - cmake
+        - ninja
+    files:
+      source:
+        - test/cmake/installed_consumer/
+
+about:
+  homepage: https://github.com/sirius-db/sirius
+  summary: GPU-native SQL engine
+  license: Apache-2.0
+  license_file: LICENSE
