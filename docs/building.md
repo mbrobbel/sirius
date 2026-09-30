@@ -1,5 +1,13 @@
 # Building Sirius
 
+## Separate DuckDB extension
+
+[`sirius-duckdb/`](../sirius-duckdb/README.md) contains the independent extension
+setup, with its own DuckDB checkout, Pixi environment, and Makefile. It consumes
+the [shared Sirius package](../packaging/conda/README.md) and runs GPU SQL tests
+through the normal DuckDB extension test target. The root build continues to
+provide the existing extension and static distribution build.
+
 ## Shared implementation objects
 
 The internal `sirius_objects` CMake target compiles the common C++ and CUDA

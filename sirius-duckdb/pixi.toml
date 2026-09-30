@@ -1,0 +1,32 @@
+[workspace]
+channels = ["rapidsai", "conda-forge"]
+name = "sirius-duckdb"
+platforms = [{ name = "cuda13", platform = "linux-64", cuda = "13" }]
+version = "0.0.0"
+requires-pixi = ">=0.81"
+preview = ["pixi-build"]
+build-variants-files = ["../packaging/conda/variants.yaml"]
+
+[tasks]
+
+[dependencies]
+black = "*"
+cmake-format = "*"
+make = "*"
+python = "3.*"
+
+[feature.tidy.dependencies]
+sirius = { path = "../packaging/conda" }
+clang = "*"
+clang-tools = "*"
+cmake = "4.4.*"
+cxx-compiler = "*"
+ninja = "*"
+sccache = "0.18.*"
+
+[feature.format.pypi-dependencies]
+clang-format = ">=11,<12"
+
+[environments]
+default = ["tidy"]
+format = ["format"]

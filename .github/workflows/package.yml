@@ -61,3 +61,94 @@ jobs:
             --variant cxx_compiler_version=${{ matrix.cuda-version == '12.9' && '14' || '15' }}
             --variant 'cuda_architectures=${{ matrix.cuda-version == '12.9' && '75-real;80-real;86-real;89-real;90a-real' || '75-real;80-real;86-real;89-real;90a-real;100f-real;120a-real;120' }}'
             --no-build-id --env-isolation none
+
+  build:
+    runs-on: [self-hosted, ubuntu-24.04, cpu-xl]
+    timeout-minutes: 60
+    env:
+      CONDA_OVERRIDE_CUDA: "13.4"
+      CMAKE_BUILD_PARALLEL_LEVEL: "16"
+    defaults:
+      run:
+        working-directory: sirius-duckdb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize build dependencies
+        working-directory: .
+        run: |
+          git submodule update --init --depth=1 --jobs 5 \
+            duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
+
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.81.0
+          run-install: false
+          cache: false
+
+      - name: Build Sirius and the extension
+        run: pixi run --locked make release
+
+      - name: Check the installed CMake package
+        # Driver symbols are resolved on the GPU test runner.
+        run: |
+          pixi run --locked cmake -S ../test/cmake/installed_consumer -B build/package-consumer -G Ninja \
+            -DCMAKE_PREFIX_PATH="$PWD/.pixi/envs/default" \
+            -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined
+          pixi run --locked cmake --build build/package-consumer
+
+      - name: Copy the cached Sirius package
+        run: |
+          packages=(.pixi/artifacts-v0/sirius/*/*.conda)
+          [[ ${#packages[@]} -eq 1 ]]
+          mkdir -p build/conda
+          cp "${packages[0]}" build/conda/
+
+      - name: Package build artifacts
+        run: tar -cf build.tar build/release/ build/conda/
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sirius-duckdb-build
+          path: sirius-duckdb/build.tar
+          if-no-files-found: error
+          retention-days: 1
+
+  test:
+    needs: build
+    runs-on: [self-hosted, ubuntu-24.04, gpu-2xt4]
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sirius-duckdb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize extension test dependencies
+        run: git submodule update --init --depth=1 --jobs 2 duckdb extension-ci-tools
+
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.81.0
+          run-install: false
+          cache: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sirius-duckdb-build
+          path: sirius-duckdb
+
+      - name: Extract build artifacts
+        run: tar -xf build.tar
+
+      - name: Install the CPU-built Sirius package
+        run: |
+          packages=("$PWD"/build/conda/sirius-*.conda)
+          [[ ${#packages[@]} -eq 1 ]]
+          pixi add --feature tidy --platform cuda13 "${packages[0]}"
+
+      - name: Run extension SQL tests
+        run: |
+          export SIRIUS_CONFIG_FILE="$PWD/test/config.yaml"
+          export LD_LIBRARY_PATH="$PWD/.pixi/envs/default/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          pixi run make test T="--test-dir '$PWD' 'test/*'"

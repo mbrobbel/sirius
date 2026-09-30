@@ -29,6 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Initialize extension formatting configuration
+        run: git submodule update --init --depth=1 sirius-duckdb/duckdb
+
       - name: Test thread sweep harness
         run: |
           set -o pipefail

@@ -1,0 +1,51 @@
+# name: test/sql/sirius.test
+# description: Sirius extension loads in DuckDB
+# group: [sql]
+
+load __TEST_DIR__/sirius_package.duckdb
+
+test-env SIRIUS_EXTENSION_PATH build/release/extension/sirius/sirius.duckdb_extension
+
+statement ok
+LOAD '${SIRIUS_EXTENSION_PATH}';
+
+query T
+SELECT extension_name FROM duckdb_extensions() WHERE extension_name = 'sirius' AND loaded;
+----
+sirius
+
+# Check registration, not just the empty extension entrypoint.
+query I
+SELECT current_setting('gpu_execution')::INTEGER;
+----
+1
+
+statement ok
+SET gpu_execution = false;
+
+statement ok
+CREATE TABLE vectors AS SELECT i::INTEGER AS id, [i, i, i]::FLOAT[3] AS vec FROM range(5000) t(i);
+
+statement ok
+CHECKPOINT;
+
+statement ok
+SET gpu_execution = true;
+
+statement ok
+SELECT * FROM pin_table(name => 'vectors', tier => 'gpu', format => 'duckdb');
+
+statement ok
+SELECT * FROM sirius_create_ann_index('vectors', 'vec', metric => 'l2', n_lists => 16);
+
+query I rowsort
+SELECT id FROM sirius_knn_search('vectors', 'vec', [0, 0, 0]::FLOAT[3], k => 5);
+----
+0
+1
+2
+3
+4
+
+statement ok
+SELECT * FROM unpin_table('vectors');

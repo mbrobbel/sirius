@@ -26,3 +26,9 @@
 [submodule "starrocks/brpc"]
 	path = experimental/starrocks/brpc
 	url = https://github.com/apache/brpc
+[submodule "sirius-duckdb/duckdb"]
+	path = sirius-duckdb/duckdb
+	url = https://github.com/sirius-db/duckdb.git
+[submodule "sirius-duckdb/extension-ci-tools"]
+	path = sirius-duckdb/extension-ci-tools
+	url = https://github.com/duckdb/extension-ci-tools.git
