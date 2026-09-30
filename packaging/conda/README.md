@@ -19,9 +19,14 @@ The initial variant is Linux with CUDA 13.4 and GCC 15. The recipe builds only t
 shared library and installs the `sirius_library` component. Package tests check
 the files and compile an independent CMake consumer without initializing a GPU.
 
-Use a fresh `SIRIUS_BUILD_ID` for each local build, including uncommitted changes.
-CI uses the source revision and workflow run to give each package a distinct
-identity, so consumers cannot reuse a cached package from another build.
+Use a fresh `SIRIUS_BUILD_ID` for each standalone rattler-build invocation,
+including uncommitted changes, so binary consumers cannot reuse a cached package
+from another build.
+
+Pixi consumers can enable `preview = ["pixi-build"]` and use this directory as a
+source dependency, with `build-variants-files` pointing to `variants.yaml`. Pixi
+tracks source changes and caches the built package; these builds use the default
+`source` build ID. The extension directory is excluded from the library sources.
 
 `build/conda` is a local channel. A downstream Pixi environment can resolve
 `sirius` from it alongside `rapidsai` and `conda-forge`; CI can transfer the channel

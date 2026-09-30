@@ -1,6 +1,6 @@
 context:
   version: "0.0.0"
-  build_id: ${{ env.get("SIRIUS_BUILD_ID") }}
+  build_id: ${{ env.get("SIRIUS_BUILD_ID", default="source") }}
 
 package:
   name: sirius
@@ -8,6 +8,9 @@ package:
 
 source:
   path: ../..
+  filter:
+    exclude:
+      - sirius-duckdb/**
 
 build:
   number: 0
