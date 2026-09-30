@@ -4,7 +4,7 @@
 
 [`sirius-duckdb/`](../sirius-duckdb/README.md) contains the independent extension
 setup, with its own DuckDB checkout, Pixi environment, and Makefile. It consumes
-the [shared Sirius package](../packaging/conda/README.md) and runs GPU SQL tests
+the [static Sirius package](../conda.recipe/README.md) and runs GPU SQL tests
 through the normal DuckDB extension test target. The root build continues to
 provide the existing extension and static distribution build.
 
@@ -85,3 +85,8 @@ Consumers use `find_package(sirius CONFIG REQUIRED COMPONENTS static)` and link
 `sirius::sirius_static`. The installed target carries the linker requirements;
 the consumer needs a CUDA toolkit at build time for the driver stubs. Shared
 builds continue to use `sirius::sirius`.
+
+The static target extracts the compiled NVTX object from `libsirius.a` into the
+consumer's build directory and links it directly, preserving its public entry
+point when a consumer hides archive symbols. No additional object is shipped or
+compiled.

@@ -5,7 +5,7 @@ platforms = [{ name = "cuda13", platform = "linux-64", cuda = "13" }]
 version = "0.0.0"
 requires-pixi = ">=0.81"
 preview = ["pixi-build"]
-build-variants-files = ["../packaging/conda/variants.yaml"]
+build-variants-files = ["../conda.recipe/variants.yaml"]
 
 [tasks]
 
@@ -16,13 +16,20 @@ make = "*"
 python = "3.*"
 
 [feature.tidy.dependencies]
-sirius = { path = "../packaging/conda" }
+sirius-static = { path = "../conda.recipe" }
 clang = "*"
 clang-tools = "*"
 cmake = "4.4.*"
 cxx-compiler = "*"
+cuda-nvcc = "13.4.*"
+cuda-driver-dev = "*"
+cuda-nvml-dev = "*"
 ninja = "*"
 sccache = "0.18.*"
+
+[feature.test.dependencies]
+libgcc = "*"
+libstdcxx = "*"
 
 [feature.format.pypi-dependencies]
 clang-format = ">=11,<12"
@@ -30,3 +37,4 @@ clang-format = ">=11,<12"
 [environments]
 default = ["tidy"]
 format = ["format"]
+test = ["test"]
