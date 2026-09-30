@@ -35,6 +35,12 @@ add_compile_definitions(CCCL_DISABLE_WARPSPEED_SCAN)
 option(ENABLE_STREAM_CHECK
        "Enable stream check library for debugging default stream usage" OFF)
 option(BUILD_WITH_CTRACK "Build with CTrack profiling support" OFF)
+option(SIRIUS_BUILD_STATIC "Build the bundled static Sirius library" OFF)
+if(SIRIUS_BUILD_STATIC AND NOT VCPKG_BUILD)
+  message(
+    FATAL_ERROR
+      "The bundled Sirius archive requires the static vcpkg dependencies")
+endif()
 
 # The [s3] integration tests launch MinIO via a patched build of upstream
 # testcontainers-native, fetched + patched at configure time and built as a Go

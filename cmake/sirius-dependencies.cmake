@@ -96,6 +96,10 @@ endif()
 
 pkg_check_modules(NUMA REQUIRED IMPORTED_TARGET numa)
 pkg_check_modules(LIBURING REQUIRED IMPORTED_TARGET liburing)
+if(SIRIUS_BUILD_STATIC AND NOT TARGET Numa::Numa)
+  # Keep cuCascade's NUMA dependency visible to archive dependency discovery.
+  add_library(Numa::Numa ALIAS PkgConfig::NUMA)
+endif()
 if(VCPKG_BUILD)
   # The CMake target includes curl's private static dependencies.
   find_package(CURL CONFIG REQUIRED)

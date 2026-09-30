@@ -58,3 +58,22 @@ pixi run cmake --build build/consumer
 ```
 
 Consumers are responsible for DuckDB and C++ runtime ABI compatibility.
+
+## Bundled static library
+
+The vcpkg configuration can also produce `libsirius.a`, including its static
+DuckDB, RAPIDS, CUDA toolkit, and host library dependencies. It reuses the engine
+objects from that configuration. The archive rejects unexpected shared library
+dependencies; the CUDA driver and standard platform libraries remain external.
+
+```bash
+pixi run -e vcpkg cmake -S duckdb --preset vcpkg-release -DSIRIUS_BUILD_STATIC=ON
+pixi run -e vcpkg cmake --build build/vcpkg-release --target sirius_static
+pixi run -e vcpkg cmake --install build/vcpkg-release \
+  --component sirius_static_library --prefix "$PWD/build/static-install"
+```
+
+Consumers use `find_package(sirius CONFIG REQUIRED COMPONENTS static)` and link
+`sirius::sirius_static`. The installed target carries the linker requirements;
+the consumer needs a CUDA toolkit at build time for the driver stubs. Shared
+builds continue to use `sirius::sirius`.
