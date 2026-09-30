@@ -8,10 +8,14 @@ if(VCPKG_BUILD)
   target_include_directories(sirius_unittest BEFORE PRIVATE ${_VCPKG_INC})
 endif()
 
+# Prefer our Catch2 compatibility header over package-provided shims.
+target_include_directories(
+  sirius_unittest BEFORE
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/cpp>)
+
 target_include_directories(
   sirius_unittest
   PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/cpp>
     ${SIRIUS_DUCKDB_SOURCE_DIR}/test/include
     ${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/catch
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
