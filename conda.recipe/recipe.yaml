@@ -7,7 +7,7 @@ package:
   version: ${{ version }}
 
 source:
-  path: ../..
+  path: ..
   filter:
     exclude:
       - sirius-duckdb/**
@@ -17,7 +17,30 @@ build:
   string: cuda${{ cuda_compiler_version | split('.') | first }}_${{ hash }}_${{ build_number }}_${{ build_id }}
   skip: not linux
   script:
-    file: build.sh
+    content: |
+      set -euo pipefail
+      export LIBCLANG_PATH="$BUILD_PREFIX/lib"
+      export SCCACHE_BASEDIRS="$SRC_DIR:$PREFIX:$BUILD_PREFIX"
+      export RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0
+
+      cmake -S duckdb -B build-conda -G Ninja \
+        ${CMAKE_ARGS:-} ${SIRIUS_CMAKE_ARGS:-} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+        -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+        -DCMAKE_CUDA_COMPILER_LAUNCHER=sccache \
+        -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_PREFIX_PATH="$PREFIX;$BUILD_PREFIX" \
+        -DCMAKE_CUDA_ARCHITECTURES="${{ cuda_architectures }}" \
+        -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
+        -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+        -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF \
+        -DBUILD_UNITTESTS=OFF -DBUILD_SHELL=OFF \
+        -DSIRIUS_BUILD_S3_TESTS=OFF \
+        -DDUCKDB_EXTENSION_CONFIGS="$SRC_DIR/extension_config.cmake"
+      cmake --build build-conda --target sirius_shared --parallel "$CPU_COUNT"
+      cmake --install build-conda --component sirius_library
     env:
       SIRIUS_CMAKE_ARGS: ${{ env.get("SIRIUS_CMAKE_ARGS", default="") }}
   dynamic_linking:
@@ -34,6 +57,7 @@ requirements:
     - ${{ stdlib('c') }}
     - cmake >=3.30.4
     - ninja
+    - sccache ==0.18.0
     - make
     - git
     - pkg-config
@@ -50,11 +74,11 @@ requirements:
     - cuda-nvrtc-dev
     - libcurand-dev
     - libnvcomp-dev
-    - libcudf ==26.08.01
-    - libcuvs ==26.08.01
-    - libraft-headers ==26.08.00
-    - librmm ==26.08.00
-    - libkvikio ==26.08.00
+    - libcudf ${{ rapids_version }}.*
+    - libcuvs ${{ rapids_version }}.*
+    - libraft-headers ${{ rapids_version }}.*
+    - librmm ${{ rapids_version }}.*
+    - libkvikio ${{ rapids_version }}.*
     - libnuma
     - liburing
     - libcurl
@@ -67,8 +91,8 @@ requirements:
     - catch2 3.*
   run:
     - __cuda >=${{ cuda_compiler_version | split('.') | first }}
-    - libcuvs ==26.08.01
-    - libkvikio ==26.08.00
+    - libcuvs ${{ rapids_version }}.*
+    - libkvikio ${{ rapids_version }}.*
   run_exports:
     - ${{ pin_subpackage('sirius', exact=true) }}
 

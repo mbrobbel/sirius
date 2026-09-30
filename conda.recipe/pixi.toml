@@ -1,7 +1,12 @@
 [workspace]
 name = "sirius-package"
 channels = ["rapidsai", "conda-forge"]
-platforms = [{ name = "cuda13", platform = "linux-64", cuda = "13" }]
+platforms = [
+  { name = "linux-64-cuda12", platform = "linux-64", cuda = "12" },
+  { name = "linux-64-cuda13", platform = "linux-64", cuda = "13" },
+  { name = "linux-aarch64-cuda12", platform = "linux-aarch64", cuda = "12" },
+  { name = "linux-aarch64-cuda13", platform = "linux-aarch64", cuda = "13" },
+]
 requires-pixi = ">=0.81"
 preview = ["pixi-build"]
 build-variants-files = ["variants.yaml"]
@@ -16,12 +21,12 @@ backend = { name = "pixi-build-rattler-build", version = "==0.4.6", channels = [
 [package.build.config]
 # Exclude generated outputs and extension sources from the library cache inputs.
 extra-input-globs = [
-  "!../../build/**",
-  "!../../sirius-duckdb/**",
-  "!../../vcpkg/**",
-  "!../../telemetry_data/**",
-  "!../../log/**",
-  "!../../runs/**",
-  "!../../test_datasets/**",
+  "!../build/**",
+  "!../sirius-duckdb/**",
+  "!../vcpkg/**",
+  "!../telemetry_data/**",
+  "!../log/**",
+  "!../runs/**",
+  "!../test_datasets/**",
   "!**/target/**",
 ]

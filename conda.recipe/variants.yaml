@@ -1,0 +1,22 @@
+rapids_version:
+  - "26.08"
+cuda_compiler:
+  - cuda-nvcc
+cuda_compiler_version:
+  - "12.9"
+  - "13.4"
+c_compiler_version:
+  - "14"
+  - "15"
+cxx_compiler_version:
+  - "14"
+  - "15"
+cuda_architectures:
+  - "75-real;80-real;86-real;89-real;90a-real"
+  - "75-real;80-real;86-real;89-real;90a-real;100f-real;120a-real;120"
+c_stdlib:
+  - sysroot
+c_stdlib_version:
+  - "2.28"
+zip_keys:
+  - [cuda_compiler_version, c_compiler_version, cxx_compiler_version, cuda_architectures]
