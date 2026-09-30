@@ -1,5 +1,32 @@
 # Building Sirius
 
+## Separate DuckDB extension
+
+`sirius-duckdb/` builds the extension against an installed Sirius shared library.
+It uses DuckDB's extension build helpers and does not compile engine, CUDA, or
+Rust sources. The normal `make` build and static distribution still use the
+existing extension targets in the repository root.
+
+Build and install Sirius with the existing build, then configure the separate
+consumer using the pinned DuckDB source tree:
+
+```bash
+pixi run make
+pixi run cmake --install build/release --prefix "$PWD/build/install" --component sirius_library
+pixi run cmake -S duckdb -B build/sirius-duckdb -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+  -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF -DBUILD_UNITTESTS=OFF \
+  -DEXTENSION_STATIC_BUILD=ON \
+  -DDUCKDB_EXTENSION_CONFIGS="$PWD/sirius-duckdb/extension_config.cmake" \
+  -Dsirius_DIR="$PWD/build/install/lib/cmake/sirius"
+pixi run cmake --build build/sirius-duckdb --target sirius_loadable_extension
+```
+
+The extension is written to
+`build/sirius-duckdb/extension/sirius/sirius.duckdb_extension`. Loading it requires
+`libsirius.so` and its runtime dependencies. CI builds this consumer and loads it
+into a separate DuckDB host on the GPU runner.
+
 ## Shared implementation objects
 
 The internal `sirius_objects` CMake target compiles the common C++ and CUDA

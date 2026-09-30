@@ -98,6 +98,18 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_Git=TRUE
           cmake --build "$sirius_test_dir/consumer"
 
+      - name: Build the separate DuckDB extension
+        run: |
+          cmake --install build/release --prefix "$PWD/build/release/install" --component sirius_library
+          cmake -S duckdb -B build/release/sirius-duckdb -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF -DBUILD_UNITTESTS=OFF -DBUILD_SHELL=OFF \
+            -DEXTENSION_STATIC_BUILD=ON \
+            -DDUCKDB_EXTENSION_CONFIGS="$PWD/sirius-duckdb/extension_config.cmake" \
+            -Dsirius_DIR="$PWD/build/release/install/lib/cmake/sirius"
+          cmake --build build/release/sirius-duckdb --target sirius_loadable_extension --parallel "$(nproc)"
+
       - name: Surface build errors
         if: failure()
         run: |
@@ -177,6 +189,23 @@ jobs:
           done
           echo "::error::Could not install the avro and iceberg extensions after 3 attempts." >&2
           exit 1
+
+      - name: Load the extension into a separate DuckDB host
+        env:
+          SIRIUS_CONFIG_FILE: ${{ github.workspace }}/test/cpp/integration/integration.yaml
+        run: |
+          LD_LIBRARY_PATH="$PWD/build/release/install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" timeout 60s python - <<'PY'
+          from pathlib import Path
+
+          import duckdb
+
+          extension = Path("build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension").resolve()
+          with duckdb.connect(config={"allow_unsigned_extensions": "true"}) as connection:
+              connection.execute(f"LOAD '{extension}'")
+              assert connection.execute("SELECT current_setting('gpu_execution')").fetchone() == (True,)
+              connection.execute("CREATE TABLE smoke AS SELECT i::INTEGER AS i FROM range(100) t(i)")
+              assert connection.execute("SELECT sum(i) FROM smoke").fetchone() == (4950,)
+          PY
 
       # Two Catch2 shards per GPU. Each shard sees only its assigned GPU; [multi_gpu]
       # tests run afterwards with all GPUs. Declaration order keeps tests using
