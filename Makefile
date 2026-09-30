@@ -24,7 +24,6 @@ endif
 BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 
 .PHONY: all release debug reldebug relwithdebinfo debug-release \
-	legacy-release \
 	clang-release clang-debug clang-relwithdebinfo clang-asan clang-tsan \
 	vcpkg-release ci-release configure_ci set_duckdb_version \
 	test test_release test_debug test_reldebug test_ci-release clean list-presets \
@@ -59,9 +58,6 @@ debug-release: relwithdebinfo
 
 relwithdebinfo: build/relwithdebinfo/build.ninja
 	$(call build_split,$(BUILD_TARGETS))
-
-legacy-release: build/legacy-release/build.ninja
-	$(call build_split,$(MAIN_BUILD_TARGETS))
 
 clang-release: build/clang-release/build.ninja
 	$(call build_split,$(BUILD_TARGETS))

@@ -23,10 +23,10 @@ git submodule update --init --recursive
 build/release/test/cpp/sirius_unittest
 
 # Run a specific tag or test name
-build/release/test/cpp/sirius_unittest "[cpu_cache]"
-build/release/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
+build/release/test/cpp/sirius_unittest "[uri_parser]"
+build/release/test/cpp/sirius_unittest "uri_parser parses object-store URIs"
 
-# SQL logic tests (end-to-end)
+# Build and run the C++ unit and integration tests
 make test
 ```
 

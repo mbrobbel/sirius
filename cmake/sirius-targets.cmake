@@ -79,7 +79,6 @@ foreach(_target sirius_objects sirius_core sirius_shared)
     PRIVATE
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/compression/simpatico_codegen/src>
-      $<$<BOOL:${SIRIUS_LEGACY_INCLUDE_DIR}>:$<BUILD_INTERFACE:${SIRIUS_LEGACY_INCLUDE_DIR}>>
   )
 
   # Substrait->DuckDB reader headers (from_substrait.hpp) and its bundled
@@ -89,11 +88,6 @@ foreach(_target sirius_objects sirius_core sirius_shared)
     PRIVATE ${SIRIUS_SUBSTRAIT_DIR}/src/include
             ${SIRIUS_SUBSTRAIT_DIR}/third_party
             ${SIRIUS_SUBSTRAIT_DIR}/third_party/substrait)
-
-  if(SIRIUS_LEGACY_COMPILE_DEFINITIONS)
-    target_compile_definitions(${_target}
-                               PRIVATE ${SIRIUS_LEGACY_COMPILE_DEFINITIONS})
-  endif()
 
   # cuCascade::cucascade_cudf holds the cudf-coupled representations and
   # converters Sirius uses; it transitively links the cudf-free core

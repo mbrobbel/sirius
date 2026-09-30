@@ -119,8 +119,8 @@ build/release/test/cpp/sirius_unittest
 
 Run tests associated with a specific tag or a specific test:
 ```
-build/release/test/cpp/sirius_unittest "[cpu_cache]"
-build/release/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
+build/release/test/cpp/sirius_unittest "[uri_parser]"
+build/release/test/cpp/sirius_unittest "uri_parser parses object-store URIs"
 ```
 
 Test logs are saved in:

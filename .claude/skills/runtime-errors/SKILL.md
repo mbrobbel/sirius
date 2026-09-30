@@ -282,7 +282,7 @@ When the query produces an exception, error message, unexpected fallback to CPU,
      - **CUDA runtime error:** `cudaErrorXxx` -- indicates GPU-side failure (OOM, invalid config, driver error)
      - **cuDF exception:** `cudf::logic_error`, `cudf::cuda_error` -- cuDF operation failed
      - **DuckDB error:** Error propagated from DuckDB's execution engine
-     - **Sirius fallback:** Query or operator fell back to CPU execution -- search log for `fallback` entries. Check `src/fallback.cpp` to understand which condition triggered it.
+     - **Sirius fallback:** Query or operator fell back to CPU execution -- search log for `fallback` entries. Check `src/transparent/physical_sirius_execution.cpp` to understand which condition triggered it.
      - **Assertion failure:** `assert()` or `DCHECK` failure -- the code hit an unexpected state
 
 3. Read the source file at the error location. Understand the function, the expected preconditions, and what state would cause the error.
@@ -343,7 +343,7 @@ Common runtime error causes in Sirius:
 - **Unsupported data type:** A column type (e.g., `INTERVAL`, `BLOB`, nested types) reached a GPU operator that doesn't handle it. Should trigger fallback but may throw instead.
 - **cuDF operation failure:** cuDF throws on invalid input (e.g., mismatched column lengths in join, unsupported aggregation type). Read the cuDF error message carefully -- it usually says exactly what's wrong.
 - **GPU OOM:** `cudaErrorMemoryAllocation` -- the GPU ran out of memory. Check memory reservation logic, consider reducing data batch size or GPU region sizes.
-- **Unexpected fallback:** A query falls back to CPU when the user expected GPU execution. Check `src/fallback.cpp` for the fallback condition. Common triggers: unsupported operator, data too large, unsupported type.
+- **Unexpected fallback:** A query falls back to CPU when the user expected GPU execution. Check `src/transparent/physical_sirius_execution.cpp` for the fallback condition. Common triggers: unsupported operator, data too large, unsupported type.
 - **Type mismatch:** Sirius type conversion (DuckDB types <-> cuDF types) failed. Check type mapping in `src/include/cudf/` and `src/include/data/`.
 - **Pipeline dependency error:** A pipeline tried to read from a Data Repository that hasn't been populated yet (dependency ordering issue in `sirius_meta_pipeline`).
 - **Row count overflow:** cuDF uses `int32_t` for row indices (~2B row limit). Large tables can overflow. Should trigger fallback.
@@ -446,4 +446,4 @@ See `common-segfaults.md` in this directory for a catalog of known segfault patt
 
 ## Scope
 
-Only analyze code in `namespace sirius` plus exceptions listed in shared build-and-query.md. Ignore legacy `namespace duckdb` code.
+Analyze active code in both `namespace sirius` and `namespace duckdb`; see shared build-and-query.md.
