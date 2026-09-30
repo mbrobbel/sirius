@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30.4)
+cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 project(sirius_duckdb LANGUAGES CXX)
 
 if(NOT COMMAND build_loadable_extension)
@@ -20,8 +20,9 @@ if(SIRIUS_DUCKDB_LINKAGE STREQUAL "static")
   set(sirius_dependency sirius::sirius_static)
 endif()
 
-build_static_extension(sirius src/sirius_extension.cpp)
-build_loadable_extension(sirius CPP src/sirius_extension.cpp)
+set(EXTENSION_SOURCES src/sirius/sirius_extension.cpp)
+build_static_extension(sirius ${EXTENSION_SOURCES})
+build_loadable_extension(sirius " " ${EXTENSION_SOURCES})
 foreach(target sirius_extension sirius_loadable_extension)
   target_include_directories(${target}
                              PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/include")

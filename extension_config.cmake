@@ -18,14 +18,4 @@
 # to load
 
 # Extension from this repo
-duckdb_extension_load(
-  sirius
-  SOURCE_DIR
-  ${CMAKE_CURRENT_LIST_DIR}/sirius-duckdb
-  INCLUDE_DIR
-  ${CMAKE_CURRENT_LIST_DIR}/sirius-duckdb/src/include
-  TEST_DIR
-  ${CMAKE_CURRENT_LIST_DIR}/test/sql
-  LOAD_TESTS
-  EXTENSION_VERSION
-  dev)
+include("${CMAKE_CURRENT_LIST_DIR}/sirius-duckdb/extension_config.cmake")
