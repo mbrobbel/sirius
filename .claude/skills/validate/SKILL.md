@@ -24,7 +24,7 @@ Diagnose incorrect query results by comparing Sirius GPU output against DuckDB C
 2. **Establish baseline:**
    Run the query via DuckDB CPU to get the expected correct result:
    ```bash
-   build/release/duckdb <db_path> -c "SELECT ..." > /tmp/claude-1000/baseline_result.txt
+   build/release/sirius-duckdb/duckdb <db_path> -c "SELECT ..." > /tmp/claude-1000/baseline_result.txt
    ```
 
 3. **Run via Sirius GPU:**
@@ -32,7 +32,7 @@ Diagnose incorrect query results by comparing Sirius GPU output against DuckDB C
    export SIRIUS_LOG_LEVEL=trace
    export SIRIUS_LOG_DIR=build/release/log/run_$(date +%s)
    mkdir -p $SIRIUS_LOG_DIR
-   build/release/duckdb <db_path> -c "CALL gpu_execution('SELECT ...');" > /tmp/claude-1000/gpu_result.txt
+   build/release/sirius-duckdb/duckdb <db_path> -c "CALL gpu_execution('SELECT ...');" > /tmp/claude-1000/gpu_result.txt
    ```
    Compare output against baseline (sort both to handle ordering differences).
 
@@ -96,7 +96,7 @@ The most common cause of wrong results in Sirius is **reading garbage data due t
    CMAKE_BUILD_PARALLEL_LEVEL=$(nproc) cmake --build build/release --target stream_check
 
    # Run the query with stream_check preloaded
-   LD_PRELOAD=build/release/libstream_check.so build/release/duckdb <db_path> <<'EOF'
+   LD_PRELOAD=build/release/libstream_check.so build/release/sirius-duckdb/duckdb <db_path> <<'EOF'
    CALL gpu_execution('<QUERY>');
    EOF
    ```

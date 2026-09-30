@@ -42,7 +42,7 @@ When a query never returns or the process appears stuck. Hangs are typically cau
    export SIRIUS_LOG_LEVEL=trace
    export SIRIUS_LOG_DIR=build/release/log/run_$(date +%s)
    mkdir -p $SIRIUS_LOG_DIR
-   timeout <TIMEOUT> build/release/duckdb <db_path> <<'EOF'
+   timeout <TIMEOUT> build/release/sirius-duckdb/duckdb <db_path> <<'EOF'
    CALL gpu_execution('<QUERY>');
    EOF
    ```
@@ -132,7 +132,7 @@ Sirius installs a signal handler (via `install_segfault_backtrace_handler()`) th
    export SIRIUS_LOG_LEVEL=trace
    export SIRIUS_LOG_DIR=build/release/log/run_$(date +%s)
    mkdir -p $SIRIUS_LOG_DIR
-   build/release/duckdb <db_path> <<'EOF' 2>&1 | tee /tmp/segfault_output.txt
+   build/release/sirius-duckdb/duckdb <db_path> <<'EOF' 2>&1 | tee /tmp/segfault_output.txt
    CALL gpu_execution('<QUERY>');
    EOF
    ```
@@ -193,7 +193,7 @@ Summarize Phase 1 findings. Offer ASan when the crash appears to be a CPU-side m
   export SIRIUS_LOG_LEVEL=trace
   export SIRIUS_LOG_DIR=build/clang-debug/log/run_$(date +%s)
   mkdir -p $SIRIUS_LOG_DIR
-  ASAN_OPTIONS="detect_leaks=1:halt_on_error=1" build/clang-debug/duckdb <db_path> <<'EOF'
+  ASAN_OPTIONS="detect_leaks=1:halt_on_error=1" build/clang-debug/sirius-duckdb/duckdb <db_path> <<'EOF'
   CALL gpu_execution('<QUERY>');
   EOF
   ```
@@ -265,7 +265,7 @@ When the query produces an exception, error message, unexpected fallback to CPU,
    export SIRIUS_LOG_LEVEL=trace
    export SIRIUS_LOG_DIR=build/release/log/run_$(date +%s)
    mkdir -p $SIRIUS_LOG_DIR
-   build/release/duckdb <db_path> <<'EOF'
+   build/release/sirius-duckdb/duckdb <db_path> <<'EOF'
    CALL gpu_execution('<QUERY>');
    EOF
    ```

@@ -26,7 +26,7 @@ Note that if building consumes too much memory, try reducing the `CMAKE_BUILD_PA
 
 ```bash
 export SIRIUS_CONFIG_FILE=/path/to/sirius.yaml
-./build/release/duckdb
+./build/release/sirius-duckdb/duckdb
 ```
 
 From the DuckDB shell, create views pointing to your Parquet files and run queries with `gpu_execution`:
@@ -114,18 +114,18 @@ CREATE VIEW my_table AS SELECT * FROM read_parquet('/path/to/my_data/*.parquet')
 Run all unit tests:
 ```
 CMAKE_BUILD_PARALLEL_LEVEL=$(nproc) make
-build/release/extension/sirius/test/cpp/sirius_unittest
+build/release/test/cpp/sirius_unittest
 ```
 
 Run tests associated with a specific tag or a specific test:
 ```
-build/release/extension/sirius/test/cpp/sirius_unittest "[cpu_cache]"
-build/release/extension/sirius/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
+build/release/test/cpp/sirius_unittest "[cpu_cache]"
+build/release/test/cpp/sirius_unittest "test_cpu_cache_basic_string_single_col"
 ```
 
 Test logs are saved in:
 ```
-build/release/extension/sirius/test/cpp/log
+build/release/test/cpp/log
 ```
 
 ## Developer Documentation

@@ -4,7 +4,7 @@
 #
 # Requires data to be pre-generated as a DuckDB database file. You can
 # generate one with:
-#   ./build/release/duckdb test_datasets/tpch_sf1.duckdb \
+#   ./build/release/sirius-duckdb/duckdb test_datasets/tpch_sf1.duckdb \
 #     -c "INSTALL tpch; LOAD tpch; CALL dbgen(sf=1);"
 #
 # By default, each query runs in its own DuckDB process (multi-session).
@@ -34,8 +34,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DUCKDB="$PROJECT_DIR/build/release/duckdb"
-EXTENSION="$PROJECT_DIR/build/release/extension/sirius/sirius.duckdb_extension"
+DUCKDB="$PROJECT_DIR/build/release/sirius-duckdb/duckdb"
+EXTENSION="$PROJECT_DIR/build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension"
 QUERY_DIR="$SCRIPT_DIR/tpch_queries/orig"
 
 # --- Parse arguments ---

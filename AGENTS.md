@@ -41,8 +41,8 @@ pixi run pre-commit run -a                 # all formatting/lint hooks
 
 Running tests directly (non-obvious invocations):
 ```bash
-pixi run build/release/test/unittest --test-dir . test/sql/tpch-sirius.test    # one SQLLogic file
-pixi run build/release/extension/sirius/test/cpp/sirius_unittest "[cpu_cache]"  # by Catch2 tag/test name
+pixi run build/release/sirius-duckdb/test/unittest --test-dir . test/sql/tpch-sirius.test    # one SQLLogic file
+pixi run build/release/test/cpp/sirius_unittest "[cpu_cache]"  # by Catch2 tag/test name
 ```
 
 **Python API**: the default Pixi environment includes DuckDB's Python package. Load the built
@@ -71,7 +71,7 @@ Load the extension and run normal SQL — Sirius intercepts it transparently and
 queries on the GPU (controlled by the `gpu_execution` setting, on by default):
 
 ```sql
-LOAD 'build/release/extension/sirius/sirius.duckdb_extension';
+LOAD 'build/release/sirius-duckdb/extension/sirius/sirius.duckdb_extension';
 SELECT ...;                  -- transparently routed to the GPU
 -- SET gpu_execution = false;  -- to disable interception
 ```

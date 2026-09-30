@@ -95,6 +95,14 @@ if(BUILD_WITH_CTRACK)
 endif()
 
 pkg_check_modules(NUMA REQUIRED IMPORTED_TARGET numa)
+if(SIRIUS_BUILD_STATIC)
+  # Import cuCascade's NUMA dependency where the archive collector can see it.
+  block()
+  list(PREPEND CMAKE_MODULE_PATH
+       "${CMAKE_CURRENT_SOURCE_DIR}/cucascade/cmake/Modules")
+  find_package(Numa REQUIRED)
+  endblock()
+endif()
 pkg_check_modules(LIBURING REQUIRED IMPORTED_TARGET liburing)
 if(VCPKG_BUILD)
   # The CMake target includes curl's private static dependencies.
@@ -199,7 +207,7 @@ add_subdirectory(rust/crates/telemetry/bridge)
 # start MinIO containers from the test binary. Builds a Go c-archive, so a Go
 # toolchain (provided by pixi) and network access on the first configure/build
 # are required — hence gated behind SIRIUS_BUILD_S3_TESTS.
-if(SIRIUS_BUILD_S3_TESTS)
+if(SIRIUS_BUILD_TESTS AND SIRIUS_BUILD_S3_TESTS)
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/testcontainers_native.cmake")
 endif()
 

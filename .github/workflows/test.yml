@@ -79,6 +79,12 @@ jobs:
         with:
           version: v0.18.0
 
+      - name: Test static archive packaging
+        run: |
+          cmake -S test/cmake/static_bundle -B build/static-bundle-test -G Ninja
+          cmake --build build/static-bundle-test
+          ctest --test-dir build/static-bundle-test --output-on-failure
+
       - name: Build
         env:
           CUDAARCHS: "75" # 75 for T4 capability; 89 for L4 capability
@@ -97,18 +103,6 @@ jobs:
             -DCMAKE_PREFIX_PATH="$sirius_test_dir/relocated" \
             -DCMAKE_DISABLE_FIND_PACKAGE_Git=TRUE
           cmake --build "$sirius_test_dir/consumer"
-
-      - name: Build the separate DuckDB extension
-        run: |
-          cmake --install build/release --prefix "$PWD/build/release/install" --component sirius_library
-          cmake -S duckdb -B build/release/sirius-duckdb -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-            -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF -DBUILD_UNITTESTS=OFF -DBUILD_SHELL=OFF \
-            -DEXTENSION_STATIC_BUILD=ON \
-            -DDUCKDB_EXTENSION_CONFIGS="$PWD/sirius-duckdb/extension_config.cmake" \
-            -Dsirius_DIR="$PWD/build/release/install/lib/cmake/sirius"
-          cmake --build build/release/sirius-duckdb --target sirius_loadable_extension --parallel "$(nproc)"
 
       - name: Surface build errors
         if: failure()
@@ -181,7 +175,7 @@ jobs:
         # otherwise produce, there is no extension repository to install from.
         run: |
           for attempt in 1 2 3; do
-            if ./build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
+            if ./build/release/sirius-duckdb/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
               exit 0
             fi
             echo "::warning::Extension install attempt ${attempt} failed; retrying in $((attempt * 10))s"
@@ -213,8 +207,8 @@ jobs:
       - name: Run C++ unit tests
         run: |
           nvidia-smi
-          bin=./build/release/extension/sirius/test/cpp/sirius_unittest
-          log_root=$PWD/build/release/extension/sirius/test/cpp/log
+          bin=./build/release/test/cpp/sirius_unittest
+          log_root=$PWD/build/release/test/cpp/log
           gpus=$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)
           if ((gpus < 2)); then
             echo "::error::Expected at least 2 GPUs, found $gpus" >&2
@@ -257,7 +251,7 @@ jobs:
             echo "::error::Expected at least 2 GPUs for multi-GPU tests, found $gpus" >&2
             exit 1
           fi
-          timeout 20m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort --order decl --durations yes \
+          timeout 20m ./build/release/test/cpp/sirius_unittest --abort --order decl --durations yes \
             "[multi_gpu]~[.]" 2>&1 | tee /tmp/unittest_multi_gpu.log
 
       # The late-materialization gate is read from the environment once per process, so the
@@ -268,7 +262,7 @@ jobs:
         run: |
           set -o pipefail
           SIRIUS_EXP_LATE_MAT=1 \
-            timeout 20m ./build/release/extension/sirius/test/cpp/sirius_unittest --abort --order decl \
+            timeout 20m ./build/release/test/cpp/sirius_unittest --abort --order decl \
             "[late_mat],[deferred_query],[native_filter]" 2>&1 | tee /tmp/unittest_late_mat.log
 
       - name: Iceberg conformance (correctness + connection liveness)
@@ -284,7 +278,7 @@ jobs:
           set -o pipefail
           python3 test/cpp/integration/data/iceberg_conformance/run_conformance.py \
             test/cpp/integration/data/iceberg_conformance \
-            --duckdb ./build/release/duckdb 2>&1 | tee /tmp/conformance.log
+            --duckdb ./build/release/sirius-duckdb/duckdb 2>&1 | tee /tmp/conformance.log
 
       - name: Surface test failures
         if: failure()
@@ -305,7 +299,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unittest-logs-cuda${{ matrix.cuda.version }}-${{ github.run_id }}
-          path: build/release/extension/sirius/test/cpp/log/
+          path: build/release/test/cpp/log/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -314,7 +308,7 @@ jobs:
           ./setup_test_datasets.sh
           chmod -R a+r test_datasets/
           mkdir -p test_datasets/tpch_parquet_sf1
-          ./build/release/duckdb -f scripts/tpch_to_parquet.sql
+          ./build/release/sirius-duckdb/duckdb -f scripts/tpch_to_parquet.sql
 
       - name: TPC-H performance snapshot
         id: tpch

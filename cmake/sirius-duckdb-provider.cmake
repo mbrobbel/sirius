@@ -10,6 +10,21 @@ if(NOT EXISTS "${SIRIUS_DUCKDB_SOURCE_DIR}/src/include/duckdb.hpp")
       "Initialize the DuckDB submodule or set SIRIUS_DUCKDB_SOURCE_DIR")
 endif()
 
+set(OVERRIDE_GIT_DESCRIBE
+    "v1.5.6"
+    CACHE STRING "DuckDB version used by the source dependency")
+
+function(sirius_add_duckdb_source)
+  # Keep DuckDB options scoped to its dependency build.
+  set(DUCKDB_EXTENSION_CONFIGS "")
+  set(BUILD_EXTENSIONS "core_functions;parquet")
+  set(BUILD_SHELL OFF)
+  set(BUILD_UNITTESTS OFF)
+  add_subdirectory("${SIRIUS_DUCKDB_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/duckdb"
+                   EXCLUDE_FROM_ALL)
+endfunction()
+sirius_add_duckdb_source()
+
 add_library(sirius_duckdb_dependency INTERFACE IMPORTED)
 add_library(sirius::duckdb_dependency ALIAS sirius_duckdb_dependency)
 get_directory_property(_duckdb_headers DIRECTORY "${SIRIUS_DUCKDB_SOURCE_DIR}"

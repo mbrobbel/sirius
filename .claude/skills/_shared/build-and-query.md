@@ -49,7 +49,7 @@ ASan and TSan cannot be used simultaneously. DuckDB will warn and disable ASan i
 
 **ASan runtime options:**
 ```bash
-ASAN_OPTIONS="detect_leaks=1:halt_on_error=0:print_legend=1" build/clang-debug/duckdb ...
+ASAN_OPTIONS="detect_leaks=1:halt_on_error=0:print_legend=1" build/clang-debug/sirius-duckdb/duckdb ...
 ```
 - `detect_leaks=1`: Also report memory leaks at exit
 - `halt_on_error=0`: Continue after first error (collect multiple reports)
@@ -104,8 +104,8 @@ CALL gpu_execution('<USER_SQL_QUERY>');
 All skills that run SQL queries offer the option to compare Sirius GPU results against DuckDB's native CPU execution.
 
 **Pattern:**
-1. Run the query via DuckDB CPU (no Sirius extension): `build/release/duckdb <db_path>` then `SELECT ...;`
-2. Run the same query via Sirius GPU: `build/release/duckdb <db_path>` then `CALL gpu_execution('SELECT ...');`
+1. Run the query via DuckDB CPU (no Sirius extension): `build/release/sirius-duckdb/duckdb <db_path>` then `SELECT ...;`
+2. Run the same query via Sirius GPU: `build/release/sirius-duckdb/duckdb <db_path>` then `CALL gpu_execution('SELECT ...');`
 3. Diff the results row-by-row (sort both outputs first to handle ordering differences)
 4. Report any mismatches: missing rows, extra rows, wrong values, type differences
 

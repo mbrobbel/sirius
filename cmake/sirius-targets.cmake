@@ -4,31 +4,13 @@ add_library(sirius_core STATIC $<TARGET_OBJECTS:sirius_objects>)
 
 add_library(sirius_shared SHARED src/sirius_library_anchor.cpp
                                  $<TARGET_OBJECTS:sirius_objects>)
-build_static_extension(sirius src/sirius_extension_entry.cpp
-                       $<TARGET_OBJECTS:sirius_objects>)
-build_loadable_extension(sirius CPP src/sirius_extension_entry.cpp
-                         $<TARGET_OBJECTS:sirius_objects>)
-
-# The standalone FFI constructs an embedded DuckDB, which needs the no-op static
-# extension loader retained regardless of archive ordering.
-set_property(
-  TARGET sirius_loadable_extension
-  PROPERTY LINK_LIBRARY_OVERRIDE_dummy_static_extension_loader WHOLE_ARCHIVE)
-
-# rapidsai/rmm#826: DuckDB links the loadable extension with
-# -Wl,--exclude-libs,ALL, under which mold (but not bfd) hides RMM's GNU_UNIQUE
-# current-device-resource registry symbols, so cuDF's internal allocations
-# bypass the cuCascade reservation system. Force bfd to keep them exported.
-# Harmless for the single-DSO static vcpkg build.
-set_target_properties(sirius_loadable_extension PROPERTIES LINKER_TYPE BFD)
-
 if(VCPKG_BUILD AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(_sirius_cuda_link_script
       "${CMAKE_CURRENT_LIST_DIR}/sirius-cuda-fatbin.ld")
   set(_sirius_cuda_link_interface
       "$<BUILD_INTERFACE:${_sirius_cuda_link_script}>$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/cmake/sirius/sirius-cuda-fatbin.ld>"
   )
-  foreach(_target sirius_core sirius_extension)
+  foreach(_target sirius_core)
     target_link_options(${_target} INTERFACE
                         "$<HOST_LINK:LINKER:-T,${_sirius_cuda_link_interface}>")
     set_property(
@@ -36,7 +18,7 @@ if(VCPKG_BUILD AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
       APPEND
       PROPERTY INTERFACE_LINK_DEPENDS "${_sirius_cuda_link_interface}")
   endforeach()
-  foreach(_target sirius_shared sirius_loadable_extension)
+  foreach(_target sirius_shared)
     target_link_options(${_target} PRIVATE
                         "$<HOST_LINK:LINKER:-T,${_sirius_cuda_link_script}>")
     set_property(
@@ -46,12 +28,11 @@ if(VCPKG_BUILD AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   endforeach()
 endif()
 
-# Shared configuration for both extension targets
+# Shared configuration for the engine targets
 set(SIRIUS_CLANG_CXX_WARNING_OPTIONS -Wunreachable-code -Wimplicit-fallthrough
                                      -Wrange-loop-analysis -Wnull-dereference)
 
-foreach(_target sirius_objects sirius_core sirius_extension
-                sirius_loadable_extension sirius_shared)
+foreach(_target sirius_objects sirius_core sirius_shared)
   set(_link_scope "")
   if(_target STREQUAL "sirius_shared")
     set(_link_scope PRIVATE)
@@ -157,40 +138,21 @@ foreach(_target sirius_objects sirius_core sirius_extension
     kvikio::kvikio)
 endforeach()
 
-# Additional libraries only needed by the static extension
-target_link_libraries(sirius_extension PkgConfig::NUMA PkgConfig::LIBURING
-                      ${SIRIUS_CURL_TARGET} OpenSSL::Crypto absl::any_invocable)
-
 # `sirius_core` is itself an archive, so its LINK_LIBRARY_OVERRIDE does not
 # perform a final link. Carry the concrete Rust archive as a transitive
 # WHOLE_ARCHIVE item instead; DuckDB and every other final consumer then retain
 # the static NVTX pointer shim as well.
-foreach(_target sirius_core sirius_extension)
-  target_link_libraries(${_target}
-                        "$<LINK_LIBRARY:WHOLE_ARCHIVE,telemetry_bridge-static>")
-endforeach()
+target_link_libraries(sirius_core
+                      "$<LINK_LIBRARY:WHOLE_ARCHIVE,telemetry_bridge-static>")
 
 # A statically embedded Sirius cannot give NVTX a DSO path. Its private dlopen
 # interposer maps one sentinel path to the running executable instead. Carry
 # both symbols into the final executable's dynamic symbol table so dependency
 # images such as libcudf can resolve the Quent initializer from that handle.
-foreach(_target sirius_core sirius_extension)
-  target_link_options(
-    ${_target} INTERFACE
-    "LINKER:--export-dynamic-symbol=InitializeInjectionNvtx2"
-    "LINKER:--export-dynamic-symbol=dlopen")
-endforeach()
-
-target_link_libraries(sirius_loadable_extension PkgConfig::LIBURING
-                      ${SIRIUS_CURL_TARGET} OpenSSL::Crypto absl::any_invocable)
-
-# NVTX's runtime injection lookup dlopens the path named by
-# NVTX_INJECTION64_PATH and resolves InitializeInjectionNvtx2 from it. Export
-# the statically embedded Quent entry point from the loadable extension so
-# Sirius can point NVTX at its own already-loaded DSO without deploying a second
-# injection library.
-target_link_options(sirius_loadable_extension PRIVATE
-                    "LINKER:--export-dynamic-symbol=InitializeInjectionNvtx2")
+target_link_options(
+  sirius_core INTERFACE
+  "LINKER:--export-dynamic-symbol=InitializeInjectionNvtx2"
+  "LINKER:--export-dynamic-symbol=dlopen")
 
 add_library(sirius::sirius ALIAS sirius_shared)
 set_target_properties(
@@ -264,4 +226,19 @@ if(TARGET CUDA::nvml_static)
       )
     endif()
   endif()
+endif()
+
+if(NOT SIRIUS_BUILD_SHARED)
+  set_target_properties(sirius_shared PROPERTIES EXCLUDE_FROM_ALL ON)
+endif()
+add_custom_target(sirius_library)
+if(SIRIUS_BUILD_SHARED)
+  add_dependencies(sirius_library sirius_shared)
+endif()
+if(SIRIUS_BUILD_STATIC)
+  include("${CMAKE_CURRENT_LIST_DIR}/sirius-static-bundle.cmake")
+  sirius_add_static_bundle(
+    sirius_static "${CMAKE_CURRENT_BINARY_DIR}/libsirius.a" sirius_core
+    dummy_static_extension_loader CUDA::cudart_static)
+  add_dependencies(sirius_library sirius_static)
 endif()
