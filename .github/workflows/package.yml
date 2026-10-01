@@ -1,0 +1,63 @@
+name: Package Sirius
+
+on:
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-64, linux-aarch64]
+        cuda-version: ["12.9", "13.4"]
+        include:
+          - platform: linux-64
+            runner: cpu-xl
+          - platform: linux-aarch64
+            runner: arm-xl
+    runs-on: [self-hosted, ubuntu-24.04, "${{ matrix.runner }}"]
+    timeout-minutes: 240
+    env:
+      CONDA_OVERRIDE_CUDA: ${{ matrix.cuda-version }}
+      SIRIUS_BUILD_ID: ${{ github.sha }}_${{ github.run_id }}_${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize build dependencies
+        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
+
+      - name: Configure cache backend
+        run: |
+          if [[ -n "${SCCACHE_BUCKET}" ]]; then
+            echo "SCCACHE_GHA_ENABLED=false" >> "$GITHUB_ENV"
+          else
+            echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          fi
+          echo "SCCACHE_S3_KEY_PREFIX=sirius" >> "$GITHUB_ENV"
+          if [[ -n "${VCPKG_BUCKET}" ]]; then
+            echo "VCPKG_BINARY_SOURCES=clear;x-aws,s3://${VCPKG_BUCKET}/sirius/,readwrite" >> "$GITHUB_ENV"
+          fi
+
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.18.0
+
+      - name: Build and test the packages
+        uses: prefix-dev/rattler-build-action@1ca5f45832f419a46d1326ccc5861d7e14d67c44 # v0.2.39
+        with:
+          rattler-build-version: v0.76.1
+          artifact-name: sirius-${{ matrix.platform }}-cuda${{ matrix.cuda-version }}
+          build-args: >-
+            --channel rapidsai --channel conda-forge
+            --target-platform ${{ matrix.platform }}
+            --variant cuda_compiler_version=${{ matrix.cuda-version }}
+            --variant c_compiler_version=${{ matrix.cuda-version == '12.9' && '14' || '15' }}
+            --variant cxx_compiler_version=${{ matrix.cuda-version == '12.9' && '14' || '15' }}
+            --variant 'cuda_architectures=${{ matrix.cuda-version == '12.9' && '75-real;80-real;86-real;89-real;90a-real' || '75-real;80-real;86-real;89-real;90a-real;100f-real;120a-real;120' }}'
+            --no-build-id --env-isolation none

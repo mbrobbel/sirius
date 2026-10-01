@@ -208,6 +208,15 @@ target_link_libraries(
           "$<LINK_LIBRARY:WHOLE_ARCHIVE,dummy_static_extension_loader>")
 set_target_properties(sirius_shared PROPERTIES LINKER_TYPE LLD)
 
+# Keep embedded DuckDB globals separate from the host's DuckDB instance.
+target_link_options(
+  sirius_shared
+  PRIVATE
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duckdb_static>"
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:core_functions_extension>"
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:parquet_extension>"
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:dummy_static_extension_loader>")
+
 # Discard unused sections pulled in by whole archives.
 target_link_options(sirius_shared PRIVATE "LINKER:--gc-sections")
 

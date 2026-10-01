@@ -4,6 +4,7 @@
 #     - Allow actions by Marketplace verified creators: NO
 #     - Explicitly allowed third-party actions:
 #       prefix-dev/setup-pixi@*
+#       prefix-dev/rattler-build-action@*
 #       mozilla-actions/sccache-action@*
 #     - Require actions to be pinned to a full-length commit SHA: NO
 #

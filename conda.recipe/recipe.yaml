@@ -1,0 +1,293 @@
+context:
+  version: 0.0.0
+  build_id: ${{ env.get("SIRIUS_BUILD_ID", default="source") }}
+source:
+  path: ..
+  filter:
+    exclude:
+      - sirius-duckdb/**
+      - vcpkg/**
+build:
+  skip: not linux
+outputs:
+  - package:
+      name: sirius-devel
+      version: ${{ version }}
+    build:
+      number: 0
+      noarch: generic
+      string: ${{ hash }}_${{ build_number }}_${{ build_id }}
+      script: |
+        set -euo pipefail
+        mkdir -p "$PREFIX/include" "$PREFIX/lib/cmake/sirius"
+        cp -r include/sirius "$PREFIX/include/"
+        cat > install-devel.cmake <<'CMAKE'
+        include(CMakePackageConfigHelpers)
+        set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX}")
+        configure_package_config_file(
+          cmake/sirius-config.cmake.in "$ENV{PREFIX}/lib/cmake/sirius/sirius-config.cmake"
+          INSTALL_DESTINATION lib/cmake/sirius)
+        write_basic_package_version_file(
+          "$ENV{PREFIX}/lib/cmake/sirius/sirius-config-version.cmake"
+          VERSION "${{ version }}" COMPATIBILITY SameMinorVersion ARCH_INDEPENDENT)
+        CMAKE
+        cmake -P install-devel.cmake
+    requirements:
+      build:
+        - cmake >=3.30.4
+    tests:
+      - package_contents:
+          files:
+            - include/sirius/duckdb.hpp
+            - include/sirius/ffi.hpp
+            - lib/cmake/sirius/sirius-config.cmake
+            - lib/cmake/sirius/sirius-config-version.cmake
+  - package:
+      name: sirius
+      version: ${{ version }}
+    build:
+      number: 0
+      string: cuda${{ cuda_compiler_version | split('.') | first }}_${{ hash }}_${{ build_number }}_${{ build_id }}
+      skip: not linux
+      script:
+        content: |
+          set -euo pipefail
+          export LIBCLANG_PATH="$BUILD_PREFIX/lib"
+          export SCCACHE_BASEDIRS="$SRC_DIR:$PREFIX:$BUILD_PREFIX"
+          export RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0
+
+          cmake -S duckdb -B build-conda -G Ninja \
+            ${CMAKE_ARGS:-} ${SIRIUS_CMAKE_ARGS:-} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CUDA_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_PREFIX_PATH="$PREFIX;$BUILD_PREFIX" \
+            -DCMAKE_CUDA_ARCHITECTURES="${{ cuda_architectures }}" \
+            -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
+            -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+            -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF \
+            -DBUILD_UNITTESTS=OFF -DBUILD_SHELL=OFF \
+            -DSIRIUS_BUILD_S3_TESTS=OFF \
+            -DDUCKDB_EXTENSION_CONFIGS="$SRC_DIR/extension_config.cmake"
+          cmake --build build-conda --target sirius_shared --parallel "$CPU_COUNT"
+          cmake --install build-conda --component sirius_library
+        env:
+          SIRIUS_CMAKE_ARGS: ${{ env.get("SIRIUS_CMAKE_ARGS", default="") }}
+      dynamic_linking:
+        overlinking_behavior: error
+        missing_dso_allowlist:
+          - '**/libcuda.so*'
+          - '**/libnvidia-ml.so*'
+      files:
+        - lib/libsirius.so*
+        - lib/cmake/sirius/sirius-targets*.cmake
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - ${{ compiler('cuda') }}
+        - ${{ stdlib('c') }}
+        - cmake >=3.30.4
+        - ninja
+        - sccache ==0.18.0
+        - make
+        - git
+        - pkg-config
+        - python
+        - rust >=1.88
+        - lld
+        - libclang
+        - clang
+      host:
+        - cuda-version ${{ cuda_compiler_version }}.*
+        - cuda-cudart-dev
+        - cuda-driver-dev
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+        - libnvcomp-dev
+        - libcudf ${{ rapids_version }}.*
+        - libcuvs ${{ rapids_version }}.*
+        - libraft-headers ${{ rapids_version }}.*
+        - librmm ${{ rapids_version }}.*
+        - libkvikio ${{ rapids_version }}.*
+        - libnuma
+        - liburing
+        - libcurl
+        - openssl
+        - yaml-cpp
+        - spdlog 1.8.*
+        - libabseil
+        - croaring
+        - zlib
+        - catch2 3.*
+      run:
+        - __cuda >=${{ cuda_compiler_version | split('.') | first }}
+        - libcuvs ${{ rapids_version }}.*
+        - libkvikio ${{ rapids_version }}.*
+        - ${{ pin_subpackage('sirius-devel', exact=true) }}
+      run_exports:
+        - ${{ pin_subpackage('sirius', exact=true) }}
+    tests:
+      - package_contents:
+          files:
+            - lib/libsirius.so.0
+            - lib/cmake/sirius/sirius-targets.cmake
+      - script:
+          - cmake -S test/cmake/installed_consumer -B consumer -G Ninja -DCMAKE_PREFIX_PATH="$PREFIX"
+          - cmake --build consumer
+        requirements:
+          run:
+            - ${{ compiler('cxx') }}
+            - cmake
+            - ninja
+        files:
+          source:
+            - test/cmake/installed_consumer/
+  - package:
+      name: sirius-static
+      version: ${{ version }}
+    build:
+      number: 0
+      string: cuda${{ cuda_compiler_version | split('.') | first }}_${{ hash }}_${{ build_number }}_${{ build_id }}
+      skip: not linux
+      script:
+        content: |
+          set -euo pipefail
+          export LIBCLANG_PATH="$BUILD_PREFIX/lib"
+          export SCCACHE_BASEDIRS="$SRC_DIR:$PREFIX:$BUILD_PREFIX"
+          export RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0
+          export VCPKG_ROOT="$SRC_DIR/vcpkg" VCPKG_DISABLE_METRICS=1
+          export VCPKG_CUDA_VERSION="${{ cuda_compiler_version | split('.') | first }}"
+          export CUDAARCHS="${{ cuda_architectures }}"
+          chmod +x "$VCPKG_ROOT/vcpkg"
+
+          cmake -S duckdb -B build-conda -G Ninja \
+            ${CMAKE_ARGS:-} ${SIRIUS_CMAKE_ARGS:-} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CUDA_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_CUDA_ARCHITECTURES="$CUDAARCHS" \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_MANIFEST_DIR="$SRC_DIR" \
+            -DVCPKG_TARGET_TRIPLET="${{ 'arm64-linux' if aarch64 else 'x64-linux' }}" \
+            -DVCPKG_BUILD=ON -DSIRIUS_BUILD_STATIC=ON \
+            -DVCPKG_INSTALL_OPTIONS=--clean-buildtrees-after-build \
+            -DCPM_LOCAL_PACKAGES_ONLY=ON \
+            -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
+            -DOVERRIDE_GIT_DESCRIBE=v1.5.6 \
+            -DEXTENSION_STATIC_BUILD=ON \
+            -DENABLE_SANITIZER=OFF -DENABLE_UBSAN=OFF \
+            -DBUILD_UNITTESTS=OFF -DBUILD_SHELL=OFF \
+            -DSIRIUS_BUILD_S3_TESTS=OFF \
+            -DDUCKDB_EXTENSION_CONFIGS="$SRC_DIR/extension_config.cmake"
+          cmake --build build-conda --target sirius_static --parallel "$CPU_COUNT"
+          cmake --install build-conda --component sirius_static_library
+        env:
+          SIRIUS_CMAKE_ARGS: ${{ env.get("SIRIUS_CMAKE_ARGS", default="") }}
+      dynamic_linking:
+        overlinking_behavior: error
+        missing_dso_allowlist:
+          - '**/libcuda.so*'
+          - '**/libnvidia-ml.so*'
+      files:
+        - lib/libsirius.a
+        - lib/cmake/sirius/sirius-static-targets.cmake
+        - lib/cmake/sirius/libsirius.a.cmake
+        - lib/cmake/sirius/sirius-cuda-fatbin.ld
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - ${{ compiler('cuda') }}
+        - ${{ stdlib('c') }}
+        - cmake >=3.30.4
+        - ninja
+        - sccache ==0.18.0
+        - make
+        - git
+        - pkg-config
+        - python
+        - rust >=1.88
+        - lld
+        - libclang
+        - clang
+        - awscli
+        - autoconf
+        - automake
+        - libtool
+        - bison
+        - flex
+        - perl
+        - nasm
+        - curl
+        - zip
+        - unzip
+        - patchelf
+      host:
+        - cuda-version ${{ cuda_compiler_version }}.*
+        - cuda-cudart-dev
+        - cuda-driver-dev
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+      run:
+        - ${{ pin_subpackage('sirius-devel', exact=true) }}
+        - __cuda >=${{ cuda_compiler_version | split('.') | first }}
+      run_exports:
+        - __cuda >=${{ cuda_compiler_version | split('.') | first }}
+        - __glibc >=${{ c_stdlib_version }}
+      ignore_run_exports:
+        from_package:
+          - cuda-cudart-dev
+          - cuda-nvrtc-dev
+          - libcurand-dev
+        by_name:
+          - libgcc
+          - libstdcxx
+    tests:
+      - package_contents:
+          files:
+            - lib/libsirius.a
+            - lib/cmake/sirius/sirius-static-targets.cmake
+      - script:
+          - cmake -S test/cmake/installed_consumer -B consumer -G Ninja -DCMAKE_PREFIX_PATH="$PREFIX" -DSIRIUS_TARGET=sirius::sirius_static
+          - cmake --build consumer
+          - |
+            readelf -d consumer/consumer > consumer/dynamic.txt
+            while read -r library; do
+              case "$library" in
+                libcuda.so.1|libnvidia-ml.so.1|libc.so.6|libm.so.6|libdl.so.2|libutil.so.1|libpthread.so.0|librt.so.1|ld-linux*.so.*) ;;
+                *) echo "Unexpected runtime dependency: $library"; exit 1 ;;
+              esac
+            done < <(sed -n 's/.*(NEEDED).*\[\(.*\)\].*/\1/p' consumer/dynamic.txt)
+        requirements:
+          run:
+            - ${{ compiler('cxx') }}
+            - cmake
+            - ninja
+            - cuda-nvcc ${{ cuda_compiler_version }}.*
+            - cuda-driver-dev
+            - cuda-nvml-dev
+        files:
+          source:
+            - test/cmake/installed_consumer/
+    source:
+      - git: https://github.com/microsoft/vcpkg.git
+        rev: ffc071e0c08432c60c9b64f00334c0227667931b
+        target_directory: vcpkg
+        submodules: false
+      - url: https://github.com/microsoft/vcpkg-tool/releases/download/2026-02-21/vcpkg-glibc${{ '-arm64' if aarch64 else '' }}
+        sha256: ${{ 'cc37b26bf5606bafb7dc148d51e915fa5f33e01ca2f1fd15c83ef727fd59f392' if aarch64 else 'ee5d4d727bdd46bc822a1940fefe3d3ec340222a0bd6911020cb637ea8b679ee' }}
+        file_name: vcpkg
+        target_directory: vcpkg
+about:
+  homepage: https://github.com/sirius-db/sirius
+  summary: GPU-native SQL engine
+  license: Apache-2.0
+  license_file: LICENSE
