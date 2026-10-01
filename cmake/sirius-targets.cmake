@@ -211,6 +211,19 @@ set_target_properties(sirius_shared PROPERTIES LINKER_TYPE LLD)
 # Discard unused sections pulled in by whole archives.
 target_link_options(sirius_shared PRIVATE "LINKER:--gc-sections")
 
+if(SIRIUS_BUILD_STATIC)
+  include("${CMAKE_CURRENT_LIST_DIR}/sirius-static-bundle.cmake")
+  sirius_add_static_bundle(
+    sirius_static
+    "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/libsirius.a"
+    sirius_core
+    CUDA::cudart_static
+    duckdb_static
+    core_functions_extension
+    parquet_extension
+    dummy_static_extension_loader)
+endif()
+
 # The sirius-sys + sirius Rust crates are built by cargo, not CMake (unlike the
 # telemetry bridge above, which CMake drives via Corrosion). Their build.rs
 # discovers the Sirius headers (repo + conda) and links the libsirius artifact
