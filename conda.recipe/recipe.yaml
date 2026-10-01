@@ -236,6 +236,7 @@ outputs:
         - cuda-nvml-dev
         - cuda-nvrtc-dev
         - libcurand-dev
+        - libnvjitlink-dev
       run:
         - ${{ pin_subpackage('sirius-devel', exact=true) }}
         - __cuda >=${{ cuda_compiler_version | split('.') | first }}
@@ -247,6 +248,7 @@ outputs:
           - cuda-cudart-dev
           - cuda-nvrtc-dev
           - libcurand-dev
+          - libnvjitlink-dev
         by_name:
           - libgcc
           - libstdcxx
