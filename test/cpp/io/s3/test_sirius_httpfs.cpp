@@ -317,15 +317,14 @@ class sirius_httpfs_fixture {
   duckdb::Connection con;
 };
 
-std::unique_ptr<duckdb::MaterializedQueryResult> require_query_ok(duckdb::Connection& con,
-                                                                  std::string const& sql)
+std::unique_ptr<duckdb::QueryResult> require_query_ok(duckdb::Connection& con,
+                                                      std::string const& sql)
 {
   auto result = con.Query(sql);
   REQUIRE(result);
   INFO((result->HasError() ? result->GetError() : ""));
   REQUIRE_FALSE(result->HasError());
-  return std::unique_ptr<duckdb::MaterializedQueryResult>(
-    static_cast<duckdb::MaterializedQueryResult*>(result.release()));
+  return std::unique_ptr<duckdb::QueryResult>(static_cast<duckdb::QueryResult*>(result.release()));
 }
 
 void set_gpu_execution(duckdb::Connection& con, bool enabled)

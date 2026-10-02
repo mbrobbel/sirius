@@ -16,6 +16,8 @@
 
 #include "expression/ast/from_duckdb.hpp"
 
+#include <duckdb/planner/filter/expression_filter.hpp>
+
 // sirius
 #include "expression/aggregate_id.hpp"
 #include "expression/ast/aggregate.hpp"
@@ -84,17 +86,17 @@ std::optional<std::vector<std::unique_ptr<node>>> translate_children(Children co
 std::unique_ptr<node> translate_reference(duckdb::BoundReferenceExpression const& expr)
 {
   return std::make_unique<node>(
-    reference{static_cast<uint32_t>(expr.index), sirius::from_duckdb(expr.return_type)});
+    reference{static_cast<uint32_t>(expr.Index()), sirius::from_duckdb(expr.GetReturnType())});
 }
 
 std::unique_ptr<node> translate_constant(duckdb::BoundConstantExpression const& expr)
 {
-  auto return_type = sirius::from_duckdb(expr.return_type);
-  auto payload     = sirius::from_duckdb(expr.value, return_type);
+  auto return_type = sirius::from_duckdb(expr.GetReturnType());
+  auto payload     = sirius::from_duckdb(expr.GetValue(), return_type);
   return std::make_unique<node>(constant{std::move(payload), std::move(return_type)});
 }
 
-std::unique_ptr<node> translate_comparison(duckdb::BoundComparisonExpression const& expr)
+std::unique_ptr<node> translate_comparison(duckdb::BoundFunctionExpression const& expr)
 {
   // Filter the BoundComparisonExpression ExpressionType down to the set that the
   // Sirius comparison node carries (sirius::comparison_type). The set mirrors
@@ -110,8 +112,8 @@ std::unique_ptr<node> translate_comparison(duckdb::BoundComparisonExpression con
     case duckdb::ExpressionType::COMPARE_NOT_DISTINCT_FROM: break;
     default: return nullptr;
   }
-  auto left  = from_duckdb(*expr.left);
-  auto right = from_duckdb(*expr.right);
+  auto left  = from_duckdb(duckdb::BoundComparisonExpression::Left(expr));
+  auto right = from_duckdb(duckdb::BoundComparisonExpression::Right(expr));
   if (!left || !right) { return nullptr; }
   return std::make_unique<node>(comparison{
     /*op=*/sirius::from_duckdb(expr.GetExpressionType()),
@@ -128,81 +130,92 @@ std::unique_ptr<node> translate_conjunction(duckdb::BoundConjunctionExpression c
     case duckdb::ExpressionType::CONJUNCTION_OR: op = conjunction::kind::op_or; break;
     default: return nullptr;
   }
-  auto children = translate_children(expr.children);
+  auto children = translate_children(expr.GetChildren());
   if (!children) { return nullptr; }
   return std::make_unique<node>(conjunction{op, std::move(*children)});
 }
 
-std::unique_ptr<node> translate_between(duckdb::BoundBetweenExpression const& expr)
+std::unique_ptr<node> translate_between(duckdb::BoundFunctionExpression const& expr)
 {
-  auto input = from_duckdb(*expr.input);
-  auto lower = from_duckdb(*expr.lower);
-  auto upper = from_duckdb(*expr.upper);
+  auto input = from_duckdb(duckdb::BoundBetweenExpression::Input(expr));
+  auto lower = from_duckdb(duckdb::BoundBetweenExpression::LowerBound(expr));
+  auto upper = from_duckdb(duckdb::BoundBetweenExpression::UpperBound(expr));
   if (!input || !lower || !upper) { return nullptr; }
   return std::make_unique<node>(between{
     /*input=*/std::move(input),
     /*lower=*/std::move(lower),
     /*upper=*/std::move(upper),
-    /*lower_inclusive=*/expr.lower_inclusive,
-    /*upper_inclusive=*/expr.upper_inclusive,
+    /*lower_inclusive=*/duckdb::BoundBetweenExpression::LowerInclusive(expr),
+    /*upper_inclusive=*/duckdb::BoundBetweenExpression::UpperInclusive(expr),
   });
 }
 
 std::unique_ptr<node> translate_case(duckdb::BoundCaseExpression const& expr)
 {
   std::vector<case_expr::when_then> cases;
-  cases.reserve(expr.case_checks.size());
-  for (auto const& check : expr.case_checks) {
+  cases.reserve(expr.CaseChecks().size());
+  for (auto const& check : expr.CaseChecks()) {
     auto when_node = from_duckdb(*check.when_expr);
     auto then_node = from_duckdb(*check.then_expr);
     if (!when_node || !then_node) { return nullptr; }
     cases.push_back(case_expr::when_then{std::move(when_node), std::move(then_node)});
   }
-  auto else_node = from_duckdb(*expr.else_expr);
+  auto else_node = from_duckdb(expr.Else());
   if (!else_node) { return nullptr; }
   return std::make_unique<node>(
-    case_expr{std::move(cases), std::move(else_node), sirius::from_duckdb(expr.return_type)});
+    case_expr{std::move(cases), std::move(else_node), sirius::from_duckdb(expr.GetReturnType())});
 }
 
-std::unique_ptr<node> translate_cast(duckdb::BoundCastExpression const& expr)
+std::unique_ptr<node> translate_cast(duckdb::BoundFunctionExpression const& expr)
 {
   // cuDF does not implement DuckDB's temporal-numeric cast semantics. Decline the expression
   // before a same-shaped DATE carrier conversion can reach the representation tunnel; planning
   // then applies the configured fallback policy. Planner-generated restores bypass translation.
-  auto const& source_type = expr.child->return_type;
-  auto const& target_type = expr.return_type;
+  auto const& source_type = duckdb::BoundCastExpression::Child(expr).GetReturnType();
+  auto const& target_type = expr.GetReturnType();
   if ((source_type.IsTemporal() && target_type.IsNumeric()) ||
       (source_type.IsNumeric() && target_type.IsTemporal())) {
     return nullptr;
   }
 
-  auto child = from_duckdb(*expr.child);
+  auto child = from_duckdb(duckdb::BoundCastExpression::Child(expr));
   if (!child) { return nullptr; }
   return std::make_unique<node>(cast{
     /*child=*/std::move(child),
     /*target_type=*/sirius::from_duckdb(target_type),
-    /*try_cast=*/expr.try_cast,
+    /*try_cast=*/duckdb::BoundCastExpression::IsTryCast(expr),
   });
 }
 
 std::unique_ptr<node> translate_function(duckdb::BoundFunctionExpression const& expr)
 {
-  auto func_id_opt = sirius::from_duckdb_function_name(expr.function.name);
+  // Optional scan predicates are hints; the required predicate remains in the plan.
+  if (duckdb::ExpressionFilter::IsRootOptionalExpression(expr)) {
+    return translate_constant(duckdb::BoundConstantExpression(duckdb::Value::BOOLEAN(true)));
+  }
+  if (duckdb::BoundComparisonExpression::IsComparison(expr)) { return translate_comparison(expr); }
+  if (duckdb::BoundCastExpression::IsCast(expr)) { return translate_cast(expr); }
+  if (expr.GetExpressionType() == duckdb::ExpressionType::COMPARE_BETWEEN) {
+    return translate_between(expr);
+  }
+  auto func_id_opt =
+    sirius::from_duckdb_function_name(expr.Function().GetName().GetIdentifierName());
   if (!func_id_opt.has_value()) { return nullptr; }
-  auto arguments = translate_children(expr.children);
+  auto arguments = translate_children(expr.GetChildren());
   if (!arguments) { return nullptr; }
-  auto return_type = sirius::from_duckdb(expr.return_type);
+  auto return_type = sirius::from_duckdb(expr.GetReturnType());
   return std::make_unique<node>(
     function_call{*func_id_opt, std::move(*arguments), std::move(return_type)});
 }
 
 std::unique_ptr<node> translate_aggregate(duckdb::BoundAggregateExpression const& aggr)
 {
-  auto agg_id_opt = sirius::from_duckdb_aggregate_name(aggr.function.name);
+  auto agg_id_opt =
+    sirius::from_duckdb_aggregate_name(aggr.Function().GetName().GetIdentifierName());
   if (!agg_id_opt.has_value()) { return nullptr; }
-  auto arguments = translate_children(aggr.children);
+  auto arguments = translate_children(aggr.GetChildren());
   if (!arguments) { return nullptr; }
-  auto return_type = sirius::from_duckdb(aggr.return_type);
+  auto return_type = sirius::from_duckdb(aggr.GetReturnType());
   return std::make_unique<node>(
     aggregate{*agg_id_opt, std::move(*arguments), std::move(return_type), aggr.IsDistinct()});
 }
@@ -223,25 +236,25 @@ std::unique_ptr<node> translate_operator(duckdb::BoundOperatorExpression const& 
     default: break;
   }
   if (unary_kind != unary_op::kind::invalid) {
-    D_ASSERT(!expr.children.empty());
-    auto child = from_duckdb(*expr.children[0]);
+    D_ASSERT(!expr.GetChildren().empty());
+    auto child = from_duckdb(*expr.GetChildren()[0]);
     if (!child) { return nullptr; }
     return std::make_unique<node>(unary_op{unary_kind, std::move(child)});
   }
 
   if (op_type == duckdb::ExpressionType::OPERATOR_COALESCE) {
-    auto children = translate_children(expr.children);
+    auto children = translate_children(expr.GetChildren());
     if (!children) { return nullptr; }
     return std::make_unique<node>(
-      coalesce{std::move(*children), sirius::from_duckdb(expr.return_type)});
+      coalesce{std::move(*children), sirius::from_duckdb(expr.GetReturnType())});
   }
 
   if (op_type == duckdb::ExpressionType::COMPARE_IN ||
       op_type == duckdb::ExpressionType::COMPARE_NOT_IN) {
-    D_ASSERT(!expr.children.empty());
-    auto probe = from_duckdb(*expr.children[0]);
+    D_ASSERT(!expr.GetChildren().empty());
+    auto probe = from_duckdb(*expr.GetChildren()[0]);
     if (!probe) { return nullptr; }
-    auto values = translate_children(expr.children, /*start=*/1);
+    auto values = translate_children(expr.GetChildren(), /*start=*/1);
     if (!values) { return nullptr; }
     return std::make_unique<node>(in_list{
       /*probe=*/std::move(probe),
@@ -260,14 +273,8 @@ std::unique_ptr<node> from_duckdb(duckdb::Expression const& expr)
   switch (expr.GetExpressionClass()) {
     case duckdb::ExpressionClass::BOUND_AGGREGATE:
       return translate_aggregate(expr.Cast<duckdb::BoundAggregateExpression>());
-    case duckdb::ExpressionClass::BOUND_BETWEEN:
-      return translate_between(expr.Cast<duckdb::BoundBetweenExpression>());
     case duckdb::ExpressionClass::BOUND_CASE:
       return translate_case(expr.Cast<duckdb::BoundCaseExpression>());
-    case duckdb::ExpressionClass::BOUND_CAST:
-      return translate_cast(expr.Cast<duckdb::BoundCastExpression>());
-    case duckdb::ExpressionClass::BOUND_COMPARISON:
-      return translate_comparison(expr.Cast<duckdb::BoundComparisonExpression>());
     case duckdb::ExpressionClass::BOUND_CONJUNCTION:
       return translate_conjunction(expr.Cast<duckdb::BoundConjunctionExpression>());
     case duckdb::ExpressionClass::BOUND_CONSTANT:

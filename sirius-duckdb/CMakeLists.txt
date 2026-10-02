@@ -22,7 +22,7 @@ endif()
 set(EXTENSION_SOURCES src/sirius/sirius_extension.cpp)
 
 build_static_extension(sirius ${EXTENSION_SOURCES})
-build_loadable_extension(sirius CPP ${EXTENSION_SOURCES})
+build_loadable_extension(sirius " " ${EXTENSION_SOURCES})
 
 if(SIRIUS_DUCKDB_LINKAGE STREQUAL "static")
   get_target_property(sirius_link_libraries sirius_loadable_extension

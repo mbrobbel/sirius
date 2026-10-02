@@ -9,10 +9,9 @@ set(sirius_url https://github.com/mbrobbel/sirius.git)
 set(sirius_ref 3a5fad2875a699935c93b6d1f11c0f5cd9a28652)
 vcpkg_from_git(OUT_SOURCE_PATH SOURCE_PATH URL "${sirius_url}" REF
                "${sirius_ref}")
-vcpkg_from_git(
-  OUT_SOURCE_PATH DUCKDB_SOURCE_PATH URL
-  https://github.com/sirius-db/duckdb.git REF
-  069cc9f9b5be802405797faecc284961b07c70ef)
+set(duckdb_ref 561522aea03e400bd20adc64fcc63e78b8721f3f)
+vcpkg_from_git(OUT_SOURCE_PATH DUCKDB_SOURCE_PATH URL
+               https://github.com/duckdb/duckdb.git REF "${duckdb_ref}")
 vcpkg_from_git(
   OUT_SOURCE_PATH CUCASCADE_SOURCE_PATH URL
   https://github.com/NVIDIA/cuCascade.git REF
@@ -49,6 +48,7 @@ vcpkg_cmake_configure(
   -DSIRIUS_BUILD_TESTS=OFF
   -DSIRIUS_BUILD_S3_TESTS=OFF
   "-DSIRIUS_DUCKDB_SOURCE_DIR=${DUCKDB_SOURCE_PATH}"
+  "-DGIT_COMMIT_HASH=${duckdb_ref}"
   "-DFETCHCONTENT_SOURCE_DIR_CORROSION=${CORROSION_SOURCE_PATH}"
   "-DCMAKE_CUDA_ARCHITECTURES=${VCPKG_CUDA_ARCHITECTURES}"
   ${sirius_launchers})

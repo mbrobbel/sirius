@@ -452,15 +452,14 @@ class s3_sql_fixture {
   duckdb::Connection con;
 };
 
-std::unique_ptr<duckdb::MaterializedQueryResult> require_query_ok(duckdb::Connection& con,
-                                                                  std::string const& sql)
+std::unique_ptr<duckdb::QueryResult> require_query_ok(duckdb::Connection& con,
+                                                      std::string const& sql)
 {
   auto result = con.Query(sql);
   REQUIRE(result);
   INFO((result->HasError() ? result->GetError() : ""));
   REQUIRE_FALSE(result->HasError());
-  return std::unique_ptr<duckdb::MaterializedQueryResult>(
-    static_cast<duckdb::MaterializedQueryResult*>(result.release()));
+  return std::unique_ptr<duckdb::QueryResult>(static_cast<duckdb::QueryResult*>(result.release()));
 }
 
 void query_or_throw_on_error(duckdb::Connection& con, std::string const& sql)
@@ -489,7 +488,7 @@ void set_gpu_execution(duckdb::Connection& con, bool enabled)
   REQUIRE_FALSE(result->HasError());
 }
 
-std::vector<std::vector<std::string>> collect_rows(duckdb::MaterializedQueryResult& result)
+std::vector<std::vector<std::string>> collect_rows(duckdb::QueryResult& result)
 {
   std::vector<std::vector<std::string>> rows;
   for (duckdb::idx_t r = 0; r < result.RowCount(); ++r) {
@@ -569,8 +568,8 @@ watchdog_query_result require_query_ok_with_watchdog(std::shared_ptr<s3_sql_fixt
   return std::move(state->result);
 }
 
-void check_rows_equal_with_tolerant_columns(duckdb::MaterializedQueryResult& actual,
-                                            duckdb::MaterializedQueryResult& expected,
+void check_rows_equal_with_tolerant_columns(duckdb::QueryResult& actual,
+                                            duckdb::QueryResult& expected,
                                             std::vector<duckdb::idx_t> const& tolerant_columns = {})
 {
   REQUIRE(actual.RowCount() == expected.RowCount());
@@ -592,7 +591,7 @@ void check_rows_equal_with_tolerant_columns(duckdb::MaterializedQueryResult& act
 }
 
 void check_rows_equal_with_tolerant_columns(watchdog_query_result const& actual,
-                                            duckdb::MaterializedQueryResult& expected,
+                                            duckdb::QueryResult& expected,
                                             std::vector<duckdb::idx_t> const& tolerant_columns = {})
 {
   REQUIRE(actual.row_count == expected.RowCount());

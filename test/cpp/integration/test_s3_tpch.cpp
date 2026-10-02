@@ -200,7 +200,7 @@ void tpch_load_sirius_extension(duckdb::DuckDB& db)
   }
 }
 
-std::vector<std::vector<std::string>> tpch_collect_rows(duckdb::MaterializedQueryResult& result)
+std::vector<std::vector<std::string>> tpch_collect_rows(duckdb::QueryResult& result)
 {
   std::vector<std::vector<std::string>> rows;
   rows.reserve(result.RowCount());
@@ -300,7 +300,7 @@ class s3_tpch_suite {
     tpch_require_query_ok(*gpu_connection_, "SET gpu_execution = true;");
   }
 
-  std::unique_ptr<duckdb::MaterializedQueryResult> run_gpu_query(std::string const& sql)
+  std::unique_ptr<duckdb::QueryResult> run_gpu_query(std::string const& sql)
   {
     auto result = gpu_connection_->Query(sql);
     if (!result) throw std::runtime_error("GPU query returned no result");
@@ -328,7 +328,7 @@ class s3_tpch_suite {
     }
 
     auto gpu_rows = tpch_collect_rows(*gpu_result);
-    auto cpu_rows = tpch_collect_rows(cpu_result->Cast<duckdb::MaterializedQueryResult>());
+    auto cpu_rows = tpch_collect_rows(*cpu_result);
     REQUIRE(gpu_rows.size() == cpu_rows.size());
     for (std::size_t row = 0; row < gpu_rows.size(); ++row) {
       REQUIRE(gpu_rows[row].size() == cpu_rows[row].size());

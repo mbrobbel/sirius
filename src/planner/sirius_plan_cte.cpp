@@ -48,8 +48,8 @@ sirius_physical_plan_generator::create_plan(duckdb::LogicalMaterializedCTE& op)
   // Capture left->types before std::move(left) so argument evaluation order is well-defined.
   auto producer_types = left->types;
   duckdb::unique_ptr<sirius::op::sirius_physical_cte> cte;
-  cte                = duckdb::make_uniq<sirius::op::sirius_physical_cte>(op.ctename,
-                                                           op.table_index,
+  cte = duckdb::make_uniq<sirius::op::sirius_physical_cte>(op.ctename.GetIdentifierName(),
+                                                           op.table_index.index,
                                                            std::move(producer_types),
                                                            std::move(left),
                                                            std::move(right),

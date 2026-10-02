@@ -1,3 +1,6 @@
+#include "duckdb/planner/expression/bound_operator_expression.hpp"
+#include "duckdb/planner/expression/bound_reference_expression.hpp"
+#include "duckdb/planner/filter/expression_filter.hpp"
 /*
  * Copyright 2026, Sirius Contributors.
  *
@@ -102,9 +105,7 @@ namespace {
 /// null_count answers it — and handing one to filter_row_groups_with_stats
 /// faults rather than merely mis-pruning.
 ///
-/// IS NOT NULL counts: it lowers to IS_NULL + NOT in the cuDF AST, and
-/// convert_table_filters_to_expression only drops it when it is a column's
-/// top-level filter, so one nested in a conjunction still reaches here.
+/// IS NOT NULL also reaches this path as IS_NULL + NOT in the cuDF AST.
 bool expression_has_null_predicate(duckdb::Expression const& expr)
 {
   auto const expr_type = expr.GetExpressionType();
@@ -157,7 +158,7 @@ duckdb::unique_ptr<duckdb::Expression> stats_safe_conjuncts(duckdb::Expression c
 
   auto const& conjunction = expr.Cast<duckdb::BoundConjunctionExpression>();
   duckdb::vector<duckdb::unique_ptr<duckdb::Expression>> kept;
-  for (auto const& child : conjunction.children) {
+  for (auto const& child : conjunction.GetChildren()) {
     if (!is_unsafe_for_stats_filter(*child)) { kept.push_back(child->Copy()); }
   }
   if (kept.empty()) { return nullptr; }
@@ -166,18 +167,12 @@ duckdb::unique_ptr<duckdb::Expression> stats_safe_conjuncts(duckdb::Expression c
   auto out =
     duckdb::make_uniq<duckdb::BoundConjunctionExpression>(duckdb::ExpressionType::CONJUNCTION_AND);
   for (auto& child : kept) {
-    out->children.push_back(std::move(child));
+    out->GetChildrenMutable().push_back(std::move(child));
   }
   return out;
 }
 
 /// Every `<col> IS [NOT] NULL` filter usable for null_count row-group pruning.
-///
-/// Read from the TableFilterSet rather than from the converted expression,
-/// because convert_table_filters_to_expression DROPS a column's top-level
-/// IS_NOT_NULL before building the expression. Collecting downstream of that
-/// would leave the ordinary `WHERE v IS NOT NULL` with no pruning at all, which
-/// is the common form of the predicate.
 ///
 /// Both a top-level filter and one nested in a conjunction qualify. A
 /// conjunction is an AND of per-column filters, so each null test in it must
@@ -191,34 +186,40 @@ std::vector<null_prune_predicate> collect_null_prune_predicates(
 {
   std::vector<null_prune_predicate> out;
 
-  auto classify = [](duckdb::TableFilterType type) -> std::optional<bool> {
-    if (type == duckdb::TableFilterType::IS_NULL) { return true; }
-    if (type == duckdb::TableFilterType::IS_NOT_NULL) { return false; }
-    return std::nullopt;
-  };
-
-  for (auto const& [column_index, filter] : filters.filters) {
+  for (auto const& entry : filters) {
+    auto const column_index = entry.GetIndex().GetIndex();
     if (column_index >= column_ids.size() || column_ids[column_index].IsVirtualColumn()) {
       continue;
     }
-    // A partition column has no statistics in the file to prune on, and a
-    // column that is not in the batch cannot be pruned by — both are simply
-    // skipped here, unlike a conjunct that has to be evaluated.
     auto const column = sirius::op::resolve_filtered_column(
       column_index, column_ids, batch_position_by_column_id, skip_primary_indices);
     if (column.status != sirius::op::filter_column_status::usable) { continue; }
-    auto const index = static_cast<duckdb::idx_t>(column.batch_position);
-
-    if (auto expects_null = classify(filter->filter_type)) {
-      out.push_back(null_prune_predicate{index, *expects_null});
-    } else if (filter->filter_type == duckdb::TableFilterType::CONJUNCTION_AND) {
-      for (auto const& child : filter->Cast<duckdb::ConjunctionAndFilter>().child_filters) {
-        if (auto nested = classify(child->filter_type)) {
-          out.push_back(null_prune_predicate{index, *nested});
+    auto const& filter =
+      duckdb::ExpressionFilter::GetExpressionFilter(entry.Filter(), "parquet null pruning");
+    std::function<void(duckdb::Expression const&)> collect = [&](duckdb::Expression const& expr) {
+      if (expr.GetExpressionType() == duckdb::ExpressionType::CONJUNCTION_AND &&
+          expr.GetExpressionClass() == duckdb::ExpressionClass::BOUND_CONJUNCTION) {
+        for (auto const& child : expr.Cast<duckdb::BoundConjunctionExpression>().GetChildren()) {
+          collect(*child);
         }
+        return;
       }
-    }
+      if (expr.GetExpressionClass() != duckdb::ExpressionClass::BOUND_OPERATOR ||
+          (expr.GetExpressionType() != duckdb::ExpressionType::OPERATOR_IS_NULL &&
+           expr.GetExpressionType() != duckdb::ExpressionType::OPERATOR_IS_NOT_NULL)) {
+        return;
+      }
+      auto const& args = expr.Cast<duckdb::BoundOperatorExpression>().GetChildren();
+      if (args.size() != 1 || args[0]->GetExpressionClass() != duckdb::ExpressionClass::BOUND_REF ||
+          args[0]->Cast<duckdb::BoundReferenceExpression>().Index() != 0) {
+        return;
+      }
+      out.push_back({static_cast<duckdb::idx_t>(column.batch_position),
+                     expr.GetExpressionType() == duckdb::ExpressionType::OPERATOR_IS_NULL});
+    };
+    collect(*filter.expr);
   }
+
   return out;
 }
 
@@ -556,7 +557,7 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<parquet_ingestibl
   // column_ids with empty projection_ids, the no-pushdown sirius_read_parquet
   // case), filter pushdown, or hive-partition injection — needs column names.
   bool const needs_names = !bind.projection_ids.empty() ||
-                           (bind.table_filters && !bind.table_filters->filters.empty()) ||
+                           (bind.table_filters && bind.table_filters->HasFilters()) ||
                            !bind.partition_indices.empty() ||
                            column_ids_need_reader_projection(bind.column_ids, bind.names.size());
   if (needs_names && bind.names.empty()) {
@@ -579,11 +580,22 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<parquet_ingestibl
   // AST translation deferred to materialize_table so a task-local stream is used.
   // Filters on hive-partition columns are dropped — those columns aren't in the
   // parquet file (DuckDB prunes them at the file-list level already).
-  if (bind.table_filters && !bind.table_filters->filters.empty()) {
-    for (auto const& [column_index, filter] : bind.table_filters->filters) {
+  if (bind.table_filters && bind.table_filters->HasFilters()) {
+    for (auto const& entry : *bind.table_filters) {
+      auto const column_index = entry.GetIndex().GetIndex();
       if (column_index < bind.column_ids.size() &&
           _virtual_types.contains(bind.column_ids[column_index].GetPrimaryIndex())) {
         _has_virtual_filter = true;
+      }
+    }
+    for (auto const& filter : bind.table_filters->GetMultiColumnFilters()) {
+      auto const& expr_filter =
+        duckdb::ExpressionFilter::GetExpressionFilter(*filter, "parquet virtual filter");
+      for (auto index : expr_filter.column_indexes) {
+        if (index.GetIndex() < bind.column_ids.size() &&
+            _virtual_types.contains(bind.column_ids[index.GetIndex()].GetPrimaryIndex())) {
+          _has_virtual_filter = true;
+        }
       }
     }
     // Collected from the filters themselves, not the expression built below --
@@ -600,8 +612,7 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<parquet_ingestibl
                                                       bind.returned_types,
                                                       _plan->batch_position_by_column_id,
                                                       _plan->partition_primary_indices,
-                                                      _virtual_types,
-                                                      _plan->has_user_virtual_columns());
+                                                      _virtual_types);
     if (duckdb_expression) {
       // Validate before scan tasks retranslate and dereference the predicate.
       if (sirius::ast::from_duckdb(*duckdb_expression) == nullptr) {
@@ -615,12 +626,16 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<parquet_ingestibl
       std::shared_ptr<duckdb::Expression> stats_candidate = _duckdb_filter_expression;
       if (_has_virtual_filter) {
         duckdb::TableFilterSet physical_filters;
-        for (auto const& [column_index, filter] : bind.table_filters->filters) {
+        for (auto const& entry : *bind.table_filters) {
+          auto const column_index = entry.GetIndex().GetIndex();
           if (column_index >= bind.column_ids.size() ||
               _virtual_types.contains(bind.column_ids[column_index].GetPrimaryIndex())) {
             continue;
           }
-          physical_filters.filters.emplace(column_index, filter->Copy());
+          physical_filters.PushFilter(entry.GetIndex(),
+                                      duckdb::ExpressionFilter::GetExpressionFilter(
+                                        entry.Filter(), "parquet physical pruning")
+                                        .Copy());
         }
         stats_candidate =
           sirius::op::convert_table_filters_to_expression(physical_filters,
@@ -684,8 +699,7 @@ parquet_gpu_ingestible::parquet_gpu_ingestible(std::unique_ptr<parquet_ingestibl
                                             bind.returned_types,
                                             _plan->batch_position_by_column_id,
                                             _plan->partition_primary_indices,
-                                            _virtual_types,
-                                            _plan->has_user_virtual_columns()),
+                                            _virtual_types),
         answerable_positions);
     }
   }

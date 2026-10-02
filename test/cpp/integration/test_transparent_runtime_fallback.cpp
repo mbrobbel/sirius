@@ -173,7 +173,7 @@ class RuntimeFallbackFixture {
     if (r->HasError()) { UNSCOPED_INFO("query error: " << r->GetError()); }
     REQUIRE_FALSE(r->HasError());
     REQUIRE(r->RowCount() == 1);
-    return r->GetValue(0, 0).ToString();
+    return r->Collection().GetValue(0, 0).ToString();
   }
 
  protected:
@@ -248,8 +248,8 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
 
     std::vector<std::string> rows;
     rows.reserve(result->RowCount());
-    for (duckdb::idx_t row = 0; row < result->RowCount(); ++row) {
-      rows.push_back(result->GetValue(0, row).ToString());
+    for (auto const& row : result->Collection().Rows()) {
+      rows.push_back(row.GetValue(0).ToString());
     }
     return rows;
   };
@@ -313,8 +313,8 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
   sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1, 0);
 
   // The fallback result matches the GPU result.
-  REQUIRE(gpu->Cast<duckdb::MaterializedQueryResult>().GetValue(0, 0).ToString() ==
-          gpu2->Cast<duckdb::MaterializedQueryResult>().GetValue(0, 0).ToString());
+  REQUIRE(gpu->Collection().GetValue(0, 0).ToString() ==
+          gpu2->Collection().GetValue(0, 0).ToString());
 }
 
 // The CPU fallback runs in the SAME transaction as the failed GPU attempt, so it
@@ -389,6 +389,34 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
   REQUIRE(scalar(*con, "SELECT count(*) FROM rf_off;") == "10");
 }
 
+TEST_CASE_METHOD(RuntimeFallbackFixture,
+                 "prepared parameters reach GPU execution and runtime fallback",
+                 "[transparent][fallback][integration]")
+{
+  create_table("CREATE TABLE rf_parameters AS SELECT i AS id FROM range(100) t(i)");
+  auto prepared = con->Prepare("SELECT sum(id) FROM rf_parameters WHERE id >= ?");
+  REQUIRE(prepared);
+  REQUIRE_FALSE(prepared->HasError());
+  for (auto const threshold : {10, 90}) {
+    auto before = sirius::test::get_transparent_execution_stats(*con);
+    auto result = prepared->Execute(threshold);
+    REQUIRE(result);
+    REQUIRE_FALSE(result->HasError());
+    auto expected = 4950 - threshold * (threshold - 1) / 2;
+    REQUIRE(result->Collection().GetValue(0, 0).ToString() == std::to_string(expected));
+    auto after = sirius::test::get_transparent_execution_stats(*con);
+    sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1);
+  }
+  inject("prepared-fallback");
+  auto before = sirius::test::get_transparent_execution_stats(*con);
+  auto result = prepared->Execute(50);
+  REQUIRE(result);
+  REQUIRE_FALSE(result->HasError());
+  REQUIRE(result->Collection().GetValue(0, 0).ToString() == "3725");
+  auto after = sirius::test::get_transparent_execution_stats(*con);
+  sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1, 1);
+}
+
 // enable_duckdb_fallback also gates plan-time fallback: an unsupported operator
 // (window function) errors when fallback is off, and silently runs on CPU when on.
 TEST_CASE_METHOD(RuntimeFallbackFixture,
@@ -417,12 +445,6 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
   auto after = sirius::test::get_transparent_execution_stats(*con);
   sirius::test::require_transparent_execution_delta(before, after, 0, 1, 0, 0);
 }
-
-// Note: SQL-level `PREPARE ... AS SELECT` / `EXECUTE` is not intercepted by Sirius
-// (transparent interception gates on statement_type == SELECT_STATEMENT, and those
-// carry PREPARE/EXECUTE statement types), so it runs on DuckDB CPU and the runtime
-// fallback path does not apply. Extending interception to prepared statements is a
-// separate concern, out of scope for runtime fallback.
 
 // The enable_duckdb_fallback setting defaults to true and is overridable per session.
 TEST_CASE_METHOD(RuntimeFallbackFixture,
@@ -532,13 +554,11 @@ class S3MixFixture : public sirius::test::GpuExecutionFixture {
     REQUIRE(gpu->RowCount() == cpu->RowCount());
     if (expected_first_value.has_value()) {
       REQUIRE(gpu->RowCount() > 0);
-      CHECK(gpu->GetValue(0, 0).ToString() == *expected_first_value);
+      CHECK(gpu->Collection().GetValue(0, 0).ToString() == *expected_first_value);
     }
 
-    auto gpu_rows =
-      sirius::test::GpuExecutionFixture::collect_rows(gpu->Cast<duckdb::MaterializedQueryResult>());
-    auto cpu_rows =
-      sirius::test::GpuExecutionFixture::collect_rows(cpu->Cast<duckdb::MaterializedQueryResult>());
+    auto gpu_rows = sirius::test::GpuExecutionFixture::collect_rows(*gpu);
+    auto cpu_rows = sirius::test::GpuExecutionFixture::collect_rows(*cpu);
     CHECK(gpu_rows == cpu_rows);
     return gpu_rows;
   }
@@ -796,9 +816,10 @@ TEST_CASE("an unsupported filter above a join falls back during planning",
   fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
                                   " b ON a.id = b.id WHERE round(a.a + b.b) > 1",
                                 "249");
-  fixture.require_gpu("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
-                        " b ON a.id = b.id WHERE a.a + b.b > 1",
-                      "249");
+  // V2 absorbs this cross-table predicate into an arbitrary join condition.
+  fixture.require_plan_fallback("SELECT count(*) FROM " + parquet + " a JOIN " + parquet +
+                                  " b ON a.id = b.id WHERE a.a + b.b > 1",
+                                "249");
 }
 
 TEST_CASE("supported IS NOT NULL filter stays on GPU for parquet",

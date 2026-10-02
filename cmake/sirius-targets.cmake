@@ -156,10 +156,15 @@ set_target_properties(
              INSTALL_RPATH "$ORIGIN"
              INSTALL_REMOVE_ENVIRONMENT_RPATH ON)
 target_compile_features(sirius_shared PUBLIC cxx_std_20)
-target_link_libraries(
-  sirius_shared
-  PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,dummy_static_extension_loader>")
 set_target_properties(sirius_shared PROPERTIES LINKER_TYPE LLD)
+
+# Keep embedded DuckDB globals separate from the host's DuckDB instance.
+target_link_options(
+  sirius_shared
+  PRIVATE
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:duckdb_static>"
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:core_functions_extension>"
+  "LINKER:--exclude-libs,$<TARGET_FILE_NAME:parquet_extension>")
 
 # Discard unused sections pulled in by whole archives.
 target_link_options(sirius_shared PRIVATE "LINKER:--gc-sections"
@@ -170,13 +175,8 @@ if(SIRIUS_BUILD_STATIC)
   set_target_properties(sirius_core PROPERTIES OUTPUT_NAME sirius EXPORT_NAME
                                                                   sirius_static)
   target_link_libraries(
-    sirius_core
-    PRIVATE
-      duckdb_static
-      core_functions_extension
-      parquet_extension
-      "$<LINK_LIBRARY:WHOLE_ARCHIVE,$<TARGET_NAME:dummy_static_extension_loader>>"
-  )
+    sirius_core PRIVATE duckdb_static core_functions_extension
+                        parquet_extension)
   target_compile_features(sirius_core PUBLIC cxx_std_20)
   target_link_options(
     sirius_core INTERFACE "LINKER:--undefined=InitializeInjectionNvtx2"

@@ -24,7 +24,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
-  duckdb_version: v1.5.6
+  duckdb_version: 561522aea03e400bd20adc64fcc63e78b8721f3f
 
 jobs:
   build:

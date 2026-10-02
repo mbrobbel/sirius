@@ -25,6 +25,8 @@
 
 #include "expression/aggregate_id.hpp"
 #include "expression/ast/aggregate.hpp"
+
+#include <duckdb/main/settings.hpp>
 // Reaching a join operator through these headers instantiates `vector<join_condition>`'s
 // destructor, which needs the AST node definition.
 #include "expression/ast/node.hpp"
@@ -141,7 +143,7 @@ duckdb::unique_ptr<sirius_physical_operator> generate_sirius_plan(
 
     auto plan = std::move(planner.plan);
 
-    if (context.config.enable_optimizer) {
+    if (duckdb::Settings::Get<duckdb::EnableOptimizerSetting>(context)) {
       Optimizer optimizer(*planner.binder, context);
       plan = optimizer.Optimize(std::move(plan));
     }
@@ -149,7 +151,8 @@ duckdb::unique_ptr<sirius_physical_operator> generate_sirius_plan(
     plan->ResolveOperatorTypes();
 
     ColumnBindingResolver resolver;
-    ColumnBindingResolver::Verify(*plan);
+    duckdb::ColumnBindingResolver verifier(true);
+    verifier.VisitOperator(*plan);
     resolver.VisitOperator(*plan);
 
     sirius::planner::sirius_physical_plan_generator gen(context);
@@ -238,14 +241,13 @@ std::string tree_to_string(sirius_physical_operator* root)
 duckdb::unique_ptr<duckdb::Expression> untranslatable_table_filter_expression()
 {
   auto expression = duckdb::make_uniq<duckdb::BoundFunctionExpression>(
-    duckdb::LogicalType::BOOLEAN,
-    duckdb::ScalarFunction("sirius_unmapped_filter",
-                           {duckdb::LogicalType::BIGINT},
-                           duckdb::LogicalType::BOOLEAN,
-                           nullptr),
+    duckdb::BoundScalarFunction(duckdb::ScalarFunction("sirius_unmapped_filter",
+                                                       {duckdb::LogicalType::BIGINT},
+                                                       duckdb::LogicalType::BOOLEAN,
+                                                       nullptr)),
     duckdb::vector<duckdb::unique_ptr<duckdb::Expression>>{},
     nullptr);
-  expression->children.push_back(
+  expression->GetChildrenMutable().push_back(
     duckdb::make_uniq<duckdb::BoundReferenceExpression>(duckdb::LogicalType::BIGINT, 0));
   return expression;
 }
@@ -1216,7 +1218,7 @@ duckdb::unique_ptr<sirius_physical_operator> make_wrap_hash_join(
   duckdb::unique_ptr<sirius_physical_operator> left,
   duckdb::unique_ptr<sirius_physical_operator> right)
 {
-  duckdb::LogicalDummyScan stub(0);
+  duckdb::LogicalDummyScan stub(duckdb::TableIndex(0));
   stub.types = {duckdb::LogicalType::INTEGER,
                 duckdb::LogicalType::INTEGER,
                 duckdb::LogicalType::INTEGER,
@@ -1398,7 +1400,7 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
   // nothing to copy.
   sirius::planner::sirius_physical_plan_generator gen(*con->context);
 
-  duckdb::LogicalDummyScan stub(0);
+  duckdb::LogicalDummyScan stub(duckdb::TableIndex(0));
   stub.types = {duckdb::LogicalType::INTEGER, duckdb::LogicalType::INTEGER};
   duckdb::unique_ptr<sirius_physical_operator> plan =
     duckdb::make_uniq<sirius::op::sirius_physical_nested_loop_join>(
@@ -1426,16 +1428,17 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
   function.filter_pushdown     = true;
 
   auto get = duckdb::make_uniq<duckdb::LogicalGet>(
-    0,
-    std::move(function),
+    duckdb::TableIndex(0),
+    duckdb::BoundTableFunction(std::move(function)),
     nullptr,
     duckdb::vector<duckdb::LogicalType>{duckdb::LogicalType::BIGINT},
-    duckdb::vector<duckdb::string>{"id"});
+    duckdb::vector<duckdb::Identifier>{"id"});
   get->SetColumnIds({duckdb::ColumnIndex(0)});
-  get->projection_ids        = {0};
+  get->projection_ids        = {duckdb::ProjectionIndex(0)};
   get->estimated_cardinality = 1;
-  get->table_filters.filters[0] =
-    duckdb::make_uniq<duckdb::ExpressionFilter>(untranslatable_table_filter_expression());
+  get->table_filters.SetFilterByColumnIndex(
+    duckdb::ProjectionIndex(0),
+    duckdb::make_uniq<duckdb::ExpressionFilter>(untranslatable_table_filter_expression()));
 
   duckdb::unique_ptr<duckdb::LogicalOperator> logical = std::move(get);
   sirius::planner::sirius_physical_plan_generator generator(*con->context);
