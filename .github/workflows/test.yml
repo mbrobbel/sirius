@@ -166,6 +166,15 @@ jobs:
       - name: Configure shared library lookup
         run: echo "LD_LIBRARY_PATH=$PWD/build/release/install/lib:$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 
+      - name: Compare v2 CPU and GPU execution
+        env:
+          SIRIUS_CONFIG_FILE: ${{ github.workspace }}/test/cpp/integration/integration.yaml
+        run: |
+          timeout 180s python test/scripts/v2_extension_smoke.py \
+            --duckdb sirius-duckdb/build/release/duckdb \
+            --extension sirius-duckdb/build/release/extension/sirius/sirius.duckdb_extension \
+            --output build/v2-smoke
+
       - name: Provision DuckDB extensions the tests load
         # The iceberg cases LOAD without INSTALL on purpose: a test must not reach the network,
         # and an INSTALL inside the test would silently paper over an unprovisioned runner
@@ -173,9 +182,8 @@ jobs:
         # band. avro comes in as an iceberg dependency but is named explicitly so a failure
         # says which extension is missing.
         #
-        # This resolves only because OVERRIDE_GIT_DESCRIBE (cmake/CMakePresets.json) gives the
-        # build a real DuckDB version. Against the dummy v0.0.1 a shallow submodule would
-        # otherwise produce, there is no extension repository to install from.
+        # Development revisions require matching published provider extensions.
+        # Keep provisioning failures explicit until those builds are available.
         run: |
           for attempt in 1 2 3; do
             if ./sirius-duckdb/build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
