@@ -27,7 +27,7 @@ Detect and diagnose race conditions using ThreadSanitizer (CPU threads) and NVID
    for i in $(seq 1 5); do
      export SIRIUS_LOG_DIR=build/release/log/run_${i}_$(date +%s)
      mkdir -p $SIRIUS_LOG_DIR
-     build/release/duckdb <db_path> -c "CALL gpu_execution('...');" > /tmp/claude-1000/result_${i}.txt 2>&1
+     sirius-duckdb/build/release/duckdb <db_path> -c "CALL gpu_execution('...');" > /tmp/claude-1000/result_${i}.txt 2>&1
    done
    ```
    Compare all results pairwise. If any differ, confirm non-deterministic behavior.
@@ -41,7 +41,7 @@ Detect and diagnose race conditions using ThreadSanitizer (CPU threads) and NVID
      ```
    - Run the reproduction case:
      ```bash
-     TSAN_OPTIONS="second_deadlock_stack=1:history_size=7" build/clang-debug/duckdb <db_path> <<'EOF'
+     TSAN_OPTIONS="second_deadlock_stack=1:history_size=7" sirius-duckdb/build/clang-debug/duckdb <db_path> <<'EOF'
      CALL gpu_execution('<QUERY>');
      EOF
      ```

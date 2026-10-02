@@ -178,7 +178,7 @@ TPCH_TABLES = (
     "supplier",
 )
 
-BUILD_PATH = os.environ.get("SIRIUS_BUILD_PATH", "build/release")
+BUILD_PATH = os.environ.get("SIRIUS_BUILD_PATH", "build/release/sirius-duckdb")
 
 EXTENSION_PATH = os.path.join(
     REPO_ROOT, BUILD_PATH, "extension/sirius/sirius.duckdb_extension"
@@ -962,7 +962,7 @@ def _build_precmd_temp_sql(
     sql_path = os.path.join(qdir, f"{precmd}.sql")
     timing_path = os.path.join(qdir, "timings.csv")
 
-    # NOTE: the DuckDB CLI (build/release/duckdb) statically links the Sirius
+    # NOTE: the DuckDB CLI (sirius-duckdb/build/release/duckdb) statically links the Sirius
     # extension, so gpu_execution is already registered at startup. An explicit
     # `LOAD '<ext>'` here throws "Table Function gpu_execution already exists".
     # (Only the in-process path, which uses the vanilla Python duckdb module,

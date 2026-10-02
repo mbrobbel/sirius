@@ -47,15 +47,15 @@ import sys
 DATA = pathlib.Path(__file__).resolve().parent
 SOURCE = "iceberg_v1"
 
-# Candidates in preference order. `duckdb/build/release/duckdb` is the trap: it is written by
+# Candidates in preference order. `duckdb/sirius-duckdb/build/release/duckdb` is the trap: it is written by
 # DuckDB's OWN build, survives every `/var/tmp` wipe because it lives inside the repo, and so goes
 # stale by whole DuckDB versions while everything else moves on. A fixture written by one DuckDB
 # version and read by a suite linked against another is not a fixture, it is a coincidence -- and
 # the same stale binary, used as an oracle for whether a table needs a setting, will answer for a
 # different iceberg extension build than the tests resolve. Hence require_duckdb() below.
 DUCKDB_CANDIDATES = [
-    pathlib.Path("build/release/duckdb"),
-    pathlib.Path("duckdb/build/release/duckdb"),
+    pathlib.Path("sirius-duckdb/build/release/duckdb"),
+    pathlib.Path("duckdb/sirius-duckdb/build/release/duckdb"),
 ]
 
 

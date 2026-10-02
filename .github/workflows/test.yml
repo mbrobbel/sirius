@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Init build submodules
-        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
+        run: git submodule update --init --depth=1 --jobs 5 duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
 
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
@@ -98,6 +98,12 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_Git=TRUE
           cmake --build "$sirius_test_dir/consumer"
 
+      - name: Build the DuckDB extension against the shared library
+        run: |
+          cmake --install build/release --prefix "$PWD/build/release/install" --component sirius_library
+          make -C sirius-duckdb release \
+            EXT_FLAGS="-DCMAKE_PREFIX_PATH=$PWD/build/release/install -DSIRIUS_DUCKDB_LINKAGE=shared -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+
       - name: Surface build errors
         if: failure()
         run: |
@@ -107,7 +113,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Package build artifacts
-        run: tar -cf build.tar build/release/
+        run: tar -cf build.tar build/release/ sirius-duckdb/build/release/
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -157,6 +163,9 @@ jobs:
       - name: Extract build artifacts
         run: tar -xf build.tar
 
+      - name: Configure shared library lookup
+        run: echo "LD_LIBRARY_PATH=$PWD/build/release/install/lib:$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
       - name: Provision DuckDB extensions the tests load
         # The iceberg cases LOAD without INSTALL on purpose: a test must not reach the network,
         # and an INSTALL inside the test would silently paper over an unprovisioned runner
@@ -169,7 +178,7 @@ jobs:
         # otherwise produce, there is no extension repository to install from.
         run: |
           for attempt in 1 2 3; do
-            if ./build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
+            if ./sirius-duckdb/build/release/duckdb -c "INSTALL avro; INSTALL iceberg;"; then
               exit 0
             fi
             echo "::warning::Extension install attempt ${attempt} failed; retrying in $((attempt * 10))s"
@@ -196,7 +205,7 @@ jobs:
           set -o pipefail
           python3 test/cpp/integration/data/iceberg_conformance/run_conformance.py \
             test/cpp/integration/data/iceberg_conformance \
-            --duckdb ./build/release/duckdb 2>&1 | tee /tmp/conformance.log
+            --duckdb ./sirius-duckdb/build/release/duckdb 2>&1 | tee /tmp/conformance.log
 
       - name: Surface test failures
         if: failure()
@@ -207,7 +216,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo '## Test failures' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          grep -h -B 5 -A 10 'FAILED:' build/release/extension/sirius/test/cpp/log/*/unittest.log \
+          grep -h -B 5 -A 10 'FAILED:' build/release/test/cpp/log/*/unittest.log \
             | head -80 >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
@@ -216,7 +225,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unittest-logs-cuda${{ matrix.cuda.version }}-${{ github.run_id }}
-          path: build/release/extension/sirius/test/cpp/log/
+          path: build/release/test/cpp/log/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -225,7 +234,7 @@ jobs:
           ./setup_test_datasets.sh
           chmod -R a+r test_datasets/
           mkdir -p test_datasets/tpch_parquet_sf1
-          ./build/release/duckdb -f scripts/tpch_to_parquet.sql
+          ./sirius-duckdb/build/release/duckdb -f scripts/tpch_to_parquet.sql
 
       - name: TPC-H performance snapshot
         id: tpch
