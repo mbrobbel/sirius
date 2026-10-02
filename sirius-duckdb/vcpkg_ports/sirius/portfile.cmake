@@ -6,7 +6,7 @@ if(VCPKG_CUDA_ARCHITECTURES STREQUAL "RAPIDS")
 endif()
 
 set(sirius_url https://github.com/mbrobbel/sirius.git)
-set(sirius_ref 3a5fad2875a699935c93b6d1f11c0f5cd9a28652)
+set(sirius_ref ac03251aaf08af02600088d45c24a2948055803d)
 vcpkg_from_git(OUT_SOURCE_PATH SOURCE_PATH URL "${sirius_url}" REF
                "${sirius_ref}")
 set(duckdb_ref 561522aea03e400bd20adc64fcc63e78b8721f3f)
