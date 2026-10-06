@@ -3161,6 +3161,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sirius-exchange-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-build",
+ "protox",
+]
+
+[[package]]
 name = "sirius-sys"
 version = "0.1.0"
 dependencies = [

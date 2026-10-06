@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package sirius.exchange.v1;
+
+// Query and fragment identities retain both halves of the coordinator's identifier.
+message Id128 {
+  fixed64 high = 1;
+  fixed64 low = 2;
+}
+
+// ReadRel.extension_table.detail. The ReadRel base_schema describes incoming batches.
+message ExchangeSource {
+  Id128 query_id = 1;
+  Id128 receiver_fragment_id = 2;
+  optional uint32 exchange_id = 3;
+  repeated uint32 expected_sender_ids = 4;
+}
+
+// ExchangeRel.advanced_extension.enhancement. Routing uses standard ExchangeRel fields.
+message ExchangeSink {
+  Id128 query_id = 1;
+  Id128 sender_fragment_id = 2;
+  optional uint32 sender_id = 3;
+}
+
+// ExchangeRel.ExchangeTarget.extended. The caller registers peer bootstrap metadata.
+message ExchangeDestination {
+  Id128 receiver_fragment_id = 1;
+  optional uint32 exchange_id = 2;
+  string peer_id = 3;
+}

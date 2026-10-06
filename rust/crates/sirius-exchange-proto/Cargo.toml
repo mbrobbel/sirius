@@ -1,0 +1,14 @@
+[package]
+name = "sirius-exchange-proto"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+description = "Shared protobuf metadata for Sirius Substrait exchanges"
+
+[dependencies]
+prost = "0.14"
+
+[build-dependencies]
+prost-build = "0.14"
+protox = "0.9"
