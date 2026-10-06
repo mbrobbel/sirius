@@ -26,6 +26,7 @@
 #include "op/sirius_physical_cte.hpp"
 #include "op/sirius_physical_delim_join.hpp"
 #include "op/sirius_physical_dense_count_join.hpp"
+#include "op/sirius_physical_exchange.hpp"
 #include "op/sirius_physical_grouped_aggregate.hpp"
 #include "op/sirius_physical_hash_join.hpp"
 #include "op/sirius_physical_operator.hpp"
@@ -558,8 +559,12 @@ char const* dump_evidence_scope(op::scan::certificate_evidence_scope scope)
 //! the scan manager later matches against pinned entries.
 void dump_scan_identity(std::ostringstream& out, const op::sirius_physical_operator& op)
 {
-  if (op.type == op::SiriusPhysicalOperatorType::STREAMING_SOURCE) {
-    auto const& stream = op.Cast<op::sirius_physical_streaming_source>();
+  if (op.type == op::SiriusPhysicalOperatorType::STREAMING_SOURCE ||
+      op.type == op::SiriusPhysicalOperatorType::EXCHANGE_SOURCE) {
+    auto const& stream = op.type == op::SiriusPhysicalOperatorType::EXCHANGE_SOURCE
+                           ? static_cast<op::sirius_physical_streaming_source const&>(
+                               op.Cast<op::sirius_physical_exchange_source>())
+                           : op.Cast<op::sirius_physical_streaming_source>();
     if (stream.contract_id() != 0 && stream.read_views()) {
       auto const& entry    = stream.read_views()->entry(stream.contract_id());
       auto const& contract = entry.contract;
@@ -668,8 +673,12 @@ void dump_plan_replay_policy(std::ostringstream& out, pipeline_conversion_result
       auto const& scan = node.Cast<op::scan::sirius_gpu_scan_operator>();
       registry         = scan.read_views();
       id               = scan.contract_id();
-    } else if (node.type == op::SiriusPhysicalOperatorType::STREAMING_SOURCE) {
-      auto const& scan = node.Cast<op::sirius_physical_streaming_source>();
+    } else if (node.type == op::SiriusPhysicalOperatorType::STREAMING_SOURCE ||
+               node.type == op::SiriusPhysicalOperatorType::EXCHANGE_SOURCE) {
+      auto const& scan = node.type == op::SiriusPhysicalOperatorType::EXCHANGE_SOURCE
+                           ? static_cast<op::sirius_physical_streaming_source const&>(
+                               node.Cast<op::sirius_physical_exchange_source>())
+                           : node.Cast<op::sirius_physical_streaming_source>();
       registry         = scan.read_views();
       id               = scan.contract_id();
     } else

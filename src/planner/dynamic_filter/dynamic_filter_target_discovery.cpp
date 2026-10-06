@@ -257,6 +257,8 @@ std::vector<descent_step> descent_steps(sirius::op::sirius_physical_operator con
     case SiriusPhysicalOperatorType::GPU_VALUES:
     case SiriusPhysicalOperatorType::GPU_SCAN:
     case SiriusPhysicalOperatorType::STREAMING_SOURCE:
+    case SiriusPhysicalOperatorType::EXCHANGE_SOURCE:
+    case SiriusPhysicalOperatorType::EXCHANGE_SINK:
     case SiriusPhysicalOperatorType::STREAMING_SINK: return {};
   }
   return {};  // unreachable

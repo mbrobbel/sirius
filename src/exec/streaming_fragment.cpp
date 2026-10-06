@@ -17,6 +17,7 @@
 #include "exec/streaming_fragment.hpp"
 
 #include "helper/type_conversions.hpp"
+#include "op/sirius_physical_exchange.hpp"
 #include "op/sirius_physical_result_collector.hpp"
 #include "planner/sirius_physical_plan_generator.hpp"
 #include "sirius/exception.hpp"
@@ -186,11 +187,21 @@ duckdb::unique_ptr<op::sirius_physical_operator> streaming_fragment::make_stream
   duckdb::unique_ptr<op::sirius_physical_streaming_sink> sink;
   if (_spec.partitioning.has_value()) {
     normalize_key_cast_types(*_spec.partitioning, types);
-    sink = duckdb::make_uniq<op::sirius_physical_streaming_sink>(
-      std::move(types), cardinality, std::move(sink_repos), *_spec.partitioning);
+    if (_spec.output_boundary == stream_boundary::exchange) {
+      sink = duckdb::make_uniq<op::sirius_physical_exchange_sink>(
+        std::move(types), cardinality, std::move(sink_repos), *_spec.partitioning);
+    } else {
+      sink = duckdb::make_uniq<op::sirius_physical_streaming_sink>(
+        std::move(types), cardinality, std::move(sink_repos), *_spec.partitioning);
+    }
   } else {
-    sink = duckdb::make_uniq<op::sirius_physical_streaming_sink>(
-      std::move(types), cardinality, sink_repos.front());
+    if (_spec.output_boundary == stream_boundary::exchange) {
+      sink = duckdb::make_uniq<op::sirius_physical_exchange_sink>(
+        std::move(types), cardinality, sink_repos.front());
+    } else {
+      sink = duckdb::make_uniq<op::sirius_physical_streaming_sink>(
+        std::move(types), cardinality, sink_repos.front());
+    }
   }
   sink->children.push_back(std::move(subtree));
   _session.add_sink(_spec.outputs, *sink);
@@ -260,7 +271,8 @@ void streaming_fragment::build()
                                             input.types,
                                             std::make_shared<cucascade::shared_data_repository>(),
                                             input.expected_senders,
-                                            nullptr});
+                                            nullptr,
+                                            input.boundary});
     }
 
     auto bound = _spec.plan_source(_context);

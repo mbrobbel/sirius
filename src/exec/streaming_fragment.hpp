@@ -50,6 +50,7 @@ struct stream_input_spec {
   duckdb::vector<sirius::logical_type> types;
   /// Sender-set EOS: stream ends only once all have closed.
   std::set<sender_id_t> expected_senders;
+  stream_boundary boundary = stream_boundary::streaming;
 };
 
 /// Bound, optimized DuckDB logical plan from Substrait bytes, SQL, or similar.
@@ -71,6 +72,7 @@ struct fragment_spec {
   std::vector<stream_id_t> outputs;
   /// Absent = gather (single destination, no partitioning). Illegal when outputs.size() < 2.
   std::optional<op::partition_spec> partitioning;
+  stream_boundary output_boundary = stream_boundary::streaming;
 };
 
 /// Owns repositories, plan, engine, and session for one fragment. The query window exists only
@@ -89,8 +91,8 @@ class streaming_fragment {
   streaming_fragment(const streaming_fragment&)            = delete;
   streaming_fragment& operator=(const streaming_fragment&) = delete;
 
-  /// Declare inputs, lower to STREAMING_SOURCE plus STREAMING_SINK or RESULT_COLLECTOR, and
-  /// register with the session. Holds the engine's query-lifecycle slot only while generating
+  /// Declare inputs, lower to streaming/exchange operators or RESULT_COLLECTOR, and register
+  /// with the session. Holds the engine's query-lifecycle slot only while generating
   /// the physical plan, so any number of fragments may be built before any runs. Inputs can be
   /// filled after this returns.
   /// @throws sirius::invalid_input_exception when already built, after a failed build() (no

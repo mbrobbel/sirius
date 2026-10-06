@@ -9,6 +9,7 @@ set(SIRIUS_SUBSTRAIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/substrait")
 file(GLOB_RECURSE SIRIUS_SUBSTRAIT_PROTOBUF_SOURCES
      "${SIRIUS_SUBSTRAIT_DIR}/third_party/google/protobuf/*.cc")
 set(SIRIUS_SUBSTRAIT_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exchange/generated/sirius/exchange/v1/exchange.pb.cc
     ${SIRIUS_SUBSTRAIT_DIR}/src/from_substrait.cpp
     ${SIRIUS_SUBSTRAIT_DIR}/src/custom_extensions.cpp
     ${SIRIUS_SUBSTRAIT_DIR}/src/custom_extensions_generated.cpp
@@ -23,3 +24,5 @@ set(SIRIUS_SUBSTRAIT_SOURCES
 set_source_files_properties(${SIRIUS_SUBSTRAIT_SOURCES}
                             PROPERTIES COMPILE_OPTIONS "-w")
 target_sources(sirius_objects PRIVATE ${SIRIUS_SUBSTRAIT_SOURCES})
+target_include_directories(
+  sirius_objects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/exchange/generated)

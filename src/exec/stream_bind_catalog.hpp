@@ -30,6 +30,8 @@
 
 namespace sirius::exec {
 
+enum class stream_boundary { streaming, exchange };
+
 /// Schema + provenance for one input stream. Caller-supplied; never inferred.
 struct stream_input_binding {
   std::vector<std::string> names;
@@ -39,6 +41,7 @@ struct stream_input_binding {
 
   /// Back-pointer into the engine-owned plan; filled during planning for session registration.
   op::sirius_physical_streaming_source* built = nullptr;
+  stream_boundary boundary                    = stream_boundary::streaming;
 };
 
 /// Per-connection declared input streams. ClientContextState so DuckDB bind can resolve schema

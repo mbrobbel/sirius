@@ -43,6 +43,7 @@
 #include "log/logging.hpp"
 #include "op/scan/duckdb_mvcc_visibility.hpp"
 #include "op/scan/iceberg_metadata_connection.hpp"
+#include "op/sirius_physical_exchange.hpp"
 #include "op/sirius_physical_filter.hpp"
 #include "op/sirius_physical_table_scan.hpp"
 #include "planner/connector_registry.hpp"
@@ -648,13 +649,24 @@ sirius_physical_plan_generator::create_streaming_source_plan(duckdb::LogicalGet&
                                              std::move(materializer),
                                              op.returned_types,
                                              op.table_index);
-  auto source =
-    duckdb::make_uniq<sirius::op::sirius_physical_streaming_source>(binding.types,
-                                                                    op.EstimateCardinality(context),
-                                                                    binding.repository,
-                                                                    binding.expected_senders,
-                                                                    read_views,
-                                                                    contract_id);
+  duckdb::unique_ptr<sirius::op::sirius_physical_streaming_source> source;
+  if (binding.boundary == sirius::exec::stream_boundary::exchange) {
+    source = duckdb::make_uniq<sirius::op::sirius_physical_exchange_source>(
+      binding.types,
+      op.EstimateCardinality(context),
+      binding.repository,
+      binding.expected_senders,
+      read_views,
+      contract_id);
+  } else {
+    source = duckdb::make_uniq<sirius::op::sirius_physical_streaming_source>(
+      binding.types,
+      op.EstimateCardinality(context),
+      binding.repository,
+      binding.expected_senders,
+      read_views,
+      contract_id);
+  }
 
   // Plan owns op; catalog.built back-pointer for session registration.
   catalog->set_built(bind->stream_id, source.get());

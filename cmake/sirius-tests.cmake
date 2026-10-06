@@ -29,6 +29,7 @@ target_include_directories(
     ${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/catch
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exchange/generated
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/compression/simpatico_codegen/src>
 )
 

@@ -27,6 +27,7 @@
 #include "helper/type_conversions.hpp"
 #include "log/logging.hpp"
 #include "op/scan/sirius_gpu_scan_operator.hpp"
+#include "op/sirius_physical_exchange.hpp"
 #include "op/sirius_physical_streaming_source.hpp"
 #include "sirius_context.hpp"
 #include "transparent/read_view_registry.hpp"
@@ -44,6 +45,8 @@ void collect_read_views(op::sirius_physical_operator const& node,
     candidate = node.Cast<op::scan::sirius_gpu_scan_operator>().read_views();
   } else if (node.type == op::SiriusPhysicalOperatorType::STREAMING_SOURCE) {
     candidate = node.Cast<op::sirius_physical_streaming_source>().read_views();
+  } else if (node.type == op::SiriusPhysicalOperatorType::EXCHANGE_SOURCE) {
+    candidate = node.Cast<op::sirius_physical_exchange_source>().read_views();
   }
   if (candidate) {
     if (result && result != candidate) {

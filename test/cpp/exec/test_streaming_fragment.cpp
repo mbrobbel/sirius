@@ -133,17 +133,44 @@ std::size_t drain_row_count(streaming_fragment& fragment, stream_id_t id)
 
 }  // namespace
 
+TEST_CASE_METHOD(fragment_fixture,
+                 "exchange sources preserve scan contracts and prohibit CPU replay",
+                 "[integration][streaming_fragment][exchange_operator]")
+{
+  catalog->declare(0,
+                   stream_input_binding{{"a"},
+                                        {sirius::from_duckdb(duckdb::LogicalType::INTEGER)},
+                                        std::make_shared<cucascade::shared_data_repository>(),
+                                        {0},
+                                        nullptr,
+                                        stream_boundary::exchange});
+  try {
+    // An aggregate places the source in a scheduled child of the synthetic root pipeline.
+    auto dump =
+      sirius::test::convert_query_to_dump(*con, "SELECT count(*) FROM sirius_stream_source(0)");
+    REQUIRE_THAT(dump, ContainsSubstring("EXCHANGE_SOURCE"));
+    REQUIRE_THAT(dump, ContainsSubstring("profile=sirius.stream.v1"));
+    REQUIRE_THAT(dump, ContainsSubstring("plan_cpu_replay=forbidden veto=stream"));
+    catalog->erase(0);
+  } catch (...) {
+    catalog->erase(0);
+    throw;
+  }
+}
+
 // ============================================================================
 // FRAG-1: a leaf fragment runs to completion and parks its output
 // ============================================================================
 
 TEST_CASE_METHOD(fragment_fixture,
                  "FRAG-1: a leaf fragment runs and its output survives the window cleanup",
-                 "[integration][streaming_fragment]")
+                 "[integration][streaming_fragment][exchange_operator]")
 {
+  auto boundary = GENERATE(stream_boundary::streaming, stream_boundary::exchange);
   fragment_spec spec;
-  spec.plan_source = sirius::test::sql_plan_source(kLeafQuery);
-  spec.outputs     = {0};
+  spec.plan_source     = sirius::test::sql_plan_source(kLeafQuery);
+  spec.outputs         = {0};
+  spec.output_boundary = boundary;
 
   con->BeginTransaction();
   try {
@@ -167,8 +194,9 @@ TEST_CASE_METHOD(fragment_fixture,
 
 TEST_CASE_METHOD(fragment_fixture,
                  "FRAG-2: a two-fragment chain matches the equivalent single query",
-                 "[integration][streaming_fragment]")
+                 "[integration][streaming_fragment][exchange_operator]")
 {
+  auto boundary = GENERATE(stream_boundary::streaming, stream_boundary::exchange);
   auto expected = con->Query(std::string("SELECT count(*) FROM (") + kLeafQuery + ") t");
   REQUIRE_FALSE(expected->HasError());
   auto const expected_rows = expected->GetValue(0, 0).GetValue<std::int64_t>();
@@ -176,8 +204,9 @@ TEST_CASE_METHOD(fragment_fixture,
   con->BeginTransaction();
   try {
     fragment_spec sender_spec;
-    sender_spec.plan_source = sirius::test::sql_plan_source(kLeafQuery);
-    sender_spec.outputs     = {0};
+    sender_spec.plan_source     = sirius::test::sql_plan_source(kLeafQuery);
+    sender_spec.outputs         = {0};
+    sender_spec.output_boundary = boundary;
     streaming_fragment sender(*con->context, std::move(sender_spec));
 
     fragment_spec receiver_spec;
@@ -186,8 +215,10 @@ TEST_CASE_METHOD(fragment_fixture,
     receiver_spec.inputs[0] = stream_input_spec{
       {"a"},
       sirius::from_duckdb_vec(duckdb::vector<duckdb::LogicalType>{duckdb::LogicalType::INTEGER}),
-      {0}};
-    receiver_spec.outputs = {1};
+      {0},
+      boundary};
+    receiver_spec.outputs         = {1};
+    receiver_spec.output_boundary = boundary;
     streaming_fragment receiver(*con->context, std::move(receiver_spec));
 
     sender.build();

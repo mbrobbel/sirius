@@ -216,7 +216,7 @@ class sirius_pipeline : public std::enable_shared_from_this<sirius_pipeline> {
   //! Checks if the pipeline has been finished
   virtual bool is_pipeline_finished() const;
 
-  //! Query-terminal sink (RESULT_COLLECTOR or STREAMING_SINK): no downstream schedule/wiring;
+  //! Result, streaming, or exchange sink: no downstream schedule/wiring;
   //! completion signals execute().
   [[nodiscard]] bool is_query_terminal() const;
 

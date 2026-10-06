@@ -38,6 +38,7 @@ set(TEST_SOURCES
     test/cpp/exec/test_stream_session.cpp
     test/cpp/exec/test_streaming_fragment.cpp
     test/cpp/exec/test_thread_util.cpp
+    test/cpp/exchange/test_exchange_plan.cpp
     test/cpp/expression/test_ast_aggregate.cpp
     test/cpp/expression/test_ast_clone.cpp
     test/cpp/expression/test_ast_substitute.cpp

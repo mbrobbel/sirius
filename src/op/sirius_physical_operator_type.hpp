@@ -151,6 +151,8 @@ enum class SiriusPhysicalOperatorType : uint8_t {
   DYNAMIC_FILTER,
   STREAMING_SOURCE,
   STREAMING_SINK,
+  EXCHANGE_SOURCE,
+  EXCHANGE_SINK,
   DENSE_COUNT_JOIN
 };
 
