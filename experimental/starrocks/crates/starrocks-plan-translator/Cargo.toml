@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 prost.workspace = true
+sirius-exchange-proto = { path = "../../../../rust/crates/sirius-exchange-proto" }
 starrocks-thrift = { path = "../starrocks-thrift" }
 substrait.workspace = true
 thiserror.workspace = true

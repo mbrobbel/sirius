@@ -145,8 +145,9 @@ their CUDA contexts.
 ## Scope
 
 This protocol connects Sirius peers. It does not implement StarRocks' native batch
-transport. Peer bootstrap and distributed execution orchestration remain the embedding
-caller's responsibility.
+transport. The StarRocks translator emits the exchange plan format, while CN peer
+bootstrap and distributed execution orchestration remain the embedding caller's
+responsibility.
 
 The local Rust integration tests use a single GPU across separate worker processes.
 They validate rows, routing, and lifecycle behavior. Multi-host bandwidth and

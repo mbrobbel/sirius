@@ -9,6 +9,11 @@
 
 #include <catch.hpp>
 
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <limits>
+
 namespace {
 
 namespace exchange = sirius::exchange;
@@ -99,7 +104,55 @@ exchange::plan parse(const substrait::Plan& plan)
   return exchange::rewrite_substrait(plan.SerializeAsString());
 }
 
+substrait::Plan translated_fixture(const char* name)
+{
+  const auto path = std::filesystem::path(__FILE__).parent_path() / "data" / name;
+  std::ifstream file(path, std::ios::binary);
+  REQUIRE(file.good());
+  const std::string bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+  substrait::Plan result;
+  REQUIRE(result.ParseFromString(bytes));
+  return result;
+}
+
 }  // namespace
+
+TEST_CASE("native exchange parser consumes StarRocks translator fixtures", "[exchange_plan]")
+{
+  SECTION("character source schema")
+  {
+    auto result = parse(translated_fixture("starrocks_string_source.substrait"));
+    REQUIRE(result.inputs.size() == 1);
+    REQUIRE(result.inputs[0].names == std::vector<std::string>{"id", "name", "code"});
+    REQUIRE(result.inputs[0].types.size() == 3);
+    REQUIRE(result.inputs[0].types[0].id() == sirius::type_id::BIGINT);
+    REQUIRE(result.inputs[0].types[1].id() == sirius::type_id::VARCHAR);
+    REQUIRE(result.inputs[0].types[2].id() == sirius::type_id::VARCHAR);
+    REQUIRE(result.inputs[0].address.query_id.high == std::numeric_limits<std::uint64_t>::max());
+  }
+  SECTION("aggregate sink enforces its output type")
+  {
+    auto result = parse(translated_fixture("starrocks_sum_sink.substrait"));
+    REQUIRE(result.sink);
+    REQUIRE(result.inputs[0].types[0].id() == sirius::type_id::INTEGER);
+    substrait::Plan rewritten;
+    REQUIRE(rewritten.ParseFromString(result.rewritten));
+    const auto& project = rewritten.relations(0).root().input().project();
+    REQUIRE(project.expressions_size() == 1);
+    REQUIRE(project.expressions(0).cast().type().has_i64());
+  }
+  SECTION("modern limit and offset")
+  {
+    auto result = parse(translated_fixture("starrocks_fetch_source.substrait"));
+    substrait::Plan rewritten;
+    REQUIRE(rewritten.ParseFromString(result.rewritten));
+    const auto& fetch = rewritten.relations(0).root().input().fetch();
+    REQUIRE(fetch_scalar(fetch, "count") == 1);
+    REQUIRE(fetch_scalar(fetch, "offset") == 2);
+    REQUIRE_FALSE(fetch.has_count_expr());
+    REQUIRE_FALSE(fetch.has_offset_expr());
+  }
+}
 
 TEST_CASE("exchange fetch expressions normalize for the bundled importer", "[exchange_plan]")
 {

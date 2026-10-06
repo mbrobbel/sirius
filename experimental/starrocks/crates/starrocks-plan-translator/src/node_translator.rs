@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use starrocks_thrift::exprs::TExpr;
+use starrocks_thrift::internal_service::TPlanFragmentExecParams;
 use starrocks_thrift::opcodes::TExprOpcode;
 use starrocks_thrift::plan_nodes::{TJoinOp, TPlan, TPlanNode, TPlanNodeType, TSortInfo};
 use starrocks_thrift::types::TSlotId;
@@ -45,6 +46,7 @@ pub(crate) struct TranslatedRel {
 
 /// Mutable state shared by plan-node translators.
 struct PlanContext<'a> {
+    exec: Option<&'a TPlanFragmentExecParams>,
     /// Descriptor lookups for row layouts, tables, and scan schemas.
     desc: &'a DescriptorTable,
     /// Parquet file paths for each scan node, collected from the fragment's broker
@@ -63,6 +65,7 @@ impl<'a> PlanContext<'a> {
         registry: &'a mut ExtensionRegistry,
     ) -> Self {
         Self {
+            exec: None,
             desc,
             scan_paths,
             registry,
@@ -161,6 +164,11 @@ fn translate_plan_node(
     let translated = match node.node_type {
         TPlanNodeType::FILE_SCAN_NODE => translate_file_scan(node, children, ctx),
         TPlanNodeType::HDFS_SCAN_NODE => translate_hdfs_scan(node, children, ctx),
+        TPlanNodeType::EXCHANGE_NODE => {
+            expect_children(node, &children, 0)?;
+            let translated = crate::exchange::source(node, ctx.desc, ctx.exec)?;
+            apply_conjuncts(translated, node, ctx)
+        }
         TPlanNodeType::SELECT_NODE => translate_select(node, children, ctx),
         TPlanNodeType::PROJECT_NODE => translate_project(node, children, ctx),
         TPlanNodeType::AGGREGATION_NODE => translate_aggregation(node, children, ctx),
@@ -185,6 +193,11 @@ fn apply_fetch(input: TranslatedRel, node: &TPlanNode) -> TranslatedRel {
         .sort_node
         .as_ref()
         .and_then(|sort| sort.offset)
+        .or_else(|| {
+            node.exchange_node
+                .as_ref()
+                .and_then(|exchange| exchange.offset)
+        })
         .unwrap_or(0);
     if node.limit < 0 && offset == 0 {
         return input;
@@ -326,8 +339,10 @@ pub(crate) fn translate_plan(
     desc: &DescriptorTable,
     scan_paths: &ScanFilePaths,
     registry: &mut ExtensionRegistry,
+    exec: Option<&TPlanFragmentExecParams>,
 ) -> Result<TranslatedRel> {
     let mut ctx = PlanContext::new(desc, scan_paths, registry);
+    ctx.exec = exec;
     plan.translate(&mut ctx)
 }
 

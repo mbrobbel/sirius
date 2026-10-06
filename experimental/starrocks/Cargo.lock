@@ -1845,6 +1845,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sirius-exchange-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-build",
+ "protox",
+]
+
+[[package]]
 name = "sirius-starrocks-cn"
 version = "0.1.0"
 dependencies = [
@@ -1919,6 +1928,7 @@ name = "starrocks-plan-translator"
 version = "0.1.0"
 dependencies = [
  "prost",
+ "sirius-exchange-proto",
  "starrocks-thrift",
  "substrait",
  "thiserror",

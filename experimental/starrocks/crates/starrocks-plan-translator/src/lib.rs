@@ -6,9 +6,8 @@
 //! invariants over breadth: it translates one fragment at a time, and everything
 //! outside the supported surface returns a structured [`TranslateError`] that
 //! names the offending node/type — so the next contributor knows exactly what to
-//! implement next. In particular `EXCHANGE_NODE` is rejected: a fragment is
-//! translated in isolation, and multi-fragment plans (every exchange is a
-//! fragment boundary) are a later milestone.
+//! implement next. Fragment boundaries carry Sirius exchange metadata; execution
+//! connects their peer identities to caller-supplied transport metadata.
 //!
 //! # Wire format: flat preorder
 //!
@@ -29,6 +28,8 @@
 //! |----------------------|--------------------|
 //! | `FILE_SCAN_NODE`     | `ReadRel` (local files) |
 //! | `HDFS_SCAN_NODE`     | `ReadRel` (named table) |
+//! | `EXCHANGE_NODE`      | `ReadRel` (Sirius exchange source metadata) |
+//! | `DATA_STREAM_SINK`   | `ExchangeRel` (gather, broadcast, or hash) |
 //! | `SELECT_NODE`        | `FilterRel`        |
 //! | `PROJECT_NODE`       | `ProjectRel` (common slots materialized first as hidden `ProjectRel`s) |
 //! | `AGGREGATION_NODE`   | `AggregateRel` (finalized one-phase only, `new_planner_agg_stage=1`) |
@@ -67,9 +68,10 @@
 //!
 //! Decimal arithmetic is **not exact**. `ARITHMETIC_EXPR` over decimal operands, and decimal
 //! `sum`/`avg`, are evaluated in FP64 because the GPU expression and aggregate paths cannot
-//! consume decimal arithmetic; decimal slots of precision &gt; 18 likewise map to FP64. Results
-//! are not cast back, so a column the frontend declared DECIMAL can arrive as a double and
-//! differ from StarRocks in its final digits.
+//! consume decimal arithmetic; decimal slots of precision &gt; 18 likewise map to FP64. Result
+//! fragments are not cast back, so a column the frontend declared DECIMAL can arrive as a
+//! double and differ from StarRocks in its final digits. Exchange sinks cast their columns to
+//! the declared wire types so receiver schemas agree; this does not restore decimal precision.
 //!
 //! # Adding a node
 //!
@@ -99,6 +101,7 @@ use substrait::proto::{Plan, PlanRel, RelRoot, plan_rel};
 // to `pub` only when a real consumer needs it.
 pub(crate) mod descriptor_table;
 pub mod error;
+mod exchange;
 mod expr_translator;
 mod node_translator;
 mod scan_paths;
@@ -193,8 +196,15 @@ impl PlanTranslator {
         let desc = DescriptorTable::try_from(desc_tbl)?;
         let scan_paths = ScanFilePaths::from_fragment(params, &desc)?;
         let mut registry = ExtensionRegistry::new();
-        let mut translated =
-            node_translator::translate_plan(plan, &desc, &scan_paths, &mut registry)?;
+        let mut translated = node_translator::translate_plan(
+            plan,
+            &desc,
+            &scan_paths,
+            &mut registry,
+            params.params.as_ref(),
+        )?;
+
+        let input_layout = translated.row_tuples.clone();
 
         let output_names = if let Some(output_exprs) = fragment
             .output_exprs
@@ -216,6 +226,7 @@ impl PlanTranslator {
         };
 
         let output_names = unique_names(output_names).collect::<Vec<_>>();
+        translated.rel = exchange::attach_sink(translated.rel, params, &desc, &input_layout)?;
         let (extension_urns, extensions) = registry.into_extensions();
         let substrait_plan = Plan {
             // Source the spec version from the `substrait` crate so it tracks the

@@ -3195,10 +3195,9 @@ fn nestloop_join_without_a_liftable_comparison_still_translates() {
     }
 }
 
-/// Verifies an exchange node is still rejected: fragments are translated in isolation and
-/// multi-fragment plans are a later milestone.
+/// Exchange nodes need an explicit stream descriptor.
 #[test]
-fn exchange_node_is_rejected() {
+fn exchange_node_requires_payload() {
     let exchange = base_plan_node(1, TPlanNodeType::EXCHANGE_NODE, 0, vec![0]);
     let err = translate_fragment(&params(
         Some(TPlan::new(vec![exchange])),
@@ -3208,9 +3207,9 @@ fn exchange_node_is_rejected() {
     .unwrap_err();
     assert!(matches!(
         err,
-        TranslateError::UnsupportedPlanNode {
-            node_type: TPlanNodeType::EXCHANGE_NODE,
-            ..
+        TranslateError::MissingField {
+            context: "EXCHANGE_NODE",
+            field: "exchange_node"
         }
     ));
 }
@@ -4595,4 +4594,506 @@ fn bare_cross_join_translates_to_constant_key_join() {
         })
         .collect();
     assert_eq!(operands, vec![2, 4]);
+}
+
+fn exchange_params() -> TExecPlanFragmentParams {
+    use starrocks_thrift::plan_nodes::TExchangeNode;
+    let mut node = base_plan_node(7, TPlanNodeType::EXCHANGE_NODE, 0, vec![0]);
+    node.exchange_node = Some(TExchangeNode::new(vec![0], None, None, None, None, None));
+    let mut params = params(Some(TPlan::new(vec![node])), Some(base_desc()), None);
+    params.params = Some(TPlanFragmentExecParams::new(
+        TUniqueId::new(-1, 27),
+        TUniqueId::new(42, -2),
+        BTreeMap::new(),
+        BTreeMap::from([(7, 2)]),
+        None,
+        Some(1),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ));
+    params
+}
+
+fn with_exchange_sink(
+    mut params: TExecPlanFragmentParams,
+    kind: TPartitionType,
+    count: i64,
+) -> TExecPlanFragmentParams {
+    use starrocks_thrift::data_sinks::{
+        TDataSink, TDataSinkType, TDataStreamSink, TPlanFragmentDestination,
+    };
+    use starrocks_thrift::types::TNetworkAddress;
+    let keys = (kind == TPartitionType::HASH_PARTITIONED)
+        .then(|| vec![slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT))]);
+    let stream = TDataStreamSink::new(
+        9,
+        TDataPartition::new(kind, keys, None, None),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    params.fragment.as_mut().unwrap().output_sink = Some(TDataSink::new(
+        TDataSinkType::DATA_STREAM_SINK,
+        Some(stream),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ));
+    params.params.as_mut().unwrap().destinations = Some(
+        (0..count)
+            .map(|partition| {
+                TPlanFragmentDestination::new(
+                    TUniqueId::new(81, partition),
+                    None,
+                    Some(TNetworkAddress::new(format!("worker-{partition}"), 8060)),
+                    None,
+                )
+            })
+            .collect(),
+    );
+    params
+}
+
+#[test]
+fn exchange_source_preserves_schema_identity_and_expected_senders() {
+    use prost::Message;
+    use sirius_exchange_proto::{ExchangeSource, SOURCE_TYPE_URL};
+    let translated = translate_fragment(&exchange_params()).unwrap();
+    let Some(rel::RelType::Read(read)) = root(&translated.plan)
+        .input
+        .as_ref()
+        .unwrap()
+        .rel_type
+        .as_ref()
+    else {
+        panic!("expected exchange read");
+    };
+    assert_eq!(read.base_schema.as_ref().unwrap().names, ["id", "name"]);
+    let Some(read_rel::ReadType::ExtensionTable(table)) = &read.read_type else {
+        panic!("expected extension table")
+    };
+    let detail = table.detail.as_ref().unwrap();
+    assert_eq!(detail.type_url, SOURCE_TYPE_URL);
+    let metadata = ExchangeSource::decode(detail.value.as_slice()).unwrap();
+    assert_eq!(metadata.query_id.unwrap().high, u64::MAX);
+    assert_eq!(metadata.receiver_fragment_id.unwrap().low, u64::MAX - 1);
+    assert_eq!(metadata.exchange_id, Some(7));
+    assert_eq!(metadata.expected_sender_ids, [0, 1]);
+}
+
+#[test]
+fn exchange_source_honors_limit_and_offset() {
+    let mut params = exchange_params();
+    let node = &mut params
+        .fragment
+        .as_mut()
+        .unwrap()
+        .plan
+        .as_mut()
+        .unwrap()
+        .nodes[0];
+    node.limit = 1;
+    node.exchange_node.as_mut().unwrap().offset = Some(2);
+    let translated = translate_fragment(&params).unwrap();
+    assert_exchange_fixture(
+        "starrocks_fetch_source.substrait",
+        &translated.to_substrait_bytes(),
+    );
+    let Some(rel::RelType::Fetch(fetch)) = root(&translated.plan)
+        .input
+        .as_ref()
+        .unwrap()
+        .rel_type
+        .as_ref()
+    else {
+        panic!("expected fetch");
+    };
+    assert!(fetch.offset_expr.is_some());
+    assert!(fetch.count_expr.is_some());
+    assert!(matches!(
+        fetch.input.as_ref().unwrap().rel_type,
+        Some(rel::RelType::Read(_))
+    ));
+}
+
+#[test]
+fn exchange_sources_reject_incomplete_or_ordered_inputs() {
+    let base = exchange_params();
+    let mut missing = base.clone();
+    missing.params = None;
+    assert!(translate_fragment(&missing).is_err());
+    let mut empty_senders = base.clone();
+    empty_senders
+        .params
+        .as_mut()
+        .unwrap()
+        .per_exch_num_senders
+        .insert(7, 0);
+    assert!(translate_fragment(&empty_senders).is_err());
+    let mut merge = base.clone();
+    merge
+        .fragment
+        .as_mut()
+        .unwrap()
+        .plan
+        .as_mut()
+        .unwrap()
+        .nodes[0]
+        .exchange_node
+        .as_mut()
+        .unwrap()
+        .enable_parallel_merge = Some(true);
+    assert!(
+        translate_fragment(&merge)
+            .unwrap_err()
+            .to_string()
+            .contains("ordered")
+    );
+    let mut prefix = base;
+    prefix
+        .fragment
+        .as_mut()
+        .unwrap()
+        .plan
+        .as_mut()
+        .unwrap()
+        .nodes[0]
+        .exchange_node
+        .as_mut()
+        .unwrap()
+        .input_row_tuples
+        .clear();
+    assert!(
+        translate_fragment(&prefix)
+            .unwrap_err()
+            .to_string()
+            .contains("output layout")
+    );
+}
+
+#[test]
+fn stream_sink_maps_gather_broadcast_and_hash() {
+    use prost::Message;
+    use sirius_exchange_proto::{ExchangeDestination, ExchangeSink};
+    use substrait::proto::exchange_rel::{ExchangeKind, exchange_target::TargetType};
+    for (kind, count) in [
+        (TPartitionType::UNPARTITIONED, 1),
+        (TPartitionType::UNPARTITIONED, 2),
+        (TPartitionType::HASH_PARTITIONED, 2),
+    ] {
+        let translated =
+            translate_fragment(&with_exchange_sink(exchange_params(), kind, count)).unwrap();
+        let Some(rel::RelType::Exchange(exchange)) = root(&translated.plan)
+            .input
+            .as_ref()
+            .unwrap()
+            .rel_type
+            .as_ref()
+        else {
+            panic!("expected exchange sink");
+        };
+        match (kind, count, &exchange.exchange_kind) {
+            (TPartitionType::UNPARTITIONED, 1, Some(ExchangeKind::SingleTarget(_))) => {}
+            (TPartitionType::UNPARTITIONED, 2, Some(ExchangeKind::Broadcast(_))) => {}
+            (TPartitionType::HASH_PARTITIONED, 2, Some(ExchangeKind::ScatterByFields(fields))) => {
+                assert_eq!(fields.fields.len(), 1)
+            }
+            _ => panic!("incorrect exchange routing"),
+        }
+        let metadata = ExchangeSink::decode(
+            exchange
+                .advanced_extension
+                .as_ref()
+                .unwrap()
+                .enhancement
+                .as_ref()
+                .unwrap()
+                .value
+                .as_slice(),
+        )
+        .unwrap();
+        assert_eq!(metadata.sender_id, Some(1));
+        assert_eq!(metadata.query_id.unwrap().high, u64::MAX);
+        assert_eq!(exchange.partition_count, count as i32);
+        for (index, target) in exchange.targets.iter().enumerate() {
+            assert_eq!(target.partition_id, [index as i32]);
+            let Some(TargetType::Extended(detail)) = &target.target_type else {
+                panic!("expected target metadata")
+            };
+            let destination = ExchangeDestination::decode(detail.value.as_slice()).unwrap();
+            assert_eq!(destination.exchange_id, Some(9));
+            assert_eq!(destination.receiver_fragment_id.unwrap().low, index as u64);
+            assert_eq!(
+                destination.peer_id,
+                format!("starrocks://worker-{index}:8060")
+            );
+        }
+    }
+}
+
+#[test]
+fn hash_exchange_keys_follow_reordered_fragment_output() {
+    use expression::{field_reference::ReferenceType, reference_segment};
+    use substrait::proto::exchange_rel::ExchangeKind;
+    let mut params = with_exchange_sink(exchange_params(), TPartitionType::HASH_PARTITIONED, 2);
+    params.fragment.as_mut().unwrap().output_exprs = Some(vec![
+        slot_ref(2, 0, scalar_type(TPrimitiveType::VARCHAR)),
+        slot_ref(1, 0, scalar_type(TPrimitiveType::BIGINT)),
+    ]);
+    let translated = translate_fragment(&params).unwrap();
+    let Some(rel::RelType::Exchange(exchange)) = root(&translated.plan)
+        .input
+        .as_ref()
+        .unwrap()
+        .rel_type
+        .as_ref()
+    else {
+        panic!("expected exchange")
+    };
+    let Some(ExchangeKind::ScatterByFields(fields)) = &exchange.exchange_kind else {
+        panic!("expected hash")
+    };
+    let Some(ReferenceType::DirectReference(reference)) = &fields.fields[0].reference_type else {
+        panic!("expected direct key")
+    };
+    let Some(reference_segment::ReferenceType::StructField(field)) = &reference.reference_type
+    else {
+        panic!("expected column key")
+    };
+    assert_eq!(field.field, 1);
+    params
+        .fragment
+        .as_mut()
+        .unwrap()
+        .output_exprs
+        .as_mut()
+        .unwrap()
+        .pop();
+    assert!(
+        translate_fragment(&params)
+            .unwrap_err()
+            .to_string()
+            .contains("absent")
+    );
+}
+
+#[test]
+fn stream_sink_rejects_unsupported_partitioning_and_driver_routing() {
+    for kind in [
+        TPartitionType::RANDOM,
+        TPartitionType::RANGE_PARTITIONED,
+        TPartitionType::BUCKET_SHUFFLE_HASH_PARTITIONED,
+        TPartitionType::HYBRID_HASH_PARTITIONED,
+    ] {
+        assert!(
+            translate_fragment(&with_exchange_sink(exchange_params(), kind, 2))
+                .unwrap_err()
+                .to_string()
+                .contains("partition type")
+        );
+    }
+    let mut params = with_exchange_sink(exchange_params(), TPartitionType::UNPARTITIONED, 2);
+    params
+        .params
+        .as_mut()
+        .unwrap()
+        .destinations
+        .as_mut()
+        .unwrap()[0]
+        .pipeline_driver_sequence = Some(1);
+    assert!(
+        translate_fragment(&params)
+            .unwrap_err()
+            .to_string()
+            .contains("driver sequence")
+    );
+    let empty = with_exchange_sink(exchange_params(), TPartitionType::UNPARTITIONED, 0);
+    assert!(
+        translate_fragment(&empty)
+            .unwrap_err()
+            .to_string()
+            .contains("destinations")
+    );
+}
+
+fn assert_exchange_fixture(name: &str, bytes: &[u8]) {
+    let directory =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../test/cpp/exchange/data");
+    let path = directory.join(name);
+    if std::env::var_os("UPDATE_EXCHANGE_FIXTURES").is_some() {
+        std::fs::create_dir_all(&directory).unwrap();
+        std::fs::write(path, bytes).unwrap();
+    } else {
+        assert_eq!(bytes, std::fs::read(path).unwrap());
+    }
+}
+
+#[test]
+fn exchange_string_source_matches_native_parser_fixture() {
+    let mut params = exchange_params();
+    params.desc_tbl = Some(desc_table(
+        vec![(0, Some(100))],
+        vec![
+            slot(1, 0, "id", scalar_type(TPrimitiveType::BIGINT)),
+            slot(
+                2,
+                0,
+                "name",
+                scalar_type_with(TPrimitiveType::VARCHAR, Some(64), None, None),
+            ),
+            slot(
+                3,
+                0,
+                "code",
+                scalar_type_with(TPrimitiveType::CHAR, Some(8), None, None),
+            ),
+        ],
+    ));
+    let translated = translate_fragment(&params).unwrap();
+    assert_exchange_fixture(
+        "starrocks_string_source.substrait",
+        &translated.to_substrait_bytes(),
+    );
+    let translated = translate_fragment(&with_exchange_sink(
+        params,
+        TPartitionType::UNPARTITIONED,
+        1,
+    ))
+    .unwrap();
+    let Some(rel::RelType::Exchange(exchange)) = root(&translated.plan)
+        .input
+        .as_ref()
+        .unwrap()
+        .rel_type
+        .as_ref()
+    else {
+        panic!("expected exchange")
+    };
+    let project = as_project(exchange.input.as_ref().unwrap());
+    for expression in &project.expressions[1..] {
+        let expression::RexType::Cast(cast) = expression.rex_type.as_ref().unwrap() else {
+            panic!("expected boundary cast")
+        };
+        assert!(matches!(
+            cast.r#type.as_ref().unwrap().kind,
+            Some(substrait::proto::r#type::Kind::String(_))
+        ));
+    }
+}
+
+#[test]
+fn exchange_aggregate_sender_enforces_receiver_bigint_type() {
+    let mut params = exchange_params();
+    params.desc_tbl = Some(desc_table(
+        vec![(0, Some(100)), (1, None)],
+        vec![
+            slot(1, 0, "value", scalar_type(TPrimitiveType::INT)),
+            slot(1, 1, "total", scalar_type(TPrimitiveType::BIGINT)),
+        ],
+    ));
+    let aggregate = aggregation_node(
+        8,
+        1,
+        Vec::new(),
+        vec![aggregate_expr(
+            "sum",
+            scalar_type(TPrimitiveType::BIGINT),
+            Some(slot_ref(1, 0, scalar_type(TPrimitiveType::INT))),
+        )],
+    );
+    params
+        .fragment
+        .as_mut()
+        .unwrap()
+        .plan
+        .as_mut()
+        .unwrap()
+        .nodes
+        .insert(0, aggregate);
+    let mut params = with_exchange_sink(params, TPartitionType::UNPARTITIONED, 1);
+    for projected in [false, true] {
+        if projected {
+            params.fragment.as_mut().unwrap().output_exprs =
+                Some(vec![slot_ref(1, 1, scalar_type(TPrimitiveType::BIGINT))]);
+        }
+        let translated = translate_fragment(&params).unwrap();
+        let Some(rel::RelType::Exchange(exchange)) = root(&translated.plan)
+            .input
+            .as_ref()
+            .unwrap()
+            .rel_type
+            .as_ref()
+        else {
+            panic!("expected exchange")
+        };
+        let project = as_project(exchange.input.as_ref().unwrap());
+        assert_eq!(emit_mapping(project.common.as_ref()), [1]);
+        assert_eq!(project.expressions.len(), 1);
+        let expression::RexType::Cast(cast) = project.expressions[0].rex_type.as_ref().unwrap()
+        else {
+            panic!("expected boundary cast")
+        };
+        assert!(matches!(
+            cast.r#type.as_ref().unwrap().kind,
+            Some(substrait::proto::r#type::Kind::I64(_))
+        ));
+        assert_eq!(struct_field(cast.input.as_ref().unwrap()), 0);
+        assert_eq!(
+            cast.failure_behavior,
+            expression::cast::FailureBehavior::ThrowException as i32
+        );
+        if !projected {
+            assert_exchange_fixture(
+                "starrocks_sum_sink.substrait",
+                &translated.to_substrait_bytes(),
+            );
+        }
+    }
+}
+
+#[test]
+fn exchange_rejects_binary_source_and_sink_columns() {
+    for primitive in [TPrimitiveType::BINARY, TPrimitiveType::VARBINARY] {
+        let mut source = exchange_params();
+        source.desc_tbl = Some(desc_table(
+            vec![(0, Some(100))],
+            vec![slot(1, 0, "bytes", scalar_type(primitive))],
+        ));
+        assert!(
+            translate_fragment(&source)
+                .unwrap_err()
+                .to_string()
+                .contains("binary exchange columns")
+        );
+        source.fragment.as_mut().unwrap().plan = Some(TPlan::new(vec![scan_node(0, 0)]));
+        let sink = with_exchange_sink(source, TPartitionType::UNPARTITIONED, 1);
+        assert!(
+            translate_fragment(&sink)
+                .unwrap_err()
+                .to_string()
+                .contains("binary exchange columns")
+        );
+    }
 }
