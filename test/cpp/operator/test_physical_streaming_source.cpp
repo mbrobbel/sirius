@@ -1008,6 +1008,45 @@ TEST_CASE("streaming_source REARM-1: a push after a WAITING hint re-schedules th
   REQUIRE(creator.schedule_count(op.get()) == 3);
 }
 
+TEST_CASE("streaming_source does not resume a pipeline after early completion",
+          "[streaming_source][exchange_operator]")
+{
+  class exhausted_source final : public sirius_physical_streaming_source {
+   public:
+    using sirius_physical_streaming_source::sirius_physical_streaming_source;
+    bool is_limit_exhausted() const override { return true; }
+  };
+
+  auto mem_mgr    = sirius::test::operator_utils::initialize_memory_manager();
+  auto* gpu_space = mem_mgr->get_memory_space(Tier::GPU, 0);
+  REQUIRE(gpu_space != nullptr);
+  recording_task_creator creator(*mem_mgr);
+  auto repository = std::make_shared<cucascade::shared_data_repository>();
+  exhausted_source source(
+    sirius::from_duckdb_vec(duckdb::vector<duckdb::LogicalType>{duckdb::LogicalType::INTEGER}),
+    0,
+    repository,
+    std::set<sender_id_t>{SOLE_SENDER});
+  auto pipeline = make_single_op_pipeline(source);
+  pipeline->set_task_creator(&creator);
+  sirius::pipeline::sirius_pipeline_build_state build_state;
+  build_state.add_pipeline_operator(*pipeline, source);
+  pipeline->update_pipeline_status();
+  REQUIRE(pipeline->is_pipeline_finished());
+
+  REQUIRE(source.push(make_numeric_batch<int32_t>(*gpu_space, {1}, cudf::type_id::INT32)));
+  REQUIRE(creator.schedule_count(&source) == 0);
+  REQUIRE_FALSE(source.get_next_task_hint().has_value());
+  {
+    auto lock = pipeline->get_task_creation_lock();
+    REQUIRE(source.get_next_task_input_data() == nullptr);
+  }
+  REQUIRE(repository->total_size() == 1);
+  REQUIRE(source.stream().try_pull() != nullptr);
+  source.fail_input(std::make_exception_ptr(std::runtime_error("late peer failure")));
+  REQUIRE(creator.schedule_count(&source) == 0);
+}
+
 // ============================================================================
 // REARM-2: second burst after a drain loop that never calls get_next_task_hint().
 // ============================================================================

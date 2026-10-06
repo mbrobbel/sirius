@@ -74,7 +74,7 @@ void sirius_physical_streaming_source::set_pipeline(
   // Self-nomination (on_data → schedule(head)); schedule() only enqueues.
   _input->set_on_data([weak_pipeline] {
     auto p = weak_pipeline.lock();
-    if (!p) { return; }
+    if (!p || p->is_pipeline_finished()) { return; }
     auto* creator = p->get_task_creator();
     auto head     = p->get_source();
     if (creator && head) { creator->schedule(head.get()); }
@@ -98,6 +98,9 @@ void sirius_physical_streaming_source::fail_input(std::exception_ptr error)
 
 std::optional<task_creation_hint> sirius_physical_streaming_source::get_next_task_hint()
 {
+  if (auto pipeline = get_pipeline(); pipeline && pipeline->is_pipeline_finished()) {
+    return std::nullopt;
+  }
   switch (_input->classify()) {
     case exec::batch_stream::availability::END_OF_STREAM: return std::nullopt;
     case exec::batch_stream::availability::HAS_DATA:
@@ -111,6 +114,11 @@ bool sirius_physical_streaming_source::all_ports_empty() { return _input->draine
 
 std::unique_ptr<operator_data> sirius_physical_streaming_source::get_next_task_input_data()
 {
+  // The task creator holds the pipeline's creation lock through this check and
+  // task registration, so a queued notification cannot restart a completed LIMIT.
+  if (auto pipeline = get_pipeline(); pipeline && pipeline->is_pipeline_finished()) {
+    return nullptr;
+  }
   auto batch = _input->try_pull();
   if (!batch) return nullptr;
 
