@@ -10,6 +10,10 @@ CREATE TABLE orders (customer_id INTEGER, amount INTEGER)
 statement ok
 INSERT INTO orders VALUES (1, 10), (1, 20), (2, 30)
 
+onlyif sirius
+statement ok
+CHECKPOINT
+
 query TI rowsort
 SELECT c.name, o.amount
 FROM customers AS c

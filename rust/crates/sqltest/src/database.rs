@@ -13,6 +13,8 @@ use sqllogictest::{DB, DBOutput};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("standard SQLLogicTest scripts use one connection")]
+    ConnectionAlreadyUsed,
     #[error(transparent)]
     DuckDB(#[from] duckdb::Error),
     #[error(transparent)]
@@ -23,11 +25,12 @@ pub enum Error {
 
 pub struct Database {
     connection: Connection,
+    sirius: bool,
 }
 
 impl Database {
-    pub fn new(connection: Connection) -> Self {
-        Self { connection }
+    pub fn new(connection: Connection, sirius: bool) -> Self {
+        Self { connection, sirius }
     }
 }
 
@@ -36,7 +39,7 @@ impl DB for Database {
     type ColumnType = Column;
 
     fn engine_name(&self) -> &str {
-        "duckdb"
+        if self.sirius { "sirius" } else { "duckdb" }
     }
 
     fn run(&mut self, sql: &str) -> Result<DBOutput<Column>, Error> {
