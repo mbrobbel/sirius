@@ -11,9 +11,9 @@ publish = false
 name = "sirius_sys"
 
 [features]
-# Link the self-contained `libsirius.a` (Sirius + all static deps bundled; no
-# runtime deps — the fully static vcpkg build) instead of the default
-# `libsirius.so`. Point SIRIUS_BUILD_DIR at the build tree that has the artifact.
+# Link `libsirius.a` instead of `libsirius.so`. Native dependencies must be
+# supplied separately; Cargo does not consume CMake's static target metadata.
+# Point SIRIUS_BUILD_DIR at the build tree that has the artifact.
 static = []
 
 [dependencies]

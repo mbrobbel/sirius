@@ -159,9 +159,11 @@ void streaming_fragment::poison_outputs(std::exception_ptr cause) noexcept
 void streaming_fragment::register_sources()
 {
   auto catalog = catalog_for(_context);
-  for (const auto& [id, _] : _spec.inputs) {
+  for (const auto& [id, input] : _spec.inputs) {
     auto* built = catalog->get(id).built;
     if (built == nullptr) {
+      // Transport drains exchange reads removed by the optimizer without a consumer.
+      if (input.boundary == stream_boundary::exchange) { continue; }
       // Declared but unread would hang. Fail here.
       throw sirius::invalid_input_exception("streaming_fragment: input stream " +
                                             std::to_string(id) +
@@ -303,7 +305,13 @@ void streaming_fragment::build()
   _phase = phase::built;
 }
 
-void streaming_fragment::run()
+stream_session& streaming_fragment::session()
+{
+  require_built("session()");
+  return _session;
+}
+
+void streaming_fragment::run(const fragment_run_hooks& hooks)
 {
   require_built("run()");
   switch (_phase.load()) {
@@ -319,6 +327,13 @@ void streaming_fragment::run()
   // engine, until another thread closed it.
   for (auto id : _session.input_streams()) {
     if (!_session.input_closed(id)) {
+      if (_spec.inputs.at(id).boundary == stream_boundary::exchange) {
+        if (hooks.start && hooks.finish && hooks.cancel) { continue; }
+        throw sirius::invalid_input_exception(
+          "streaming_fragment: an open exchange input requires start, finish, and cancel hooks; "
+          "input stream " +
+          std::to_string(id) + " is still open");
+      }
       throw sirius::invalid_input_exception(
         "streaming_fragment: run() needs every input closed first; input stream " +
         std::to_string(id) + " is still open");
@@ -342,21 +357,26 @@ void streaming_fragment::run()
     _engine =
       std::make_unique<sirius::sirius_engine>(_context, window->query_id(), kFragmentQueryLabel);
     _engine->initialize(std::move(_plan_root));
+    if (hooks.start) { hooks.start(); }
     _engine->execute();
     if (is_result()) { _result = _engine->get_result(); }
+    if (_result && _result->HasError()) { _result->ThrowError(); }
+    if (hooks.finish) { hooks.finish(); }
     window->finish();
   } catch (...) {
     // Fail every output before the window closes. Otherwise a peer in wait() blocks forever.
-    poison_outputs(std::current_exception());
+    auto error = std::current_exception();
+    poison_outputs(error);
+    if (hooks.cancel) {
+      try {
+        hooks.cancel(error);
+      } catch (...) {  // Preserve the original execution failure.
+      }
+    }
     _result.reset();
     _phase = phase::run_failed;
     window.reset();
     throw;
-  }
-  if (_result && _result->HasError()) {
-    _phase      = phase::run_failed;
-    auto failed = std::move(_result);
-    failed->ThrowError();
   }
   _phase = phase::ran;
 }

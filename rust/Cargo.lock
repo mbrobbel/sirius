@@ -3155,6 +3155,7 @@ dependencies = [
  "cxx",
  "parquet",
  "prost",
+ "sirius-exchange-proto",
  "sirius-sys",
  "substrait",
  "tempfile",

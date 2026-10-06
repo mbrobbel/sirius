@@ -25,7 +25,7 @@ BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 	test test_release test_debug test_reldebug test_ci-release clean list-presets \
 	s3-test s3-test-large s3-tpch \
 	s3-test-aws s3-test-aws-sigv4 s3-test-aws-broker \
-	slot-gate-test
+	slot-gate-test exchange-test
 
 PRESETS_LINK := $(DUCKDB_DIR)/CMakePresets.json
 
@@ -105,6 +105,18 @@ test_reldebug: relwithdebinfo
 test_ci-release: ci-release
 	cd $(DUCKDB_DIR) && $(CMAKE) --build --preset ci-release --target $(TEST_BUILD_TARGET)
 	$(RUN_UNIT_TESTS) --build-dir build/ci-release $(UNITTEST_ARGS)
+
+# The Rust coordinator creates Substrait plans and starts separate GPU workers.
+EXCHANGE_BUILD_DIR ?= build/exchange
+
+exchange-test:
+	$(CMAKE) -S . -B "$(EXCHANGE_BUILD_DIR)" -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release -DSIRIUS_ENABLE_NIXL=ON -DSIRIUS_BUILD_S3_TESTS=OFF
+	$(CMAKE) --build "$(EXCHANGE_BUILD_DIR)" --target sirius_shared
+	SIRIUS_BUILD_DIR="$(abspath $(EXCHANGE_BUILD_DIR))" \
+		LD_LIBRARY_PATH="$(abspath $(EXCHANGE_BUILD_DIR)):$${LD_LIBRARY_PATH:-}" \
+		cargo test --locked --manifest-path rust/Cargo.toml -p sirius \
+		--test exchange exchange_end_to_end -- --ignored --nocapture
 
 clean:
 	rm -rf build

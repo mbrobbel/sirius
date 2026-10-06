@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -154,6 +155,117 @@ TEST_CASE_METHOD(fragment_fixture,
     catalog->erase(0);
   } catch (...) {
     catalog->erase(0);
+    throw;
+  }
+}
+
+TEST_CASE_METHOD(fragment_fixture,
+                 "exchange hooks finish live and optimized-away inputs before query cleanup",
+                 "[integration][streaming_fragment][exchange_operator]")
+{
+  bool removed    = GENERATE(false, true);
+  auto sirius_ctx = con->context->registered_state->Get<duckdb::SiriusContext>("sirius_state");
+  REQUIRE(sirius_ctx != nullptr);
+  auto const initial_windows = sirius_ctx->get_data_repository_managers().size();
+  fragment_spec spec;
+  spec.plan_source =
+    sirius::test::sql_plan_source(removed ? "SELECT a FROM sirius_stream_source(0) LIMIT 0"
+                                          : "SELECT a FROM sirius_stream_source(0)");
+  spec.inputs[0] = stream_input_spec{
+    {"a"}, {sirius::from_duckdb(duckdb::LogicalType::INTEGER)}, {0}, stream_boundary::exchange};
+  spec.outputs         = {1};
+  spec.output_boundary = stream_boundary::exchange;
+
+  con->BeginTransaction();
+  try {
+    streaming_fragment fragment(*con->context, std::move(spec));
+    fragment.build();
+    REQUIRE(fragment.session().input_streams().empty() == removed);
+    if (!removed) {
+      REQUIRE_THROWS_WITH(fragment.run(),
+                          ContainsSubstring("requires start, finish, and cancel hooks"));
+      REQUIRE(sirius_ctx->get_data_repository_managers().size() == initial_windows);
+    }
+    std::vector<std::string> calls;
+    fragment.run(fragment_run_hooks{
+      [&] {
+        calls.push_back("start");
+        REQUIRE(sirius_ctx->get_data_repository_managers().size() == initial_windows + 1);
+        if (!removed) {
+          REQUIRE_FALSE(fragment.session().input_closed(0));
+          fragment.close_input(0, 0);
+        }
+      },
+      [&] {
+        calls.push_back("finish");
+        while (auto batch = fragment.session().pull(1)) {
+          REQUIRE(sirius::get_cudf_table_view(**batch).num_rows() == 0);
+        }
+        REQUIRE(fragment.session().drained(1));
+        REQUIRE(sirius_ctx->get_data_repository_managers().size() == initial_windows + 1);
+      },
+      [&](std::exception_ptr) { calls.push_back("cancel"); }});
+    REQUIRE(calls == std::vector<std::string>{"start", "finish"});
+    REQUIRE(sirius_ctx->get_data_repository_managers().size() == initial_windows);
+    REQUIRE(fragment.drained(1));
+    con->Rollback();
+  } catch (...) {
+    con->Rollback();
+    throw;
+  }
+}
+
+TEST_CASE_METHOD(fragment_fixture,
+                 "exchange hooks cancel before failed-query cleanup and preserve the error",
+                 "[integration][streaming_fragment][exchange_operator]")
+{
+  bool fail_start = GENERATE(false, true);
+  auto sirius_ctx = con->context->registered_state->Get<duckdb::SiriusContext>("sirius_state");
+  REQUIRE(sirius_ctx != nullptr);
+  auto const initial_windows = sirius_ctx->get_data_repository_managers().size();
+  fragment_spec spec;
+  spec.plan_source     = sirius::test::sql_plan_source(kLeafQuery);
+  spec.outputs         = {0};
+  spec.output_boundary = stream_boundary::exchange;
+
+  con->BeginTransaction();
+  try {
+    streaming_fragment fragment(*con->context, std::move(spec));
+    fragment.build();
+    std::vector<std::string> calls;
+    std::exception_ptr canceled_error;
+    bool canceled_before_cleanup = false;
+    fragment_run_hooks hooks{[&] {
+                               calls.push_back("start");
+                               if (fail_start) {
+                                 throw std::runtime_error("exchange hook failure");
+                               }
+                             },
+                             [&] {
+                               calls.push_back("finish");
+                               throw std::runtime_error("exchange hook failure");
+                             },
+                             [&](std::exception_ptr error) {
+                               calls.push_back("cancel");
+                               canceled_error = error;
+                               canceled_before_cleanup =
+                                 sirius_ctx->get_data_repository_managers().size() ==
+                                 initial_windows + 1;
+                               throw std::runtime_error("secondary cancellation failure");
+                             }};
+    REQUIRE_THROWS_WITH(fragment.run(hooks), ContainsSubstring("exchange hook failure"));
+    REQUIRE(canceled_before_cleanup);
+    REQUIRE(canceled_error != nullptr);
+    REQUIRE_THROWS_WITH(std::rethrow_exception(canceled_error),
+                        ContainsSubstring("exchange hook failure"));
+    auto expected = fail_start ? std::vector<std::string>{"start", "cancel"}
+                               : std::vector<std::string>{"start", "finish", "cancel"};
+    REQUIRE(calls == expected);
+    REQUIRE_THROWS_WITH(fragment.pull(0), ContainsSubstring("exchange hook failure"));
+    REQUIRE(sirius_ctx->get_data_repository_managers().size() == initial_windows);
+    con->Rollback();
+  } catch (...) {
+    con->Rollback();
     throw;
   }
 }

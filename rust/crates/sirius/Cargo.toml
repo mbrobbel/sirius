@@ -8,8 +8,8 @@ license = "Apache-2.0"
 publish = false
 
 [features]
-# Forwarded to sirius-sys: link the self-contained libsirius.a (no runtime deps)
-# instead of the default libsirius.so. See sirius-sys for details.
+# Forwarded to sirius-sys: link libsirius.a instead of libsirius.so.
+# Native dependencies must be supplied separately; see sirius-sys for details.
 static = ["sirius-sys/static"]
 
 [dependencies]
@@ -27,3 +27,4 @@ substrait = "0.65"
 prost = "0.14"
 parquet = "60"
 tempfile = "3"
+sirius-exchange-proto = { path = "../sirius-exchange-proto" }

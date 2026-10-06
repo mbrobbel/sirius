@@ -4,20 +4,18 @@
 //!  1. Compile the cxx bridge glue against Sirius's lightweight public FFI header
 //!     (`include/sirius/ffi.hpp`) — no internal Sirius headers are needed, so
 //!     this is the only include directory.
-//!  2. Link the single Sirius artifact that exports the FFI symbols (no
-//!     hand-maintained transitive dependency list). `cargo:rustc-link-{lib,search}`
+//!  2. Link the Sirius artifact that exports the FFI symbols.
+//!     `cargo:rustc-link-{lib,search}`
 //!     propagate to downstream binaries, e.g. the `sirius` crate's `cargo test`.
 //!
 //! The artifact lives under the CMake build tree (`$SIRIUS_BUILD_DIR`, default
 //! `build/release`); build Sirius first (`pixi run make`). Linkage is selectable:
 //!  * default          — `libsirius.so` (shared; records its deps via DT_NEEDED).
-//!  * `static` feature — `libsirius.a` (self-contained; no runtime deps — the
-//!    fully static vcpkg build).
+//!  * `static` feature — `libsirius.a`; its native dependencies must already be
+//!    supplied by the caller. Cargo does not read CMake's static target metadata.
 //!
-//! A dedicated `libsirius` does not exist yet, so by default the bindings link
-//! the DuckDB extension that carries the exported FFI symbols; `resolve_lib_dir`
-//! symlinks it to `libsirius.so` as a stopgap so `-lsirius` resolves. Once Sirius
-//! ships a real `libsirius`, that symlink path simply isn't taken.
+//! `resolve_lib_dir` supports both standalone and DuckDB extension build trees.
+//! Older builds without `libsirius.so` fall back to a symlink to the extension.
 
 use std::path::{Path, PathBuf};
 
@@ -84,8 +82,7 @@ fn resolve_lib_dir(build_dir: &Path, static_link: bool) -> PathBuf {
         return dir.clone();
     }
 
-    // Dynamic stopgap: symlink libsirius.so -> the DuckDB extension that carries
-    // the exported FFI symbols, until a dedicated libsirius.so exists.
+    // Older builds only expose the FFI symbols through the DuckDB extension.
     if !static_link
         && let Some(dir) = candidates
             .iter()
@@ -100,7 +97,7 @@ fn resolve_lib_dir(build_dir: &Path, static_link: bool) -> PathBuf {
     }
 
     let looked_for = if static_link {
-        "libsirius.a (a self-contained static bundle)".to_string()
+        "libsirius.a".to_string()
     } else {
         format!("{file} (or sirius.duckdb_extension to symlink)")
     };

@@ -139,6 +139,37 @@ TEST_CASE("stream_session SESS-2: push reaches only the addressed source", "[str
   REQUIRE(b.repo->total_size() == 1);
 }
 
+TEST_CASE("stream_session: discard releases queued input and preserves EOS and errors",
+          "[stream_session][exchange_operator]")
+{
+  auto mem_mgr    = sirius::test::operator_utils::initialize_memory_manager();
+  auto* gpu_space = mem_mgr->get_memory_space(Tier::GPU, 0);
+  REQUIRE(gpu_space != nullptr);
+  auto a = make_source({0, 1});
+  auto b = make_source({0});
+  stream_session session;
+  session.add_source(10, *a.source);
+  session.add_source(20, *b.source);
+  REQUIRE(session.push(10, make_numeric_batch<int32_t>(*gpu_space, {1}, cudf::type_id::INT32)));
+  REQUIRE(session.push(20, make_numeric_batch<int32_t>(*gpu_space, {2}, cudf::type_id::INT32)));
+  session.close_input(10, 0);
+
+  session.discard_input(10);
+  REQUIRE(a.repo->all_empty());
+  REQUIRE(b.repo->total_size() == 1);
+  REQUIRE(a.source->stream().sender_closed(0));
+  REQUIRE_FALSE(a.source->stream().terminal());
+  session.close_input(10, 1);
+  REQUIRE(a.source->stream().drained());
+  REQUIRE_NOTHROW(session.discard_input(10));
+
+  session.fail_input(20,
+                     std::make_exception_ptr(sirius::invalid_input_exception("discard failure")));
+  REQUIRE_THROWS_WITH(session.discard_input(20), "discard failure");
+  REQUIRE(b.repo->total_size() == 1);
+  REQUIRE_THROWS_AS(session.discard_input(99), sirius::invalid_input_exception);
+}
+
 // ============================================================================
 // SESS-3: close_input marks one sender of one stream
 // ============================================================================

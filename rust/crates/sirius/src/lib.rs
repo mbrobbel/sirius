@@ -4,11 +4,12 @@
 //! This crate wraps the low-level [`sirius-sys`][sirius_sys] cxx bindings in safe Rust types
 //! — the entry point for driving Sirius from Rust.
 //!
-//! Today it binds just enough to prove the toolchain links against the real
-//! Sirius library: constructing a [`SiriusContext`] from defaults or a YAML
-//! config file. More of the API surface is added in later PRs.
+//! Execute Substrait plans directly, or bootstrap exchange peers and run a
+//! [`SiriusFragment`] as part of a distributed query.
 
+use std::marker::PhantomData;
 use std::path::Path;
+use std::time::Duration;
 
 use arrow_array::ffi_stream::{ArrowArrayStreamReader, FFI_ArrowArrayStream};
 use arrow_array::{RecordBatch, RecordBatchReader};
@@ -40,6 +41,12 @@ pub struct SubstraitResult {
     pub batches: Vec<RecordBatch>,
 }
 
+/// A built fragment that exclusively borrows its context through execution.
+pub struct SiriusFragment<'context> {
+    inner: UniquePtr<sirius_sys::Fragment>,
+    _context: PhantomData<&'context mut SiriusContext>,
+}
+
 impl SiriusContext {
     /// Bring up a new, initialized Sirius engine context configured from
     /// built-in defaults.
@@ -57,6 +64,54 @@ impl SiriusContext {
         let_cxx_string!(config_path = path.to_string_lossy().as_ref());
         Ok(Self {
             inner: sirius_sys::make_context_from_config(&config_path)?,
+        })
+    }
+
+    /// Initialize the NIXL exchange transport before registering peers or building a fragment.
+    ///
+    /// Each process needs a unique `agent_name`. `staging_bytes` bounds the
+    /// transport's staging buffer; large batches are transferred in chunks.
+    pub fn enable_exchange(
+        &mut self,
+        agent_name: &str,
+        staging_bytes: usize,
+        timeout: Duration,
+    ) -> Result<(), SiriusError> {
+        let timeout_ms = u64::try_from(timeout.as_millis())
+            .map_err(|_| SiriusError::InvalidInput("exchange timeout exceeds u64 milliseconds"))?;
+        let_cxx_string!(agent_name = agent_name);
+        self.inner
+            .pin_mut()
+            .enable_exchange(&agent_name, staging_bytes, timeout_ms)
+            .map_err(SiriusError::Engine)
+    }
+
+    /// Return this agent's opaque bootstrap metadata for an external coordinator.
+    pub fn exchange_metadata(&self) -> Result<Vec<u8>, Exception> {
+        let metadata = self.inner.exchange_metadata()?;
+        Ok(metadata.as_bytes().to_vec())
+    }
+
+    /// Import a peer's opaque bootstrap metadata and return its routing name.
+    pub fn add_exchange_peer(&mut self, metadata: &[u8]) -> Result<String, Exception> {
+        let_cxx_string!(metadata = metadata);
+        let name = self.inner.pin_mut().add_exchange_peer(&metadata)?;
+        Ok(name.to_string_lossy().into_owned())
+    }
+
+    /// Build an exchange fragment from a serialized Substrait plan.
+    ///
+    /// The plan declares its exchange inputs and outputs. The returned fragment
+    /// borrows this context until dropped, preventing overlapping query lifecycles.
+    pub fn fragment(&mut self, plan: &[u8]) -> Result<SiriusFragment<'_>, Exception> {
+        // SAFETY: the lifetime marker keeps the context exclusively borrowed
+        // until the owned fragment is dropped.
+        let mut inner = unsafe { sirius_sys::make_fragment(self.inner.pin_mut())? };
+        let_cxx_string!(plan = plan);
+        inner.pin_mut().build(&plan)?;
+        Ok(SiriusFragment {
+            inner,
+            _context: PhantomData,
         })
     }
 
@@ -93,19 +148,48 @@ impl SiriusContext {
                 .execute_substrait(&plan, out_stream_addr)
                 .map_err(SiriusError::Engine)?;
         }
-        // Drain fully while `self` is alive (conversion dereferences the context).
-        let reader = ArrowArrayStreamReader::try_new(stream).map_err(SiriusError::Arrow)?;
-        let schema = reader.schema();
-        let batches = reader
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(SiriusError::Arrow)?;
-        Ok(SubstraitResult { schema, batches })
+        collect_arrow_stream(stream)
     }
 }
 
-/// Error returned by [`SiriusContext::execute_substrait`].
+impl SiriusFragment<'_> {
+    /// Execute until the fragment's pipelines and exchange transfers finish.
+    pub fn run(&mut self) -> Result<(), Exception> {
+        self.inner.pin_mut().run()
+    }
+
+    /// Collect a completed result fragment's Arrow rows while its context is alive.
+    ///
+    /// Returns an error before `run()`, for an intermediate fragment, or after
+    /// the result has already been collected.
+    pub fn result(&mut self) -> Result<SubstraitResult, SiriusError> {
+        let mut stream = FFI_ArrowArrayStream::empty();
+        // SAFETY: `stream` is writable and remains alive throughout the call.
+        // Collection below releases it while the fragment still borrows its context.
+        unsafe {
+            self.inner
+                .pin_mut()
+                .result_to_arrow(std::ptr::addr_of_mut!(stream) as usize)
+                .map_err(SiriusError::Engine)?;
+        }
+        collect_arrow_stream(stream)
+    }
+}
+
+fn collect_arrow_stream(stream: FFI_ArrowArrayStream) -> Result<SubstraitResult, SiriusError> {
+    let reader = ArrowArrayStreamReader::try_new(stream).map_err(SiriusError::Arrow)?;
+    let schema = reader.schema();
+    let batches = reader
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(SiriusError::Arrow)?;
+    Ok(SubstraitResult { schema, batches })
+}
+
+/// Error returned while configuring or executing a Sirius query.
 #[derive(Debug)]
 pub enum SiriusError {
+    /// A Rust argument cannot be represented by the engine API.
+    InvalidInput(&'static str),
     /// The engine failed to translate or execute the plan (a C++ exception).
     Engine(Exception),
     /// The Arrow result stream could not be consumed.
@@ -115,6 +199,7 @@ pub enum SiriusError {
 impl std::fmt::Display for SiriusError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidInput(err) => write!(f, "invalid sirius input: {err}"),
             Self::Engine(err) => write!(f, "sirius engine error: {err}"),
             Self::Arrow(err) => write!(f, "arrow result error: {err}"),
         }
@@ -124,6 +209,7 @@ impl std::fmt::Display for SiriusError {
 impl std::error::Error for SiriusError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            Self::InvalidInput(_) => None,
             Self::Engine(err) => Some(err),
             Self::Arrow(err) => Some(err),
         }

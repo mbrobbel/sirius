@@ -1,1 +1,1 @@
-target_sources(sirius_objects PRIVATE exchange_plan.cpp)
+target_sources(sirius_objects PRIVATE exchange_plan.cpp exchange_executor.cpp)

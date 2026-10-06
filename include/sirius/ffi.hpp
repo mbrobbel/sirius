@@ -71,6 +71,19 @@ class SIRIUS_FFI_EXPORT Context {
   /// translation or execution failure.
   void execute_substrait(const std::string& plan, std::uintptr_t out_stream_addr);
 
+  /// Initialize this context's NIXL agent. The caller exchanges the opaque metadata with peers.
+  /// Call once, before building exchange fragments. Staging capacity must be at least 1 MiB;
+  /// timeout_ms bounds exchange progress waits and must be positive.
+  void enable_exchange(const std::string& agent_name,
+                       std::size_t staging_bytes,
+                       std::uint64_t timeout_ms);
+
+  /// Export this agent's registered staging buffers and NIXL connection metadata.
+  [[nodiscard]] std::unique_ptr<std::string> exchange_metadata() const;
+
+  /// Register a peer's exported metadata; returns its agent name used by plan destinations.
+  [[nodiscard]] std::unique_ptr<std::string> add_exchange_peer(const std::string& metadata);
+
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
@@ -91,7 +104,10 @@ class SIRIUS_FFI_EXPORT Context {
 /// Any number of fragments may be built before any runs; run them in any order where each
 /// source runs before its receiver's relay_from. build(), run() and Context::execute_substrait
 /// execute one at a time per Context: a concurrent call waits for the one in progress. run() and
-/// destruction may happen on a thread other than build()'s.
+/// destruction may happen on a thread other than build()'s. Exchange fragments use metadata in
+/// the plan instead of manual stream declarations. Only one exchange fragment may be attached
+/// per Context. A failed exchange run or abandonment cancels its transport; recreate the
+/// context before running another exchange.
 class SIRIUS_FFI_EXPORT Fragment {
  public:
   ~Fragment();
@@ -131,7 +147,8 @@ class SIRIUS_FFI_EXPORT Fragment {
   /// unsupported type (integer, boolean, varchar, and decimal keys are supported).
   void declare_output_hash_key(std::uint32_t column_index);
 
-  /// Lower and plan `substrait_plan` against the declared streams.
+  /// Lower and plan `substrait_plan` against the declared streams. Exchange plans declare
+  /// their own inputs and outputs after Context::enable_exchange().
   /// Creates a view `sirius_stream_<id>` for each declared input stream. A failed build() rolls
   /// back and leaves the Fragment unbuilt, so it may be called again.
   /// @throws if already built, on an unknown input type name, a declared input the plan never
@@ -158,9 +175,9 @@ class SIRIUS_FFI_EXPORT Fragment {
   /// @throws before build() or on unknown stream/sender.
   void close_input(std::uint64_t stream_id, std::uint32_t sender_id);
 
-  /// Execute the fragment and block until pipelines finish. Every input must be closed first
-  /// (relay_from and close_input close their sender). Runs once; after a failure, build a new
-  /// fragment.
+  /// Execute the fragment and wait for pipelines and exchange transfers. Manual inputs must be
+  /// closed first (relay_from and close_input close their sender); exchange inputs arrive during
+  /// execution. Runs once; after a failure, build a new fragment.
   /// @throws before build(), while an input is open (the fragment stays runnable), on a second
   /// call, or on execution failure.
   void run();

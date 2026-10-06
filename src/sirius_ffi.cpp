@@ -33,7 +33,9 @@
 #include "duckdb/optimizer/optimizer.hpp"                  // duckdb::Optimizer
 #include "duckdb/parser/statement/relation_statement.hpp"  // duckdb::RelationStatement
 #include "duckdb/planner/planner.hpp"                      // duckdb::Planner
-#include "exec/stream_bind_catalog.hpp"                    // sirius::exec::stream_bind_catalog
+#include "exchange/exchange_executor.hpp"
+#include "exchange/exchange_plan.hpp"
+#include "exec/stream_bind_catalog.hpp"   // sirius::exec::stream_bind_catalog
 #include "exec/stream_plan_bindings.hpp"  // sirius::exec::register_stream_source_function
 #include "exec/streaming_fragment.hpp"    // sirius::exec::streaming_fragment, fragment_spec
 #include "from_substrait.hpp"             // duckdb::SubstraitToDuckDB (compiled into libsirius)
@@ -46,6 +48,7 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -158,6 +161,8 @@ struct Context::Impl {
   duckdb::unique_ptr<duckdb::Connection> conn;
   // Serializes transactions on `conn`; see in_transaction().
   std::mutex conn_mutex;
+  // Destroy transport before its borrowed engine and memory resources.
+  std::unique_ptr<sirius::exchange::exchange_executor> exchange;
 
   void bring_up(sirius::sirius_config& config)
   {
@@ -226,6 +231,41 @@ Context::Context(const std::string& config_path) : impl_(std::make_unique<Impl>(
 // the embedded DuckDB and the initialized engine.
 Context::~Context() = default;
 
+void Context::enable_exchange(const std::string& agent_name,
+                              std::size_t staging_bytes,
+                              std::uint64_t timeout_ms)
+{
+  std::lock_guard lock(impl_->conn_mutex);
+  if (impl_->exchange) {
+    throw sirius::invalid_input_exception("Context: exchange is already enabled");
+  }
+  if (agent_name.empty() || staging_bytes < (1u << 20) || timeout_ms == 0 ||
+      timeout_ms > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
+    throw sirius::invalid_input_exception(
+      "Context: exchange needs an agent name, at least 1 MiB staging, and a positive timeout");
+  }
+  impl_->exchange = std::make_unique<sirius::exchange::exchange_executor>(
+    *impl_->context, agent_name, staging_bytes, std::chrono::milliseconds(timeout_ms));
+}
+
+std::unique_ptr<std::string> Context::exchange_metadata() const
+{
+  std::lock_guard lock(impl_->conn_mutex);
+  if (!impl_->exchange) {
+    throw sirius::invalid_input_exception("Context: enable_exchange() must run first");
+  }
+  return std::make_unique<std::string>(impl_->exchange->metadata());
+}
+
+std::unique_ptr<std::string> Context::add_exchange_peer(const std::string& metadata)
+{
+  std::lock_guard lock(impl_->conn_mutex);
+  if (!impl_->exchange) {
+    throw sirius::invalid_input_exception("Context: enable_exchange() must run first");
+  }
+  return std::make_unique<std::string>(impl_->exchange->add_peer(metadata));
+}
+
 void Context::execute_substrait(const std::string& plan, std::uintptr_t out_stream_addr)
 {
   auto& client = *impl_->conn->context;
@@ -282,6 +322,17 @@ std::unique_ptr<Context> make_context_from_config(const std::string& config_path
 struct Fragment::Impl {
   explicit Impl(Context::Impl& ctx) : ctx(ctx) {}
 
+  ~Impl()
+  {
+    if (exchange_attached) {
+      try {
+        throw sirius::invalid_input_exception("Fragment: destroyed before exchange completed");
+      } catch (...) {
+        cancel_exchange(std::current_exception());
+      }
+    }
+  }
+
   Context::Impl& ctx;
 
   // An input stream declared before build(). type_names are parsed at build(), inside a
@@ -299,6 +350,16 @@ struct Fragment::Impl {
 
   // One streaming_fragment for both terminals. Empty outputs is a RESULT_COLLECTOR.
   std::unique_ptr<sirius::exec::streaming_fragment> fragment;
+  std::optional<sirius::exchange::plan> exchange_plan;
+  bool exchange_attached{false};
+
+  void cancel_exchange(std::exception_ptr error) noexcept
+  {
+    if (exchange_attached) {
+      ctx.exchange->cancel(std::move(error));
+      exchange_attached = false;
+    }
+  }
 
   void require_not_built(const char* what) const
   {
@@ -329,6 +390,7 @@ struct Fragment::Impl {
       }
       spec.expected_senders = declared.expected_senders;
       if (spec.expected_senders.empty()) { spec.expected_senders.insert(0); }
+      if (exchange_plan) { spec.boundary = sirius::exec::stream_boundary::exchange; }
       resolved.emplace(id, std::move(spec));
     }
     return resolved;
@@ -405,36 +467,97 @@ void Fragment::declare_output_hash_key(std::uint32_t column_index)
 void Fragment::build(const std::string& substrait_plan)
 {
   impl_->require_not_built("build");
+  auto parsed = sirius::exchange::rewrite_substrait(substrait_plan);
+  if (parsed.has_exchange()) {
+    if (!impl_->ctx.exchange) {
+      throw sirius::invalid_input_exception(
+        "Fragment: enable_exchange() before building an exchange plan");
+    }
+    if (!impl_->inputs.empty() || !impl_->outputs.empty() || impl_->broadcast_outputs ||
+        !impl_->hash_key_columns.empty()) {
+      throw sirius::invalid_input_exception(
+        "Fragment: exchange metadata cannot be combined with manual stream declarations");
+    }
+    impl_->exchange_plan = std::move(parsed);
+  }
+  const auto& plan_bytes =
+    impl_->exchange_plan ? impl_->exchange_plan->rewritten : parsed.rewritten;
 
   std::unique_ptr<sirius::exec::streaming_fragment> fragment;
-  // Type-name parsing, CREATE VIEW, and Substrait lowering all need an active transaction. A
-  // failure rolls back the views, so a half-declared fragment leaves nothing behind.
-  in_transaction(impl_->ctx.conn_mutex, *impl_->ctx.conn, [&] {
-    sirius::exec::fragment_spec spec;
-    spec.inputs      = impl_->resolve_inputs();
-    spec.outputs     = impl_->outputs;
-    spec.plan_source = [this, &substrait_plan](duckdb::ClientContext&) {
-      impl_->create_stream_views();
-      return lower_substrait(*impl_->ctx.conn, substrait_plan);
-    };
-    // streaming_fragment rejects a partition mode on fewer than two outputs.
-    if (impl_->broadcast_outputs) {
-      sirius::op::partition_spec broadcast;
-      broadcast.mode    = sirius::op::partition_mode::broadcast;
-      spec.partitioning = std::move(broadcast);
-    } else if (!impl_->hash_key_columns.empty()) {
-      // key_cast_types left empty. streaming_fragment::build() fills them from output types.
-      sirius::op::partition_spec hash;
-      hash.mode         = sirius::op::partition_mode::hash;
-      hash.key_columns  = impl_->hash_key_columns;
-      spec.partitioning = std::move(hash);
+  try {
+    // Build and run use separate transactions; the fragment owns its compiled plan between them.
+    in_transaction(impl_->ctx.conn_mutex, *impl_->ctx.conn, [&] {
+      if (impl_->exchange_plan) {
+        for (const auto& input : impl_->exchange_plan->inputs) {
+          Impl::declared_input declared;
+          declared.names            = input.names;
+          declared.expected_senders = input.expected_senders;
+          for (const auto& type : input.types) {
+            declared.type_names.push_back(type.to_string());
+          }
+          impl_->inputs.emplace(input.stream_id(), std::move(declared));
+        }
+        if (impl_->exchange_plan->sink) {
+          const auto& sink = *impl_->exchange_plan->sink;
+          for (std::size_t i = 0; i < sink.targets.size(); ++i) {
+            impl_->outputs.push_back(i);
+          }
+          if (sink.targets.size() > 1) {
+            impl_->broadcast_outputs = sink.mode == sirius::exchange::distribution::broadcast;
+            if (sink.mode == sirius::exchange::distribution::hash) {
+              impl_->hash_key_columns = sink.hash_columns;
+            }
+          }
+        }
+      }
+      sirius::exec::fragment_spec spec;
+      spec.inputs  = impl_->resolve_inputs();
+      spec.outputs = impl_->outputs;
+      if (impl_->exchange_plan) { spec.output_boundary = sirius::exec::stream_boundary::exchange; }
+      spec.plan_source = [this, &plan_bytes](duckdb::ClientContext&) {
+        impl_->create_stream_views();
+        return lower_substrait(*impl_->ctx.conn, plan_bytes);
+      };
+      if (impl_->broadcast_outputs) {
+        sirius::op::partition_spec broadcast;
+        broadcast.mode    = sirius::op::partition_mode::broadcast;
+        spec.partitioning = std::move(broadcast);
+      } else if (!impl_->hash_key_columns.empty()) {
+        sirius::op::partition_spec hash;
+        hash.mode         = sirius::op::partition_mode::hash;
+        hash.key_columns  = impl_->hash_key_columns;
+        spec.partitioning = std::move(hash);
+      }
+      fragment = std::make_unique<sirius::exec::streaming_fragment>(*impl_->ctx.conn->context,
+                                                                    std::move(spec));
+      fragment->build();
+      if (impl_->exchange_plan) {
+        const auto& types = fragment->sink_types();
+        std::vector<sirius::logical_type> output_types(types.begin(), types.end());
+        if (impl_->exchange_plan->sink) {
+          for (int key : impl_->exchange_plan->sink->hash_columns) {
+            if (key < 0 || static_cast<std::size_t>(key) >= types.size()) {
+              throw sirius::invalid_input_exception(
+                "Fragment: exchange hash key column is out of range");
+            }
+          }
+        }
+        impl_->ctx.exchange->attach(*impl_->exchange_plan, fragment->session(), output_types);
+        impl_->exchange_attached = true;
+      }
+    });
+    impl_->fragment = std::move(fragment);
+  } catch (...) {
+    impl_->cancel_exchange(std::current_exception());
+    if (impl_->exchange_plan) {
+      impl_->inputs.clear();
+      impl_->outputs.clear();
+      impl_->broadcast_outputs = false;
+      impl_->hash_key_columns.clear();
+      impl_->exchange_plan.reset();
     }
-
-    fragment = std::make_unique<sirius::exec::streaming_fragment>(*impl_->ctx.conn->context,
-                                                                  std::move(spec));
-    fragment->build();
-  });
-  impl_->fragment = std::move(fragment);
+    throw;
+  }
 }
 
 std::size_t Fragment::relay_from(Fragment& source,
@@ -443,6 +566,9 @@ std::size_t Fragment::relay_from(Fragment& source,
                                  std::uint32_t sender_id)
 {
   impl_->require_built("relay_from()");
+  if (impl_->exchange_plan || source.impl_->exchange_plan) {
+    throw sirius::invalid_input_exception("Fragment: exchange streams cannot be relayed manually");
+  }
   if (!source.impl_->fragment) {
     throw sirius::invalid_input_exception(
       "Fragment: relay_from() requires the source fragment to have been built");
@@ -454,6 +580,9 @@ std::size_t Fragment::relay_from(Fragment& source,
 void Fragment::close_input(std::uint64_t stream_id, std::uint32_t sender_id)
 {
   impl_->require_built("close_input()");
+  if (impl_->exchange_plan) {
+    throw sirius::invalid_input_exception("Fragment: exchange inputs are closed by their senders");
+  }
   impl_->fragment->close_input(stream_id, sender_id);
 }
 
@@ -461,7 +590,28 @@ void Fragment::run()
 {
   impl_->require_built("run()");
   // Scans read DuckDB MVCC state through the active transaction.
-  in_transaction(impl_->ctx.conn_mutex, *impl_->ctx.conn, [&] { impl_->fragment->run(); });
+  try {
+    in_transaction(impl_->ctx.conn_mutex, *impl_->ctx.conn, [&] {
+      sirius::exec::fragment_run_hooks hooks;
+      if (impl_->exchange_plan) {
+        if (!impl_->exchange_attached) {
+          throw sirius::invalid_input_exception("Fragment: exchange already run or failed");
+        }
+        hooks.start  = [this] { impl_->ctx.exchange->start(); };
+        hooks.finish = [this] {
+          impl_->ctx.exchange->finish();
+          impl_->exchange_attached = false;
+        };
+        hooks.cancel = [this](std::exception_ptr error) {
+          impl_->cancel_exchange(std::move(error));
+        };
+      }
+      impl_->fragment->run(hooks);
+    });
+  } catch (...) {
+    impl_->cancel_exchange(std::current_exception());
+    throw;
+  }
 }
 
 void Fragment::result_to_arrow(std::uintptr_t out_stream_addr)

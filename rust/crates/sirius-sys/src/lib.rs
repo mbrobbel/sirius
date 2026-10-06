@@ -8,9 +8,8 @@
 //! an RAII [`Context`] held via [`cxx::UniquePtr`]. Constructing it brings up an
 //! initialized engine; dropping the `UniquePtr` tears it down. The header is
 //! lightweight, so the bridge compiles without any of Sirius's internal headers
-//! (cudf/rmm/duckdb). It is the seed of the public API `libsirius` will expose;
-//! the bindings link whichever Sirius artifact provides these symbols (the DuckDB
-//! extension today, a dedicated `libsirius` later — see `build.rs`).
+//! (cudf/rmm/duckdb). The bindings link `libsirius` from either the standalone
+//! build or the DuckDB extension build — see `build.rs`.
 //!
 //! The `make_context*` functions are bound as fallible (`Result`): bringing up
 //! the engine (or parsing a config file) can throw, and cxx turns a C++ exception
@@ -28,6 +27,9 @@ mod ffi {
         /// RAII handle to an initialized Sirius engine context.
         type Context;
 
+        /// A plan fragment borrowing its engine context.
+        type Fragment;
+
         /// Construct an initialized [`Context`] from built-in defaults, owned by
         /// the returned `UniquePtr`.
         fn make_context() -> Result<UniquePtr<Context>>;
@@ -36,6 +38,33 @@ mod ffi {
         /// `config_path`, owned by the returned `UniquePtr`. `config_path` binds
         /// to the C++ `const std::string&` parameter.
         fn make_context_from_config(config_path: &CxxString) -> Result<UniquePtr<Context>>;
+
+        fn enable_exchange(
+            self: Pin<&mut Context>,
+            agent_name: &CxxString,
+            staging_bytes: usize,
+            timeout_ms: u64,
+        ) -> Result<()>;
+
+        fn exchange_metadata(self: &Context) -> Result<UniquePtr<CxxString>>;
+
+        fn add_exchange_peer(
+            self: Pin<&mut Context>,
+            metadata: &CxxString,
+        ) -> Result<UniquePtr<CxxString>>;
+
+        /// # Safety
+        /// `context` must outlive the returned fragment. Its query lifecycle must
+        /// remain exclusively owned by that fragment until execution finishes.
+        unsafe fn make_fragment(context: Pin<&mut Context>) -> Result<UniquePtr<Fragment>>;
+
+        fn build(self: Pin<&mut Fragment>, plan: &CxxString) -> Result<()>;
+        fn run(self: Pin<&mut Fragment>) -> Result<()>;
+
+        /// # Safety
+        /// `out_stream_addr` must point to a writable ArrowArrayStream, and the
+        /// stream must be drained or released before the fragment's context dies.
+        unsafe fn result_to_arrow(self: Pin<&mut Fragment>, out_stream_addr: usize) -> Result<()>;
 
         /// Execute a serialized Substrait plan on the GPU, writing the results
         /// into the Arrow C Data Interface stream at `out_stream_addr` — the
@@ -58,4 +87,4 @@ mod ffi {
     }
 }
 
-pub use ffi::{Context, make_context, make_context_from_config};
+pub use ffi::{Context, Fragment, make_context, make_context_from_config, make_fragment};

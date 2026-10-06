@@ -75,6 +75,16 @@ struct fragment_spec {
   stream_boundary output_boundary = stream_boundary::streaming;
 };
 
+/// Keep asynchronous exchange work inside the execution window. Callbacks may be absent.
+struct fragment_run_hooks {
+  /// Arm transport progress after the engine is initialized.
+  std::function<void()> start;
+  /// Drain transport after execution, before query cleanup. May throw a transport error.
+  std::function<void()> finish;
+  /// Stop transport before failed-query cleanup. Must not throw.
+  std::function<void(std::exception_ptr)> cancel;
+};
+
 /// Owns repositories, plan, engine, and session for one fragment. The query window exists only
 /// inside run(). Repositories outlive data_repository_manager_ cleanup, so queued batches
 /// survive run(). The engine owns the plan after run(), so the sink stays pullable.
@@ -97,19 +107,26 @@ class streaming_fragment {
   /// filled after this returns.
   /// @throws sirius::invalid_input_exception when already built, after a failed build() (no
   ///         retry; create a new fragment), no catalog, no Sirius state, null plan, a declared
-  ///         input the plan never reads, or bound_plan::prepared types that do not match the
-  ///         plan's output types (HUGEINT over a BIGINT plan column is accepted).
+  ///         ordinary input the plan never reads, or bound_plan::prepared types that do not match
+  ///         the plan's output types (HUGEINT over a BIGINT plan column is accepted).
   /// @throws whatever the plan source, binder, or plan generator raises.
   void build();
 
   /// Open the query window, execute, and block; the window closes before this returns. Every
-  /// input must already be closed. On failure, poisons every output before the window closes.
+  /// ordinary input must already be closed; exchange inputs may arrive during execution when
+  /// start, finish, and cancel hooks are all supplied.
+  /// Hooks finish or cancel asynchronous work before the window closes. On failure, poisons
+  /// every output before cleanup.
   /// @throws sirius::invalid_input_exception before build(), when an input is still open (the
   ///         fragment stays runnable), when already run, after a failed run() (create a new
   ///         fragment), or when a table was pinned or unpinned since build().
   /// @throws the result's error for a result fragment whose query failed.
   /// @throws whatever the engine's execution raises.
-  void run();
+  void run(const fragment_run_hooks& hooks = {});
+
+  /// Transport borrows the session until its finish/cancel hook returns.
+  /// @throws sirius::invalid_input_exception before build().
+  [[nodiscard]] stream_session& session();
 
   /// Move every parked batch on `source`'s output `source_stream_id` into this fragment's
   /// input `input_stream_id`, then close `sender_id` on it. Checks schema, shared context,

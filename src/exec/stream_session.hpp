@@ -79,8 +79,15 @@ class stream_session {
   /// Sender-set EOS. @throws on unknown input id or unexpected sender.
   void close_input(stream_id_t id, sender_id_t sender);
 
+  /// Poison an input and wake its pipeline. @throws on unknown input id.
+  void fail_input(stream_id_t id, std::exception_ptr error);
+
   /// True once every expected sender has closed the input. @throws on unknown input id.
   [[nodiscard]] bool input_closed(stream_id_t id) const;
+
+  /// Release queued input after local execution finishes. Preserves EOS and pending errors.
+  /// The caller must prevent concurrent consumers and arrange to discard subsequent pushes.
+  void discard_input(stream_id_t id);
 
   // -----------------------------------------------------------------------
   // Consumer side — output streams

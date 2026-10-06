@@ -112,9 +112,20 @@ void stream_session::close_input(stream_id_t id, sender_id_t sender)
   resolve_source(id).close_input(sender);
 }
 
+void stream_session::fail_input(stream_id_t id, std::exception_ptr error)
+{
+  resolve_source(id).fail_input(std::move(error));
+}
+
 bool stream_session::input_closed(stream_id_t id) const
 {
   return resolve_source(id).stream().terminal();
+}
+
+void stream_session::discard_input(stream_id_t id)
+{
+  auto& input = resolve_source(id).stream();
+  while (input.try_pull()) {}
 }
 
 std::optional<std::shared_ptr<cucascade::data_batch>> stream_session::pull(stream_id_t id)

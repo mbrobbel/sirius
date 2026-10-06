@@ -12,10 +12,11 @@ wait(stream_id)                     // block until data arrives or the stream en
 drained(stream_id) -> bool          // stream ended cleanly and nothing is left
 ```
 
-Sirius itself stays **fragment-blind**: it never learns that it is distributed, which compute
+The low-level streaming operators stay **fragment-blind**: they never learn which compute
 node a partition ships to, or how many nodes exist. One session models one fragment; pairing a
 leaf fragment's output id with a root fragment's input id — across sessions and nodes — is the
-wrapper's routing table, never the engine's.
+wrapper's routing table. [Native exchanges](exchanges.md) add a Sirius-owned NIXL executor
+that routes these streams using Substrait metadata.
 
 A session is built from three pieces:
 
