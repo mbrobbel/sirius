@@ -27,3 +27,9 @@ To run specific tests, call the test binary directly with a Catch2 tag or test n
 pixi run build/release/extension/sirius/test/cpp/sirius_unittest "[uri_parser]"
 pixi run build/release/extension/sirius/test/cpp/sirius_unittest "uri_parser parses bare absolute paths as file URIs"
 ```
+
+## SQL correctness tests
+
+The Rust SQLLogicTest runner executes `.slt` files against DuckDB without building
+the C++ tests. See [SQLLogicTest](sqltest/README.md) for
+setup, commands, and test syntax.

@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/sqltest",
     "crates/telemetry/bridge",
     "crates/telemetry/model",
     "crates/telemetry/analyzer",

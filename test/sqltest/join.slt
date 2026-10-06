@@ -1,0 +1,25 @@
+statement ok
+CREATE TABLE customers (id INTEGER, name VARCHAR(30))
+
+statement ok
+INSERT INTO customers VALUES (1, 'Ada'), (2, 'Grace'), (3, 'Edsger')
+
+statement ok
+CREATE TABLE orders (customer_id INTEGER, amount INTEGER)
+
+statement ok
+INSERT INTO orders VALUES (1, 10), (1, 20), (2, 30)
+
+query TI rowsort
+SELECT c.name, o.amount
+FROM customers AS c
+LEFT JOIN orders AS o ON c.id = o.customer_id
+----
+Ada
+10
+Ada
+20
+Edsger
+NULL
+Grace
+30
