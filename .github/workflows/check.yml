@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Test TPC-DS runners
+        run: python3 -B -m unittest discover -s test/tpcds_performance -p 'test_*.py'
+
       - name: Test thread sweep harness
         run: |
           set -o pipefail

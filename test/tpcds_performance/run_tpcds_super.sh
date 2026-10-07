@@ -110,9 +110,10 @@ TPCDS_TABLES=(
 
 VIEW_SQL=""
 for TABLE_NAME in "${TPCDS_TABLES[@]}"; do
+    # Numbered shards must not match other tables, such as store_sales.
     FILES=()
     for f in "$PARQUET_DIR/${TABLE_NAME}.parquet" \
-             "$PARQUET_DIR/${TABLE_NAME}_"*.parquet \
+             "$PARQUET_DIR/${TABLE_NAME}_"[0-9]*.parquet \
              "$PARQUET_DIR/${TABLE_NAME}/"*.parquet; do
         [ -f "$f" ] && FILES+=("'$f'")
     done
@@ -176,8 +177,9 @@ for q in "${QUERIES[@]}"; do
     Q_RESULT_FILE="$OUTPUT_DIR/result_q${q}.txt"
     Q_LOG="$OUTPUT_DIR/log_q${q}.txt"
 
+    EXIT_STATUS=0
     # Run in a fresh DuckDB process (no database file needed — views read parquet)
-    OUTPUT=$("$DUCKDB" < "$TEMP_SQL" 2>&1) || true
+    OUTPUT=$("$DUCKDB" -bail < "$TEMP_SQL" 2>&1) || EXIT_STATUS=$?
 
     echo "$OUTPUT" > "$Q_LOG"
     rm -f "$TEMP_SQL"
@@ -188,13 +190,8 @@ for q in "${QUERIES[@]}"; do
     RUN1_TIME="${TIMES[0]:--1}"
     RUN2_TIME="${TIMES[1]:--1}"
 
-    # Check for errors in the output
-    HAS_ERROR=$(echo "$OUTPUT" | grep -ci "error" || true)
-
-    if [ "$HAS_ERROR" -gt 0 ] && [ "$RUN1_TIME" = "-1" ]; then
-        ERROR_MSG=$(echo "$OUTPUT" | grep -i "error" | head -1)
-        echo "  Run 1: FAILED — $ERROR_MSG"
-        echo "  Run 2: FAILED"
+    if [ "$EXIT_STATUS" -ne 0 ]; then
+        echo "  FAILED — DuckDB exited with status $EXIT_STATUS; see $Q_LOG"
         echo "${q},${RUN1_TIME},FAILED,${RUN2_TIME},FAILED" >> "$TIMING_FILE"
     else
         RUN1_STATUS="OK"
@@ -245,3 +242,5 @@ echo ""
 echo "Timings:  $TIMING_FILE"
 echo "Results:  $OUTPUT_DIR/result_q*.txt"
 echo "Logs:     $OUTPUT_DIR/log_q*.txt"
+
+[ "$FAILED" -eq 0 ]
