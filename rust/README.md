@@ -35,23 +35,19 @@ LD_LIBRARY_PATH="$PWD/build/release/extension/sirius:$LD_LIBRARY_PATH" \
 
 ### Exchange integration test
 
-Build Sirius with NIXL enabled and run the complete process-based GPU test:
+Build Sirius and run the complete process-based GPU test:
 
 ```bash
 pixi run make exchange-test
 ```
 
-The target creates a standalone shared-library build in `build/exchange` with
-`SIRIUS_ENABLE_NIXL=ON`, then points Cargo and the runtime loader at that directory.
+The target creates a standalone shared-library build in `build/exchange`,
+then points Cargo and the runtime loader at that directory.
 Override it with `EXCHANGE_BUILD_DIR=<path>`. CMake fetches NIXL 1.5.0 and builds
 its native SDK with the UCX backend built in; Pixi supplies the build tools and
 UCX 1.20.1. The vcpkg build uses static NIXL and UCX overlay ports supporting
 TCP, shared memory, and CUDA. See the [native exchange guide](../docs/super-sirius/exchanges.md)
 for manual build commands and transport scope.
-
-The target leaves NIXL enabled in the selected build directory's CMake cache. To disable it
-for subsequent builds, run
-`pixi run cmake -S . -B build/exchange -DSIRIUS_ENABLE_NIXL=OFF`.
 
 The coordinator generates Parquet inputs and Substrait plans, launches one
 engine per process with 128 MiB of GPU memory and 512 MiB of host memory,

@@ -463,7 +463,7 @@ fn run_case(mode: Mode, scenario: Scenario) {
 }
 
 #[test]
-#[ignore = "requires a GPU and Sirius built with NIXL/UCX exchange support"]
+#[ignore = "requires a GPU"]
 fn exchange_end_to_end() {
     for mode in [Mode::Gather, Mode::Hash, Mode::Broadcast] {
         eprintln!("testing {mode:?} exchange, then a second query with a receiver filter");

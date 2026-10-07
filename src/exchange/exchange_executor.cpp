@@ -5,15 +5,12 @@
 
 #include "exchange/exchange_executor.hpp"
 
-#include "sirius/exception.hpp"
-
-#ifdef SIRIUS_ENABLE_NIXL
-
 #include "cudf/cudf_utils.hpp"
 #include "data/data_batch_utils.hpp"
 #include "data/sirius_converter_registry.hpp"
 #include "exec/stream_session.hpp"
 #include "helper/numeric_narrowing.hpp"
+#include "sirius/exception.hpp"
 #include "sirius_context.hpp"
 
 #include <cudf/contiguous_split.hpp>
@@ -1153,35 +1150,3 @@ void exchange_executor::start() { _impl->start(); }
 void exchange_executor::cancel(std::exception_ptr error) noexcept { _impl->cancel(error); }
 
 }  // namespace sirius::exchange
-
-#else
-
-namespace sirius::exchange {
-struct exchange_executor::impl {};
-namespace {
-[[noreturn]] void disabled()
-{
-  throw sirius::invalid_input_exception(
-    "Sirius was built without NIXL exchange support; configure with SIRIUS_ENABLE_NIXL=ON");
-}
-}  // namespace
-exchange_executor::exchange_executor(duckdb::SiriusContext&,
-                                     std::string,
-                                     std::size_t,
-                                     std::chrono::milliseconds)
-{
-  disabled();
-}
-exchange_executor::~exchange_executor() = default;
-std::string exchange_executor::metadata() const { disabled(); }
-std::string exchange_executor::add_peer(const std::string&) { disabled(); }
-void exchange_executor::attach(const plan&, exec::stream_session&, const std::vector<logical_type>&)
-{
-  disabled();
-}
-void exchange_executor::finish() { disabled(); }
-void exchange_executor::start() { disabled(); }
-void exchange_executor::cancel(std::exception_ptr) noexcept {}
-}  // namespace sirius::exchange
-
-#endif

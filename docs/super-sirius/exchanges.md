@@ -91,36 +91,27 @@ not time out. This version does not exchange heartbeats.
 
 ## Build and test
 
-NIXL is optional and disabled by default. The complete GPU integration harness
+NIXL is included in every Sirius build. The complete GPU integration harness
 can be built and run with:
 
 ```bash
 pixi run make exchange-test
 ```
 
-This target configures a standalone Sirius build in `build/exchange`, enables
-`SIRIUS_ENABLE_NIXL`, builds the shared library, and runs the Rust process harness.
+This target configures a standalone Sirius build in `build/exchange`, builds
+the shared library, and runs the Rust process harness.
 Use `EXCHANGE_BUILD_DIR=<path>` to choose another build directory. CMake fetches
 the pinned NIXL 1.5.0 source and builds its native SDK as
 static archives with the UCX backend built in. Pixi provides Meson, ASIO,
 tomlplusplus, and UCX 1.20.1. The development build links Pixi's shared UCX
 libraries; activating Pixi supplies their runtime dependencies.
 
-The selected build directory retains NIXL in its CMake cache. To disable it for
-subsequent builds:
-
-```bash
-pixi run cmake -S . -B build/exchange -DSIRIUS_ENABLE_NIXL=OFF
-```
-
 The vcpkg build uses the repository's NIXL and UCX overlay ports. Both produce
 static archives linked by the Sirius targets. The UCX port enables TCP, shared
-memory, and CUDA transports. InfiniBand and RoCE support are deferred. Enable
-the optional `nixl` manifest feature when configuring this build:
+memory, and CUDA transports. InfiniBand and RoCE support are deferred.
 
 ```bash
-pixi run -e vcpkg cmake -S duckdb --preset vcpkg-release \
-  -DVCPKG_MANIFEST_FEATURES=nixl -DSIRIUS_ENABLE_NIXL=ON
+pixi run -e vcpkg cmake -S duckdb --preset vcpkg-release
 pixi run -e vcpkg cmake --build build/vcpkg-release --target sirius_shared
 ```
 
@@ -131,7 +122,7 @@ To configure and build manually, including the native parser/operator tests:
 
 ```bash
 pixi run cmake -S . -B build/exchange -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DSIRIUS_ENABLE_NIXL=ON -DSIRIUS_BUILD_TESTS=ON -DSIRIUS_BUILD_S3_TESTS=OFF
+  -DSIRIUS_BUILD_TESTS=ON -DSIRIUS_BUILD_S3_TESTS=OFF
 pixi run cmake --build build/exchange --target sirius_shared sirius_unittest
 pixi run build/exchange/test/cpp/sirius_unittest \
   '[exchange_plan],[exchange_operator],[sirius_ffi]'

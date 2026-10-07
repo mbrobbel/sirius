@@ -88,15 +88,6 @@ if(BUILD_WITH_CTRACK)
   list(APPEND SIRIUS_LINK_LIBRARIES $<BUILD_INTERFACE:ctrack::ctrack>)
 endif()
 
-if(SIRIUS_ENABLE_NIXL)
-  add_dependencies(sirius_objects nixl::nixl)
-  set_source_files_properties(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/exchange/exchange_executor.cpp"
-    TARGET_DIRECTORY sirius_objects
-    PROPERTIES COMPILE_DEFINITIONS SIRIUS_ENABLE_NIXL=1
-               INCLUDE_DIRECTORIES "${SIRIUS_NIXL_INCLUDE_DIR}")
-endif()
-
 foreach(_target sirius_objects sirius_core sirius_extension
                 sirius_loadable_extension sirius_shared)
   if(NOT TARGET ${_target})
@@ -166,9 +157,6 @@ foreach(_target sirius_objects sirius_core sirius_extension
   # (cuCascade::cucascade) and cudf::cudf.
 
   target_link_libraries(${_target} ${_link_scope} ${SIRIUS_LINK_LIBRARIES})
-  if(SIRIUS_ENABLE_NIXL AND NOT _target STREQUAL "sirius_objects")
-    target_link_libraries(${_target} ${_link_scope} nixl::nixl)
-  endif()
 
   # Corrosion exposes telemetry_bridge as an INTERFACE target whose concrete
   # Rust archive is telemetry_bridge-static. Apply WHOLE_ARCHIVE to that real
