@@ -5,7 +5,7 @@ Crates for driving [Sirius](https://github.com/sirius-db/sirius) from Rust
 
 | Crate | Role |
 |-------|------|
-| [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C++ configuration API and existing execution bridge. |
+| [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C++ context/configuration API and existing execution bridge. |
 | [`sirius`](crates/sirius) | Safe, idiomatic wrapper over `sirius-sys`. |
 
 (The `telemetry/*` crates are unrelated — Rust linked *into* the C++ extension via
@@ -29,9 +29,37 @@ sharing immutable settings. The file is read only by `from_yaml()`; later file
 changes do not affect a loaded builder. Configuration errors retain their
 I/O, YAML syntax, or invalid-setting category in `ConfigError`.
 
-The configuration bridge requires C++23 with `std::expected`; the existing
-execution bridge remains C++20. These configuration types do not yet construct
-`SiriusContext`, and they expose no `Send` or `Sync` guarantees.
+The public API bridge requires C++23 with `std::expected`; the existing
+execution bridge remains C++20. The new
+configuration and context types expose no `Send` or `Sync` guarantees.
+
+## Public context
+
+Construct an engine from a configuration; dropping the handle releases it:
+
+```rust
+use sirius::{Context, ContextConfigBuilder};
+
+fn create_engine() -> Result<Context, Box<dyn std::error::Error>> {
+    let config = ContextConfigBuilder::from_yaml("sirius.yaml")?.build()?;
+    Ok(Context::new(&config)?)
+}
+```
+
+`ContextError` distinguishes an occupied process runtime from initialization and
+native bridge failures. The configuration can be dropped after construction.
+Only one engine context may be active per process; this includes the existing
+`SiriusContext` execution wrapper and other Sirius integrations. Forking with an
+active context is unsupported. A failed teardown keeps the runtime reserved until
+process exit. The public `Context` currently exposes construction and destruction;
+query execution remains on the existing `SiriusContext` API.
+
+Run the context example with a YAML file and the build-tree shared library:
+
+```bash
+LD_LIBRARY_PATH="$PWD/build/release/extension/sirius${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  pixi run cargo run --manifest-path rust/Cargo.toml -p sirius --example context -- sirius.yaml
+```
 
 ## Building & testing
 

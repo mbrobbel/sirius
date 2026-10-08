@@ -14,6 +14,7 @@ ConfigErrorCode error_code(ErrorCode code)
     case ErrorCode::configuration_io: return ConfigErrorCode::Io;
     case ErrorCode::malformed_yaml: return ConfigErrorCode::MalformedYaml;
     case ErrorCode::invalid_configuration: return ConfigErrorCode::InvalidConfiguration;
+    default: break;
   }
   throw std::runtime_error("Unknown Sirius configuration error code");
 }

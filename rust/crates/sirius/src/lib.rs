@@ -4,11 +4,13 @@
 //! This crate wraps the low-level [`sirius-sys`][sirius_sys] cxx bindings in safe Rust types
 //! — the entry point for driving Sirius from Rust.
 //!
-//! Build immutable configurations with [`ContextConfigBuilder`]. Existing engine
-//! execution is available through [`SiriusContext`].
+//! Build immutable configurations with [`ContextConfigBuilder`] and construct an
+//! engine with [`Context`]. Existing execution is available through [`SiriusContext`].
 
 mod config;
+mod context;
 pub use config::{ConfigError, ContextConfig, ContextConfigBuilder};
+pub use context::{Context, ContextError};
 
 use std::path::Path;
 
@@ -28,7 +30,7 @@ use cxx::{Exception, UniquePtr, let_cxx_string};
 ///
 /// The engine keeps process-global GPU state, so it currently supports a single
 /// live context per process; constructing or holding more than one concurrently
-/// is not yet supported (enforcement is a follow-up).
+/// is rejected by the engine. This limit is shared with [`Context`].
 pub struct SiriusContext {
     // RAII handle owning the C++ engine context for its lifetime.
     inner: UniquePtr<sirius_sys::Context>,

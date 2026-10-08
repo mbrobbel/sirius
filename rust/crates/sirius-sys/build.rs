@@ -1,7 +1,7 @@
 //! Build script for `sirius-sys`.
 //!
 //! Two jobs:
-//!  1. Compile the execution bridge as C++20 and the public configuration bridge
+//!  1. Compile the execution bridge as C++20 and the public API bridge
 //!     as C++23. Both use public Sirius headers; no engine headers are needed.
 //!  2. Link the single Sirius artifact that exports the FFI symbols (no
 //!     hand-maintained transitive dependency list). `cargo:rustc-link-{lib,search}`
@@ -44,13 +44,14 @@ fn main() {
         .include(repo.join("include"))
         .compile("sirius_sys");
 
-    // The public configuration API uses std::expected and requires C++23.
-    cxx_build::bridge("src/config.rs")
+    // The public context API uses std::expected and requires C++23.
+    cxx_build::bridges(["src/config.rs", "src/context.rs"])
         .file("src/config_bridge.cpp")
+        .file("src/context_bridge.cpp")
         .std("c++23")
         .include(repo.join("include"))
         .include("src")
-        .compile("sirius_config_bridge");
+        .compile("sirius_context_bridge");
 
     // 2. Link the single Sirius artifact.
     let lib_dir = resolve_lib_dir(&build_dir, static_link);
@@ -73,10 +74,14 @@ fn main() {
         "src/config.rs",
         "src/config_bridge.hpp",
         "src/config_bridge.cpp",
+        "src/context.rs",
+        "src/context_bridge.hpp",
+        "src/context_bridge.cpp",
     ] {
         println!("cargo:rerun-if-changed={path}");
     }
     for header in [
+        "context/context.hpp",
         "context/config.hpp",
         "context/config_builder.hpp",
         "error.hpp",
