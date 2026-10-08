@@ -5,11 +5,33 @@ Crates for driving [Sirius](https://github.com/sirius-db/sirius) from Rust
 
 | Crate | Role |
 |-------|------|
-| [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C-ABI (`include/sirius/ffi.hpp`). |
+| [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C++ configuration API and existing execution bridge. |
 | [`sirius`](crates/sirius) | Safe, idiomatic wrapper over `sirius-sys`. |
 
 (The `telemetry/*` crates are unrelated — Rust linked *into* the C++ extension via
 CMake/Corrosion, the opposite direction.)
+
+## Configuration
+
+Build a validated, immutable configuration without initializing GPUs:
+
+```rust
+use sirius::{ConfigError, ContextConfigBuilder};
+
+fn load_config() -> Result<sirius::ContextConfig, ConfigError> {
+    ContextConfigBuilder::from_yaml("sirius.yaml")?.build()
+}
+```
+
+Use `ContextConfigBuilder::new()?.build()?` for built-in defaults. Both the
+builder and configuration offer `try_clone()` to create independent handles
+sharing immutable settings. The file is read only by `from_yaml()`; later file
+changes do not affect a loaded builder. Configuration errors retain their
+I/O, YAML syntax, or invalid-setting category in `ConfigError`.
+
+The configuration bridge requires C++23 with `std::expected`; the existing
+execution bridge remains C++20. These configuration types do not yet construct
+`SiriusContext`, and they expose no `Send` or `Sync` guarantees.
 
 ## Building & testing
 
@@ -67,17 +89,15 @@ dependency list:
 - **`--features static`** → `libsirius.a` (self-contained, no runtime deps — the
   fully static vcpkg build). Requires that bundled archive to exist.
 
-`build.rs` only needs `include` to compile the shim, because the bound
-surface is the lightweight `sirius/ffi.hpp`. That header is the seed of the public
-C++ API `libsirius` will expose; today it is compiled into the DuckDB extension,
-which the bindings link until a dedicated `libsirius` ships (at which point the
-symlink stopgap is no longer used).
+`build.rs` compiles both bridges against the public `include` directory. The
+configuration adapter lives in `sirius-sys/src`; neither bridge includes internal
+engine headers.
 
 ## Environment
 
 - `DOCS_RS` — when set, skip Sirius's native build and link steps for documentation.
 - `SIRIUS_BUILD_DIR` — Sirius build tree (default `build/release`).
-- `CONDA_PREFIX` — set by `pixi`; used to find the headers and the shared lib's deps.
+- `CONDA_PREFIX` — set by `pixi`; used to find the shared library's dependencies.
 - `CARGO_NET_GIT_FETCH_WITH_CLI=true` — only on machines whose git config rewrites
   `https://github.com/` to SSH (the telemetry crate's `quent` git dep otherwise
   fails libgit2's ssh-agent path). CI is unaffected.
