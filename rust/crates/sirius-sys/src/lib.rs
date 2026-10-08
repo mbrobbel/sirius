@@ -4,7 +4,8 @@
 //! declared in the `#[cxx::bridge]` module below and nothing else. Safe, idiomatic
 //! wrappers live in the [`sirius`](https://docs.rs/sirius) crate.
 //!
-//! The bridge binds Sirius's **public C++ surface** (`include/sirius/ffi.hpp`):
+//! The [`config`] module binds the public C++ configuration API. The execution
+//! bridge below binds `include/sirius/ffi.hpp`:
 //! an RAII [`Context`] held via [`cxx::UniquePtr`]. Constructing it brings up an
 //! initialized engine; dropping the `UniquePtr` tears it down. The header is
 //! lightweight, so the bridge compiles without any of Sirius's internal headers
@@ -59,3 +60,6 @@ mod ffi {
 }
 
 pub use ffi::{Context, make_context, make_context_from_config};
+
+/// Bindings for immutable public configuration construction.
+pub mod config;

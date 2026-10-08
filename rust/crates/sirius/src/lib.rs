@@ -4,9 +4,11 @@
 //! This crate wraps the low-level [`sirius-sys`][sirius_sys] cxx bindings in safe Rust types
 //! — the entry point for driving Sirius from Rust.
 //!
-//! Today it binds just enough to prove the toolchain links against the real
-//! Sirius library: constructing a [`SiriusContext`] from defaults or a YAML
-//! config file. More of the API surface is added in later PRs.
+//! Build immutable configurations with [`ContextConfigBuilder`]. Existing engine
+//! execution is available through [`SiriusContext`].
+
+mod config;
+pub use config::{ConfigError, ContextConfig, ContextConfigBuilder};
 
 use std::path::Path;
 
