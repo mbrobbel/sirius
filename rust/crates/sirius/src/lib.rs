@@ -30,7 +30,8 @@ use cxx::{Exception, UniquePtr, let_cxx_string};
 ///
 /// The engine keeps process-global GPU state, so it currently supports a single
 /// live context per process; constructing or holding more than one concurrently
-/// is rejected by the engine. This limit is shared with [`Context`].
+/// is unsupported and is not prevented by a runtime check. This restriction also
+/// applies to [`Context`].
 pub struct SiriusContext {
     // RAII handle owning the C++ engine context for its lifetime.
     inner: UniquePtr<sirius_sys::Context>,

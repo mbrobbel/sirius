@@ -8,8 +8,6 @@ use crate::ContextConfig;
 /// A failure while creating an engine context.
 #[derive(Debug)]
 pub enum ContextError {
-    /// Another context holds the process runtime, or teardown left it unavailable.
-    InUse(String),
     /// Hardware resolution or engine initialization failed.
     Initialization(String),
     /// A native allocation or bridge operation failed.
@@ -19,7 +17,7 @@ pub enum ContextError {
 impl std::fmt::Display for ContextError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InUse(message) | Self::Initialization(message) => f.write_str(message),
+            Self::Initialization(message) => f.write_str(message),
             Self::Native(error) => error.fmt(f),
         }
     }
@@ -42,10 +40,13 @@ impl From<cxx::Exception> for ContextError {
 
 /// Own an initialized Sirius engine. Dropping it releases its resources.
 ///
-/// Only one engine context may be active per process, including contexts created
-/// through other Sirius integrations. Creation fails while another context is
-/// initializing, active, or shutting down. A failed teardown retains the process
-/// reservation until exit. Forking with an active context is unsupported.
+/// Only one active engine context per process is supported, including contexts
+/// created through other Sirius integrations. This restriction is not enforced;
+/// callers must ensure context lifetimes do not overlap. Constructing another
+/// context may succeed, but shared runtime resources can interfere with each other.
+/// Destruction does not reset all process-wide settings: changing
+/// `sirius.executor.downgrade.copy_chunk_bytes` between contexts is unsupported.
+/// Forking with an active context is unsupported.
 ///
 /// This type owns a public C++ context and exposes construction only. Query
 /// execution and client sessions are not exposed by this type yet.
@@ -67,17 +68,14 @@ impl Context {
     /// let config = ContextConfigBuilder::from_yaml("sirius.yaml")?.build()?;
     /// let context = Context::new(&config)?;
     /// drop(config);
-    /// drop(context); // Release the engine and its process reservation.
+    /// drop(context); // Release the engine.
     /// # Ok(())
     /// # }
     /// ```
     pub fn new(config: &ContextConfig) -> Result<Self, ContextError> {
         let result = bridge::context_create(config.inner.as_ref().expect("owned configuration"))?;
         if result.value.is_null() {
-            return Err(match result.code {
-                bridge::ContextErrorCode::InUse => ContextError::InUse(result.message),
-                _ => ContextError::Initialization(result.message),
-            });
+            return Err(ContextError::Initialization(result.message));
         }
         Ok(Self {
             _inner: result.value,

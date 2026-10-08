@@ -46,13 +46,13 @@ fn create_engine() -> Result<Context, Box<dyn std::error::Error>> {
 }
 ```
 
-`ContextError` distinguishes an occupied process runtime from initialization and
-native bridge failures. The configuration can be dropped after construction.
-Only one engine context may be active per process; this includes the existing
-`SiriusContext` execution wrapper and other Sirius integrations. Forking with an
-active context is unsupported. A failed teardown keeps the runtime reserved until
-process exit. The public `Context` currently exposes construction and destruction;
-query execution remains on the existing `SiriusContext` API.
+`ContextError` reports initialization and native bridge failures. The configuration
+can be dropped after construction. Only one active engine context per process is
+supported, including the existing `SiriusContext` execution wrapper and other Sirius
+integrations. This restriction is not enforced; callers must ensure context lifetimes
+do not overlap. Forking with an active context is unsupported. The public `Context`
+currently exposes construction and destruction; query execution remains on the
+existing `SiriusContext` API.
 
 Run the context example with a YAML file and the build-tree shared library:
 
