@@ -45,7 +45,10 @@ impl From<cxx::Exception> for ContextError {
 /// callers must ensure context lifetimes do not overlap. Constructing another
 /// context may succeed, but shared runtime resources can interfere with each other.
 /// Destruction does not reset all process-wide settings: changing
-/// `sirius.executor.downgrade.copy_chunk_bytes` between contexts is unsupported.
+/// `sirius.executor.downgrade.copy_chunk_bytes` after a successful creation is unsupported.
+/// CUDA/NVTX initialization persists even after failed creation; NVTX injection settings
+/// must remain unchanged for the process lifetime.
+/// An unrecoverable failure to stop workers or destroy resources terminates the process.
 /// Forking with an active context is unsupported.
 ///
 /// This type owns a public C++ context and exposes construction only. Query
