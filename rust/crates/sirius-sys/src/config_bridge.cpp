@@ -14,6 +14,7 @@ ConfigErrorCode error_code(ErrorCode code)
     case ErrorCode::configuration_io: return ConfigErrorCode::Io;
     case ErrorCode::malformed_yaml: return ConfigErrorCode::MalformedYaml;
     case ErrorCode::invalid_configuration: return ConfigErrorCode::InvalidConfiguration;
+    case ErrorCode::allocation_failure: return ConfigErrorCode::AllocationFailure;
     default: break;
   }
   throw std::runtime_error("Unknown Sirius configuration error code");
@@ -34,6 +35,9 @@ BuilderResult config_builder_from_yaml(const std::string& path)
   }
   auto result = ContextConfigBuilder::from_yaml(std::filesystem::path(path));
   if (!result) {
+    if (result.error().code == ErrorCode::allocation_failure) {
+      return {nullptr, ConfigErrorCode::AllocationFailure, {}};
+    }
     return {nullptr, error_code(result.error().code), rust::String::lossy(result.error().message)};
   }
   return {std::make_unique<ContextConfigBuilder>(*result), {}, {}};
@@ -48,6 +52,9 @@ ConfigResult config_build(const ContextConfigBuilder& builder)
 {
   auto result = builder.build();
   if (!result) {
+    if (result.error().code == ErrorCode::allocation_failure) {
+      return {nullptr, ConfigErrorCode::AllocationFailure, {}};
+    }
     return {nullptr, error_code(result.error().code), rust::String::lossy(result.error().message)};
   }
   return {std::make_unique<ContextConfig>(*result), {}, {}};

@@ -8,6 +8,7 @@ pub mod bridge {
         MalformedYaml,
         InvalidConfiguration,
         InvalidPath,
+        AllocationFailure,
     }
 
     struct BuilderResult {

@@ -2,8 +2,14 @@
 
 #[cxx::bridge(namespace = "sirius::rust_bridge")]
 pub mod bridge {
+    enum ContextErrorCode {
+        Initialization,
+        AllocationFailure,
+    }
+
     struct ContextResult {
         value: UniquePtr<Context>,
+        code: ContextErrorCode,
         message: String,
     }
 

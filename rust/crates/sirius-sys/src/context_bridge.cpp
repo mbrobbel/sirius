@@ -11,11 +11,14 @@ namespace sirius::rust_bridge {
 ContextResult context_create(const ContextConfig& config)
 {
   auto result = Context::create(config);
-  if (result) { return {std::move(*result), {}}; }
+  if (result) { return {std::move(*result), {}, {}}; }
+  if (result.error().code == ErrorCode::allocation_failure) {
+    return {nullptr, ContextErrorCode::AllocationFailure, {}};
+  }
   if (result.error().code != ErrorCode::context_initialization) {
     throw std::runtime_error("Unexpected Sirius context error code");
   }
-  return {nullptr, rust::String::lossy(result.error().message)};
+  return {nullptr, ContextErrorCode::Initialization, rust::String::lossy(result.error().message)};
 }
 
 }  // namespace sirius::rust_bridge

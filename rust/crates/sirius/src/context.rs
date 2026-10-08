@@ -8,15 +8,18 @@ use crate::ContextConfig;
 /// A failure while creating an engine context.
 #[derive(Debug)]
 pub enum ContextError {
+    /// A public C++ factory reported allocation failure without allocating a message.
+    AllocationFailure,
     /// Hardware resolution or engine initialization failed.
     Initialization(String),
-    /// A native allocation or bridge operation failed.
+    /// A C++ exception escaped a bridge operation.
     Native(cxx::Exception),
 }
 
 impl std::fmt::Display for ContextError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::AllocationFailure => f.write_str("allocation failed"),
             Self::Initialization(message) => f.write_str(message),
             Self::Native(error) => error.fmt(f),
         }
@@ -78,7 +81,10 @@ impl Context {
     pub fn new(config: &ContextConfig) -> Result<Self, ContextError> {
         let result = bridge::context_create(config.inner.as_ref().expect("owned configuration"))?;
         if result.value.is_null() {
-            return Err(ContextError::Initialization(result.message));
+            return Err(match result.code {
+                bridge::ContextErrorCode::AllocationFailure => ContextError::AllocationFailure,
+                _ => ContextError::Initialization(result.message),
+            });
         }
         Ok(Self {
             _inner: result.value,

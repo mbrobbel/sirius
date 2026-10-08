@@ -8,13 +8,15 @@ use sirius_sys::config::bridge;
 /// A failure while constructing or copying a configuration.
 #[derive(Debug)]
 pub enum ConfigError {
+    /// A public C++ factory reported allocation failure without allocating a message.
+    AllocationFailure,
     /// A configuration file could not be opened or read.
     Io(String),
     /// The input could not be parsed as YAML.
     MalformedYaml(String),
     /// Settings are unknown, invalid, or conflicting.
     InvalidConfiguration(String),
-    /// A native allocation or bridge operation failed.
+    /// A C++ exception escaped a bridge operation.
     Native(cxx::Exception),
     /// The platform path cannot be represented by the native bridge.
     InvalidPath,
@@ -23,6 +25,7 @@ pub enum ConfigError {
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::AllocationFailure => f.write_str("allocation failed"),
             Self::Io(message)
             | Self::MalformedYaml(message)
             | Self::InvalidConfiguration(message) => f.write_str(message),
@@ -52,6 +55,7 @@ fn configuration_error(code: bridge::ConfigErrorCode, message: String) -> Config
         bridge::ConfigErrorCode::Io => ConfigError::Io(message),
         bridge::ConfigErrorCode::MalformedYaml => ConfigError::MalformedYaml(message),
         bridge::ConfigErrorCode::InvalidPath => ConfigError::InvalidPath,
+        bridge::ConfigErrorCode::AllocationFailure => ConfigError::AllocationFailure,
         _ => ConfigError::InvalidConfiguration(message),
     }
 }
@@ -93,7 +97,8 @@ pub struct ContextConfigBuilder {
 }
 
 impl ContextConfigBuilder {
-    /// Start with built-in defaults. Native allocation failures are returned as errors.
+    /// Start with built-in defaults. Allocation failures from the native constructor
+    /// or bridge storage are returned as [`ConfigError::Native`].
     ///
     /// ```no_run
     /// # use sirius::{ConfigError, ContextConfigBuilder};
