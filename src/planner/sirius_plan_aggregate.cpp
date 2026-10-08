@@ -183,12 +183,13 @@ static std::pair<std::size_t, std::size_t> resolve_join_output_column(
   return ref.Index() < types.size() && ref.GetReturnType() == types[ref.Index()];
 }
 
-// Whether a subtree contains a LOGICAL_DELIM_JOIN at any depth.
-static bool contains_delim_join(duckdb::LogicalOperator const& node)
+// Whether a subtree contains a producer with separate consumer-side output.
+static bool contains_bespoke_producer(duckdb::LogicalOperator const& node)
 {
   return node.type == duckdb::LogicalOperatorType::LOGICAL_DELIM_JOIN ||
+         node.type == duckdb::LogicalOperatorType::LOGICAL_MATERIALIZED_CTE ||
          std::ranges::any_of(node.children,
-                             [](auto const& child) { return contains_delim_join(*child); });
+                             [](auto const& child) { return contains_bespoke_producer(*child); });
 }
 
 // Whether a join input can feed a DENSE_COUNT_JOIN port. Two rules apply to the input's logical
@@ -200,14 +201,14 @@ static bool contains_delim_join(duckdb::LogicalOperator const& node)
 // Identity projections are elided during planning, so the root is found by looking through
 // projections.
 //
-// Depth rule: a DELIM_JOIN is excluded anywhere in the subtree.
+// Depth rule: a DELIM_JOIN or MATERIALIZED_CTE is excluded anywhere in the subtree.
 // sirius_physical_dense_count_join::get_next_task_hint directs the task creator into the source
 // operator of an unfinished producer pipeline, which can happen before the delim subtree's sizing
 // partitions have negotiated a join mode, and a MARK hash join polled before sizing throws in
 // sirius_physical_hash_join::refresh_cross_schedule instead of deferring.
 static bool can_feed_dense_count_join(duckdb::LogicalOperator const& input)
 {
-  if (contains_delim_join(input)) { return false; }
+  if (contains_bespoke_producer(input)) { return false; }
   auto const* root = &input;
   while (root->type == duckdb::LogicalOperatorType::LOGICAL_PROJECTION) {
     root = root->children[0].get();
@@ -706,6 +707,29 @@ sirius_physical_plan_generator::create_plan(duckdb::LogicalAggregate& op)
   if (op.grouping_sets.size() > 1 || !op.grouping_functions.empty()) {
     throw duckdb::NotImplementedException(
       "ROLLUP, CUBE, GROUPING SETS and GROUPING() are not supported in GPU aggregates");
+  }
+
+  // The GPU aggregates support DISTINCT only in COUNT, but not with FILTER.
+  for (auto const& expression : op.expressions) {
+    auto const& aggregate = expression->Cast<duckdb::BoundAggregateExpression>();
+    if (!aggregate.IsDistinct()) { continue; }
+    if (aggregate.GetFilter()) {
+      throw duckdb::NotImplementedException(
+        "DISTINCT aggregates with a FILTER clause not supported in GPU");
+    }
+    if (sirius::from_duckdb_aggregate_name(aggregate.Function().GetName().GetIdentifierName()) !=
+        sirius::aggregate_id::count) {
+      throw duckdb::NotImplementedException(op.groups.empty()
+                                              ? "DISTINCT in ungrouped aggregates other than "
+                                                "COUNT not supported in GPU"
+                                              : "DISTINCT in grouped aggregates other than "
+                                                "COUNT not supported in GPU");
+    }
+    if (op.groups.empty() && (aggregate.GetChildren().size() != 1 ||
+                              aggregate.GetChildren()[0]->GetReturnType().IsNested())) {
+      throw duckdb::NotImplementedException(
+        "Ungrouped COUNT(DISTINCT) on a nested or multi-column input not supported in GPU");
+    }
   }
 
   if (auto fused = try_plan_dense_count_join(op)) { return fused; }

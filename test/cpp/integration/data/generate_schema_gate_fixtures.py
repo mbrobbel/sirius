@@ -47,7 +47,7 @@ import sys
 DATA = pathlib.Path(__file__).resolve().parent
 SOURCE = "iceberg_v1"
 
-# Candidates in preference order. `duckdb/sirius-duckdb/build/release/duckdb` is the trap: it is written by
+# Candidates in preference order. `duckdb/build/release/duckdb` is the trap: it is written by
 # DuckDB's OWN build, survives every `/var/tmp` wipe because it lives inside the repo, and so goes
 # stale by whole DuckDB versions while everything else moves on. A fixture written by one DuckDB
 # version and read by a suite linked against another is not a fixture, it is a coincidence -- and
@@ -55,7 +55,7 @@ SOURCE = "iceberg_v1"
 # different iceberg extension build than the tests resolve. Hence require_duckdb() below.
 DUCKDB_CANDIDATES = [
     pathlib.Path("sirius-duckdb/build/release/duckdb"),
-    pathlib.Path("duckdb/sirius-duckdb/build/release/duckdb"),
+    pathlib.Path("duckdb/build/release/duckdb"),
 ]
 
 
@@ -180,10 +180,11 @@ def repoint(dst: pathlib.Path, src_name: str, dst_name: str) -> None:
     for avro_path in sorted((dst / "metadata").glob("*.avro")):
         with avro_path.open("rb") as fh:
             reader = fastavro.reader(fh)
+            metadata = dict(reader.metadata)
             schema = reader.writer_schema
             records = [rewrite(r, src_name, dst_name) for r in reader]
         with avro_path.open("wb") as fh:
-            fastavro.writer(fh, schema, records, codec="null")
+            fastavro.writer(fh, schema, records, codec="null", metadata=metadata)
 
     for meta in sorted((dst / "metadata").glob("*.metadata.json")):
         write_metadata(meta, rewrite(json.loads(meta.read_text()), src_name, dst_name))

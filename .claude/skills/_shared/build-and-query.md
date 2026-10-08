@@ -49,7 +49,7 @@ ASan and TSan cannot be used simultaneously. DuckDB will warn and disable ASan i
 
 **ASan runtime options:**
 ```bash
-ASAN_OPTIONS="detect_leaks=1:halt_on_error=0:print_legend=1" sirius-duckdb/build/clang-debug/duckdb ...
+ASAN_OPTIONS="detect_leaks=1:halt_on_error=0:print_legend=1" sirius-duckdb/build/debug/duckdb -unsigned -cmd "LOAD 'sirius-duckdb/build/debug/extension/sirius/sirius.duckdb_extension';" ...
 ```
 - `detect_leaks=1`: Also report memory leaks at exit
 - `halt_on_error=0`: Continue after first error (collect multiple reports)
@@ -67,6 +67,11 @@ ASAN_OPTIONS="detect_leaks=1:halt_on_error=0:print_legend=1" sirius-duckdb/build
 
 ## SQL Query Execution
 
+Root presets build Sirius and its C++ tests. Install the matching library and
+build the separate wrapper as described in [sirius-duckdb/README.md](../../../sirius-duckdb/README.md)
+before running SQL. The wrapper uses `build/release` or `build/debug` even when
+Sirius was built with a `clang-` preset.
+
 All skills accept an optional SQL query from the user. Follow this pattern:
 
 1. Ask the user whether their data is in **DuckDB format** or **Parquet format**
@@ -78,7 +83,7 @@ All skills accept an optional SQL query from the user. Follow this pattern:
 **Query execution -- DuckDB format:**
 ```bash
 export SIRIUS_LOG_LEVEL=trace
-build/<preset>/duckdb <path_to_database.duckdb>
+sirius-duckdb/build/<preset>/duckdb -unsigned -cmd "LOAD 'sirius-duckdb/build/<preset>/extension/sirius/sirius.duckdb_extension';" <path_to_database.duckdb>
 ```
 Then inside the DuckDB CLI:
 ```sql
@@ -89,7 +94,7 @@ CALL gpu_execution('<USER_SQL_QUERY>');
 Ask the user for the parquet directory path, then:
 ```bash
 export SIRIUS_LOG_LEVEL=trace
-build/<preset>/duckdb
+sirius-duckdb/build/<preset>/duckdb -unsigned -cmd "LOAD 'sirius-duckdb/build/<preset>/extension/sirius/sirius.duckdb_extension';"
 ```
 Then inside the DuckDB CLI, create views for each table from parquet files:
 ```sql
@@ -105,7 +110,7 @@ All skills that run SQL queries offer the option to compare Sirius GPU results a
 
 **Pattern:**
 1. Run the query via DuckDB CPU (no Sirius extension): `sirius-duckdb/build/release/duckdb <db_path>` then `SELECT ...;`
-2. Run the same query via Sirius GPU: `sirius-duckdb/build/release/duckdb <db_path>` then `CALL gpu_execution('SELECT ...');`
+2. Run the same query via Sirius GPU: `sirius-duckdb/build/release/duckdb -unsigned -cmd "LOAD 'sirius-duckdb/build/release/extension/sirius/sirius.duckdb_extension';" <db_path>` then `CALL gpu_execution('SELECT ...');`
 3. Diff the results row-by-row (sort both outputs first to handle ordering differences)
 4. Report any mismatches: missing rows, extra rows, wrong values, type differences
 

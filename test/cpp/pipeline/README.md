@@ -43,8 +43,8 @@ These tests are integrated into the main test suite and will run as part of the 
 make test
 
 # Or run just the task scheduler tests using catch2 tags
-./sirius-duckdb/build/release/test/unittest "[task_scheduler]"
-./sirius-duckdb/build/release/test/unittest "[gpu_pipeline_executor]"
+./build/release/test/cpp/sirius_unittest "[task_scheduler]"
+./build/release/test/cpp/sirius_unittest "[gpu_pipeline_executor]"
 ```
 
 ## Test Timeouts

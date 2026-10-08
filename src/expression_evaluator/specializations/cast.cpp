@@ -21,6 +21,7 @@
 #include <expression_evaluator/expression_evaluator.hpp>
 #include <helper/logical_type.hpp>
 #include <helper/numeric_narrowing.hpp>
+#include <helper/timestamp_semantics.hpp>
 #include <sirius/exception.hpp>
 
 // cudf
@@ -99,6 +100,11 @@ evaluate_result expression_evaluator::evaluate(sirius::ast::cast const& alt, eva
               return_type.id() == cudf::type_id::TIMESTAMP_MICROSECONDS ||
               return_type.id() == cudf::type_id::TIMESTAMP_NANOSECONDS)) {
     result_column = cast_date_to_timestamp(input, return_type, alt.try_cast, _stream, _mr);
+  } else if ((input.type().id() == cudf::type_id::TIMESTAMP_NANOSECONDS ||
+              input.type().id() == cudf::type_id::TIMESTAMP_MILLISECONDS ||
+              input.type().id() == cudf::type_id::TIMESTAMP_SECONDS) &&
+             return_type.id() == cudf::type_id::TIMESTAMP_MICROSECONDS) {
+    result_column = temporal::cast_to_microseconds_checked(input, _stream, _mr);
   } else {
     result_column = cudf::cast(input, return_type, _stream, _mr);
   }

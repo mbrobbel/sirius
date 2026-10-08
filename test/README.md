@@ -3,7 +3,9 @@ This directory contains all the tests for this extension. The `cpp` directory ho
 
 ## C++ unit tests
 
-CI and `make test` run the C++ unit tests with `scripts/run_unit_tests.py`. `make test` builds the release build first, and `make test_debug` does the same with the debug build:
+CI and `make test` run the C++ unit tests with `scripts/run_unit_tests.py`. `make test` builds the release library and wrapper first, and sets `SIRIUS_EXTENSION_PATH`
+to include extension-loading checks. `make test_debug` builds the debug library and tests;
+set `SIRIUS_EXTENSION_PATH` explicitly to test a compatible wrapper with that build:
 ```bash
 pixi run make test
 pixi run python scripts/run_unit_tests.py                                # without rebuilding
@@ -11,6 +13,9 @@ pixi run python scripts/run_unit_tests.py --steps shards                 # one s
 pixi run python scripts/run_unit_tests.py -- --order rand --rng-seed 5   # Catch2 options for every process
 pixi run make test UNITTEST_ARGS="-- --abort"                            # options through make
 ```
+
+Dynamic scan checks launch `sirius_extension_host`, built alongside `sirius_unittest`.
+This DuckDB-only process loads the wrapper without an embedded Sirius copy.
 
 The script runs three steps:
 

@@ -32,19 +32,33 @@ target_include_directories(
   INTERFACE "${SIRIUS_DUCKDB_SOURCE_DIR}/src/include"
             "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/fmt/include"
             "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/concurrentqueue"
+            "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/fastpforlib"
             "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/yyjson/include"
             "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/utf8proc/include"
             "${SIRIUS_DUCKDB_SOURCE_DIR}/extension/core_functions/include"
-            "${SIRIUS_DUCKDB_SOURCE_DIR}/extension/parquet/include")
+            "${SIRIUS_DUCKDB_SOURCE_DIR}/extension/parquet/include"
+            "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/parquet"
+            "${SIRIUS_DUCKDB_SOURCE_DIR}/third_party/thrift")
 target_compile_definitions(
   sirius_duckdb_dependency
   INTERFACE $<$<OR:$<CONFIG:Debug>,$<BOOL:${FORCE_DEBUG}>>:DEBUG>
-            $<$<BOOL:${FORCE_ASSERT}>:DUCKDB_FORCE_ASSERT>)
+            $<$<BOOL:${FORCE_ASSERT}>:DUCKDB_FORCE_ASSERT>
+            $<$<BOOL:${DISABLE_STR_INLINE}>:DUCKDB_DEBUG_NO_INLINE>
+            $<$<BOOL:${FORCE_ASYNC_SINK_SOURCE}>:DUCKDB_DEBUG_ASYNC_SINK_SOURCE>
+            $<$<BOOL:${DISABLE_POINTER_SALT}>:DUCKDB_DISABLE_POINTER_SALT>
+            $<$<BOOL:${HASH_ZERO}>:DUCKDB_HASH_ZERO>)
+# These options change DuckDB's header layouts or data representation.
+if(DEFINED STANDARD_VECTOR_SIZE AND NOT STANDARD_VECTOR_SIZE STREQUAL "")
+  target_compile_definitions(
+    sirius_duckdb_dependency
+    INTERFACE STANDARD_VECTOR_SIZE=${STANDARD_VECTOR_SIZE})
+endif()
 target_link_libraries(
   sirius_duckdb_dependency INTERFACE duckdb_static core_functions_extension
                                      parquet_extension)
 
 function(sirius_link_duckdb_extensions target)
   set(DUCKDB_MODULE_BASE_DIR "${SIRIUS_DUCKDB_SOURCE_DIR}")
-  duckdb_link_extensions(${target} core_functions parquet)
+  duckdb_link_extensions(${target} ${ARGN} httplib loadable_extensions
+                         core_functions parquet)
 endfunction()

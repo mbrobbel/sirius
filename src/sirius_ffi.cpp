@@ -161,10 +161,9 @@ struct Context::Impl {
   // Serializes transactions on `conn`; see in_transaction().
   std::mutex conn_mutex;
 
-  void bring_up(sirius::sirius_config& config)
+  void bring_up(const sirius::parsed_sirius_config& config)
   {
     install_log_sink_from_env();
-    sirius::converter_registry::initialize(config.get_downgrade_executor_config().copy_chunk_bytes);
     context = duckdb::make_shared_ptr<duckdb::SiriusContext>();
     context->initialize(config);
 
@@ -213,15 +212,13 @@ struct Context::Impl {
 
 Context::Context() : impl_(std::make_unique<Impl>())
 {
-  sirius::sirius_config config;
-  config.apply_defaults();  // populate default GPU/host/disk memory spaces
+  sirius::parsed_sirius_config config;
   impl_->bring_up(config);
 }
 
 Context::Context(const std::string& config_path) : impl_(std::make_unique<Impl>())
 {
-  sirius::sirius_config config;
-  config.load_from_file(config_path);  // throws on a missing/invalid config file
+  auto config = sirius::parsed_sirius_config::from_file(config_path);
   impl_->bring_up(config);
 }
 

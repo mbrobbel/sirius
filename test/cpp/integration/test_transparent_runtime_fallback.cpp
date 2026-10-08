@@ -30,6 +30,7 @@
 #include <unistd.h>  // getpid
 #include <util/duckdb_error_message.hpp>
 #include <utils/gpu_execution_fixture.hpp>
+#include <utils/log_test_utils.hpp>
 #include <utils/parquet_fixture_utils.hpp>
 #include <utils/sirius_test_env.hpp>
 #include <utils/transparent_execution_test_utils.hpp>
@@ -393,13 +394,26 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
                  "prepared parameters reach GPU execution and runtime fallback",
                  "[transparent][fallback][integration]")
 {
+  auto const mode = GENERATE(0, 1, 2);
+  CAPTURE(mode);
   create_table("CREATE TABLE rf_parameters AS SELECT i AS id FROM range(100) t(i)");
   auto prepared = con->Prepare("SELECT sum(id) FROM rf_parameters WHERE id >= ?");
   REQUIRE(prepared);
   REQUIRE_FALSE(prepared->HasError());
+  if (mode == 2) {
+    REQUIRE_FALSE(
+      con->Query("PREPARE typed_parameter AS SELECT sum(id) FROM rf_parameters WHERE id >= ?")
+        ->HasError());
+  }
+  auto execute = [&](int threshold) -> duckdb::unique_ptr<duckdb::QueryResult> {
+    if (mode == 2)
+      return con->Query("EXECUTE typed_parameter(" + std::to_string(threshold) + "::BIGINT)");
+    if (mode == 1) return prepared->Execute(int64_t{threshold});
+    return prepared->Execute(threshold);
+  };
   for (auto const threshold : {10, 90}) {
     auto before = sirius::test::get_transparent_execution_stats(*con);
-    auto result = prepared->Execute(threshold);
+    auto result = execute(threshold);
     REQUIRE(result);
     REQUIRE_FALSE(result->HasError());
     auto expected = 4950 - threshold * (threshold - 1) / 2;
@@ -409,7 +423,7 @@ TEST_CASE_METHOD(RuntimeFallbackFixture,
   }
   inject("prepared-fallback");
   auto before = sirius::test::get_transparent_execution_stats(*con);
-  auto result = prepared->Execute(50);
+  auto result = execute(50);
   REQUIRE(result);
   REQUIRE_FALSE(result->HasError());
   REQUIRE(result->Collection().GetValue(0, 0).ToString() == "3725");
@@ -583,6 +597,68 @@ class S3MixFixture : public sirius::test::GpuExecutionFixture {
 
 void run_s3mix_scenario(std::string const& scenario)
 {
+  if (scenario == "metadata_footer_liveness") {
+    sirius::test::GpuExecutionFixture fixture;
+    sirius::test::scratch_dir directory{"metadata_footer_liveness"};
+    auto good = directory.path() / "01_good.parquet";
+    auto bad  = directory.path() / "02_truncated.parquet";
+    fixture.run_ok("SET gpu_execution=false");
+    fixture.run_ok("COPY (SELECT i::INTEGER AS i FROM range(32) t(i)) TO " +
+                   sirius::test::sql_literal(good.string()) + " (FORMAT PARQUET)");
+    fs::copy_file(good, bad);
+    // Keep a readable leading schema in file 1, but no valid trailer in file 2.
+    fs::resize_file(bad, 12);
+    std::ifstream input(bad, std::ios::binary);
+    input.seekg(-4, std::ios::end);
+    std::string trailer(4, '\0');
+    input.read(trailer.data(), 4);
+    REQUIRE(trailer != "PAR1");
+    auto query = "SELECT sum(i) FROM read_parquet(" +
+                 sirius::test::sql_literal((directory.path() / "*.parquet").string()) + ")";
+    auto bound = fixture.con->Prepare(query);
+    REQUIRE_FALSE(bound->HasError());
+    auto cpu = fixture.con->Query(query);
+    REQUIRE(cpu->HasError());
+    REQUIRE(cpu->GetError().find(bad.filename().string()) != std::string::npos);
+
+    fixture.run_ok("SET gpu_execution=true");
+    fixture.run_ok("SET enable_duckdb_fallback=true");
+    sirius::test::scoped_recording_log_sink logs;
+    auto before  = sirius::test::get_transparent_execution_stats(*fixture.con);
+    auto started = std::chrono::steady_clock::now();
+    auto failed  = fixture.con->Query(query);
+    REQUIRE(failed->HasError());
+    CHECK(failed->GetError() == cpu->GetError());
+    auto after = sirius::test::get_transparent_execution_stats(*fixture.con);
+    CHECK(after.successful_rebinds == before.successful_rebinds + 1);
+    CHECK(after.fallbacks == before.fallbacks);
+    CHECK(after.runtime_fallbacks == before.runtime_fallbacks + 1);
+    auto const cause = static_cast<size_t>(sirius::transparent::late_failure_cause::reader_io);
+    CHECK(after.late_failures[cause] == before.late_failures[cause] + 1);
+    CHECK(after.late_replays[cause] == before.late_replays[cause] + 1);
+    bool footer_failure = false;
+    for (auto const& record : logs.records()) {
+      if (record.message.find("Transparent GPU execution error:") != std::string::npos) {
+        UNSCOPED_INFO(record.message);
+        // Pinned cuDF reports an invalid trailer as "Incorrect data source".
+        footer_failure |= record.message.find("parquet_io_utils.cpp") != std::string::npos &&
+                          record.message.find("Incorrect data source") != std::string::npos;
+      }
+    }
+    CHECK(footer_failure);
+    // Same connection, real scan: also proves the next execution window can run.
+    auto healthy = fixture.con->Query("SELECT sum(i) FROM read_parquet(" +
+                                      sirius::test::sql_literal(good.string()) + ")");
+    REQUIRE_FALSE(healthy->HasError());
+    CHECK(healthy->Collection().GetValue(0, 0).GetValue<int64_t>() == 496);
+    auto recovered = sirius::test::get_transparent_execution_stats(*fixture.con);
+    CHECK(recovered.executions == after.executions + 1);
+    CHECK(recovered.runtime_fallbacks == after.runtime_fallbacks);
+    CHECK(recovered.fallbacks == after.fallbacks);
+    CHECK(recovered.window_tasks_started > after.window_tasks_started);
+    CHECK(std::chrono::steady_clock::now() - started < std::chrono::seconds{60});
+    return;
+  }
   S3MixFixture fixture;
   auto const parquet = fixture.parquet_scan();
 
@@ -757,6 +833,13 @@ TEST_CASE("S3 mix fallback child runner", "[.][transparent][integration][s3mix_c
   auto const* scenario = std::getenv(kS3MixScenarioEnv);
   if (scenario == nullptr) { return; }
   run_s3mix_scenario(scenario);
+}
+
+TEST_CASE("Metadata footer failure permits a second query on the same connection",
+          "[transparent][late_failure][integration][metadata_liveness]")
+{
+  // Parent kills and reaps on timeout, including a hang in error cleanup/destruction.
+  require_s3mix_child_survives("metadata_footer_liveness", false, std::chrono::seconds{90});
 }
 
 TEST_CASE("unsupported parquet round projection falls back without killing the process",

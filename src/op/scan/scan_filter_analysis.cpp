@@ -376,8 +376,9 @@ bool fold_expression_conjunct(duckdb::Expression const& expr,
     fully_covered = false;
     return false;
   }
-  bool supported_subject =
-    is_filter_reference(*subject) && subject->GetReturnType() == sirius::to_duckdb(col_type);
+  bool supported_subject = is_filter_reference(*subject) &&
+                           subject->GetReturnType() == sirius::to_duckdb(col_type) &&
+                           value->GetReturnType() == subject->GetReturnType();
   if (duckdb::BoundCastExpression::IsCast(*subject)) {
     auto const& cast  = subject->Cast<duckdb::BoundFunctionExpression>();
     auto const& child = duckdb::BoundCastExpression::Child(cast);

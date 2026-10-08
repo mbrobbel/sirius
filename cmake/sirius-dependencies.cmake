@@ -48,20 +48,20 @@ endif()
 # --- cuCollections (cuco) --- #
 
 # libcudf no longer ships its bundled copy. In the vcpkg build cuco comes from
-# the overlay port (vcpkg_ports/cuco); configure-time downloads are disabled
-# there. Otherwise (pixi build) fetch the same commit cudf is built against
-# (populate sources without add_subdirectory; CCCL comes from cudf). Either way
-# cuco is header-only and exposed as the cuco::cuco target, so both paths
-# consume it identically below.
+# the overlay port (sirius-duckdb/vcpkg_ports/cuco); configure-time downloads
+# are disabled there. Otherwise (pixi build) fetch the same commit cudf is built
+# against (populate sources without add_subdirectory; CCCL comes from cudf).
+# Either way cuco is header-only and exposed as the cuco::cuco target, so both
+# paths consume it identically below.
 if(VCPKG_BUILD)
   find_package(cuco CONFIG REQUIRED)
 else()
   include(FetchContent)
   FetchContent_Declare(
     cuco
-    URL https://github.com/NVIDIA/cuCollections/archive/0883368d39296f3bef3a058033141bcc642c5c54.tar.gz
+    URL https://github.com/NVIDIA/cuCollections/archive/4b26118c99866221f99f35f4e3bc74afdbe063bc.tar.gz
     URL_HASH
-      SHA256=4ec8320a0372839b991f0b431c7f8bf0e770006cb3c8631c6e373c434471fd45
+      SHA256=cfff0dfe8552ca2a8e3c53d04c26ab4d95364d14c159aaf8a37b3971b78b609d
     SOURCE_SUBDIR do-not-build)
   FetchContent_MakeAvailable(cuco)
   # SOURCE_SUBDIR do-not-build populates headers without running cuco's CMake,
@@ -158,14 +158,5 @@ endif()
 
 # Rust telemetry instrumentation (C++ FFI via Corrosion)
 add_subdirectory(rust/crates/telemetry/bridge)
-
-# Upstream testcontainers-native, fetched + patched at configure time (see
-# cmake/testcontainers_native.cmake), used by the S3 integration test harness to
-# start MinIO containers from the test binary. Builds a Go c-archive, so a Go
-# toolchain (provided by pixi) and network access on the first configure/build
-# are required — hence gated behind SIRIUS_BUILD_S3_TESTS.
-if(SIRIUS_BUILD_TESTS AND SIRIUS_BUILD_S3_TESTS)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/testcontainers_native.cmake")
-endif()
 
 find_package(kvikio REQUIRED CONFIG)

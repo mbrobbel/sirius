@@ -16,10 +16,13 @@
 
 #include "transparent/sirius_optimizer_extension.hpp"
 
+#include "op/scan/table_scan/bound_read_view.hpp"
+#include "planner/connector_registry.hpp"
 #include "sirius_context.hpp"
 #include "transparent/connection_provenance.hpp"
 
 #include <duckdb/common/enums/optimizer_type.hpp>
+#include <duckdb/common/multi_file/multi_file_states.hpp>
 #include <duckdb/common/types/value.hpp>
 #include <duckdb/main/client_context.hpp>
 #include <duckdb/main/config.hpp>
@@ -29,6 +32,7 @@
 #include <duckdb/planner/expression/bound_conjunction_expression.hpp>
 #include <duckdb/planner/expression_iterator.hpp>
 #include <duckdb/planner/operator/logical_filter.hpp>
+#include <duckdb/planner/operator/logical_get.hpp>
 #include <log/logging.hpp>
 #include <util/duckdb_error_message.hpp>
 
@@ -215,6 +219,33 @@ void derive_join_dependent_filters_recursive(duckdb::LogicalOperator& op)
   }
 }
 
+void preserve_parquet_bindings(duckdb::LogicalOperator const& from,
+                               duckdb::LogicalOperator& to,
+                               duckdb::ClientContext& context)
+{
+  if (from.type != to.type || from.children.size() != to.children.size()) {
+    throw duckdb::NotImplementedException("Plan copy changed the bound scan structure");
+  }
+  if (from.type == duckdb::LogicalOperatorType::LOGICAL_GET) {
+    auto const& original = from.Cast<duckdb::LogicalGet>();
+    auto& copied         = to.Cast<duckdb::LogicalGet>();
+    auto const* source   = sirius::planner::lookup_connector(original, context);
+    if (source &&
+        (source->function_name == "read_parquet" || source->function_name == "parquet_scan")) {
+      if (original.table_index != copied.table_index ||
+          sirius::planner::lookup_connector(copied, context) != source) {
+        throw duckdb::NotImplementedException("Plan copy changed the Parquet source");
+      }
+      // Serialization rebinds the wildcard and loses Hive pruning. Copy the verified
+      // bind data instead; DuckDB gives the copy its own materialized file list.
+      copied.bind_data = original.bind_data->Copy();
+    }
+  }
+  for (std::size_t i = 0; i < from.children.size(); ++i) {
+    preserve_parquet_bindings(*from.children[i], *to.children[i], context);
+  }
+}
+
 }  // namespace
 
 void sirius_pre_optimizer_hook(duckdb::OptimizerExtensionInput& input,
@@ -262,6 +293,7 @@ duckdb::unique_ptr<duckdb::LogicalOperator> copy_logical_plan(duckdb::LogicalOpe
                                                               duckdb::ClientContext& context)
 {
   auto copy = plan.Copy(context);
+  preserve_parquet_bindings(plan, *copy, context);
   if (!copy_cardinality_estimates(plan, *copy)) {
     SIRIUS_LOG_DEBUG(
       "Transparent execution: plan copy differs in shape from the original, some cardinality "
@@ -295,10 +327,13 @@ void sirius_optimizer_hook(duckdb::OptimizerExtensionInput& input,
   // hooks must not throw, so log a readable message and decline the plan.
   try {
     auto const* captured = plan.get();
-    if (plan->type == duckdb::LogicalOperatorType::LOGICAL_EXECUTE) {
+    if (plan->type == duckdb::LogicalOperatorType::LOGICAL_EXECUTE ||
+        plan->type == duckdb::LogicalOperatorType::LOGICAL_PREPARE) {
       if (plan->children.size() != 1) { return; }
       captured = plan->children[0].get();
     }
+    conn_state->set_captured_original_views(
+      sirius::op::scan::capture_bound_read_views(*captured, context));
     conn_state->set_captured_plan(copy_logical_plan(*captured, context));
   } catch (duckdb::NotImplementedException& e) {
     // Plan not serializable — skip GPU. Logged because a silent skip here is

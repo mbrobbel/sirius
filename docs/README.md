@@ -37,6 +37,16 @@ For the legacy Sirius implementation used for the ClickBench results, see the
 - Git (to clone the repo)
 - Pixi (install instructions [here](https://pixi.sh/latest/installation/))
 
+## Installing a Prebuilt Sirius Release
+
+Getting started? Download one of our prebuilt extensions instead of building from source:
+
+- [`stable`](https://github.com/sirius-db/sirius/releases/tag/stable): a maintainer-selected build, promoted manually
+- [`latest`](https://github.com/sirius-db/sirius/releases/tag/latest): tracks the newest successful build on `main` automatically, possible to encounter breaking changes
+
+Both include full install instructions in the release notes: installing a matching DuckDB
+version, downloading the right binary for your platform, and a sample query to try it with.
+
 ## Building and Running Sirius
 
 For full build instructions, alternate build types, pre-commit setup, and testing, see [DEVELOPMENT.md](DEVELOPMENT.md).
@@ -47,10 +57,8 @@ Quick start:
 git clone --no-recurse-submodules https://github.com/sirius-db/sirius.git
 cd sirius
 git submodule update --init --depth=1 --jobs 5 duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
-pixi run make
-pixi run cmake --install build/release --component sirius_library --prefix "$PWD/build/install"
-pixi run make -C sirius-duckdb release EXT_FLAGS="-DCMAKE_PREFIX_PATH=$PWD/build/install -DSIRIUS_DUCKDB_LINKAGE=shared"
-pixi run bash -c 'export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"; exec "$@"' -- sirius-duckdb/build/release/duckdb -unsigned -cmd "LOAD 'sirius-duckdb/build/release/extension/sirius/sirius.duckdb_extension';"
+pixi run make TEST_BUILD_TARGET=
+pixi run duckdb
 ```
 
 Alternatively, load the extension into an existing DuckDB shell:

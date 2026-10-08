@@ -19,17 +19,22 @@ MAIN_BUILD_TARGETS ?= sirius_library
 
 BUILD_TARGETS := $(MAIN_BUILD_TARGETS) $(TEST_BUILD_TARGET)
 
-.PHONY: all release debug reldebug relwithdebinfo debug-release \
+.PHONY: all sirius-duckdb release debug reldebug relwithdebinfo debug-release \
 	clang-release clang-debug clang-relwithdebinfo clang-asan clang-tsan \
-	vcpkg-release ci-release \
-	test test_release test_debug test_reldebug test_ci-release clean list-presets \
+	test test_release test_debug test_reldebug clean list-presets \
 	s3-test s3-test-large s3-tpch \
 	s3-test-aws s3-test-aws-sigv4 s3-test-aws-broker \
 	slot-gate-test
 
 CMAKE_INPUTS := CMakePresets.json cmake/CMakePresets.json CMakeLists.txt $(wildcard cmake/*.cmake)
 
-all: release
+all: sirius-duckdb
+
+sirius-duckdb: release
+	$(CMAKE) --install build/release --prefix "$(CURDIR)/build/release/install" --component sirius_library
+	$(MAKE) -C sirius-duckdb release SIRIUS_DUCKDB_LINKAGE=shared \
+		SIRIUS_INSTALL_DIR="$(CURDIR)/build/release/install" \
+		EXT_FLAGS="$(EXT_FLAGS) -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
 
 build/%/build.ninja: $(CMAKE_INPUTS)
 	$(CMAKE) --preset $* -DSIRIUS_DUCKDB_SOURCE_DIR="$(abspath $(DUCKDB_DIR))"
@@ -70,19 +75,14 @@ clang-asan: build/clang-asan/build.ninja
 clang-tsan: build/clang-tsan/build.ninja
 	$(CMAKE) --build --preset clang-tsan --target $(BUILD_TARGETS)
 
-vcpkg-release: build/vcpkg-release/build.ninja
-	$(CMAKE) --build --preset vcpkg-release --target $(BUILD_TARGETS)
-
-ci-release: build/ci-release/build.ninja
-	$(CMAKE) --build --preset ci-release --target $(MAIN_BUILD_TARGETS)
-
 # The C++ unit tests run through scripts/run_unit_tests.py, as in CI. Pass options through
 # UNITTEST_ARGS, e.g. `make test UNITTEST_ARGS="--steps shards -- --order rand"`.
 RUN_UNIT_TESTS = python3 scripts/run_unit_tests.py
 
 test: test_release
 
-test_release: release
+test_release: export SIRIUS_EXTENSION_PATH ?= $(CURDIR)/sirius-duckdb/build/release/extension/sirius/sirius.duckdb_extension
+test_release: sirius-duckdb
 	$(RUN_UNIT_TESTS) --build-dir build/release $(UNITTEST_ARGS)
 
 test_debug: debug
@@ -91,12 +91,8 @@ test_debug: debug
 test_reldebug: relwithdebinfo
 	$(RUN_UNIT_TESTS) --build-dir build/relwithdebinfo $(UNITTEST_ARGS)
 
-test_ci-release: ci-release
-	$(CMAKE) --build --preset ci-release --target $(TEST_BUILD_TARGET)
-	$(RUN_UNIT_TESTS) --build-dir build/ci-release $(UNITTEST_ARGS)
-
 clean:
-	rm -rf build
+	rm -rf build sirius-duckdb/build
 
 list-presets:
 	$(CMAKE) --list-presets
@@ -104,27 +100,23 @@ list-presets:
 # -----------------------------------------------------------------------------
 # S3 integration test gates
 # -----------------------------------------------------------------------------
-# MinIO is started by the test binary itself (test/cpp/utils/s3_container.*) when
-# SIRIUS_TEST_S3_AUTO=1 is set. The testcontainers-native bridge it uses is
-# fetched and patched at configure time (cmake/testcontainers_native.cmake,
-# third_party/testcontainers-native.patch) when SIRIUS_BUILD_S3_TESTS=ON. There
-# is no separate `s3-up`/`s3-down` step, no docker-compose, and no env.sh to
-# source: the binary spins up HTTP + TLS MinIO on dynamic ports, uploads
-# fixtures, runs the tests, and tears the containers down on exit.
+# The test binary starts SeaweedFS on local HTTP and TLS ports when
+# SIRIUS_TEST_S3_AUTO=1. The Pixi environment provides weed; override its path
+# with SIRIUS_TEST_WEED. Fixtures and server cleanup are managed in-process.
 #
 # `make test`         runs the default Catch2 suite. Without
-#                     SIRIUS_TEST_S3_AUTO it does not start MinIO, and the
-#                     MinIO-backed cases skip.
+#                     SIRIUS_TEST_S3_AUTO it does not start SeaweedFS, and the
+#                     SeaweedFS-backed cases skip.
 # `make s3-test`      standard S3 gate: runs [s3][integration] except
 #                     [large]/[aws] (incl. the SQL-over-S3 surface and the tiny
-#                     TPC-H Q1-Q22 suite) with MinIO auto-managed, in strict mode.
+#                     TPC-H Q1-Q22 suite) with SeaweedFS auto-managed, in strict mode.
 # `make s3-test-large`
 #                     large-fixture gate, run as two processes. Both run the
 #                     SF10 lineitem cases, with cache.mode sirius in the first
 #                     and cache.mode none in the second
 #                     (SIRIUS_TEST_S3_LARGE=1 makes the harness generate and
 #                     upload lineitem_sf10.parquet; needs the DuckDB CLI from
-#                     `make release`). The first process also runs the SF1 TPC-H
+#                     the sirius-duckdb build). The first process also runs the SF1 TPC-H
 #                     suite (SIRIUS_TEST_S3_TPCH=1) and the 1001-object glob case
 #                     (SIRIUS_TEST_S3_GLOB_SCALE=1).
 # `make s3-test-aws`  MANUAL real-AWS gate: runs the live [s3][aws] tests against
@@ -182,7 +174,7 @@ s3-test-large:
 	  echo "s3-test-large: $(S3_TEST_BIN) not found - run \`make release\` first" >&2; \
 	  exit 1; \
 	fi
-	@# Two processes, so MinIO is brought up once per group: first the SF10
+	@# Two processes, so SeaweedFS is brought up once per group: first the SF10
 	@# lineitem cases with cache.mode sirius ([large-cache]) plus the SF1 TPC-H
 	@# suite and the 1001-object glob case, which use cache.mode none; then the
 	@# SF10 lineitem cases with cache.mode none ([large-nocache]). Catch2
@@ -209,7 +201,7 @@ s3-tpch:
 	export SIRIUS_TEST_S3_AUTO=1 SIRIUS_TEST_S3_STRICT=1 SIRIUS_TEST_S3_TPCH=1; \
 	$(S3_TEST_BIN) --order decl "[s3][integration][sql][tpch]"
 
-# Manual real-AWS gates. These never start MinIO/Docker and are excluded from
+# Manual real-AWS gates. These never start the local backend and are excluded from
 # CI. Export the AWS environment yourself before invoking (regional S3 endpoint,
 # real bucket, and assume-role TEMPORARY credentials including the session
 # token); keep usage bounded. SIRIUS_TEST_S3_STRICT=1 turns a missing-env skip

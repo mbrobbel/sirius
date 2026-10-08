@@ -2,6 +2,49 @@ find_package(Catch2 3 REQUIRED CONFIG)
 
 add_executable(sirius_unittest ${TEST_SOURCES} src/sirius_extension_entry.cpp
                                test/cpp/utils/sirius_extension_loader.cpp)
+# Export DuckDB's host API for third-party extensions such as Iceberg.
+set_target_properties(sirius_unittest PROPERTIES ENABLE_EXPORTS ON)
+# Load Sirius in a DuckDB-only host to avoid a second embedded engine copy.
+add_executable(sirius_extension_host test/cpp/utils/duckdb_extension_host.cpp)
+target_link_libraries(sirius_extension_host PRIVATE Catch2::Catch2WithMain
+                                                    sirius::duckdb_dependency)
+sirius_link_duckdb_extensions(sirius_extension_host PRIVATE)
+target_include_directories(sirius_extension_host
+                           PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp")
+target_compile_definitions(
+  sirius_extension_host
+  PRIVATE SIRIUS_PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}")
+set_target_properties(
+  sirius_extension_host
+  PROPERTIES ENABLE_EXPORTS ON
+             CXX_SCAN_FOR_MODULES OFF
+             CXX_STANDARD 20
+             CXX_STANDARD_REQUIRED ON
+             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/cpp")
+add_dependencies(sirius_unittest sirius_extension_host)
+
+# Compile the public API test separately so engine tests remain C++20.
+add_library(sirius_context_config_test OBJECT
+            test/cpp/config/test_context_config.cpp)
+target_compile_features(sirius_context_config_test PRIVATE cxx_std_23)
+target_compile_definitions(sirius_context_config_test
+                           PRIVATE CCCL_IGNORE_DEPRECATED_STREAM_REF_HEADER)
+set_target_properties(sirius_context_config_test PROPERTIES CXX_SCAN_FOR_MODULES
+                                                            OFF)
+target_include_directories(
+  sirius_context_config_test BEFORE
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test/cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(sirius_context_config_test PRIVATE sirius_core
+                                                         Catch2::Catch2)
+if(VCPKG_BUILD)
+  set_target_properties(sirius_context_config_test
+                        PROPERTIES NO_SYSTEM_FROM_IMPORTED ON)
+  target_include_directories(sirius_context_config_test BEFORE
+                             PRIVATE ${_VCPKG_INC})
+endif()
+target_sources(sirius_unittest
+               PRIVATE $<TARGET_OBJECTS:sirius_context_config_test>)
 
 if(VCPKG_BUILD)
   set_target_properties(sirius_unittest PROPERTIES NO_SYSTEM_FROM_IMPORTED ON)
@@ -23,27 +66,58 @@ target_include_directories(
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/compression/simpatico_codegen/src>
 )
 
-target_link_libraries(sirius_unittest sirius_core duckdb_static ZLIB::ZLIB
-                      Catch2::Catch2)
+target_link_libraries(
+  sirius_unittest
+  sirius_core
+  duckdb_static
+  ZLIB::ZLIB
+  Catch2::Catch2
+  ${SIRIUS_CURL_TARGET}
+  ${CMAKE_DL_LIBS})
 
 target_include_directories(
   sirius_unittest BEFORE PRIVATE ${SIRIUS_SUBSTRAIT_DIR}/third_party
                                  ${SIRIUS_SUBSTRAIT_DIR}/third_party/substrait)
 
-# S3 container harness: the testcontainers-native bridge plus libcurl for
-# host-side fixture upload (SigV4 signing comes from sirius_core). Gated so
-# offline/Go-less builds skip it; the harness calls in unittest.cpp are guarded
-# by SIRIUS_HAVE_TESTCONTAINERS.
-if(SIRIUS_BUILD_S3_TESTS)
-  target_link_libraries(sirius_unittest testcontainers_native
-                        ${SIRIUS_CURL_TARGET})
-  target_compile_definitions(sirius_unittest
-                             PRIVATE SIRIUS_HAVE_TESTCONTAINERS=1)
-endif()
+sirius_link_duckdb_extensions(sirius_unittest)
+
+# A fresh-process helper for NVTX startup tests. A shared test context can cache
+# domain handles and mask first-domain capture bugs.
+add_executable(sirius_nvtx_startup test/telemetry/nvtx_startup.cpp)
+target_link_libraries(sirius_nvtx_startup sirius_core duckdb_static ZLIB::ZLIB)
+target_sources(
+  sirius_nvtx_startup PRIVATE src/sirius_extension_entry.cpp
+                              test/cpp/utils/sirius_extension_loader.cpp)
+target_include_directories(
+  sirius_nvtx_startup
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
+target_link_options(sirius_nvtx_startup PRIVATE
+                    "LINKER:--allow-multiple-definition")
+set_target_properties(
+  sirius_nvtx_startup
+  PROPERTIES CXX_SCAN_FOR_MODULES OFF
+             CXX_STANDARD 20
+             CXX_STANDARD_REQUIRED ON
+             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/cpp")
+add_dependencies(sirius_unittest sirius_nvtx_startup)
+
 # DuckDB unity builds emit strong symbols for static constexpr members that
 # conflict with inline definitions from headers included in test files.
 target_link_options(sirius_unittest PRIVATE
                     "LINKER:--allow-multiple-definition")
+
+# Isolated opt-in host allocation fault tests; the runner supplies exact
+# call-site ranges.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_library(sirius_host_allocation_fault SHARED EXCLUDE_FROM_ALL
+              test/cpp/utils/dynamic_filter_host_allocation_fault.cpp)
+  target_link_libraries(sirius_host_allocation_fault PRIVATE ${CMAKE_DL_LIBS})
+  set_target_properties(
+    sirius_host_allocation_fault
+    PROPERTIES CXX_STANDARD 20
+               CXX_STANDARD_REQUIRED ON
+               CXX_SCAN_FOR_MODULES OFF)
+endif()
 
 set_target_properties(
   sirius_unittest

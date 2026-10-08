@@ -128,7 +128,9 @@ std::vector<table_filter_conjunct> decompose_table_filters(
  * partition filters at the file-list level when hive_partitioning is enabled, so dropping them
  * here is safe.
  *
- * Returns nullptr if the filter set is empty or contains only unsupported/skipped filter types.
+ * Required predicates, including IS NOT NULL, are retained. Only advisory filters and
+ * predicates owned by another layer (the partition filters above) are omitted.
+ * Returns nullptr if no predicates remain.
  */
 duckdb::unique_ptr<duckdb::Expression> convert_table_filters_to_expression(
   const duckdb::TableFilterSet& filters,
