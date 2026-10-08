@@ -47,7 +47,7 @@ std::optional<ordinal_origin> pass_through_origin(duckdb::LogicalOperator const&
         return std::nullopt;
       }
       return ordinal_origin{
-        0, static_cast<std::size_t>(expression.Cast<duckdb::BoundReferenceExpression>().index)};
+        0, static_cast<std::size_t>(expression.Cast<duckdb::BoundReferenceExpression>().Index())};
     }
     case duckdb::LogicalOperatorType::LOGICAL_FILTER: {
       auto const& filter = op.Cast<duckdb::LogicalFilter>();
@@ -72,7 +72,7 @@ std::optional<ordinal_origin> pass_through_origin(duckdb::LogicalOperator const&
       auto const& group = *aggregate.groups[output_ordinal];
       if (group.GetExpressionClass() != duckdb::ExpressionClass::BOUND_REF) { return std::nullopt; }
       return ordinal_origin{
-        0, static_cast<std::size_t>(group.Cast<duckdb::BoundReferenceExpression>().index)};
+        0, static_cast<std::size_t>(group.Cast<duckdb::BoundReferenceExpression>().Index())};
     }
     case duckdb::LogicalOperatorType::LOGICAL_COMPARISON_JOIN: {
       auto const& join = op.Cast<duckdb::LogicalComparisonJoin>();
@@ -153,10 +153,10 @@ std::vector<duckdb::LogicalGet const*> resolve_build_key_scans(
   if (join.children.size() != 2) { return scans; }
   for (std::size_t condition_index = 0; condition_index < join.conditions.size();
        ++condition_index) {
-    auto const& build_side = *join.conditions[condition_index].right;
+    auto const& build_side = join.conditions[condition_index].GetRHS();
     if (build_side.GetExpressionClass() != duckdb::ExpressionClass::BOUND_REF) { continue; }
     auto const ordinal =
-      static_cast<std::size_t>(build_side.Cast<duckdb::BoundReferenceExpression>().index);
+      static_cast<std::size_t>(build_side.Cast<duckdb::BoundReferenceExpression>().Index());
     scans[condition_index] = resolve_pass_through_scan(*join.children[1], ordinal);
   }
   return scans;
@@ -174,7 +174,7 @@ std::optional<std::size_t> duckdb_base_table_cardinality::operator()(
   duckdb::LogicalGet const& get) const noexcept
 {
   // Other table functions may report estimates below the true domain.
-  if (get.function.name != "seq_scan" || !get.function.cardinality || !get.bind_data) {
+  if (get.function.GetName() != "seq_scan" || !get.function.cardinality || !get.bind_data) {
     return std::nullopt;
   }
   try {

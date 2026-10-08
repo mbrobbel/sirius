@@ -71,6 +71,9 @@ connector const* lookup_connector(duckdb::PhysicalTableScan const&, duckdb::Clie
 connector const* lookup_connector(duckdb::TableFunction const&,
                                   duckdb::FunctionData const*,
                                   duckdb::ClientContext&);
+connector const* lookup_connector(duckdb::BoundTableFunction const&,
+                                  duckdb::FunctionData const*,
+                                  duckdb::ClientContext&);
 std::span<connector const> registered_connectors();
 
 // Register at Sirius load; bootstrap Iceberg trust during extension loading, never in lookup.

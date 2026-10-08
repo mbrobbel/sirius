@@ -97,9 +97,9 @@ Execution is out-of-core with tiered memory management (GPU/host/disk), automati
 Use Sirius through DuckDB's Python API: load the extension, execute SQL, and fetch results.
 Supported queries run on the GPU automatically, just as they do in the DuckDB shell.
 
-The default Pixi environment includes DuckDB's Python package. Its DuckDB version must match
-the version used to build the Sirius extension. Forked or nightly DuckDB builds may also require
-a Python package built from compatible source.
+The v2 extension requires the exact DuckDB revision pinned in this repository.
+Use the built CLI above. The default environment's DuckDB 1.5 Python package cannot
+load this extension; Python use requires a package built from the matching revision.
 
 Save this example as `example.py` in the repository root and replace `/path/to/lineitem.parquet`
 with your TPC-H Parquet file. `allow_unsigned_extensions` allows loading the locally built

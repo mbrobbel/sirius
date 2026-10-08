@@ -488,15 +488,14 @@ std::string create_sirius_s3_secret_sql(s3_test_env const& env,
   return sql + ")";
 }
 
-std::unique_ptr<duckdb::MaterializedQueryResult> require_query_ok(duckdb::Connection& con,
-                                                                  std::string const& sql)
+std::unique_ptr<duckdb::QueryResult> require_query_ok(duckdb::Connection& con,
+                                                      std::string const& sql)
 {
   auto result = con.Query(sql);
   REQUIRE(result);
   INFO((result->HasError() ? result->GetError() : ""));
   REQUIRE_FALSE(result->HasError());
-  return std::unique_ptr<duckdb::MaterializedQueryResult>(
-    static_cast<duckdb::MaterializedQueryResult*>(result.release()));
+  return std::unique_ptr<duckdb::QueryResult>(static_cast<duckdb::QueryResult*>(result.release()));
 }
 
 void query_or_throw_on_error(duckdb::Connection& con, std::string const& sql)
@@ -525,14 +524,14 @@ void set_gpu_execution(duckdb::Connection& con, bool enabled)
   REQUIRE_FALSE(result->HasError());
 }
 
-std::vector<std::vector<std::string>> collect_rows(duckdb::MaterializedQueryResult& result)
+std::vector<std::vector<std::string>> collect_rows(duckdb::QueryResult& result)
 {
   std::vector<std::vector<std::string>> rows;
   for (duckdb::idx_t r = 0; r < result.RowCount(); ++r) {
     std::vector<std::string> row;
     row.reserve(result.ColumnCount());
     for (duckdb::idx_t c = 0; c < result.ColumnCount(); ++c) {
-      row.push_back(result.GetValue(c, r).ToString());
+      row.push_back(result.Collection().GetValue(c, r).ToString());
     }
     rows.push_back(std::move(row));
   }
@@ -573,7 +572,7 @@ watchdog_query_result require_query_ok_with_watchdog(std::shared_ptr<s3_sql_fixt
         out.column_count = result->ColumnCount();
         out.column_names.reserve(result->ColumnCount());
         for (duckdb::idx_t c = 0; c < result->ColumnCount(); ++c) {
-          out.column_names.push_back(result->ColumnName(c));
+          out.column_names.push_back(result->ColumnName(c).GetIdentifierName());
         }
         out.rows = collect_rows(*result);
       }
@@ -605,16 +604,16 @@ watchdog_query_result require_query_ok_with_watchdog(std::shared_ptr<s3_sql_fixt
   return std::move(state->result);
 }
 
-void check_rows_equal_with_tolerant_columns(duckdb::MaterializedQueryResult& actual,
-                                            duckdb::MaterializedQueryResult& expected,
+void check_rows_equal_with_tolerant_columns(duckdb::QueryResult& actual,
+                                            duckdb::QueryResult& expected,
                                             std::vector<duckdb::idx_t> const& tolerant_columns = {})
 {
   REQUIRE(actual.RowCount() == expected.RowCount());
   REQUIRE(actual.ColumnCount() == expected.ColumnCount());
   for (duckdb::idx_t r = 0; r < actual.RowCount(); ++r) {
     for (duckdb::idx_t c = 0; c < actual.ColumnCount(); ++c) {
-      auto const actual_value   = actual.GetValue(c, r).ToString();
-      auto const expected_value = expected.GetValue(c, r).ToString();
+      auto const actual_value   = actual.Collection().GetValue(c, r).ToString();
+      auto const expected_value = expected.Collection().GetValue(c, r).ToString();
       INFO("row=" << r << " column=" << c);
       if (std::find(tolerant_columns.begin(), tolerant_columns.end(), c) !=
           tolerant_columns.end()) {
@@ -628,7 +627,7 @@ void check_rows_equal_with_tolerant_columns(duckdb::MaterializedQueryResult& act
 }
 
 void check_rows_equal_with_tolerant_columns(watchdog_query_result const& actual,
-                                            duckdb::MaterializedQueryResult& expected,
+                                            duckdb::QueryResult& expected,
                                             std::vector<duckdb::idx_t> const& tolerant_columns = {})
 {
   REQUIRE(actual.row_count == expected.RowCount());
@@ -636,7 +635,7 @@ void check_rows_equal_with_tolerant_columns(watchdog_query_result const& actual,
   for (duckdb::idx_t r = 0; r < actual.row_count; ++r) {
     for (duckdb::idx_t c = 0; c < actual.column_count; ++c) {
       auto const& actual_value  = actual.rows[r][c];
-      auto const expected_value = expected.GetValue(c, r).ToString();
+      auto const expected_value = expected.Collection().GetValue(c, r).ToString();
       INFO("row=" << r << " column=" << c);
       if (std::find(tolerant_columns.begin(), tolerant_columns.end(), c) !=
           tolerant_columns.end()) {
@@ -835,7 +834,7 @@ duckdb::idx_t local_parquet_row_count(s3_test_env const& env, std::string_view t
   duckdb::Connection con(db);
   auto result = require_query_ok(con, "SELECT count(*) FROM " + local_parquet_scan(env, table));
   REQUIRE(result->RowCount() == 1);
-  auto const rows = result->GetValue(0, 0).GetValue<int64_t>();
+  auto const rows = result->Collection().GetValue(0, 0).GetValue<int64_t>();
   REQUIRE(rows >= 0);
   return static_cast<duckdb::idx_t>(rows);
 }
@@ -847,7 +846,7 @@ duckdb::idx_t local_parquet_file_row_count(fs::path const& path)
   auto result =
     require_query_ok(con, "SELECT count(l_orderkey) FROM " + local_parquet_file_scan(path));
   REQUIRE(result->RowCount() == 1);
-  auto const rows = result->GetValue(0, 0).GetValue<int64_t>();
+  auto const rows = result->Collection().GetValue(0, 0).GetValue<int64_t>();
   REQUIRE(rows >= 0);
   return static_cast<duckdb::idx_t>(rows);
 }
@@ -858,7 +857,7 @@ std::string explain_text(duckdb::Connection& con, std::string const& sql)
   std::string out;
   for (duckdb::idx_t r = 0; r < result->RowCount(); ++r) {
     for (duckdb::idx_t c = 0; c < result->ColumnCount(); ++c) {
-      out += result->GetValue(c, r).ToString();
+      out += result->Collection().GetValue(c, r).ToString();
       out.push_back('\n');
     }
   }
@@ -877,9 +876,9 @@ bool plan_mentions_cardinality(std::string plan_text, duckdb::idx_t row_count)
 duckdb::unique_ptr<duckdb::FunctionData> bind_sirius_read_parquet(
   duckdb::ClientContext& ctx,
   std::string const& uri,
-  duckdb::TableFunction& table_function,
+  duckdb::BoundTableFunction& table_function,
   duckdb::vector<duckdb::LogicalType>& types,
-  duckdb::vector<std::string>& names)
+  duckdb::vector<duckdb::Identifier>& names)
 {
   duckdb::unique_ptr<duckdb::FunctionData> bind_data;
   ctx.RunFunctionInTransaction([&] {
@@ -888,18 +887,19 @@ duckdb::unique_ptr<duckdb::FunctionData> bind_sirius_read_parquet(
 
     duckdb::vector<duckdb::LogicalType> arg_types;
     arg_types.emplace_back(duckdb::LogicalType::VARCHAR);
-    table_function = entry.functions.GetFunctionByArguments(ctx, arg_types);
+    table_function =
+      duckdb::BoundTableFunction(entry.functions.GetFunctionByArguments(ctx, arg_types));
 
     duckdb::vector<duckdb::Value> inputs;
     inputs.emplace_back(uri);
 
-    duckdb::named_parameter_map_t named_parameters;
+    duckdb::named_argument_map_t named_parameters;
     duckdb::vector<duckdb::LogicalType> input_table_types;
-    duckdb::vector<std::string> input_table_names;
+    duckdb::vector<duckdb::Identifier> input_table_names;
 
     duckdb::TableFunctionRef ref;
     duckdb::vector<duckdb::unique_ptr<duckdb::ParsedExpression>> children;
-    children.push_back(duckdb::make_uniq<duckdb::ConstantExpression>(duckdb::Value(uri)));
+    children.push_back(duckdb::ConstantExpression::String(uri));
     ref.function = duckdb::make_uniq<duckdb::FunctionExpression>(
       "sirius_read_parquet", std::move(children), nullptr, nullptr, false, false, false);
 
@@ -1033,8 +1033,8 @@ TEST_CASE("internal sirius_read_parquet is registered as a one-argument table fu
                                  "WHERE function_name = 'sirius_read_parquet' "
                                  "ORDER BY function_name");
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).ToString() == "sirius_read_parquet");
-  CHECK(result->GetValue(1, 0).ToString().find("VARCHAR") != std::string::npos);
+  CHECK(result->Collection().GetValue(0, 0).ToString() == "sirius_read_parquet");
+  CHECK(result->Collection().GetValue(1, 0).ToString().find("VARCHAR") != std::string::npos);
 }
 
 TEST_CASE("S3 SQL config guard keeps object-store credentials out of YAML", "[s3][config]")
@@ -1180,14 +1180,14 @@ TEST_CASE("gpu_execution rewrites S3 read_parquet and scans through Sirius",
   REQUIRE(result->ColumnCount() == 3);
   std::array<int, 5> region_counts{};
   for (duckdb::idx_t row = 0; row < result->RowCount(); ++row) {
-    auto const nation_key = result->GetValue(0, row).GetValue<int32_t>();
-    auto const region_key = result->GetValue(2, row).GetValue<int32_t>();
+    auto const nation_key = result->Collection().GetValue(0, row).GetValue<int32_t>();
+    auto const region_key = result->Collection().GetValue(2, row).GetValue<int32_t>();
     CHECK(nation_key == static_cast<int32_t>(row));
     REQUIRE(region_key >= 0);
     REQUIRE(region_key < static_cast<int32_t>(region_counts.size()));
     ++region_counts[static_cast<std::size_t>(region_key)];
   }
-  CHECK(result->GetValue(1, 0).ToString() == "ALGERIA");
+  CHECK(result->Collection().GetValue(1, 0).ToString() == "ALGERIA");
   for (auto const count : region_counts) {
     CHECK(count == 5);
   }
@@ -1215,9 +1215,9 @@ TEST_CASE("transparent read_parquet over S3 scans through Sirius REST",
     auto s3_result = require_query_ok(fixture.con, s3_query);
     REQUIRE(s3_result->RowCount() == 25);
     REQUIRE(s3_result->ColumnCount() == 3);
-    CHECK(s3_result->GetValue(0, 0).GetValue<int32_t>() == 0);
-    CHECK(s3_result->GetValue(1, 0).ToString() == "ALGERIA");
-    CHECK(s3_result->GetValue(2, 0).GetValue<int32_t>() == 0);
+    CHECK(s3_result->Collection().GetValue(0, 0).GetValue<int32_t>() == 0);
+    CHECK(s3_result->Collection().GetValue(1, 0).ToString() == "ALGERIA");
+    CHECK(s3_result->Collection().GetValue(2, 0).GetValue<int32_t>() == 0);
 
     duckdb::DuckDB local_db(nullptr);
     duckdb::Connection local_con(local_db);
@@ -1253,7 +1253,7 @@ TEST_CASE("transparent read_parquet over S3 routes to kvikio when backend is kvi
   auto result =
     require_query_ok(fixture.con, "SELECT count(*) FROM read_parquet(" + sql_quote(uri) + ")");
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
 
   auto const s3_query = "SELECT n_nationkey, n_name, n_regionkey FROM " +
                         s3_parquet_scan(*env, "nation") + " ORDER BY n_nationkey";
@@ -1296,7 +1296,7 @@ TEST_CASE("SIRIUS_S3 CREATE SECRET credentials are scoped and refreshed for Siri
   auto const scan_sql = "SELECT count(*) FROM read_parquet(" + sql_quote(uri) + ")";
   auto scan           = require_query_ok(fixture.con, gpu_execution_sql(scan_sql));
   REQUIRE(scan->RowCount() == 1);
-  CHECK(scan->GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(scan->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
 
   // CREATE OR REPLACE changes future opens without requiring a new connection.
   require_query_ok(
@@ -1310,7 +1310,7 @@ TEST_CASE("SIRIUS_S3 CREATE SECRET credentials are scoped and refreshed for Siri
   require_query_ok(fixture.con,
                    create_secret("s3_matching", scope, env->access_key, env->secret_key));
   auto rescanned = require_query_ok(fixture.con, gpu_execution_sql(scan_sql));
-  CHECK(rescanned->GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(rescanned->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
 }
 
 TEST_CASE("SIRIUS_S3 secret authenticates every file in an explicit parquet list",
@@ -1331,7 +1331,7 @@ TEST_CASE("SIRIUS_S3 secret authenticates every file in an explicit parquet list
     "SELECT count(*) FROM read_parquet([" + first + ", " + second + "], union_by_name=false)";
   auto result = require_query_ok(fixture.con, gpu_execution_sql(scan_sql));
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 50);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 50);
 }
 
 TEST_CASE("SIRIUS_S3 secret authenticates an uppercase-scheme parquet glob",
@@ -1350,7 +1350,7 @@ TEST_CASE("SIRIUS_S3 secret authenticates an uppercase-scheme parquet glob",
   auto const scan_sql = "SELECT count(*) FROM read_parquet(" + sql_quote(uri) + ")";
   auto result         = require_query_ok(fixture.con, scan_sql);
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 50);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 50);
 }
 
 TEST_CASE("S3 LIST keeps its REST context alive while credentials rotate",
@@ -1477,7 +1477,7 @@ TEST_CASE("transparent S3 glob opens the literal percent key instead of its slas
   compare_transparent_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
   auto result = require_query_ok(fixture.con, "SELECT count(*) FROM " + s3_scan);
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
 }
 
 TEST_CASE("transparent S3 glob opens keys containing URI fragment and query delimiters",
@@ -1540,8 +1540,8 @@ TEST_CASE("transparent S3 glob decodes a percent-encoded Hive value exactly once
   compare_transparent_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
   auto result = require_query_ok(fixture.con, s3_query);
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).ToString() == "a b");
-  CHECK(result->GetValue(1, 0).GetValue<int64_t>() == 25);
+  CHECK(result->Collection().GetValue(0, 0).ToString() == "a b");
+  CHECK(result->Collection().GetValue(1, 0).GetValue<int64_t>() == 25);
 }
 
 TEST_CASE("S3 direct and glob routes share the literal object cache identity",
@@ -1595,8 +1595,8 @@ TEST_CASE("transparent S3 non-glob reads distinguish literal percent keys from s
 
   auto literal_result = require_query_ok(fixture.con, "SELECT count(*) FROM " + literal_scan);
   auto space_result   = require_query_ok(fixture.con, "SELECT count(*) FROM " + space_scan);
-  CHECK(literal_result->GetValue(0, 0).GetValue<int64_t>() == 25);
-  CHECK(space_result->GetValue(0, 0).GetValue<int64_t>() == 5);
+  CHECK(literal_result->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(space_result->Collection().GetValue(0, 0).GetValue<int64_t>() == 5);
 }
 
 TEST_CASE("transparent S3 glob rejects a literal question mark in a Hive partition segment",
@@ -1652,7 +1652,7 @@ TEST_CASE("transparent S3 glob permits a question mark in the terminal filename"
   compare_transparent_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
   auto result = require_query_ok(fixture.con, s3_query);
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 25);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 25);
 }
 
 TEST_CASE("transparent S3 glob supports an encoded question mark in a Hive partition value",
@@ -1674,8 +1674,8 @@ TEST_CASE("transparent S3 glob supports an encoded question mark in a Hive parti
   compare_transparent_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
   auto result = require_query_ok(fixture.con, s3_query);
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).ToString() == "a?b");
-  CHECK(result->GetValue(1, 0).GetValue<int64_t>() == 25);
+  CHECK(result->Collection().GetValue(0, 0).ToString() == "a?b");
+  CHECK(result->Collection().GetValue(1, 0).GetValue<int64_t>() == 25);
 }
 
 TEST_CASE("S3 glob results are sorted by raw literal key bytes",
@@ -1782,7 +1782,7 @@ TEST_CASE("transparent S3 glob matcher semantics match DuckDB segment globs",
     compare_transparent_s3_gpu_to_local_cpu(fixture, s3_query, local_query);
     auto result = require_query_ok(fixture.con, s3_query);
     REQUIRE(result->RowCount() == 1);
-    CHECK(result->GetValue(0, 0).GetValue<int64_t>() == expected);
+    CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == expected);
   };
 
   check_count("glob/multi/nation_?.parquet", "glob/multi/nation_?.parquet", 50);
@@ -1799,7 +1799,7 @@ TEST_CASE("transparent S3 glob matcher semantics match DuckDB segment globs",
   compare_transparent_s3_gpu_to_local_cpu(fixture, uppercase_root_query, local_root_query);
   auto uppercase_root = require_query_ok(fixture.con, uppercase_root_query);
   REQUIRE(uppercase_root->RowCount() == 1);
-  CHECK(uppercase_root->GetValue(0, 0).GetValue<int64_t>() == 50);
+  CHECK(uppercase_root->Collection().GetValue(0, 0).GetValue<int64_t>() == 50);
 
   auto wildcard_bucket =
     fixture.con.Query("SELECT count(*) FROM read_parquet('s3://*/glob/multi/nation_*.parquet')");
@@ -1829,10 +1829,10 @@ TEST_CASE("transparent S3 glob scans 1001 parquet objects across LIST pages",
   auto result = require_query_ok(fixture.con, query);
 
   REQUIRE(result->RowCount() == 1);
-  CHECK(result->GetValue(0, 0).GetValue<int64_t>() == 25'025);
-  CHECK(result->GetValue(1, 0).GetValue<int64_t>() == 300'300);
-  CHECK(result->GetValue(2, 0).GetValue<int64_t>() == 0);
-  CHECK(result->GetValue(3, 0).GetValue<int64_t>() == 24);
+  CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 25'025);
+  CHECK(result->Collection().GetValue(1, 0).GetValue<int64_t>() == 300'300);
+  CHECK(result->Collection().GetValue(2, 0).GetValue<int64_t>() == 0);
+  CHECK(result->Collection().GetValue(3, 0).GetValue<int64_t>() == 24);
 }
 
 TEST_CASE("transparent S3 glob reports no-files and GPU-only errors clearly",
@@ -2259,7 +2259,8 @@ TEST_CASE("gpu_execution S3 SQL surface counts rows in five uploaded TPC-H table
     auto const sql = "SELECT count(*) FROM " + s3_parquet_scan(*env, table);
     auto result    = require_query_ok(fixture.con, gpu_execution_sql(sql));
     REQUIRE(result->RowCount() == 1);
-    CHECK(result->GetValue(0, 0).GetValue<int64_t>() == static_cast<int64_t>(expected_rows));
+    CHECK(result->Collection().GetValue(0, 0).GetValue<int64_t>() ==
+          static_cast<int64_t>(expected_rows));
   }
 }
 
@@ -2691,7 +2692,7 @@ TEST_CASE("transparent S3 eligibility covers copy and SQL-replan correspondence"
       auto result       = fixture.con.Query(query);
       REQUIRE(result);
       REQUIRE_FALSE(result->HasError());
-      REQUIRE(result->GetValue(0, 0).ToString() == (query == single ? "300" : "600"));
+      REQUIRE(result->Collection().GetValue(0, 0).ToString() == (query == single ? "300" : "600"));
       auto const after = sirius::test::get_transparent_execution_stats(fixture.con);
       sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1);
       CHECK(after.read_view_mismatches == before.read_view_mismatches);
@@ -2710,7 +2711,7 @@ TEST_CASE("transparent S3 eligibility covers copy and SQL-replan correspondence"
     auto result = fixture.con.Query(single);
     REQUIRE(result);
     REQUIRE_FALSE(result->HasError());
-    REQUIRE(result->GetValue(0, 0).ToString() == "300");
+    REQUIRE(result->Collection().GetValue(0, 0).ToString() == "300");
     auto after = sirius::test::get_transparent_execution_stats(fixture.con);
     sirius::test::require_transparent_execution_delta(before, after, 1, 0, 1);
     CHECK(after.read_view_mismatches == before.read_view_mismatches);
@@ -2784,7 +2785,7 @@ TEST_CASE("transparent S3 execution rebuild preserves template origin and source
           CHECK(result->GetError().find("correspondence=none") != std::string::npos);
         } else {
           REQUIRE_FALSE(result->HasError());
-          CHECK(result->GetValue(0, 0).ToString() == "300");
+          CHECK(result->Collection().GetValue(0, 0).ToString() == "300");
         }
         auto const after = sirius::test::get_transparent_execution_stats(con);
         CHECK(after.execution_rebuilds == before.execution_rebuilds + 1);
@@ -2824,9 +2825,9 @@ TEST_CASE("internal sirius_read_parquet bind returns row-count metadata for card
   s3_sql_fixture fixture(*env);
   auto const uri                  = s3_uri(env->bucket, "parquet/orders.parquet");
   auto const expected_orders_rows = local_parquet_row_count(*env, "orders");
-  duckdb::TableFunction table_function;
+  duckdb::BoundTableFunction table_function;
   duckdb::vector<duckdb::LogicalType> return_types;
-  duckdb::vector<std::string> names;
+  duckdb::vector<duckdb::Identifier> names;
 
   auto bind_data =
     bind_sirius_read_parquet(*fixture.con.context, uri, table_function, return_types, names);
@@ -2839,7 +2840,7 @@ TEST_CASE("internal sirius_read_parquet bind returns row-count metadata for card
   CHECK_FALSE(return_types.empty());
   CHECK_FALSE(names.empty());
   CHECK(typed->bound_types == return_types);
-  CHECK(typed->bound_names == names);
+  CHECK(typed->bound_names == duckdb::IdentifiersToStrings(names));
   REQUIRE(table_function.cardinality != nullptr);
 
   auto stats = table_function.cardinality(*fixture.con.context, bind_data.get());
@@ -2877,36 +2878,39 @@ TEST_CASE("Sirius S3 capture uses the fresh schema from a name-only rebind",
 
   auto const first_uri  = s3_uri(env->bucket, first_key);
   auto const second_uri = s3_uri(env->bucket, second_key);
-  duckdb::TableFunction first_function;
+  duckdb::BoundTableFunction first_function;
   duckdb::vector<duckdb::LogicalType> first_types;
-  duckdb::vector<std::string> first_names;
+  duckdb::vector<duckdb::Identifier> first_names;
   auto first_bind = bind_sirius_read_parquet(
     *fixture.con.context, first_uri, first_function, first_types, first_names);
   REQUIRE(first_bind != nullptr);
-  REQUIRE(first_names == duckdb::vector<std::string>{"original_name"});
-  duckdb::LogicalGet first_get(
-    /*table_index=*/91, std::move(first_function), std::move(first_bind), first_types, first_names);
+  REQUIRE(first_names == duckdb::vector<duckdb::Identifier>{"original_name"});
+  duckdb::LogicalGet first_get(duckdb::TableIndex(91),
+                               duckdb::BoundTableFunction(first_function),
+                               std::move(first_bind),
+                               first_types,
+                               first_names);
   first_get.parameters.emplace_back(first_uri);
   sirius::op::scan::bound_read_view first_captured;
   fixture.con.context->RunFunctionInTransaction([&] {
     first_captured = sirius::op::scan::capture_bound_read_view(first_get, *fixture.con.context);
   });
   REQUIRE(first_captured.identity != nullptr);
-  REQUIRE(first_captured.identity->bound_names == first_names);
+  REQUIRE(first_captured.identity->bound_names == duckdb::IdentifiersToStrings(first_names));
 
-  duckdb::TableFunction rebound_function;
+  duckdb::BoundTableFunction rebound_function;
   duckdb::vector<duckdb::LogicalType> rebound_types;
-  duckdb::vector<std::string> rebound_names;
+  duckdb::vector<duckdb::Identifier> rebound_names;
   auto rebound_bind = bind_sirius_read_parquet(
     *fixture.con.context, second_uri, rebound_function, rebound_types, rebound_names);
   REQUIRE(rebound_bind != nullptr);
   REQUIRE(rebound_types == first_types);
-  REQUIRE(rebound_names == duckdb::vector<std::string>{"rebound_name"});
+  REQUIRE(rebound_names == duckdb::vector<duckdb::Identifier>{"rebound_name"});
 
   // Model the node state that makes B1 important: a rebind has replaced the
   // bind payload, while LogicalGet::names still reflects the previous bind.
-  duckdb::LogicalGet rebound_get(/*table_index=*/91,
-                                 std::move(rebound_function),
+  duckdb::LogicalGet rebound_get(duckdb::TableIndex(91),
+                                 duckdb::BoundTableFunction(rebound_function),
                                  std::move(rebound_bind),
                                  rebound_types,
                                  first_names);
@@ -2919,8 +2923,8 @@ TEST_CASE("Sirius S3 capture uses the fresh schema from a name-only rebind",
   });
   REQUIRE(captured.identity != nullptr);
   CHECK(captured.identity->bound_types == rebound_types);
-  CHECK(captured.identity->bound_names == rebound_names);
-  CHECK(captured.identity->bound_names != rebound_get.names);
+  CHECK(captured.identity->bound_names == duckdb::IdentifiersToStrings(rebound_names));
+  CHECK(captured.identity->bound_names != duckdb::IdentifiersToStrings(rebound_get.names));
 }
 
 TEST_CASE("internal sirius_read_parquet exposes S3 row count to DuckDB EXPLAIN",
@@ -3097,7 +3101,8 @@ TEST_CASE("gpu_execution large S3 lineitem count matches the local parquet oracl
   auto s3_result            = require_query_ok(fixture.con, gpu_execution_sql(s3_count_query));
 
   REQUIRE(s3_result->RowCount() == 1);
-  CHECK(s3_result->GetValue(0, 0).GetValue<int64_t>() == static_cast<int64_t>(expected_rows));
+  CHECK(s3_result->Collection().GetValue(0, 0).GetValue<int64_t>() ==
+        static_cast<int64_t>(expected_rows));
   CHECK(large->total_num_rows == expected_rows);
   CHECK(expected_rows > 50'000'000);
 }
@@ -3162,7 +3167,8 @@ TEST_CASE("gpu_execution large S3 lineitem count matches with cache.mode none",
   auto s3_result            = require_query_ok(fixture.con, gpu_execution_sql(s3_count_query));
 
   REQUIRE(s3_result->RowCount() == 1);
-  CHECK(s3_result->GetValue(0, 0).GetValue<int64_t>() == static_cast<int64_t>(expected_rows));
+  CHECK(s3_result->Collection().GetValue(0, 0).GetValue<int64_t>() ==
+        static_cast<int64_t>(expected_rows));
 }
 
 TEST_CASE("gpu_execution large S3 lineitem Q1 shape matches local CPU with cache.mode none",
