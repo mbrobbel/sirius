@@ -135,6 +135,10 @@ pixi run python example.py
 For an example using TPC-H data from Parquet files or a DuckDB database, see the
 [Python benchmark script](../test/tpch_performance/performance_test.py).
 
+The Python benchmark and power/throughput runners require a Python DuckDB client
+built from the pinned v2 revision; the default environment's 1.5 client cannot
+load this extension. The CLI-based scripts use the built v2 host.
+
 ## Pinning Tables for Hot Runs
 
 Sirius reads table data from storage on every query. For the best hot-run performance, pin
