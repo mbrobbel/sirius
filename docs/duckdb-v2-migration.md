@@ -43,6 +43,10 @@ retain v2's default CTE representation.
 
 The packaged DuckDB 1.5 Python client remains
 available for fixture generation; it cannot load the v2 extension.
+The Python performance runners (`performance_test.py` and
+`tpch_power_throughput.py`) also require a Python client built from the pinned
+revision. Use the CLI-based TPC-H scripts with the built v2 host in the default
+environment.
 
 Distribution continues to use the Sirius fork of extension-ci-tools with
 subdirectory support. Its vcpkg build bundles dependencies into the extension.

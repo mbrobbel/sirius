@@ -80,14 +80,16 @@ jobs:
     runs-on: [self-hosted, ubuntu-22.04, cpu-xl]
     timeout-minutes: 30
     env:
+      CONDA_OVERRIDE_CUDA: "12"
       SCCACHE_S3_KEY_PREFIX: sirius
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: git submodule update --init --depth=1 duckdb
-      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514 # v0.11.0
         with:
           cache: false
-          pixi-version: v0.71.1
+          locked: true
+          pixi-version: v0.81.0
           environments: cuda12
           activate-environment: cuda12
       - name: Build matching DuckDB host

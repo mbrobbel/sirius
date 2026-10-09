@@ -122,8 +122,8 @@ bool collect_equality_values(duckdb::Expression const& expr, std::vector<std::st
 
 /// Wide intermediate for bound arithmetic: rescaling a decimal constant and the
 /// ±1 of strict inequalities can step just past the int64 edge, so bounds are
-/// intersected as __int128 and clamped once at the end.
-using int128 = __int128;
+/// intersected as __int128_t and clamped once at the end.
+using int128 = __int128_t;
 
 /// 10^e as int128 (e ≤ 38 fits; callers never exceed decimal precision bounds).
 int128 pow10_128(int e)

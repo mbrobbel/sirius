@@ -56,6 +56,7 @@ def main():
             "CHECKPOINT;",
             f"COPY numbers TO {literal(parquet)} (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 12288);",
             "PREPARE prepared_sum AS SELECT SUM(id) AS total FROM numbers WHERE id > $1;",
+            # A completion log proves GPU execution only when runtime fallback is refused.
             "SET enable_duckdb_fallback = false;",
         ]
         for name, query in cases.items():
