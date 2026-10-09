@@ -2,7 +2,7 @@
 name = "sirius-sys"
 version.workspace = true
 edition.workspace = true
-description = "Low-level cxx (cxx.rs) bindings to the Sirius C++ API."
+description = "Low-level bindings to the Sirius C ABI and C++ execution bridge."
 license = "Apache-2.0"
 # Links a local Sirius build-tree artifact; not self-contained for crates.io.
 publish = false

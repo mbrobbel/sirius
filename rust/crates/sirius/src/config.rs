@@ -2,13 +2,14 @@
 
 use std::path::Path;
 
-use cxx::{UniquePtr, let_cxx_string};
-use sirius_sys::config::bridge;
+use crate::diagnostic::Diagnostic;
+use sirius_sys::c_api;
+use std::ptr::NonNull;
 
 /// A failure while constructing or copying a configuration.
 #[derive(Debug)]
 pub enum ConfigError {
-    /// A public C++ factory reported allocation failure without allocating a message.
+    /// The native library reported allocation failure.
     AllocationFailure,
     /// A configuration file could not be opened or read.
     Io(String),
@@ -16,8 +17,8 @@ pub enum ConfigError {
     MalformedYaml(String),
     /// Settings are unknown, invalid, or conflicting.
     InvalidConfiguration(String),
-    /// A C++ exception escaped a bridge operation.
-    Native(cxx::Exception),
+    /// An unexpected native status was returned; diagnostics may be empty.
+    Unexpected { status: u32, message: String },
     /// The platform path cannot be represented by the native bridge.
     InvalidPath,
 }
@@ -29,34 +30,26 @@ impl std::fmt::Display for ConfigError {
             Self::Io(message)
             | Self::MalformedYaml(message)
             | Self::InvalidConfiguration(message) => f.write_str(message),
-            Self::Native(error) => error.fmt(f),
+            Self::Unexpected { status, message } => write!(f, "Sirius status {status}: {message}"),
             Self::InvalidPath => f.write_str("configuration path cannot be represented"),
         }
     }
 }
 
-impl std::error::Error for ConfigError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Native(error) => Some(error),
-            _ => None,
+impl std::error::Error for ConfigError {}
+
+fn configuration_error(status: u32, diagnostic: Diagnostic) -> ConfigError {
+    match status {
+        c_api::SIRIUS_ALLOCATION_FAILURE => ConfigError::AllocationFailure,
+        c_api::SIRIUS_CONFIGURATION_IO => ConfigError::Io(diagnostic.message()),
+        c_api::SIRIUS_MALFORMED_YAML => ConfigError::MalformedYaml(diagnostic.message()),
+        c_api::SIRIUS_INVALID_CONFIGURATION => {
+            ConfigError::InvalidConfiguration(diagnostic.message())
         }
-    }
-}
-
-impl From<cxx::Exception> for ConfigError {
-    fn from(error: cxx::Exception) -> Self {
-        Self::Native(error)
-    }
-}
-
-fn configuration_error(code: bridge::ConfigErrorCode, message: String) -> ConfigError {
-    match code {
-        bridge::ConfigErrorCode::Io => ConfigError::Io(message),
-        bridge::ConfigErrorCode::MalformedYaml => ConfigError::MalformedYaml(message),
-        bridge::ConfigErrorCode::InvalidPath => ConfigError::InvalidPath,
-        bridge::ConfigErrorCode::AllocationFailure => ConfigError::AllocationFailure,
-        _ => ConfigError::InvalidConfiguration(message),
+        _ => ConfigError::Unexpected {
+            status,
+            message: diagnostic.message(),
+        },
     }
 }
 
@@ -66,7 +59,7 @@ fn configuration_error(code: bridge::ConfigErrorCode, message: String) -> Config
 /// availability and capacity are checked when the engine is constructed.
 /// No thread-safety guarantees are exposed yet: this type is neither `Send` nor `Sync`.
 pub struct ContextConfig {
-    pub(crate) inner: UniquePtr<bridge::ContextConfig>,
+    pub(crate) inner: NonNull<c_api::SiriusConfig>,
 }
 
 impl ContextConfig {
@@ -81,24 +74,24 @@ impl ContextConfig {
     /// # }
     /// ```
     pub fn try_clone(&self) -> Result<Self, ConfigError> {
-        Ok(Self {
-            inner: bridge::config_copy(self.inner.as_ref().expect("owned configuration"))?,
-        })
+        // SAFETY: self keeps the immutable handle live; the new owner releases the added reference.
+        unsafe { c_api::sirius_config_retain(self.inner.as_ptr()) };
+        Ok(Self { inner: self.inner })
     }
 }
 
 /// Construct configurations from built-in defaults or a YAML file.
 ///
-/// Parsing and validation are performed by the public C++ API. Loading and
+/// Parsing and validation are performed through the public C ABI. Loading and
 /// building do not initialize CUDA, discover hardware, or allocate engine resources.
 /// This type is neither `Send` nor `Sync`.
 pub struct ContextConfigBuilder {
-    inner: UniquePtr<bridge::ContextConfigBuilder>,
+    inner: NonNull<c_api::SiriusConfigBuilder>,
 }
 
 impl ContextConfigBuilder {
-    /// Start with built-in defaults. Allocation failures from the native constructor
-    /// or bridge storage are returned as [`ConfigError::Native`].
+    /// Start with built-in defaults. Native allocation failures are returned as
+    /// [`ConfigError::AllocationFailure`].
     ///
     /// ```no_run
     /// # use sirius::{ConfigError, ContextConfigBuilder};
@@ -108,8 +101,15 @@ impl ContextConfigBuilder {
     /// # }
     /// ```
     pub fn new() -> Result<Self, ConfigError> {
+        let mut value = std::ptr::null_mut();
+        let mut diagnostic = Diagnostic(std::ptr::null_mut());
+        // SAFETY: both output slots are writable and empty.
+        let status = unsafe { c_api::sirius_config_builder_create(&mut value, &mut diagnostic.0) };
+        if status != c_api::SIRIUS_SUCCESS {
+            return Err(configuration_error(status, diagnostic));
+        }
         Ok(Self {
-            inner: bridge::config_builder_defaults()?,
+            inner: NonNull::new(value).expect("successful builder creation"),
         })
     }
 
@@ -135,13 +135,25 @@ impl ContextConfigBuilder {
         };
         #[cfg(not(unix))]
         let bytes = path.to_str().ok_or(ConfigError::InvalidPath)?.as_bytes();
-        let_cxx_string!(native_path = bytes);
-        let result = bridge::config_builder_from_yaml(&native_path)?;
-        if result.value.is_null() {
-            return Err(configuration_error(result.code, result.message));
+        let mut value = std::ptr::null_mut();
+        let mut diagnostic = Diagnostic(std::ptr::null_mut());
+        // SAFETY: the path slice remains live, and output slots are writable and empty.
+        let status = unsafe {
+            c_api::sirius_config_builder_from_yaml(
+                bytes.as_ptr().cast(),
+                bytes.len(),
+                &mut value,
+                &mut diagnostic.0,
+            )
+        };
+        if status == c_api::SIRIUS_INVALID_ARGUMENT {
+            return Err(ConfigError::InvalidPath);
+        }
+        if status != c_api::SIRIUS_SUCCESS {
+            return Err(configuration_error(status, diagnostic));
         }
         Ok(Self {
-            inner: result.value,
+            inner: NonNull::new(value).expect("successful YAML loading"),
         })
     }
 
@@ -156,12 +168,17 @@ impl ContextConfigBuilder {
     /// # }
     /// ```
     pub fn build(&self) -> Result<ContextConfig, ConfigError> {
-        let result = bridge::config_build(self.inner.as_ref().expect("owned builder"))?;
-        if result.value.is_null() {
-            return Err(configuration_error(result.code, result.message));
+        let mut value = std::ptr::null_mut();
+        let mut diagnostic = Diagnostic(std::ptr::null_mut());
+        // SAFETY: self keeps the builder live; output slots are writable and empty.
+        let status = unsafe {
+            c_api::sirius_config_builder_build(self.inner.as_ptr(), &mut value, &mut diagnostic.0)
+        };
+        if status != c_api::SIRIUS_SUCCESS {
+            return Err(configuration_error(status, diagnostic));
         }
         Ok(ContextConfig {
-            inner: result.value,
+            inner: NonNull::new(value).expect("successful configuration build"),
         })
     }
 
@@ -178,8 +195,104 @@ impl ContextConfigBuilder {
     /// # }
     /// ```
     pub fn try_clone(&self) -> Result<Self, ConfigError> {
-        Ok(Self {
-            inner: bridge::config_builder_copy(self.inner.as_ref().expect("owned builder"))?,
-        })
+        // SAFETY: self keeps the immutable handle live; the new owner releases the added reference.
+        unsafe { c_api::sirius_config_builder_retain(self.inner.as_ptr()) };
+        Ok(Self { inner: self.inner })
+    }
+}
+
+impl Drop for ContextConfig {
+    fn drop(&mut self) {
+        // SAFETY: this owner holds one live reference, with no outstanding Rust borrows.
+        unsafe { c_api::sirius_config_release(self.inner.as_ptr()) }
+    }
+}
+impl Drop for ContextConfigBuilder {
+    fn drop(&mut self) {
+        // SAFETY: this owner holds one live reference, with no outstanding Rust borrows.
+        unsafe { c_api::sirius_config_builder_release(self.inner.as_ptr()) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_and_copies_own_their_handles() {
+        assert_eq!(c_api::sirius_abi_version(), c_api::SIRIUS_ABI_VERSION);
+        let builder = ContextConfigBuilder::new().unwrap();
+        let copy = builder.try_clone().unwrap();
+        drop(builder);
+        let config = copy.build().unwrap();
+        let config_copy = config.try_clone().unwrap();
+        drop(copy);
+        drop(config);
+        drop(config_copy);
+    }
+
+    #[test]
+    fn yaml_snapshot_outlives_its_file() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(file.path(), "sirius: {}\n").unwrap();
+        let builder = ContextConfigBuilder::from_yaml(file.path()).unwrap();
+        drop(file);
+        let config = builder.build().unwrap();
+        drop(builder);
+        drop(config);
+    }
+
+    #[test]
+    fn errors_keep_their_categories() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.yaml");
+        assert!(matches!(
+            ContextConfigBuilder::from_yaml(&path),
+            Err(ConfigError::Io(_))
+        ));
+        std::fs::write(&path, "sirius: [").unwrap();
+        assert!(matches!(
+            ContextConfigBuilder::from_yaml(&path),
+            Err(ConfigError::MalformedYaml(_))
+        ));
+        std::fs::write(&path, "sirius:\n  unknown_setting: true\n").unwrap();
+        assert!(matches!(
+            ContextConfigBuilder::from_yaml(&path),
+            Err(ConfigError::InvalidConfiguration(_))
+        ));
+        assert!(matches!(
+            ContextConfigBuilder::from_yaml("bad\0path"),
+            Err(ConfigError::InvalidPath)
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn preserves_non_utf8_path_bytes() {
+        use std::os::unix::ffi::OsStrExt;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir
+            .path()
+            .join(std::ffi::OsStr::from_bytes(b"config-\xff.yaml"));
+        std::fs::write(&path, "sirius: {}\n").unwrap();
+        ContextConfigBuilder::from_yaml(&path)
+            .unwrap()
+            .build()
+            .unwrap();
+    }
+
+    #[test]
+    fn missing_diagnostics_and_unknown_statuses_are_supported() {
+        assert!(matches!(
+            configuration_error(
+                c_api::SIRIUS_ALLOCATION_FAILURE,
+                Diagnostic(std::ptr::null_mut())
+            ),
+            ConfigError::AllocationFailure
+        ));
+        assert!(
+            matches!(configuration_error(999, Diagnostic(std::ptr::null_mut())),
+            ConfigError::Unexpected { status: 999, message } if message.is_empty())
+        );
     }
 }

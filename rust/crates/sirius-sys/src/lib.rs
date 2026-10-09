@@ -1,17 +1,11 @@
-//! Low-level `cxx` bindings to the Sirius C++ API.
+//! Low-level bindings to the Sirius C ABI and C++ execution bridge.
 //!
-//! This crate is intentionally thin: it exposes the C++ types and free functions
-//! declared in the `#[cxx::bridge]` module below and nothing else. Safe, idiomatic
-//! wrappers live in the [`sirius`](https://docs.rs/sirius) crate.
+//! This crate exposes raw C functions and the C++ execution bridge. Safe,
+//! idiomatic wrappers live in the [`sirius`](https://docs.rs/sirius) crate.
 //!
-//! The [`config`] and [`context`] modules bind the public C++ API. The execution
-//! bridge below binds `include/sirius/ffi.hpp`:
-//! an RAII execution-bridge [`Context`] held via [`cxx::UniquePtr`]. Constructing it brings up an
-//! initialized engine; dropping the `UniquePtr` tears it down. The header is
-//! lightweight, so the bridge compiles without any of Sirius's internal headers
-//! (cudf/rmm/duckdb). It is the seed of the public API `libsirius` will expose;
-//! the bindings link whichever Sirius artifact provides these symbols (the DuckDB
-//! extension today, a dedicated `libsirius` later — see `build.rs`).
+//! The [`c_api`] module binds configuration and context construction through
+//! the C ABI. The execution bridge below still uses `include/sirius/ffi.hpp`
+//! through cxx and compiles as C++20.
 //!
 //! The `make_context*` functions are bound as fallible (`Result`): bringing up
 //! the engine (or parsing a config file) can throw, and cxx turns a C++ exception
@@ -61,8 +55,5 @@ mod ffi {
 
 pub use ffi::{Context, make_context, make_context_from_config};
 
-/// Bindings for immutable public configuration construction.
-pub mod config;
-
-/// Bindings for public engine context construction.
-pub mod context;
+/// Raw configuration and context bindings to the public C ABI.
+pub mod c_api;

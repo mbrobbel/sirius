@@ -5,7 +5,7 @@ Crates for driving [Sirius](https://github.com/sirius-db/sirius) from Rust
 
 | Crate | Role |
 |-------|------|
-| [`sirius-sys`](crates/sirius-sys) | Low-level [`cxx`](https://cxx.rs) bindings to Sirius's public C++ context/configuration API and existing execution bridge. |
+| [`sirius-sys`](crates/sirius-sys) | Bindings to the public C configuration/context ABI and the existing C++ execution bridge. |
 | [`sirius`](crates/sirius) | Safe, idiomatic wrapper over `sirius-sys`. |
 
 (The `telemetry/*` crates are unrelated — Rust linked *into* the C++ extension via
@@ -29,8 +29,8 @@ sharing immutable settings. The file is read only by `from_yaml()`; later file
 changes do not affect a loaded builder. Configuration errors retain their
 I/O, YAML syntax, or invalid-setting category in `ConfigError`.
 
-The public API bridge requires C++23 with `std::expected`; the existing
-execution bridge remains C++20. The new
+Configuration and context construction call the C ABI directly. The existing
+execution bridge still compiles C++20 glue and needs a C++ compiler. The new
 configuration and context types expose no `Send` or `Sync` guarantees.
 
 ## Public context
@@ -46,7 +46,7 @@ fn create_engine() -> Result<Context, Box<dyn std::error::Error>> {
 }
 ```
 
-`ContextError` reports initialization and native bridge failures. The configuration
+`ContextError` reports initialization, allocation, and unexpected native failures. The configuration
 can be dropped after construction. Only one active engine context per process is
 supported, including the existing `SiriusContext` execution wrapper and other Sirius
 integrations. This restriction is not enforced; callers must ensure context lifetimes
@@ -117,9 +117,9 @@ dependency list:
 - **`--features static`** → `libsirius.a` (self-contained, no runtime deps — the
   fully static vcpkg build). Requires that bundled archive to exist.
 
-`build.rs` compiles both bridges against the public `include` directory. The
-configuration adapter lives in `sirius-sys/src`; neither bridge includes internal
-engine headers.
+`build.rs` compiles the execution bridge against the public `include` directory.
+Configuration and context use the C declarations in `sirius-sys/src/c_api.rs`.
+Neither path includes internal engine headers.
 
 ## Environment
 

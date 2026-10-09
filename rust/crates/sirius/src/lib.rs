@@ -1,7 +1,7 @@
 //! Safe, idiomatic Rust bindings for [Sirius](https://github.com/sirius-db/sirius),
 //! the GPU-native SQL engine.
 //!
-//! This crate wraps the low-level [`sirius-sys`][sirius_sys] cxx bindings in safe Rust types
+//! This crate wraps the low-level [`sirius-sys`][sirius_sys] bindings in safe Rust types
 //! — the entry point for driving Sirius from Rust.
 //!
 //! Build immutable configurations with [`ContextConfigBuilder`] and construct an
@@ -9,6 +9,7 @@
 
 mod config;
 mod context;
+mod diagnostic;
 pub use config::{ConfigError, ContextConfig, ContextConfigBuilder};
 pub use context::{Context, ContextError};
 
@@ -150,6 +151,34 @@ mod tests {
     /// The engine keeps process-global GPU state, so at most one context may be
     /// live at a time; context-constructing tests hold this for their duration.
     static GPU_CONTEXT_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn public_context_recreates_and_recovers_from_resolution_failure() {
+        use super::{Context, ContextConfigBuilder, ContextError};
+        let _guard = GPU_CONTEXT_LOCK
+            .lock()
+            .unwrap_or_else(|err| err.into_inner());
+        let file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(
+            file.path(),
+            "sirius:\n  memory:\n    gpu:\n      usage_limit_bytes: 18446744073709551615\n",
+        )
+        .unwrap();
+        let invalid = ContextConfigBuilder::from_yaml(file.path())
+            .unwrap()
+            .build()
+            .unwrap();
+        assert!(matches!(
+            Context::new(&invalid),
+            Err(ContextError::Initialization(_))
+        ));
+        for _ in 0..2 {
+            let config = ContextConfigBuilder::new().unwrap().build().unwrap();
+            let context = Context::new(&config).unwrap();
+            drop(config);
+            drop(context);
+        }
+    }
 
     /// Proof-of-life: bring up a real Sirius engine context and drop it. This
     /// links the real Sirius library and exercises the full cxx round-trip +
