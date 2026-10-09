@@ -101,6 +101,15 @@ class Schema {
   static Result<Schema> from_arrow(const ArrowSchema& schema);
 };
 
+class RecordBatch {
+ public:
+  // Adopt foreign buffers and their release callback without copying them.
+  // Success clears the source array's release callback; failure preserves ownership.
+  static Result<RecordBatch> from_arrow(ArrowArray& array, const Schema& schema);
+  static Result<RecordBatch> from_arrow_device(
+      ArrowDeviceArray& array, const Schema& schema);
+};
+
 class Plan {
  public:
   static Result<Plan> from_substrait(std::span<const std::byte> bytes);
@@ -129,14 +138,6 @@ class Context {
  public:
   static Result<std::unique_ptr<Context>> create(const ContextConfig& config);
   Result<Session> create_session(const SessionOptions& options) const;
-  Result<InputChannel> make_input(
-      const Schema& schema, ProducerCount producers, BufferLimits limits) const;
-
-  // On success, consume the foreign array and clear its release callback.
-  // On failure, leave ownership with the caller.
-  Result<RecordBatch> import_batch(ArrowArray& array, const Schema& schema) const;
-  Result<RecordBatch> import_device_batch(
-      ArrowDeviceArray& array, const Schema& schema) const;
 };
 
 class Session {
@@ -192,6 +193,9 @@ before `start()` works. Their exact types remain an open design item.
 namespace sirius {
 
 struct InputChannel {
+  static Result<InputChannel> create(
+      const Schema& schema, ProducerCount producers, BufferLimits limits);
+
   InputSource source;
   std::vector<InputWriter> writers; // exactly the requested producer count
 };
@@ -258,6 +262,12 @@ flowchart LR
     Execution --> Reader[BatchReader]
 ```
 
+Channel creation establishes the schema, producer capabilities, and queue limits
+without requiring a context. Preparation binds its consumer endpoint to execution
+resources; starting activates consumption. Queued batches retain their own storage.
+If a future channel needs engine-managed spilling or memory reservations at creation,
+make that resource dependency explicit in its factory arguments.
+
 ### Example: producers feeding an execution
 
 This C++ example uses the proposed signatures above. The caller constructs a valid
@@ -266,7 +276,6 @@ producer count (for example, `ProducerCount::from_size(2)`) and buffer limits.
 
 ```cpp
 Result<ExecutionReport> execute_streamed(
-    const Context& context,
     const Session& session,
     std::span<const std::byte> bytes,
     const Schema& schema,
@@ -277,7 +286,7 @@ Result<ExecutionReport> execute_streamed(
   auto plan = Plan::from_substrait(bytes);
   if (!plan) { return std::unexpected(std::move(plan.error())); }
 
-  auto channel = context.make_input(schema, producers, limits);
+  auto channel = InputChannel::create(schema, producers, limits);
   if (!channel) { return std::unexpected(std::move(channel.error())); }
 
   auto inputs = InputBindings::one("orders", std::move(channel->source));
@@ -374,10 +383,19 @@ synchronization before device access; buffer and release-callback lifetimes; and
 when conversion or device transfer is required. Foreign callbacks may be
 thread-affine and need an explicit contract before Rust wrappers can be `Send`.
 
-Arrow adapters import batches compatible with a writer's schema or export reader
-outputs. Local Sirius-to-Sirius transfer should also accept native owned batches,
-preserving GPU buffers where possible without an unnecessary export/import cycle.
-Cancellation and backpressure remain Sirius API contracts.
+`RecordBatch::from_arrow` and `from_arrow_device` adopt supplied buffers and release
+callbacks independently of a Sirius context. They check the supported representation
+and schema before accepting ownership. Adoption does not copy data onto Sirius's
+GPU or allocate from its engine memory pools; foreign batches may exist before a
+context does.
+
+Execution establishes device compatibility and synchronizes before accessing device
+buffers. Required conversions or transfers follow an explicit policy. Any future
+operation copying data into engine-owned memory must expose its resource dependency.
+Arrow adapters also export reader outputs. Local Sirius-to-Sirius transfer should
+accept native owned batches, preserving GPU buffers where possible without an
+unnecessary export/import cycle. Cancellation and backpressure remain Sirius API
+contracts.
 
 ## Cancellation and parent lifetimes
 
