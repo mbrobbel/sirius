@@ -7,7 +7,8 @@
 use std::ffi::c_char;
 use std::marker::{PhantomData, PhantomPinned};
 
-pub const SIRIUS_ABI_VERSION: u32 = 1;
+/// Reserved for future ABI versioning. Zero provides no compatibility guarantee.
+pub const SIRIUS_ABI_VERSION: u32 = 0;
 pub const SIRIUS_SUCCESS: u32 = 0;
 pub const SIRIUS_CONFIGURATION_IO: u32 = 1;
 pub const SIRIUS_MALFORMED_YAML: u32 = 2;
