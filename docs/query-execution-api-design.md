@@ -74,6 +74,167 @@ Introduce `Session` when it has a concrete planning responsibility. Prefer immut
 settings where practical; sharing a context between sessions does not imply
 concurrent query execution.
 
+## C++ API sketch
+
+These declarations illustrate the eventual API, including live streaming. They are
+not a standalone header or a promise that every method ships in the first stage.
+Supporting declarations, implementation storage, and ordinary move/destructor
+boilerplate are omitted. `ContextConfig` and `Error` refer to the public configuration
+and error types.
+
+Owned plans, schemas, and reports are immutable and copyable. Input sources,
+writers, readers, prepared plans, and execution control are movable and noncopyable;
+they have no public empty constructor. The `&&` qualifiers below make consuming
+operations visible at call sites. C++ still requires a moved-from contract.
+
+### Plans, binding, and execution
+
+```cpp
+namespace sirius {
+
+template <class T>
+using Result = std::expected<T, Error>;
+
+class Schema {
+ public:
+  // Borrow the foreign schema during the call; return an owned description.
+  static Result<Schema> from_arrow(const ArrowSchema& schema);
+};
+
+class Plan {
+ public:
+  static Result<Plan> from_substrait(std::span<const std::byte> bytes);
+};
+
+class ProducerCount {
+ public:
+  static Result<ProducerCount> from_size(std::size_t count); // nonzero
+};
+
+class InputBindings {
+ public:
+  static Result<InputBindings> one(std::string name, InputSource source);
+  static Result<InputBindings> create(std::vector<NamedInput> inputs);
+};
+
+class OutputRouting {
+ public:
+  static OutputRouting single();
+  static Result<OutputRouting> broadcast(Destinations destinations);
+  static Result<OutputRouting> hash_partitioned(
+      Destinations destinations, PartitionKeys keys);
+};
+
+class Context {
+ public:
+  static Result<std::unique_ptr<Context>> create(const ContextConfig& config);
+  Result<Session> create_session(const SessionOptions& options) const;
+  Result<InputChannel> make_input(
+      const Schema& schema, ProducerCount producers, BufferLimits limits) const;
+
+  // On success, consume the foreign array and clear its release callback.
+  // On failure, leave ownership with the caller.
+  Result<RecordBatch> import_batch(ArrowArray& array, const Schema& schema) const;
+  Result<RecordBatch> import_device_batch(
+      ArrowDeviceArray& array, const Schema& schema) const;
+};
+
+class Session {
+ public:
+  // Consume input endpoints; retain any plan resources needed after return.
+  Result<PreparedPlan> prepare(
+      const Plan& plan, InputBindings inputs, OutputRouting outputs) const;
+};
+
+class PreparedPlan {
+ public:
+  Result<StartedExecution> start() &&;
+};
+
+class CancellationHandle {
+ public:
+  void request_cancel() const noexcept;
+};
+
+class Execution {
+ public:
+  ExecutionProgress progress() const;
+  CancellationHandle cancellation() const;
+  Result<ExecutionReport> wait() &&; // blocks; consumes execution control
+};
+
+struct StartedExecution {
+  Execution execution;
+  std::vector<BatchReader> outputs;
+};
+
+} // namespace sirius
+```
+
+`NamedInput` pairs an owned input name with an `InputSource`. Binding construction
+rejects duplicate names; preparation resolves those names against the plan.
+Destinations, partition keys, and buffer limits are owned domain values whose
+construction details remain to be designed. `single()` yields exactly one reader;
+other routing modes establish an explicit destination-to-reader mapping at start.
+
+Preparation consumes supplied input endpoints even on operational failure. Starting
+consumes its prepared plan, and waiting consumes execution control on both success
+and failure. Cancellation handles remain safe to use after completion.
+
+The first materialized API also needs an input factory accepting completed data and
+an execution operation returning completed outputs. Those should have distinct
+signatures rather than returning a live writer that must secretly be finished
+before `start()` works. Their exact types remain an open design item.
+
+### Channels and streaming outcomes
+
+```cpp
+namespace sirius {
+
+struct InputChannel {
+  InputSource source;
+  std::vector<InputWriter> writers; // exactly the requested producer count
+};
+
+struct Accepted {};
+struct WouldBlock { RecordBatch batch; };
+struct WriteFailure { Error error; RecordBatch batch; };
+using TryWriteResult = std::variant<Accepted, WouldBlock, WriteFailure>;
+
+class InputWriter {
+ public:
+  // Blocking acceptance; failure returns the unaccepted batch.
+  std::expected<void, WriteFailure> write(RecordBatch batch);
+  TryWriteResult try_write(RecordBatch batch);
+  Result<void> finish() &&;
+};
+
+struct Pending {};
+struct End {};
+using ReadPoll = std::variant<RecordBatch, Pending, End, Error>;
+
+class BatchReader {
+ public:
+  Result<std::optional<RecordBatch>> next(); // blocks; nullopt means clean EOF
+  ReadPoll poll();                          // never waits for a batch
+};
+
+} // namespace sirius
+```
+
+Each write either accepts the whole batch or returns it. Successful acceptance
+transfers ownership to the channel; it does not mean the batch has been processed.
+A later execution failure is reported through the execution outcome and affected
+endpoints. Finishing consumes the writer even if the receiver has already closed.
+
+`next()` and `poll()` use the same terminal contract. After clean EOF, reads continue
+to report EOF; after a stream failure, reads continue to report failure. Reading EOF
+from one output does not establish overall execution success: callers must also
+observe the execution outcome.
+
+EOF here is a protocol outcome, not an initialization flag. No endpoint exposes
+`initialize()`, `is_initialized()`, or a separate operation to make it usable.
+
 ## Input channels and execution ownership
 
 ### Two ends of one channel
@@ -97,47 +258,57 @@ flowchart LR
     Execution --> Reader[BatchReader]
 ```
 
-### Example: two producers feeding an execution
+### Example: producers feeding an execution
 
-Illustrative Rust-style pseudocode for the eventual live API:
+This C++ example uses the proposed signatures above. The caller constructs a valid
+producer count (for example, `ProducerCount::from_size(2)`) and buffer limits.
+`BatchSources` and `pump_and_wait` belong to the embedding application, not Sirius.
 
-```rust
-let plan = Plan::from_substrait(bytes)?;
-let (source, [writer_a, writer_b]) =
-    context.input_channel::<2>(schema, buffer_limits)?;
+```cpp
+Result<ExecutionReport> execute_streamed(
+    const Context& context,
+    const Session& session,
+    std::span<const std::byte> bytes,
+    const Schema& schema,
+    ProducerCount producers,
+    BufferLimits limits,
+    BatchSources batches)
+{
+  auto plan = Plan::from_substrait(bytes);
+  if (!plan) { return std::unexpected(std::move(plan.error())); }
 
-let prepared = session.prepare(
-    plan,
-    Inputs::one("orders", source), // consumes source
-    OutputRouting::single(),
-)?;
+  auto channel = context.make_input(schema, producers, limits);
+  if (!channel) { return std::unexpected(std::move(channel.error())); }
 
-let (execution, output) = prepared.start()?;
+  auto inputs = InputBindings::one("orders", std::move(channel->source));
+  if (!inputs) { return std::unexpected(std::move(inputs.error())); }
 
-// Move each writer into a producer task; drain outputs concurrently.
-let producer_a = spawn_producer(writer_a, batches_a);
-let producer_b = spawn_producer(writer_b, batches_b);
-consume_output(output)?;
+  auto prepared = session.prepare(*plan, std::move(*inputs), OutputRouting::single());
+  if (!prepared) { return std::unexpected(std::move(prepared.error())); }
 
-producer_a.join()?;
-producer_b.join()?;
-let report = execution.wait()?;
-```
+  auto started = std::move(*prepared).start();
+  if (!started) { return std::unexpected(std::move(started.error())); }
 
-The application helpers above show the successful path. Production examples must
-also coordinate cancellation and joining when a producer or output consumer fails.
-A producer writes batches and then consumes its capability:
-
-```rust
-for batch in batches {
-    writer.write(batch)?;
+  return pump_and_wait(
+      std::move(*started), std::move(channel->writers), std::move(batches));
 }
-writer.finish()?;
 ```
+
+`pump_and_wait` owns the started execution and endpoints. It assigns one writer to
+each producer, writes batches, consumes each successful producer with
+`std::move(writer).finish()`, and drains output readers concurrently. Once input
+production and output draining complete, it obtains the report through
+`std::move(execution).wait()`.
+
+On producer or consumer failure, the helper requests cancellation before joining
+blocked tasks. It also handles partial task-launch failure. This coordination is
+shown as an application helper because the public API should not prescribe a
+thread pool or async runtime. Any eventual convenience runner must implement the
+same cleanup guarantees.
 
 The name `"orders"` identifies a plan input during preparation. Subsequent writes
-operate directly on the bound channel. The const-generic producer count is only
-illustrative; the API also needs dynamically sized producer sets.
+operate directly on the bound channel. Moving a capability transfers ownership;
+it does not copy queued data.
 
 ### Resource lifetimes
 
