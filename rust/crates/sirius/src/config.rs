@@ -59,7 +59,7 @@ fn configuration_error(status: u32, diagnostic: Diagnostic) -> ConfigError {
 /// availability and capacity are checked when the engine is constructed.
 /// No thread-safety guarantees are exposed yet: this type is neither `Send` nor `Sync`.
 pub struct ContextConfig {
-    pub(crate) inner: NonNull<c_api::SiriusConfig>,
+    pub(crate) inner: NonNull<c_api::SiriusContextConfig>,
 }
 
 impl ContextConfig {
@@ -75,7 +75,7 @@ impl ContextConfig {
     /// ```
     pub fn try_clone(&self) -> Result<Self, ConfigError> {
         // SAFETY: self keeps the immutable handle live; the new owner releases the added reference.
-        unsafe { c_api::sirius_config_retain(self.inner.as_ptr()) };
+        unsafe { c_api::sirius_context_config_retain(self.inner.as_ptr()) };
         Ok(Self { inner: self.inner })
     }
 }
@@ -86,7 +86,7 @@ impl ContextConfig {
 /// building do not initialize CUDA, discover hardware, or allocate engine resources.
 /// This type is neither `Send` nor `Sync`.
 pub struct ContextConfigBuilder {
-    inner: NonNull<c_api::SiriusConfigBuilder>,
+    inner: NonNull<c_api::SiriusContextConfigBuilder>,
 }
 
 impl ContextConfigBuilder {
@@ -104,7 +104,8 @@ impl ContextConfigBuilder {
         let mut value = std::ptr::null_mut();
         let mut diagnostic = Diagnostic(std::ptr::null_mut());
         // SAFETY: both output slots are writable and empty.
-        let status = unsafe { c_api::sirius_config_builder_create(&mut value, &mut diagnostic.0) };
+        let status =
+            unsafe { c_api::sirius_context_config_builder_create(&mut value, &mut diagnostic.0) };
         if status != c_api::SIRIUS_SUCCESS {
             return Err(configuration_error(status, diagnostic));
         }
@@ -139,7 +140,7 @@ impl ContextConfigBuilder {
         let mut diagnostic = Diagnostic(std::ptr::null_mut());
         // SAFETY: the path slice remains live, and output slots are writable and empty.
         let status = unsafe {
-            c_api::sirius_config_builder_from_yaml(
+            c_api::sirius_context_config_builder_from_yaml(
                 bytes.as_ptr().cast(),
                 bytes.len(),
                 &mut value,
@@ -172,7 +173,11 @@ impl ContextConfigBuilder {
         let mut diagnostic = Diagnostic(std::ptr::null_mut());
         // SAFETY: self keeps the builder live; output slots are writable and empty.
         let status = unsafe {
-            c_api::sirius_config_builder_build(self.inner.as_ptr(), &mut value, &mut diagnostic.0)
+            c_api::sirius_context_config_builder_build(
+                self.inner.as_ptr(),
+                &mut value,
+                &mut diagnostic.0,
+            )
         };
         if status != c_api::SIRIUS_SUCCESS {
             return Err(configuration_error(status, diagnostic));
@@ -196,7 +201,7 @@ impl ContextConfigBuilder {
     /// ```
     pub fn try_clone(&self) -> Result<Self, ConfigError> {
         // SAFETY: self keeps the immutable handle live; the new owner releases the added reference.
-        unsafe { c_api::sirius_config_builder_retain(self.inner.as_ptr()) };
+        unsafe { c_api::sirius_context_config_builder_retain(self.inner.as_ptr()) };
         Ok(Self { inner: self.inner })
     }
 }
@@ -204,13 +209,13 @@ impl ContextConfigBuilder {
 impl Drop for ContextConfig {
     fn drop(&mut self) {
         // SAFETY: this owner holds one live reference, with no outstanding Rust borrows.
-        unsafe { c_api::sirius_config_release(self.inner.as_ptr()) }
+        unsafe { c_api::sirius_context_config_release(self.inner.as_ptr()) }
     }
 }
 impl Drop for ContextConfigBuilder {
     fn drop(&mut self) {
         // SAFETY: this owner holds one live reference, with no outstanding Rust borrows.
-        unsafe { c_api::sirius_config_builder_release(self.inner.as_ptr()) }
+        unsafe { c_api::sirius_context_config_builder_release(self.inner.as_ptr()) }
     }
 }
 

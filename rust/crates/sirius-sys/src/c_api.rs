@@ -20,13 +20,13 @@ pub const SIRIUS_CONTEXT_INITIALIZATION: u32 = 7;
 
 /// Opaque immutable configuration handle.
 #[repr(C)]
-pub struct SiriusConfig {
+pub struct SiriusContextConfig {
     _private: [u8; 0],
     _marker: PhantomData<(*mut u8, PhantomPinned)>,
 }
 /// Opaque immutable builder handle.
 #[repr(C)]
-pub struct SiriusConfigBuilder {
+pub struct SiriusContextConfigBuilder {
     _private: [u8; 0],
     _marker: PhantomData<(*mut u8, PhantomPinned)>,
 }
@@ -61,49 +61,49 @@ unsafe extern "C" {
     /// Construct a builder using defaults, without GPU access.
     /// # Safety
     /// `out` must be writable; `error` must be null or writable. Slots must be empty.
-    pub fn sirius_config_builder_create(
-        out: *mut *mut SiriusConfigBuilder,
+    pub fn sirius_context_config_builder_create(
+        out: *mut *mut SiriusContextConfigBuilder,
         error: *mut *mut SiriusError,
     ) -> u32;
     /// Read and validate a YAML file without GPU access.
     /// # Safety
-    /// `path` must address `length` readable bytes. Output slots follow `sirius_config_builder_create`.
-    pub fn sirius_config_builder_from_yaml(
+    /// `path` must address `length` readable bytes. Output slots follow `sirius_context_config_builder_create`.
+    pub fn sirius_context_config_builder_from_yaml(
         path: *const c_char,
         length: usize,
-        out: *mut *mut SiriusConfigBuilder,
+        out: *mut *mut SiriusContextConfigBuilder,
         error: *mut *mut SiriusError,
     ) -> u32;
     /// Build an immutable snapshot without accessing hardware.
     /// # Safety
     /// `builder` must remain live; output slots must be writable and empty (`error` may be null).
-    pub fn sirius_config_builder_build(
-        builder: *const SiriusConfigBuilder,
-        out: *mut *mut SiriusConfig,
+    pub fn sirius_context_config_builder_build(
+        builder: *const SiriusContextConfigBuilder,
+        out: *mut *mut SiriusContextConfig,
         error: *mut *mut SiriusError,
     ) -> u32;
     /// Add an owned reference to a builder; null is allowed.
     /// # Safety
     /// A non-null handle must remain live throughout the call.
-    pub fn sirius_config_builder_retain(builder: *mut SiriusConfigBuilder);
+    pub fn sirius_context_config_builder_retain(builder: *mut SiriusContextConfigBuilder);
     /// Release an owned builder reference; null is allowed.
     /// # Safety
     /// The caller must own a reference, and no borrower may outlive the last reference.
-    pub fn sirius_config_builder_release(builder: *mut SiriusConfigBuilder);
+    pub fn sirius_context_config_builder_release(builder: *mut SiriusContextConfigBuilder);
     /// Add an owned reference to a configuration; null is allowed.
     /// # Safety
     /// A non-null handle must remain live throughout the call.
-    pub fn sirius_config_retain(config: *mut SiriusConfig);
+    pub fn sirius_context_config_retain(config: *mut SiriusContextConfig);
     /// Release an owned configuration reference; null is allowed.
     /// # Safety
     /// The caller must own a reference, and no borrower may outlive the last reference.
-    pub fn sirius_config_release(config: *mut SiriusConfig);
+    pub fn sirius_context_config_release(config: *mut SiriusContextConfig);
     /// Resolve hardware and initialize an engine; only one active engine per process is supported.
     /// # Safety
     /// `config` must remain live; output slots must be writable and empty (`error` may be null).
     /// Context lifetimes must not overlap, including engines owned by other integrations.
     pub fn sirius_context_create(
-        config: *const SiriusConfig,
+        config: *const SiriusContextConfig,
         out: *mut *mut SiriusContext,
         error: *mut *mut SiriusError,
     ) -> u32;
