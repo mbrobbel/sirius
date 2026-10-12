@@ -597,7 +597,7 @@ class S3MixFixture : public sirius::test::GpuExecutionFixture {
 
 void run_s3mix_scenario(std::string const& scenario)
 {
-  if (scenario == "metadata_footer_liveness") {
+  if (scenario == "metadata_footer_liveness" || scenario == "metadata_footer_error") {
     sirius::test::GpuExecutionFixture fixture;
     sirius::test::scratch_dir directory{"metadata_footer_liveness"};
     auto good = directory.path() / "01_good.parquet";
@@ -632,6 +632,7 @@ void run_s3mix_scenario(std::string const& scenario)
     // the outer executor. Keep connection recovery covered independently.
     CHECK((failed->GetError() == cpu->GetError() ||
            failed->GetErrorType() == duckdb::ExceptionType::INTERRUPT));
+    if (scenario == "metadata_footer_error") { CHECK(failed->GetError() == cpu->GetError()); }
     auto after = sirius::test::get_transparent_execution_stats(*fixture.con);
     CHECK(after.successful_rebinds == before.successful_rebinds + 1);
     CHECK(after.fallbacks == before.fallbacks);
@@ -843,6 +844,12 @@ TEST_CASE("Metadata footer failure permits a second query on the same connection
 {
   // Parent kills and reaps on timeout, including a hang in error cleanup/destruction.
   require_s3mix_child_survives("metadata_footer_liveness", false, std::chrono::seconds{90});
+}
+
+TEST_CASE("CPU fallback preserves the original metadata reader error",
+          "[transparent][late_failure][integration][metadata_error]")
+{
+  require_s3mix_child_survives("metadata_footer_error", false, std::chrono::seconds{90});
 }
 
 TEST_CASE("unsupported parquet round projection falls back without killing the process",
