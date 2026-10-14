@@ -1,0 +1,36 @@
+PROJECTION (est=1) Expressions: __internal_decompress_string(#0), #1, #2
+  ORDER_BY (est=1) Order By: cntrycode
+    PROJECTION (est=1) Expressions: __internal_compress_string_uinteger(#0), #1, #2
+      PROJECTION (est=1) Expressions: cntrycode, numcust, totacctbal
+        PROJECTION (est=1) Expressions: __internal_decompress_string(#0), #1, #2
+          AGGREGATE (est=1) Groups: cntrycode; Expressions: count_star(), sum(c_acctbal)
+            PROJECTION (est=1) Expressions: __internal_compress_string_uinteger(#0), #1
+              PROJECTION (est=1) Expressions: cntrycode, c_acctbal
+                CTE (est=1) CTE Name: __duckdb_delim_31; Table Index: 31
+                  PROJECTION (est=7) Expressions: #0, #1, #2
+                    PROJECTION (est=7) Expressions: #0, #1, #2
+                      COMPARISON_JOIN (est=7) Join Type: INNER; Conditions: (CAST(c_acctbal AS DOUBLE) > SUBQUERY)
+                        FILTER (est=3000) Expressions: IN (...)
+                          COMPARISON_JOIN (est=15000) Join Type: MARK; Conditions: ("substring"(c_phone, 1, 2) = #0)
+                            SEQ_SCAN (est=15000) Table: "tpch-sf0".main.customer; Type: Sequential Scan
+                            CHUNK_GET (est=7)
+                        PROJECTION (est=1) Expressions: "/"(CAST(#0 AS DOUBLE), CAST(#1 AS DOUBLE))
+                          AGGREGATE (est=1) Expressions: sum(c_acctbal), count_star()
+                            FILTER (est=600) Expressions: IN (...)
+                              COMPARISON_JOIN (est=3000) Join Type: MARK; Conditions: ("substring"(c_phone, 1, 2) = #0)
+                                SEQ_SCAN (est=3000) Filters: (c_acctbal > 0.00); Table: "tpch-sf0".main.customer; Type: Sequential Scan
+                                CHUNK_GET (est=7)
+                  PROJECTION (est=1) Expressions: #0, #1
+                    PROJECTION (est=1) Expressions: #0, #1
+                      FILTER (est=1) Expressions: (NOT SUBQUERY)
+                        COMPARISON_JOIN (est=7) Join Type: MARK; Conditions: (c_custkey IS NOT DISTINCT FROM c_custkey)
+                          CTE_SCAN (est=7) CTE Index: 31
+                          PROJECTION (est=30000) Expressions: c_custkey
+                            COMPARISON_JOIN (est=30000) Join Type: SEMI; Conditions: (o_custkey = c_custkey)
+                              SEQ_SCAN (est=150000) Table: "tpch-sf0".main.orders; Type: Sequential Scan
+                              PROJECTION (est=3) Expressions: #0
+                                PROJECTION (est=3) Expressions: CAST(#0 AS BIGINT)
+                                  AGGREGATE (est=3) Groups: #[0.2]
+                                    PROJECTION (est=7) Expressions: CAST(#0 AS SMALLINT)
+                                      FILTER (est=7) Expressions: (CAST(#[0.2] AS BIGINT) <= 14999)
+                                        CTE_SCAN (est=7) CTE Index: 31

@@ -1,0 +1,30 @@
+ORDER_BY (est=7) Order By: s_name
+  PROJECTION (est=7) Expressions: s_name, s_address
+    COMPARISON_JOIN (est=7) Join Type: RIGHT_SEMI; Conditions: (#0 = s_suppkey)
+      PROJECTION (est=3200) Expressions: ps_suppkey
+        CTE (est=3200) CTE Name: __duckdb_delim_35; Table Index: 35
+          PROJECTION (est=16000) Expressions: #0, #1, #2
+            PROJECTION (est=16000) Expressions: #0, #1, #2
+              FILTER (est=16000) Expressions: SUBQUERY
+                COMPARISON_JOIN (est=80000) Join Type: MARK; Conditions: (ps_partkey = #0)
+                  SEQ_SCAN (est=80000) Table: "tpch-sf0".main.partsupp; Type: Sequential Scan
+                  PROJECTION (est=4000) Expressions: p_partkey
+                    SEQ_SCAN (est=4000) Filters: ((p_name >= 'antique') AND (p_name < 'antiquf')); Table: "tpch-sf0".main.part; Type: Sequential Scan
+          PROJECTION (est=3200) Expressions: #0
+            FILTER (est=3200) Expressions: (CAST(ps_availqty AS DECIMAL(38,3)) > SUBQUERY)
+              COMPARISON_JOIN (est=16000) Join Type: INNER; Conditions: (ps_suppkey IS NOT DISTINCT FROM ps_suppkey), (ps_partkey IS NOT DISTINCT FROM ps_partkey)
+                CTE_SCAN (est=16000) CTE Index: 35
+                PROJECTION (est=12011) Expressions: (0.5 * sum(l_quantity)), ps_suppkey, ps_partkey
+                  PROJECTION (est=12011) Expressions: CAST(#0 AS BIGINT), CAST(#1 AS BIGINT), #2
+                    AGGREGATE (est=12011) Groups: ps_suppkey, ps_partkey; Expressions: sum(l_quantity)
+                      PROJECTION (est=24022) Expressions: CAST(#0 AS SMALLINT), CAST(#1 AS SMALLINT), #2
+                        COMPARISON_JOIN (est=24022) Join Type: SEMI; Conditions: (l_partkey = ps_partkey), (l_suppkey = ps_suppkey)
+                          SEQ_SCAN (est=120114) Filters: ((l_shipdate >= '1993-01-01'::DATE) AND (l_shipdate < '1994-01-01'::DATE)); Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+                          PROJECTION (est=8000) Expressions: #0, #1
+                            PROJECTION (est=8000) Expressions: CAST(#0 AS BIGINT), CAST(#1 AS BIGINT)
+                              AGGREGATE (est=8000) Groups: #[8.2], #[8.0]
+                                PROJECTION (est=16000) Expressions: CAST(#0 AS SMALLINT), CAST(#1 AS SMALLINT), CAST(#2 AS SMALLINT)
+                                  CTE_SCAN (est=16000) CTE Index: 35
+      COMPARISON_JOIN (est=38) Join Type: INNER; Conditions: (s_nationkey = n_nationkey)
+        SEQ_SCAN (est=1000) Table: "tpch-sf0".main.supplier; Type: Sequential Scan
+        SEQ_SCAN (est=1) Filters: (n_name = 'KENYA'); Table: "tpch-sf0".main.nation; Type: Sequential Scan

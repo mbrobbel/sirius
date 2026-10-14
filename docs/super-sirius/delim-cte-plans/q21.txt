@@ -1,0 +1,20 @@
+TOP_N (est=36)
+  PROJECTION (est=36) Expressions: s_name, numwait
+    PROJECTION (est=36) Expressions: #0, #1
+      AGGREGATE (est=36) Groups: s_name; Expressions: count_star()
+        PROJECTION (est=37) Expressions: #1
+          COMPARISON_JOIN (est=37) Join Type: INNER; Conditions: (o_orderkey = l_orderkey)
+            SEQ_SCAN (est=75000) Filters: (o_orderstatus = 'F'); Table: "tpch-sf0".main.orders; Type: Sequential Scan
+            COMPARISON_JOIN (est=149) Join Type: RIGHT_SEMI; Conditions: (l_orderkey = l_orderkey), (l_suppkey IS DISTINCT FROM l_suppkey)
+              PROJECTION (est=600572) Expressions: l_suppkey, l_orderkey
+                SEQ_SCAN (est=600572) Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+              COMPARISON_JOIN (est=749) Join Type: RIGHT_ANTI; Conditions: (l_suppkey IS DISTINCT FROM l_suppkey), (l_orderkey IS NOT DISTINCT FROM l_orderkey)
+                PROJECTION (est=120114) Expressions: l_suppkey, l_orderkey
+                  FILTER (est=120114) Expressions: (l_receiptdate > l_commitdate)
+                    SEQ_SCAN (est=600572) Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+                COMPARISON_JOIN (est=3749) Join Type: INNER; Conditions: (l_suppkey = s_suppkey)
+                  FILTER (est=120114) Expressions: (l_receiptdate > l_commitdate)
+                    SEQ_SCAN (est=600572) Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+                  COMPARISON_JOIN (est=38) Join Type: INNER; Conditions: (s_nationkey = n_nationkey)
+                    SEQ_SCAN (est=1000) Table: "tpch-sf0".main.supplier; Type: Sequential Scan
+                    SEQ_SCAN (est=1) Filters: (n_name = 'BRAZIL'); Table: "tpch-sf0".main.nation; Type: Sequential Scan

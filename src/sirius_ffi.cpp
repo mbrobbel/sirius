@@ -17,18 +17,17 @@
 // Implementation of sirius/ffi.hpp. This translation unit sees the heavy internal types so
 // consumers (e.g. the Rust bindings) never include sirius_context.hpp.
 
-#include "config.hpp"                                    // duckdb::Config::LOG_*
-#include "core_functions_extension.hpp"                  // duckdb::CoreFunctionsExtension
-#include "data/sirius_converter_registry.hpp"            // sirius::converter_registry
-#include "duckdb/common/enums/optimizer_type.hpp"        // duckdb::OptimizerType
-#include "duckdb/execution/column_binding_resolver.hpp"  // duckdb::ColumnBindingResolver
-#include "duckdb/main/client_context.hpp"                // duckdb::ClientContext
-#include "duckdb/main/config.hpp"                        // duckdb::DBConfig
-#include "duckdb/main/connection.hpp"                    // duckdb::Connection
-#include "duckdb/main/database.hpp"                      // duckdb::DuckDB
-#include "duckdb/main/prepared_statement_data.hpp"       // duckdb::PreparedStatementData
-#include "duckdb/main/query_result.hpp"                  // duckdb::QueryResult
-#include "duckdb/main/relation.hpp"                      // duckdb::Relation
+#include "config.hpp"                               // duckdb::Config::LOG_*
+#include "core_functions_extension.hpp"             // duckdb::CoreFunctionsExtension
+#include "data/sirius_converter_registry.hpp"       // sirius::converter_registry
+#include "duckdb/common/enums/optimizer_type.hpp"   // duckdb::OptimizerType
+#include "duckdb/main/client_context.hpp"           // duckdb::ClientContext
+#include "duckdb/main/config.hpp"                   // duckdb::DBConfig
+#include "duckdb/main/connection.hpp"               // duckdb::Connection
+#include "duckdb/main/database.hpp"                 // duckdb::DuckDB
+#include "duckdb/main/prepared_statement_data.hpp"  // duckdb::PreparedStatementData
+#include "duckdb/main/query_result.hpp"             // duckdb::QueryResult
+#include "duckdb/main/relation.hpp"                 // duckdb::Relation
 #include "duckdb/main/settings.hpp"
 #include "duckdb/optimizer/optimizer.hpp"                  // duckdb::Optimizer
 #include "duckdb/parser/statement/relation_statement.hpp"  // duckdb::RelationStatement
@@ -122,12 +121,6 @@ sirius::exec::bound_plan lower_substrait(duckdb::Connection& conn,
     duckdb::Optimizer optimizer(*planner.binder, client);
     logical_plan = optimizer.Optimize(std::move(logical_plan));
   }
-  logical_plan->ResolveOperatorTypes();
-  duckdb::ColumnBindingResolver resolver;
-  duckdb::ColumnBindingResolver verifier(true);
-  verifier.VisitOperator(*logical_plan);
-  resolver.VisitOperator(*logical_plan);
-
   return {std::move(logical_plan), std::move(prepared)};
 }
 

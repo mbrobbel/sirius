@@ -90,12 +90,14 @@ unique_ptr<LogicalOperator> copy_inlined_domain(LogicalAggregate& aggregate,
     for (auto* ancestor : ancestors)
       replacer.VisitOperatorBindings(*ancestor);
   };
-  auto* tail  = static_cast<LogicalOperator*>(result.get());
-  auto* input = aggregate.children[0].get();
+  bool only_filters = true;
+  auto* tail        = static_cast<LogicalOperator*>(result.get());
+  auto* input       = aggregate.children[0].get();
   while (input != &domain) {
     if (!domain_wrapper(*input)) return nullptr;
     unique_ptr<LogicalOperator> copy;
     if (input->type == LogicalOperatorType::LOGICAL_PROJECTION) {
+      only_filters     = false;
       auto& projection = input->Cast<LogicalProjection>();
       auto required    = needed[projection.table_index];
       vector<unique_ptr<Expression>> expressions;
@@ -151,8 +153,22 @@ unique_ptr<LogicalOperator> copy_inlined_domain(LogicalAggregate& aggregate,
     dedup_columns.push_back(make_uniq<BoundColumnRefExpression>(
       domain.chunk_types[i], ColumnBinding(producer.table_index, i)));
   }
+  std::set<ProjectionIndex> group_columns;
+  for (auto& group : aggregate.groups) {
+    auto& ref = group->Cast<BoundColumnRefExpression>();
+    if (ref.Binding().table_index != domain.table_index) only_filters = false;
+    group_columns.insert(ref.Binding().column_index);
+  }
   remap(replacer);
   tail->children.push_back(make_uniq<LogicalDelimGet>(domain.table_index, std::move(types)));
+  if (only_filters && group_columns.size() == aggregate.groups.size() &&
+      group_columns == needed[domain.table_index]) {
+    // Filtering unique grouping keys preserves uniqueness; only rename/reorder their bindings.
+    auto projection =
+      make_uniq<LogicalProjection>(aggregate.group_index, std::move(result->groups));
+    projection->children = std::move(result->children);
+    return std::move(projection);
+  }
   return std::move(result);
 }
 
@@ -261,11 +277,29 @@ void try_invert(unique_ptr<LogicalOperator>& plan)
 
   LogicalMaterializedCTE* dedup_cte = nullptr;
   vector<LogicalOperator*> scans;
-  auto* aggregate_parent = index.at(&aggregate).parent;
+  auto* dedup_root       = static_cast<LogicalOperator*>(&aggregate);
+  auto* aggregate_parent = index.at(dedup_root).parent;
+  while (aggregate_parent && aggregate_parent->type == LogicalOperatorType::LOGICAL_PROJECTION &&
+         aggregate_parent->children.size() == 1) {
+    auto bindings     = dedup_root->GetColumnBindings();
+    auto& expressions = aggregate_parent->expressions;
+    bool identity     = expressions.size() == bindings.size();
+    for (idx_t i = 0; identity && i < expressions.size(); ++i) {
+      identity = expressions[i]->GetExpressionClass() == ExpressionClass::BOUND_COLUMN_REF;
+      if (identity) {
+        auto& ref = expressions[i]->Cast<BoundColumnRefExpression>();
+        identity =
+          ref.Depth() == 0 && ref.Binding() == bindings[i] && ref.GetReturnType() == dedup_types[i];
+      }
+    }
+    if (!identity) break;
+    dedup_root       = aggregate_parent;
+    aggregate_parent = index.at(dedup_root).parent;
+  }
   if (aggregate_parent && named(*aggregate_parent, "__duckdb_delim_dedup_")) {
     if (wrapped_domain) return decline("optimized materialized dedup producer");
     dedup_cte = &aggregate_parent->Cast<LogicalMaterializedCTE>();
-    if (dedup_cte->children.size() != 2 || dedup_cte->children[0].get() != &aggregate ||
+    if (dedup_cte->children.size() != 2 || dedup_cte->children[0].get() != dedup_root ||
         !dedup_cte->correlated_columns.empty() || dedup_cte->column_count != dedup_types.size()) {
       return decline("invalid dedup CTE producer");
     }
@@ -289,6 +323,8 @@ void try_invert(unique_ptr<LogicalOperator>& plan)
     // Nested delim joins own their scans independently during physical lowering.
     for (auto* ancestor = index.at(scan).parent; ancestor != &join;
          ancestor       = index.at(ancestor).parent) {
+      if (ancestor->type == LogicalOperatorType::LOGICAL_MATERIALIZED_CTE)
+        return decline("dedup consumer crosses a materialized CTE boundary");
       if (ancestor->type == LogicalOperatorType::LOGICAL_DELIM_JOIN) {
         auto& nested = ancestor->Cast<LogicalComparisonJoin>();
         if (!within(scan, nested.children[nested.delim_flipped ? 1 : 0].get(), index))
@@ -327,6 +363,7 @@ void try_invert(unique_ptr<LogicalOperator>& plan)
   if (!clean) return decline("bindings escape their permitted scope");
 
   // All checks precede mutation; retain scan table indexes and the consumer output bindings.
+  D_ASSERT(!inlined_domain || scans.size() == 1);
   auto old_bindings = row->GetColumnBindings();
   for (auto* scan : scans) {
     auto table =

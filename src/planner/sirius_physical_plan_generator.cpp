@@ -73,6 +73,7 @@
 #include "op/sirius_physical_ungrouped_aggregate_merge.hpp"
 #include "op/sirius_physical_union.hpp"
 #include "planner/connector_registry.hpp"
+#include "planner/delim_cte_inversion.hpp"
 #include "planner/sirius_plan_compressed_schema.hpp"
 #include "planner/sirius_plan_projection_utils.hpp"
 #include "scan_manager/preparation_ledger.hpp"
@@ -1998,6 +1999,7 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator>
 sirius_physical_plan_generator::create_plan(duckdb::unique_ptr<duckdb::LogicalOperator> op)
 {
   auto& profiler = duckdb::QueryProfiler::Get(context);
+  invert_delim_ctes(op);
 
   {
     auto timer = profiler.StartTimer<duckdb::MetricPhysicalPlannerResolveTypes>();
@@ -2005,6 +2007,10 @@ sirius_physical_plan_generator::create_plan(duckdb::unique_ptr<duckdb::LogicalOp
   }
   {
     auto timer = profiler.StartTimer<duckdb::MetricPhysicalPlannerColumnBinding>();
+#ifdef DEBUG
+    duckdb::ColumnBindingResolver verifier(true);
+    verifier.VisitOperator(*op);
+#endif
     duckdb::ColumnBindingResolver resolver;
     resolver.VisitOperator(*op);
   }

@@ -424,15 +424,6 @@ struct SiriusTableFunctionData : public TableFunctionData {
         Optimizer optimizer(*planner.binder, context);
         plan = optimizer.Optimize(std::move(plan));
       }
-
-      // After optimization, refresh types before column binding resolution
-      // to ensure types are consistent (some optimizers may have set stale types)
-      plan->ResolveOperatorTypes();
-
-      ColumnBindingResolver resolver;
-      ColumnBindingResolver verifier(true);
-      verifier.VisitOperator(*plan);
-      resolver.VisitOperator(*plan);
     } catch (...) {
       CleanupConnection(context);
       throw;

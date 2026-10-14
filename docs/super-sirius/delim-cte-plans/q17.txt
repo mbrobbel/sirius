@@ -1,0 +1,23 @@
+PROJECTION (est=1) Expressions: avg_yearly
+  AGGREGATE (est=1) Expressions: sum(l_extendedprice)
+    CTE (est=60057) CTE Name: __duckdb_delim_19; Table Index: 19
+      PROJECTION (est=17413) Expressions: #0, #1, #2
+        PROJECTION (est=17413) Expressions: #1, #2, #0
+          COMPARISON_JOIN (est=17413) Join Type: INNER; Conditions: (l_partkey = p_partkey)
+            SEQ_SCAN (est=600572) Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+            SEQ_SCAN (est=541) Filters: (p_brand = 'Brand#13'), (p_container = 'JUMBO CAN'); Table: "tpch-sf0".main.part; Type: Sequential Scan
+      PROJECTION (est=60057) Expressions: #0
+        PROJECTION (est=60057) Expressions: #2
+          COMPARISON_JOIN (est=60057) Join Type: INNER; Conditions: (p_partkey IS NOT DISTINCT FROM p_partkey), (SUBQUERY > CAST(l_quantity AS DOUBLE))
+            PROJECTION (est=60057) Expressions: (0.2 * avg(l_quantity)), p_partkey
+              PROJECTION (est=60057) Expressions: CAST(#0 AS BIGINT), #1
+                AGGREGATE (est=60057) Groups: p_partkey; Expressions: avg(l_quantity)
+                  PROJECTION (est=120114) Expressions: CAST(#0 AS SMALLINT), #1
+                    COMPARISON_JOIN (est=120114) Join Type: SEMI; Conditions: (l_partkey = p_partkey)
+                      SEQ_SCAN (est=600572) Table: "tpch-sf0".main.lineitem; Type: Sequential Scan
+                      PROJECTION (est=8706) Expressions: #0
+                        PROJECTION (est=8706) Expressions: CAST(#0 AS BIGINT)
+                          AGGREGATE (est=8706) Groups: #[1.0]
+                            PROJECTION (est=17413) Expressions: #0, #1, CAST(#2 AS SMALLINT)
+                              CTE_SCAN (est=17413) CTE Index: 19
+            CTE_SCAN (est=17413) CTE Index: 19

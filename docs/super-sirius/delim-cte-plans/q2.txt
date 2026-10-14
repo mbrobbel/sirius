@@ -1,0 +1,22 @@
+TOP_N (est=1)
+  PROJECTION (est=1) Expressions: s_acctbal, s_name, n_name, p_partkey, p_mfgr, s_address, s_phone, s_comment
+    CTE (est=1) CTE Name: __duckdb_delim_25; Table Index: 25
+      PROJECTION (est=161) Expressions: #0, #1, #2, #3, #4, #5, #6, #7, #8
+        PROJECTION (est=161) Expressions: #1, #2, #3, #4, #5, #6, #7, #0, #8
+          COMPARISON_JOIN (est=161) Join Type: INNER; Conditions: (ps_suppkey = s_suppkey)
+            COMPARISON_JOIN (est=1041) Join Type: INNER; Conditions: (ps_partkey = p_partkey)
+              SEQ_SCAN (est=80000) Table: "tpch-sf0".main.partsupp; Type: Sequential Scan
+              SEQ_SCAN (est=445) Filters: (p_size = 41), suffix(p_type, 'NICKEL'); Table: "tpch-sf0".main.part; Type: Sequential Scan
+            COMPARISON_JOIN (est=192) Join Type: INNER; Conditions: (s_nationkey = n_nationkey)
+              SEQ_SCAN (est=1000) Table: "tpch-sf0".main.supplier; Type: Sequential Scan
+              COMPARISON_JOIN (est=5) Join Type: INNER; Conditions: (n_regionkey = r_regionkey)
+                SEQ_SCAN (est=25) Table: "tpch-sf0".main.nation; Type: Sequential Scan
+                SEQ_SCAN (est=1) Filters: (r_name = 'EUROPE'); Table: "tpch-sf0".main.region; Type: Sequential Scan
+      PROJECTION (est=1) Expressions: #0, #1, #2, #3, #4, #5, #6, #7
+        PROJECTION (est=1) Expressions: #2, #3, #4, #5, #6, #7, #8, #9
+          COMPARISON_JOIN (est=1) Join Type: INNER; Conditions: (p_partkey IS NOT DISTINCT FROM p_partkey), (SUBQUERY = ps_supplycost)
+            PROJECTION (est=1241) Expressions: CAST(#0 AS BIGINT), #1
+              AGGREGATE (est=1241) Groups: #0; Expressions: min(#7)
+                PROJECTION (est=161) Expressions: CAST(#0 AS SMALLINT), __internal_compress_string_uhugeint(#1), #2, #3, #4, __internal_compress_string_uhugeint(#5), #6, #7, __internal_compress_string_uhugeint(#8)
+                  CTE_SCAN (est=161) CTE Index: 25
+            CTE_SCAN (est=161) CTE Index: 25

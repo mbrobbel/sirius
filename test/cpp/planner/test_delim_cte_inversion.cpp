@@ -1,9 +1,17 @@
 // Copyright 2026, Sirius Contributors. SPDX-License-Identifier: Apache-2.0
+#include "expression/ast/node.hpp"
+#include "op/sirius_physical_delim_join.hpp"
 #include "planner/delim_cte_inversion.hpp"
+#include "planner/sirius_physical_plan_generator.hpp"
+#include "utils/gpu_execution_fixture.hpp"
+#include "utils/scoped_sirius_setting.hpp"
 
 #include <catch.hpp>
 #include <duckdb/execution/column_binding_resolver.hpp>
+#include <duckdb/main/config.hpp>
 #include <duckdb/optimizer/column_binding_replacer.hpp>
+#include <duckdb/optimizer/optimizer.hpp>
+#include <duckdb/parser/parser.hpp>
 #include <duckdb/planner/expression/bound_cast_expression.hpp>
 #include <duckdb/planner/expression/bound_columnref_expression.hpp>
 #include <duckdb/planner/expression/bound_comparison_expression.hpp>
@@ -16,6 +24,7 @@
 #include <duckdb/planner/operator/logical_filter.hpp>
 #include <duckdb/planner/operator/logical_materialized_cte.hpp>
 #include <duckdb/planner/operator/logical_projection.hpp>
+#include <duckdb/planner/planner.hpp>
 
 namespace {
 using namespace duckdb;
@@ -114,6 +123,11 @@ TEST_CASE("Delim CTE inversion restores both dedup representations",
   auto explicit_grouping_set = GENERATE(false, true);
   auto plan                  = generated(materialized, flipped);
   if (explicit_grouping_set) plan.aggregate->grouping_sets.push_back({ProjectionIndex(0)});
+  if (materialized && GENERATE(false, true)) {
+    auto& dedup = plan.outer->children[1]->children[0];
+    dedup->children[0] =
+      LogicalProjection::CreateIdentity(TableIndex(30), std::move(dedup->children[0]));
+  }
   plan.outer->column_count = 100;  // Column pruning leaves this metadata at its original width.
   auto output              = plan.root->GetColumnBindings();
   ColumnBindingResolver before(true);
@@ -172,8 +186,8 @@ TEST_CASE("Delim CTE inversion retains optimized domain computations",
   domain.chunk_types.insert(domain.chunk_types.begin(), LogicalType::BOOLEAN);
   auto& row = plan.join->children[flipped ? 1 : 0]->Cast<LogicalCTERef>();
   row.chunk_types.insert(row.chunk_types.begin(), LogicalType::BOOLEAN);
-  (flipped ? plan.join->right_projection_map
-           : plan.join->left_projection_map).push_back(ProjectionIndex(1));
+  (flipped ? plan.join->right_projection_map : plan.join->left_projection_map)
+    .push_back(ProjectionIndex(1));
   ColumnBindingReplacer shift;
   shift.replacement_bindings.emplace_back(ColumnBinding(TableIndex(4), ProjectionIndex(0)),
                                           ColumnBinding(TableIndex(4), ProjectionIndex(1)));
@@ -217,6 +231,41 @@ TEST_CASE("Delim CTE inversion retains optimized domain computations",
   CHECK(plan.join->duplicate_eliminated_columns[0]->Cast<BoundColumnRefExpression>().Binding() ==
         ColumnBinding(TableIndex(2), ProjectionIndex(1)));
   CHECK(plan.root->GetColumnBindings() == outputs);
+  plan.root->ResolveOperatorTypes();
+  ColumnBindingResolver verifier(true);
+  verifier.VisitOperator(*plan.root);
+}
+
+TEST_CASE("Filtered delim domains reuse uniqueness only for the complete grouping key",
+          "[planner][delim_cte_inversion]")
+{
+  auto extra_filter_column = GENERATE(false, true);
+  auto flipped             = GENERATE(false, true);
+  auto plan                = generated(false, flipped);
+  if (extra_filter_column) {
+    plan.producer->children[0]->expressions.push_back(
+      make_uniq<BoundConstantExpression>(Value::INTEGER(8)));
+    plan.producer->expressions.push_back(column(1, 1));
+    plan.aggregate->children[0]->Cast<LogicalCTERef>().chunk_types.push_back(LogicalType::INTEGER);
+    plan.join->children[flipped ? 1 : 0]->Cast<LogicalCTERef>().chunk_types.push_back(
+      LogicalType::INTEGER);
+  }
+  auto filter = make_uniq<LogicalFilter>(
+    BoundComparisonExpression::Create(ExpressionType::COMPARE_GREATERTHAN,
+                                      column(5, extra_filter_column ? 1 : 0),
+                                      make_uniq<BoundConstantExpression>(Value::INTEGER(0))));
+  filter->children.push_back(std::move(plan.aggregate->children[0]));
+  plan.aggregate->children[0] = std::move(filter);
+  sirius::planner::invert_delim_ctes(plan.root);
+  REQUIRE(plan.join->type == LogicalOperatorType::LOGICAL_DELIM_JOIN);
+  CHECK(count(*plan.root, LogicalOperatorType::LOGICAL_AGGREGATE_AND_GROUP_BY) ==
+        (extra_filter_column ? 1 : 0));
+  CHECK(plan.join->duplicate_eliminated_columns.size() == (extra_filter_column ? 2 : 1));
+  if (!extra_filter_column) {
+    auto& replacement = *plan.join->children[flipped ? 0 : 1]->children[0];
+    REQUIRE(replacement.type == LogicalOperatorType::LOGICAL_PROJECTION);
+    CHECK(replacement.Cast<LogicalProjection>().table_index == TableIndex(6));
+  }
   plan.root->ResolveOperatorTypes();
   ColumnBindingResolver verifier(true);
   verifier.VisitOperator(*plan.root);
@@ -320,6 +369,16 @@ TEST_CASE("Delim CTE inversion leaves unsafe shapes untouched", "[planner][delim
       make_uniq<LogicalCrossProduct>(std::move(slot), make_uniq<LogicalDummyScan>(TableIndex(20)));
     slot = std::move(cross);
   }
+  SECTION("a dedup consumer inside a retained materialized CTE")
+  {
+    plan.join->children[1] =
+      make_uniq<LogicalMaterializedCTE>(Identifier("user_cte"),
+                                        TableIndex(40),
+                                        1,
+                                        make_uniq<LogicalDummyScan>(TableIndex(41)),
+                                        std::move(plan.join->children[1]),
+                                        CTEMaterialize::CTE_MATERIALIZE_ALWAYS);
+  }
   SECTION("wrong producer width")
   {
     plan.producer->expressions.push_back(make_uniq<BoundConstantExpression>(Value::INTEGER(3)));
@@ -330,4 +389,161 @@ TEST_CASE("Delim CTE inversion leaves unsafe shapes untouched", "[planner][delim
   CHECK(plan.root.get() == original);
   CHECK(plan.root->ToString() == text);
   CHECK(count(*plan.root, LogicalOperatorType::LOGICAL_DELIM_JOIN) == 0);
+}
+
+namespace {
+std::vector<std::string> const correlated_queries{
+  "SELECT l.k FROM outer_rows l WHERE EXISTS "
+  "(SELECT 1 FROM inner_rows r WHERE r.k=l.k AND r.v>l.v)",
+  "SELECT l.k FROM outer_rows l WHERE NOT EXISTS "
+  "(SELECT 1 FROM inner_rows r WHERE r.k=l.k AND r.v>l.v)",
+  "SELECT SUM(i.qty) FROM items i, parts p WHERE p.pk=i.fk AND p.pname='p1' "
+  "AND i.qty < (SELECT 2 * AVG(i2.qty) FROM items i2 WHERE i2.fk=p.pk)",
+  "SELECT l.k, l.v IN (SELECT r.v FROM inner_rows r WHERE r.k=l.k) "
+  "FROM outer_rows l",
+  "SELECT l.k FROM outer_rows l WHERE EXISTS (SELECT v FROM "
+  "(SELECT r.v FROM inner_rows r WHERE r.k=l.k AND r.v>l.v UNION ALL "
+  "SELECT s.v FROM inner_rows s WHERE s.k=l.k AND s.v<l.v) u)",
+  "SELECT l.k FROM outer_rows l WHERE EXISTS "
+  "(SELECT 1 FROM inner_rows r WHERE r.k=l.k+1 AND r.v>l.v)",
+  "SELECT l.k FROM outer_rows l WHERE EXISTS (SELECT 1 FROM inner_rows r "
+  "WHERE r.k=l.k AND EXISTS (SELECT 1 FROM inner_rows s WHERE s.k=r.k AND s.v>l.v))"};
+
+struct correlated_fixture : sirius::test::GpuExecutionFixture {
+  correlated_fixture()
+  {
+    run_ok("CREATE TABLE outer_rows(k INTEGER, v INTEGER)");
+    run_ok("INSERT INTO outer_rows VALUES (1,1),(1,1),(2,3),(3,5),(NULL,2),(4,NULL)");
+    run_ok("CREATE TABLE inner_rows(k INTEGER, v INTEGER)");
+    run_ok("INSERT INTO inner_rows VALUES (1,1),(1,2),(1,2),(2,4),(2,NULL),(NULL,3),(4,7)");
+    run_ok(
+      "CREATE TABLE parts AS SELECT range::INTEGER pk, concat('p', range % 3) pname FROM "
+      "range(500)");
+    run_ok(
+      "CREATE TABLE items AS SELECT (range % 500)::INTEGER fk, (range * 7 % 23)::INTEGER qty FROM "
+      "range(10000)");
+    run_ok("CHECKPOINT");
+  }
+};
+
+unique_ptr<sirius::op::sirius_physical_operator> physical_plan(Connection& con,
+                                                               std::string const& sql,
+                                                               bool* optimized_domain = nullptr)
+{
+  auto& context = *con.context;
+  REQUIRE_FALSE(con.Query("BEGIN TRANSACTION")->HasError());
+  try {
+    Parser parser(context);
+    parser.ParseQuery(sql);
+    Planner planner(context);
+    planner.CreatePlan(std::move(parser.statements[0]));
+    Optimizer optimizer(*planner.binder, context);
+    auto logical = optimizer.Optimize(std::move(planner.plan));
+    if (optimized_domain) {
+      sirius::planner::invert_delim_ctes(logical);
+      std::function<void(LogicalOperator&)> inspect = [&](LogicalOperator& op) {
+        if (op.type == LogicalOperatorType::LOGICAL_PROJECTION &&
+            op.children[0]->type == LogicalOperatorType::LOGICAL_FILTER) {
+          auto* input = op.children[0].get();
+          while (input->type == LogicalOperatorType::LOGICAL_FILTER)
+            input = input->children[0].get();
+          if (input->type == LogicalOperatorType::LOGICAL_DELIM_GET) *optimized_domain = true;
+        }
+        for (auto& child : op.children)
+          inspect(*child);
+      };
+      inspect(*logical);
+    }
+    sirius::planner::sirius_physical_plan_generator generator(context);
+    auto result = generator.create_plan(std::move(logical));
+    REQUIRE_FALSE(con.Query("COMMIT")->HasError());
+    return result;
+  } catch (...) {
+    con.Query("ROLLBACK");
+    throw;
+  }
+}
+
+void operator_sequence(sirius::op::sirius_physical_operator& op,
+                       std::vector<sirius::op::SiriusPhysicalOperatorType>& result)
+{
+  using sirius::op::SiriusPhysicalOperatorType;
+  result.push_back(op.type);
+  for (auto& child : op.children)
+    operator_sequence(*child, result);
+  if (op.type == SiriusPhysicalOperatorType::LEFT_DELIM_JOIN ||
+      op.type == SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) {
+    auto& delim = op.Cast<sirius::op::sirius_physical_delim_join>();
+    operator_sequence(*delim.join, result);
+    operator_sequence(*delim.distinct_root, result);
+  }
+}
+}  // namespace
+
+TEST_CASE_METHOD(correlated_fixture,
+                 "Correlated queries retain delim physical plans",
+                 "[planner][delim_cte_inversion][integration]")
+{
+  using sirius::op::SiriusPhysicalOperatorType;
+  auto query_index = GENERATE(size_t(0), size_t(1), size_t(2), size_t(4), size_t(5), size_t(6));
+  auto const& sql  = correlated_queries[query_index];
+  INFO(sql);
+  std::vector<SiriusPhysicalOperatorType> expected;
+  {
+    sirius::test::scoped_sirius_setting setting{*con, "delim_join_as_cte", false};
+    auto plan = physical_plan(*con, sql);
+    operator_sequence(*plan, expected);
+  }
+  sirius::test::scoped_sirius_setting setting{*con, "delim_join_as_cte", true};
+  auto plan = physical_plan(*con, sql);
+  std::vector<SiriusPhysicalOperatorType> actual;
+  operator_sequence(*plan, actual);
+
+  CHECK(std::find(actual.begin(), actual.end(), SiriusPhysicalOperatorType::CTE) == actual.end());
+  CHECK(std::count(actual.begin(), actual.end(), SiriusPhysicalOperatorType::LEFT_DELIM_JOIN) +
+          std::count(actual.begin(), actual.end(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) >
+        0);
+  // Aggregate and nested queries can be reordered differently by the two representations.
+  if (query_index == 0 || query_index == 1 || query_index == 5) CHECK(actual == expected);
+}
+
+TEST_CASE_METHOD(correlated_fixture,
+                 "Correlated queries match CPU with default delim representation",
+                 "[delim_cte_inversion][integration]")
+{
+  auto query_index = GENERATE(size_t(0), size_t(1), size_t(2), size_t(4), size_t(5), size_t(6));
+  INFO(correlated_queries[query_index]);
+  compare_gpu_vs_cpu(correlated_queries[query_index]);
+}
+
+TEST_CASE_METHOD(correlated_fixture,
+                 "A similarly named user CTE preserves results",
+                 "[delim_cte_inversion][integration]")
+{
+  compare_gpu_vs_cpu(
+    "WITH __duckdb_delim_42 AS MATERIALIZED (SELECT * FROM inner_rows) "
+    "SELECT a.k, b.v FROM __duckdb_delim_42 a JOIN __duckdb_delim_42 b ON a.k=b.k");
+}
+
+TEST_CASE_METHOD(correlated_fixture,
+                 "Unsupported correlated consumers retain CPU fallback",
+                 "[delim_cte_inversion][integration]")
+{
+  constexpr size_t query_index = 3;
+  auto as_cte                  = GENERATE(false, true);
+  sirius::test::scoped_sirius_setting setting{*con, "delim_join_as_cte", as_cte};
+  INFO(correlated_queries[query_index]);
+  expect_plan_fallback_matches_cpu(correlated_queries[query_index]);
+}
+
+TEST_CASE_METHOD(correlated_fixture,
+                 "Optimized filtered delim domains execute on GPU",
+                 "[delim_cte_inversion][integration]")
+{
+  run_ok("INSERT INTO outer_rows VALUES (5,9)");
+  run_ok("CHECKPOINT");
+  bool optimized_domain = false;
+  auto plan             = physical_plan(*con, correlated_queries[0], &optimized_domain);
+  REQUIRE(optimized_domain);
+  compare_gpu_vs_cpu(correlated_queries[0]);
 }
