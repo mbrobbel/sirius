@@ -18,7 +18,8 @@ endif
 GEN ?= ninja
 
 EXT_NAME=sirius
-EXT_CONFIG=${PROJ_DIR}extension_config.cmake
+EXT_CONFIG ?= ${PROJ_DIR}extension_config.cmake
+override EXT_CONFIG := $(abspath $(EXT_CONFIG))
 
 include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
