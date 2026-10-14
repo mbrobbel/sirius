@@ -85,7 +85,7 @@ struct extracted_plan {
 };
 
 //! Parse + plan + optimize + resolve a SQL query, mirroring the sirius-specific order of
-//! `SiriusTableFunctionData::ExtractPlan`: `ResolveOperatorTypes` BEFORE `ColumnBindingResolver`.
+//! physical generator: invert delim CTEs, then resolve types before column bindings.
 //! DuckDB's `Connection::ExtractPlan` uses the reverse order, which trips sirius plan
 //! generation with an "inequal types" binder error on some queries. Needs an active transaction.
 extracted_plan extract_logical_plan_sirius_order(duckdb::ClientContext& context,

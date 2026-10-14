@@ -21,6 +21,7 @@
 #include "pipeline/sirius_meta_pipeline.hpp"
 #include "pipeline/sirius_pipeline.hpp"
 #include "pipeline/sirius_pipeline_converter.hpp"
+#include "planner/delim_cte_inversion.hpp"
 #include "planner/sirius_physical_plan_generator.hpp"
 #include "sirius/exception.hpp"
 #include "sirius_context.hpp"
@@ -112,6 +113,7 @@ extracted_plan extract_logical_plan_sirius_order(duckdb::ClientContext& context,
     duckdb::Optimizer optimizer(*planner.binder, context);
     plan = optimizer.Optimize(std::move(plan));
   }
+  sirius::planner::invert_delim_ctes(plan);
   plan->ResolveOperatorTypes();
   duckdb::ColumnBindingResolver resolver;
   duckdb::ColumnBindingResolver verifier(true);

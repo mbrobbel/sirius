@@ -85,7 +85,7 @@ struct decimal_bounds_fixture {
     run(
       "SET disabled_optimizers = "
       "'partial_aggregate_pushdown,aggregate_function_rewriter,common_aggregate';");
-    run("SET delim_join_as_cte = false;");
+    run(GENERATE("SET delim_join_as_cte = false;", "SET delim_join_as_cte = true;"));
     // v in [1.00, 50.00] (unscaled 5000), w in [-6.00, 0.00] (600), x in [10.50, 31.50] (3150);
     // wide is DECIMAL128 on the GPU and never a candidate.
     run(
@@ -166,8 +166,9 @@ TEST_CASE_METHOD(decimal_bounds_fixture,
     *con, "SELECT sum(f.v) FROM fact f WHERE EXISTS (SELECT 1 FROM dim d WHERE d.g = f.g)");
   REQUIRE(semi.size() == 1);
   CHECK(semi[0] == std::uint64_t{5000});
+  // Keep overlapping key ranges so the optimizer retains the correlated input.
   auto const anti = bounds_in_transaction(
-    *con, "SELECT sum(f.w) FROM fact f WHERE NOT EXISTS (SELECT 1 FROM dim d WHERE d.g = f.g + 7)");
+    *con, "SELECT sum(f.w) FROM fact f WHERE NOT EXISTS (SELECT 1 FROM dim d WHERE d.g = f.g + 1)");
   REQUIRE(anti.size() == 1);
   CHECK(anti[0] == std::uint64_t{600});
   auto const cross = bounds_in_transaction(*con, "SELECT sum(f.v), sum(d.x) FROM fact f, dim d");

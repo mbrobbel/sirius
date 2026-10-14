@@ -110,3 +110,15 @@ DuckDB revision (HTTP 404), single-GPU shard failures in tests requiring two GPU
 unrelated pinned-table chunk-count expectation. These prevent an all-green integration run
 in this environment. The matched-query and affected planner regressions are checked
 separately from those failures.
+
+Final release sharded run:
+
+```bash
+pixi run python scripts/run_unit_tests.py --build-dir build/release --steps shards -- \
+  '[planner],[integration],[dense_count_join],[distinct_hash_join],[plan_tree_shape]'
+```
+
+Of 1,410 cases, 1,287 passed, 122 failed, and one was skipped. Failures were confined to
+73 extension-dependent cases, 48 cases requiring two GPUs, and the pinned-table chunk-count
+case. All 13 inversion cases and the affected dense-count, distinct-join, tree-shape, and
+decimal-bound planner regressions passed. `pixi run pre-commit run -a` passed.

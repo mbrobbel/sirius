@@ -207,12 +207,6 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator> generate_sirius_plan(
       plan = optimizer.Optimize(std::move(plan));
     }
 
-    plan->ResolveOperatorTypes();
-
-    ColumnBindingResolver resolver;
-    duckdb::ColumnBindingResolver verifier(true);
-    verifier.VisitOperator(*plan);
-    resolver.VisitOperator(*plan);
     if (options.mutate) { REQUIRE(options.mutate(*plan)); }
 
     sirius::planner::sirius_physical_plan_generator gen(context);
@@ -788,12 +782,11 @@ TEST_CASE_METHOD(dense_count_join_fixture,
                  "dense_count_join declines bespoke-wired input roots",
                  "[dense_count_join][plan]")
 {
-  // Keep the correlated join whose input wiring this test exercises.
-  sirius::test::scoped_sirius_setting retain_delim{*con, "delim_join_as_cte", false};
   using T = sirius::op::SiriusPhysicalOperatorType;
 
   SECTION("materialized CTE reference")
   {
+    sirius::test::scoped_sirius_setting representation{*con, "delim_join_as_cte", false};
     auto const query =
       "WITH t AS MATERIALIZED (SELECT o_cust, o_id FROM ord) "
       "SELECT c_id, count(t.o_id) FROM cust LEFT JOIN t ON c_id = t.o_cust GROUP BY c_id";
@@ -816,6 +809,8 @@ TEST_CASE_METHOD(dense_count_join_fixture,
 
   SECTION("semi delim join from a correlated EXISTS")
   {
+    sirius::test::scoped_sirius_setting representation{
+      *con, "delim_join_as_cte", GENERATE(false, true)};
     require_delim_root_declined(
       "SELECT c_id, count(t.o_id) FROM cust LEFT JOIN ("
       "  SELECT o_id, o_cust FROM ord o"
@@ -825,6 +820,8 @@ TEST_CASE_METHOD(dense_count_join_fixture,
 
   SECTION("single delim join from a correlated scalar subquery")
   {
+    sirius::test::scoped_sirius_setting representation{
+      *con, "delim_join_as_cte", GENERATE(false, true)};
     require_delim_root_declined(
       "SELECT c_id, count(t.a) FROM cust LEFT JOIN ("
       "  SELECT o_cust, (SELECT sum(o2.o_id - o.o_id) FROM ord o2 WHERE o2.o_cust = o.o_cust) AS a"
@@ -849,13 +846,10 @@ TEST_CASE_METHOD(dense_count_join_fixture,
     auto plan = generate_sirius_plan(*con, query);
     REQUIRE(plan);
     CHECK(collect(plan.get(), T::DENSE_COUNT_JOIN).empty());
-    if (as_cte) {
-      CHECK_FALSE(collect(plan.get(), T::CTE).empty());
-    } else {
-      CHECK(collect(plan.get(), T::LEFT_DELIM_JOIN).size() +
-              collect(plan.get(), T::RIGHT_DELIM_JOIN).size() ==
-            1);
-    }
+    CHECK(collect(plan.get(), T::CTE).empty());
+    CHECK(collect(plan.get(), T::LEFT_DELIM_JOIN).size() +
+            collect(plan.get(), T::RIGHT_DELIM_JOIN).size() ==
+          1);
   };
 
   SECTION("below a FILTER root")

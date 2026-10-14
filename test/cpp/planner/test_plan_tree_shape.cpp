@@ -148,13 +148,6 @@ duckdb::unique_ptr<sirius_physical_operator> generate_sirius_plan(
       plan = optimizer.Optimize(std::move(plan));
     }
 
-    plan->ResolveOperatorTypes();
-
-    ColumnBindingResolver resolver;
-    duckdb::ColumnBindingResolver verifier(true);
-    verifier.VisitOperator(*plan);
-    resolver.VisitOperator(*plan);
-
     sirius::planner::sirius_physical_plan_generator gen(context);
     result = gen.create_plan(std::move(plan));
   } catch (...) {
@@ -361,7 +354,8 @@ struct plan_tree_shape_fixture {
     db  = sirius::test::open_sirius_db(_db_path.path().c_str(), cfg);
     con = std::make_unique<Connection>(*db);
     // This suite checks the explicit DELIM_JOIN operator's wiring.
-    REQUIRE_FALSE(con->Query("SET delim_join_as_cte=false")->HasError());
+    REQUIRE_FALSE(con->Query(GENERATE("SET delim_join_as_cte=false", "SET delim_join_as_cte=true"))
+                    ->HasError());
 
     // big_left is larger so the optimizer keeps small_right as the build side.
     con->Query("CREATE TABLE big_left (id INTEGER, val INTEGER)");
@@ -895,8 +889,9 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
     INFO(tree_to_string(plan.get()));
 
     auto* node = find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN);
+    if (!node) node = find_first(plan.get(), SiriusPhysicalOperatorType::LEFT_DELIM_JOIN);
     REQUIRE(node != nullptr);
-    auto& delim = node->Cast<sirius::op::sirius_physical_right_delim_join>();
+    auto& delim = node->Cast<sirius::op::sirius_physical_delim_join>();
 
     auto endpoints = collect(plan.get(), SiriusPhysicalOperatorType::DYNAMIC_FILTER);
     REQUIRE(endpoints.size() == 2);
@@ -933,7 +928,8 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
     auto plan = generate_sirius_plan(*con, delim_query);
     INFO(tree_to_string(plan.get()));
 
-    REQUIRE(find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) != nullptr);
+    REQUIRE((find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) != nullptr ||
+             find_first(plan.get(), SiriusPhysicalOperatorType::LEFT_DELIM_JOIN) != nullptr));
     CHECK(collect(plan.get(), SiriusPhysicalOperatorType::DYNAMIC_FILTER).empty());
   }
 }
@@ -1070,7 +1066,7 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
                  "plan tree shape - delim join internal subtrees are rewritten and tagged",
                  "[plan_tree_shape][isolated_context]")
 {
-  SECTION("RIGHT_DELIM_JOIN: partition_join points at the build-side PARTITION")
+  SECTION("correlated aggregate: delim internals retain their pipeline wiring")
   {
     // TPC-H q17 shape: correlated aggregate whose outer is a filtered join.
     auto plan = generate_sirius_plan(
@@ -1080,22 +1076,31 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
     INFO(tree_to_string(plan.get()));
 
     auto* node = find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN);
+    if (!node) node = find_first(plan.get(), SiriusPhysicalOperatorType::LEFT_DELIM_JOIN);
     REQUIRE(node != nullptr);
-    auto& delim = node->Cast<sirius::op::sirius_physical_right_delim_join>();
+    auto& delim = node->Cast<sirius::op::sirius_physical_delim_join>();
     require_delim_join_common(delim);
 
-    // partition_join is the build-side PARTITION freshly planted by wrap_join.
-    auto* build_concat = delim.join->children[1].get();
-    REQUIRE(build_concat->type == SiriusPhysicalOperatorType::CONCAT);
-    REQUIRE(!build_concat->children.empty());
-    auto* build_partition = build_concat->children[0].get();
-    REQUIRE(build_partition->type == SiriusPhysicalOperatorType::PARTITION);
-    CHECK(static_cast<sirius_physical_operator*>(delim.partition_join) == build_partition);
+    if (node->type == SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) {
+      // partition_join is the build-side PARTITION freshly planted by wrap_join.
+      auto* build_concat = delim.join->children[1].get();
+      REQUIRE(build_concat->type == SiriusPhysicalOperatorType::CONCAT);
+      REQUIRE(!build_concat->children.empty());
+      auto* build_partition = build_concat->children[0].get();
+      REQUIRE(build_partition->type == SiriusPhysicalOperatorType::PARTITION);
+      CHECK(static_cast<sirius_physical_operator*>(
+              delim.Cast<sirius::op::sirius_physical_right_delim_join>().partition_join) ==
+            build_partition);
 
-    // The build-side placeholder DUMMY_SCAN carries no runtime data and stays un-wrapped.
-    auto* dummy = find_first(delim.join.get(), SiriusPhysicalOperatorType::DUMMY_SCAN);
-    REQUIRE(dummy != nullptr);
-    CHECK(dummy->children.empty());
+      // The build-side placeholder DUMMY_SCAN carries no runtime data and stays un-wrapped.
+      auto* dummy = find_first(delim.join.get(), SiriusPhysicalOperatorType::DUMMY_SCAN);
+      REQUIRE(dummy != nullptr);
+      CHECK(dummy->children.empty());
+    } else {
+      auto& left = delim.Cast<sirius::op::sirius_physical_left_delim_join>();
+      REQUIRE(left.column_data_scan != nullptr);
+      CHECK(contains(left.join->children[0].get(), left.column_data_scan));
+    }
   }
 
   SECTION("LEFT_DELIM_JOIN: the cached chunk scan sits under the probe-side wrap")
@@ -1470,7 +1475,8 @@ TEST_CASE_METHOD(plan_tree_shape_fixture,
     "AND i.qty < (SELECT 2 * AVG(i2.qty) FROM items i2 WHERE i2.fk = p.pk)");
   INFO(tree_to_string(plan.get()));
 
-  REQUIRE(find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) != nullptr);
+  REQUIRE((find_first(plan.get(), SiriusPhysicalOperatorType::RIGHT_DELIM_JOIN) != nullptr ||
+           find_first(plan.get(), SiriusPhysicalOperatorType::LEFT_DELIM_JOIN) != nullptr));
 
   auto const expected = collect(plan.get(), SiriusPhysicalOperatorType::GPU_SCAN);
   REQUIRE_FALSE(expected.empty());

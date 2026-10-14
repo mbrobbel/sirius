@@ -110,13 +110,6 @@ duckdb::unique_ptr<sirius::op::sirius_physical_operator> generate_sirius_plan(
       plan = optimizer.Optimize(std::move(plan));
     }
 
-    plan->ResolveOperatorTypes();
-
-    ColumnBindingResolver resolver;
-    duckdb::ColumnBindingResolver verifier(true);
-    verifier.VisitOperator(*plan);
-    resolver.VisitOperator(*plan);
-
     sirius::planner::sirius_physical_plan_generator gen(context);
     result = gen.create_plan(std::move(plan));
   } catch (duckdb::InternalException&) {
@@ -440,7 +433,8 @@ TEST_CASE_METHOD(distinct_hash_join_fixture,
                  "distinct_hash_join - DELIM_GET build side enables unique_build_keys",
                  "[distinct_hash_join][isolated_context]")
 {
-  REQUIRE_FALSE(con->Query("SET delim_join_as_cte=false")->HasError());
+  REQUIRE_FALSE(
+    con->Query(GENERATE("SET delim_join_as_cte=false", "SET delim_join_as_cte=true"))->HasError());
   // Decorrelates into a DELIM_JOIN whose inner re-join probes delim_big against a
   // DELIM_GET replaying the duplicate-eliminated k keys — the TPC-H q22 shape.
   auto plan = generate_sirius_plan(
@@ -466,7 +460,8 @@ TEST_CASE_METHOD(distinct_hash_join_fixture,
                  "distinct_hash_join - non-unique build still refused alongside DELIM_GET",
                  "[distinct_hash_join][isolated_context]")
 {
-  REQUIRE_FALSE(con->Query("SET delim_join_as_cte=false")->HasError());
+  REQUIRE_FALSE(
+    con->Query(GENERATE("SET delim_join_as_cte=false", "SET delim_join_as_cte=true"))->HasError());
   // Same delim shape, but the outer query also joins the non-unique delim_fact build.
   auto plan = generate_sirius_plan(
     *con,
