@@ -39,13 +39,13 @@ For the legacy Sirius implementation used for the ClickBench results, see the
 
 ## Installing a Prebuilt Sirius Release
 
-Getting started? Download one of our prebuilt extensions instead of building from source:
+Getting started? Download a prebuilt release instead of building from source:
 
 - [`stable`](https://github.com/sirius-db/sirius/releases/tag/stable): a maintainer-selected build, promoted manually
 - [`latest`](https://github.com/sirius-db/sirius/releases/tag/latest): tracks the newest successful build on `main` automatically, possible to encounter breaking changes
 
 Both include full install instructions in the release notes: installing a matching DuckDB
-version, downloading the right binary for your platform, and a sample query to try it with.
+version, downloading the extensions for your platform, and a sample query to try them with.
 
 ## Building and Running Sirius
 

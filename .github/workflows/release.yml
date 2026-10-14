@@ -227,7 +227,7 @@ jobs:
         run: |
           gh run download "$RUN_ID" \
             --repo "$REPO" \
-            --pattern "sirius-*-extension-linux_*-cuda*" \
+            --pattern "sirius*-extension-linux_*" \
             --dir artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -238,55 +238,52 @@ jobs:
         id: artifacts
         if: github.event_name == 'pull_request' || steps.staleness.outputs.stale != 'true'
         run: |
-          set -euo pipefail
-          mkdir -p renamed
-          cd artifacts
-          shopt -s nullglob
-          dirs=(*/)
-          shopt -u nullglob
-          count=${#dirs[@]}
-          # 4 = 2 archs (amd64/arm64) x 2 CUDA versions (12/13), per the matrix in
-          # distribution.yml - update this if that matrix changes.
-          if [ "$count" -ne 4 ]; then
-            echo "::error::Expected 4 extension artifacts, found $count: ${dirs[*]}" >&2
-            exit 1
-          fi
-          duckdb_version=""
-          for d in "${dirs[@]}"; do
-            name="${d%/}"
-            # e.g. sirius-v1.5.6-extension-linux_amd64-cuda12
-            if [[ "$name" =~ ^sirius-(v[0-9.]+|[0-9a-f]{40})-extension-(linux_[a-z0-9]+)-cuda([0-9]+)$ ]]; then
-              version="${BASH_REMATCH[1]}"
-              arch="${BASH_REMATCH[2]}"
-              cuda="${BASH_REMATCH[3]}"
-            else
-              echo "::error::Unexpected artifact name: $name" >&2
-              exit 1
-            fi
-            if [ -z "$duckdb_version" ]; then
-              duckdb_version="$version"
-            elif [ "$duckdb_version" != "$version" ]; then
-              echo "::error::Mismatched DuckDB versions across artifacts: $duckdb_version vs $version" >&2
-              exit 1
-            fi
-            src="$name/sirius.duckdb_extension"
-            dest="../renamed/sirius-${arch}-cuda${cuda}.duckdb_extension"
-            if [ ! -f "$src" ]; then
-              echo "::error::Expected file not found: $src" >&2
-              exit 1
-            fi
-            cp "$src" "$dest"
-          done
-          echo "duckdb_version=$duckdb_version" >> "$GITHUB_OUTPUT"
+          python3 - <<'PYEOF'
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+
+          # Keep older releases promotable and the PR dry run compatible with main.
+          legacy = re.compile(r"sirius-(v[0-9.]+|[0-9a-f]{40})-extension-(linux_amd64|linux_arm64)-cuda(12|13)")
+          core = re.compile(r"sirius_cuda(12|13)-(v[0-9.]+|[0-9a-f]{40})-extension-(linux_amd64|linux_arm64)")
+          versions, layouts, pairs = set(), set(), set()
+          copies = []
+          for directory in sorted(Path("artifacts").iterdir()):
+              if match := legacy.fullmatch(directory.name):
+                  version, arch, cuda = match.groups()
+                  layouts.add("direct")
+                  copies.append((directory / "sirius.duckdb_extension", f"sirius-{arch}-cuda{cuda}"))
+              elif match := core.fullmatch(directory.name):
+                  cuda, version, arch = match.groups()
+                  layouts.add("loader")
+                  if cuda == "12":
+                      copies.append((directory / "sirius_cuda12.duckdb_extension", f"sirius_cuda12-{arch}"))
+                  else:
+                      for name in ("sirius", "sirius_cuda13"):
+                          files = list(directory.glob(f"*/*/{name}.duckdb_extension"))
+                          if len(files) != 1:
+                              raise RuntimeError(f"Expected one {name} in {directory}, found {files}")
+                          copies.append((files[0], f"{name}-{arch}"))
+              else:
+                  raise RuntimeError(f"Unexpected artifact: {directory}")
+              versions.add(version)
+              if (arch, cuda) in pairs:
+                  raise RuntimeError(f"Duplicate artifact for {arch}/CUDA {cuda}")
+              pairs.add((arch, cuda))
+          expected = {(arch, cuda) for arch in ("linux_amd64", "linux_arm64") for cuda in ("12", "13")}
+          if pairs != expected or len(versions) != 1 or len(layouts) != 1:
+              raise RuntimeError(f"Incomplete or mixed distribution: {pairs=}, {versions=}, {layouts=}")
+          Path("renamed").mkdir()
+          for source, name in copies:
+              shutil.copyfile(source, Path("renamed") / f"{name}.duckdb_extension")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"duckdb_version={versions.pop()}\nlayout={layouts.pop()}\n")
+          PYEOF
 
       - name: Compress artifacts
         if: github.event_name == 'pull_request' || steps.staleness.outputs.stale != 'true'
-        # GitHub Releases rejects any single asset >= 2 GiB; cuda12 builds land right at that
-        # line. All 4 variants are compressed for consistency, not just the ones that need it.
-        # Looped per-file (not a single `gzip -9 renamed/*.duckdb_extension` wildcard) so progress
-        # is visible: compressing all 4 takes close to 5 minutes, and the wildcard form runs
-        # silently the whole time, which made a legitimately-still-running step look hung during
-        # this workflow's own testing.
+        # Compress every extension to fit GitHub's 2 GiB asset limit; log progress per file.
         run: |
           set -euo pipefail
           for f in renamed/*.duckdb_extension; do
@@ -343,15 +340,7 @@ jobs:
 
       - name: Build release notes
         if: github.event_name == 'pull_request' || steps.staleness.outputs.stale != 'true'
-        # Content lives in .github/workflows/release/*.md, not inline here: GETTING_STARTED.md
-        # is the shared walkthrough (requirements, install, download, unsigned-extensions,
-        # load-and-try) used by both modes, with {{PLACEHOLDER}} tokens filled in below;
-        # LATEST.md/STABLE.md are short static blurbs explaining what each tag means, appended
-        # above the comparison link for latest or in place of one for stable. Editing release copy
-        # is then a plain markdown edit, no backtick
-        # escaping, no touching this workflow file. The install command and example query in
-        # GETTING_STARTED.md are taken verbatim from docs/README.md's own quick-start section,
-        # not invented here, so they stay correct as that doc evolves.
+        # Select the walkthrough matching the artifacts, including older direct releases.
         run: |
           set -euo pipefail
           python3 - <<'PYEOF'
@@ -371,11 +360,11 @@ jobs:
               f"- [{os.path.basename(f)}](https://github.com/{repo}/releases/download/{tag}/{os.path.basename(f)})"
               for f in renamed_files
           )
-          # Decompressed name: the LOAD example in GETTING_STARTED.md runs after the gunzip step
-          # it also adds, so {{FIRST_FILE}} needs to be the extracted filename, not the .gz one.
+          # Older direct releases load the decompressed file by its release asset name.
           first_file = os.path.basename(renamed_files[0]).removesuffix(".gz")
 
-          with open(".github/workflows/release/GETTING_STARTED.md") as f:
+          template = "CORE_GETTING_STARTED.md" if os.environ["LAYOUT"] == "loader" else "GETTING_STARTED.md"
+          with open(f".github/workflows/release/{template}") as f:
               notes = f.read()
           if len(duckdb_version) == 40 and all(c in "0123456789abcdef" for c in duckdb_version):
               notes = notes.replace(
@@ -383,7 +372,7 @@ jobs:
                   "git clone https://github.com/duckdb/duckdb.git\n"
                   "cd duckdb\n"
                   f"git checkout {duckdb_version}\n"
-                  "make release\n"
+                  "make release EXPORT_DYNAMIC_SYMBOLS=1\n"
                   'export PATH="$PWD/build/release:$PATH"',
               )
           notes = (
@@ -423,6 +412,7 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
           DUCKDB_VERSION: ${{ steps.artifacts.outputs.duckdb_version }}
+          LAYOUT: ${{ steps.artifacts.outputs.layout }}
 
       - name: Stage assets on a scratch release for verification
         if: (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run') && steps.staleness.outputs.stale != 'true'
@@ -481,6 +471,13 @@ jobs:
             gh api -X PATCH "repos/${REPO}/git/refs/tags/$TAG" -f sha="$TARGET_SHA" -F force=true
             gh release upload "$TAG" renamed/*.duckdb_extension.gz renamed/MANIFEST.sha256 renamed/LICENSE --clobber
             gh release edit "$TAG" --title "${TAG} (${short_sha})" --notes-file NOTES.md --prerelease=true
+            # Remove obsolete layout assets only after every replacement has uploaded.
+            assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+            while IFS= read -r asset; do
+              if [ ! -f "renamed/$asset" ]; then
+                gh release delete-asset "$TAG" "$asset" --yes
+              fi
+            done <<< "$assets"
           else
             # First-ever publish of this tag - no live release exists yet to protect, so create
             # and publish it directly with assets attached, no staging swap needed. --target is
@@ -514,10 +511,10 @@ jobs:
           out=$(gh release view "$TAG" --json isDraft,isPrerelease,assets)
           is_draft=$(echo "$out" | jq -r .isDraft)
           is_pre=$(echo "$out" | jq -r .isPrerelease)
-          asset_count=$(echo "$out" | jq '.assets | length')
-          # 6 = 4 .duckdb_extension files + MANIFEST.sha256 + LICENSE
-          if [ "$is_draft" != "false" ] || [ "$is_pre" != "true" ] || [ "$asset_count" -ne 6 ]; then
-            echo "::error::Post-publish state looks wrong: draft=$is_draft prerelease=$is_pre assets=$asset_count (expected draft=false prerelease=true assets=6)" >&2
+          actual_assets=$(echo "$out" | jq -r '.assets[].name' | sort)
+          expected_assets=$(printf '%s\n' renamed/* | sed 's|^renamed/||' | sort)
+          if [ "$is_draft" != "false" ] || [ "$is_pre" != "true" ] || [ "$actual_assets" != "$expected_assets" ]; then
+            echo "::error::Post-publish state looks wrong: draft=$is_draft prerelease=$is_pre; assets must match renamed/" >&2
             exit 1
           fi
           resolved=$(gh api "repos/${REPO}/git/refs/tags/$TAG" --jq .object.sha)

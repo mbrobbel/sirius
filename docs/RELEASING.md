@@ -8,6 +8,12 @@ release; both are mutable snapshots that get replaced in place.
 - **`latest`**: tracks the newest successful build on `main` automatically, no maintainer action
   needed in normal operation.
 
+New builds publish six compressed extension files: `sirius`, `sirius_cuda12`, and
+`sirius_cuda13` for each of Linux amd64 and arm64. All come from the same distribution
+run and source commit. GitHub assets are unsigned; signed core publication is handled
+separately by DuckDB. Older builds with four direct-extension files remain promotable;
+the release workflow selects matching install instructions.
+
 ## Promoting `stable`
 
 1. Pick a commit SHA. The usual criterion is the most recent commit whose build passed the

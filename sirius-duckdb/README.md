@@ -104,13 +104,19 @@ driver version; the loader does not retry with the other CUDA version.
 
 These are Linux glibc amd64/arm64 SBSA builds; Jetson/Tegra is not supported.
 The loader does not detect or reject unsupported GPU architectures.
-The existing Makefile and distribution
-workflows still build the direct `sirius` backend for development and existing
-consumers. Before publishing the loader, stop publishing the direct backend as
-`sirius` for the same DuckDB version and platform. Publish the loader and both
-backends from the same Sirius commit. Existing direct-extension installations
-must use `FORCE INSTALL sirius FROM core` when switching to the core loader.
-Use separate extension directories when testing both layouts.
+Local `pixi run make` still builds the direct `sirius` backend. Distribution CI
+builds the three-extension layout: CUDA 12 builds its backend, and CUDA 13 builds
+its backend and the CUDA-free loader once per CPU architecture. The release
+workflow packages all six files from one successful distribution run, so the
+loader and backends come from the same Sirius commit. It no longer publishes
+the direct backend as `sirius` for new releases.
+
+GitHub release files remain unsigned; follow their release notes to install all
+three locally with `duckdb -unsigned`. Signed core publication and DuckDB's
+known-extension metadata are separate upstream work. Once core publication is
+available, existing direct-extension installations must use
+`FORCE INSTALL sirius FROM core` when switching to the loader. Use separate
+extension directories when testing both layouts.
 
 Use a separate build directory for each core configuration:
 
@@ -120,7 +126,9 @@ Use a separate build directory for each core configuration:
 | `config/cuda12.cmake` | `sirius_cuda12` |
 | `config/cuda13.cmake` | CUDA-free `sirius` and `sirius_cuda13` |
 
-Pass the absolute config path through `DUCKDB_EXTENSION_CONFIGS`. Backend configs
+With the Makefile, select a config using `EXT_CONFIG=config/cuda13.cmake`
+(or `config/cuda12.cmake`). Direct CMake builds pass its absolute path through
+`DUCKDB_EXTENSION_CONFIGS`. Backend configs
 use an installed static Sirius package by default; build that package with the
 matching CUDA toolkit and configure its vcpkg dependencies as described above.
 Use `-DEXPORT_DYNAMIC_SYMBOLS=ON` for backend scan verification.
