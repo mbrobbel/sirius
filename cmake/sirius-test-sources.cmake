@@ -238,6 +238,7 @@ set(TEST_SOURCES
     test/cpp/planner/test_dynamic_filter_key_admission.cpp
     test/cpp/planner/test_dynamic_filter_target_discovery.cpp
     test/cpp/planner/test_join_expression_key.cpp
+    test/cpp/planner/test_delim_cte_inversion.cpp
     test/cpp/planner/test_plan_tree_shape.cpp
     test/cpp/planner/test_projection_fold.cpp
     test/cpp/planner/test_sirius_read_parquet_scan.cpp
