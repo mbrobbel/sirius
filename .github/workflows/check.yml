@@ -190,7 +190,9 @@ jobs:
           engine=$(git rev-parse HEAD:duckdb)
           wrapper=$(git rev-parse HEAD:sirius-duckdb/duckdb)
           [[ "$engine" == "$wrapper" ]]
-          grep -q "duckdb_version: $engine" .github/workflows/distribution.yml
+          git -C duckdb fetch --depth=1 origin tag v2.0.0
+          [[ "$engine" == "$(git -C duckdb rev-parse 'v2.0.0^{}')" ]]
+          [[ $(grep -c 'duckdb_version: v2.0.0' .github/workflows/distribution.yml) -eq 2 ]]
 
       # Rust bindings (sirius-sys + sirius) — fmt/clippy + build/link the test.
       # Run on a single representative entry. `cargo test --no-run` compiles the

@@ -56,8 +56,8 @@ librmm = "*"
 libcurand-dev = "*"
 yaml-cpp = "*"
 libabseil = "*"
-# Fixture/data-generation Python client; the engine and LOAD tests use the pinned v2 source.
-duckdb = "=1.5.6"
+# Match the Python client to the pinned DuckDB source and extension release.
+duckdb = "=2.0.0"
 spdlog = "1.8.*"
 sqlite = "3.*"
 rust-src = "*"
