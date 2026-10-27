@@ -1,4 +1,4 @@
-//! Raw declarations matching `include/sirius/c/`.
+//! Raw declarations matching `include/sirius-c/`.
 //!
 //! Handles are allocated and released by Sirius. Never free them with Rust's allocator.
 //! Output slots must not contain unreleased handles. Diagnostics are optional;
