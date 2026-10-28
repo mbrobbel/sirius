@@ -6,8 +6,10 @@ not implemented contracts or finalized signatures.
 ## Scope
 
 Introduce an API for externally supplied plans, initially Substrait, through the C ABI
-with C++ and Rust wrappers. Prefer immutable descriptions and distinct types for
-preparation, execution, and streaming capabilities.
+with C++ and Rust wrappers. The [plan construction proposal](plan-construction-api-design.md)
+adds programmatic construction of the same immutable `Plan` through that boundary.
+Prefer immutable descriptions and distinct types for preparation, execution, and
+streaming capabilities.
 
 Start with materialized execution, then add live streaming, backpressure, and
 cancellation. Keep existing integrations working during migration. SQL preparation,
@@ -34,7 +36,7 @@ Binary packaging and runtime dependency compatibility remain separate concerns.
 |---|---|
 | `Context` | Engine resources and scheduling services. |
 | `Session` | Planning environment, including catalog and settings, when needed. |
-| `Plan` | Immutable, parsed plan description. |
+| `Plan` | Immutable plan description, imported or constructed programmatically. |
 | `PreparedPlan` | Plan bound to inputs, schemas, resources, and output routing. |
 | `Execution` | Control and observe one submitted execution. |
 | `InputSource` | An owning consumer endpoint, bound into a prepared plan. |
@@ -51,8 +53,10 @@ Serialized plan → Plan → PreparedPlan → Execution → Terminal outcome
                     Output routing
 ```
 
-Parsing produces an owned, structurally valid `Plan`. Preparation resolves schemas,
-functions, supported operators, resource references, and output routing. Success
+Import or programmatic construction produces an owned, structurally valid `Plan`
+and establishes schema/type facts available without engine resources. Preparation
+resolves remaining schemas, functions, supported operators, resource references,
+and output routing. Success
 produces a complete `PreparedPlan`; partial preparation stays private and cleans up
 on failure.
 
