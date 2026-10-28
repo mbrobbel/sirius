@@ -3161,6 +3161,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sirius-substrait"
+version = "0.1.0"
+dependencies = [
+ "arrow-array",
+ "arrow-schema",
+ "parquet",
+ "prost",
+ "sirius",
+ "substrait",
+ "tempfile",
+ "url",
+]
+
+[[package]]
 name = "sirius-sys"
 version = "0.1.0"
 dependencies = [

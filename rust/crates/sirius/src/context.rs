@@ -42,8 +42,8 @@ impl std::error::Error for ContextError {}
 /// An unrecoverable failure to stop workers or destroy resources terminates the process.
 /// Forking with an active context is unsupported.
 ///
-/// This type owns a native context through the C ABI and exposes construction only. Query
-/// execution and client sessions are not exposed by this type yet.
+/// This type owns a native context through the C ABI and supports blocking
+/// materialized execution of plans constructed through the public builder.
 /// It is neither `Send` nor `Sync`.
 pub struct Context {
     // Own the native engine until Rust drops this handle.
@@ -96,5 +96,49 @@ impl Drop for Context {
     fn drop(&mut self) {
         // SAFETY: this is the unique owner, and Rust borrows cannot outlive it.
         unsafe { c_api::sirius_context_destroy(self.inner.as_ptr()) }
+    }
+}
+
+impl Context {
+    /// Prepare and execute a constructed plan, returning materialized CPU Arrow batches.
+    ///
+    /// Blocks until execution and output collection complete. Requires exclusive access
+    /// to the context; it remains neither Send nor Sync. The plan is borrowed and can
+    /// be reused after success or failure. No DuckDB CPU query fallback is performed.
+    ///
+    /// ```no_run
+    /// # fn run(context: &mut sirius::Context, plan: &sirius::Plan) -> Result<(), sirius::PlanError> {
+    /// let result = context.execute_plan(plan)?;
+    /// for batch in result.batches { println!("{} rows", batch.num_rows()); }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn execute_plan(
+        &mut self,
+        plan: &crate::Plan,
+    ) -> Result<crate::PlanResult, crate::PlanError> {
+        use arrow_array::RecordBatchReader;
+        use arrow_array::ffi_stream::{ArrowArrayStreamReader, FFI_ArrowArrayStream};
+        let mut stream = FFI_ArrowArrayStream::empty();
+        let mut diagnostic = Diagnostic(std::ptr::null_mut());
+        // SAFETY: both handles remain borrowed, self is exclusive, and stream is an
+        // empty writable Arrow C stream. Native execution transfers its ownership.
+        let status = unsafe {
+            sirius_sys::plan::sirius_context_execute_plan(
+                self.inner.as_ptr(),
+                plan.inner.as_ptr(),
+                (&mut stream as *mut FFI_ArrowArrayStream).cast(),
+                &mut diagnostic.0,
+            )
+        };
+        crate::plan::check(status, &diagnostic)?;
+        let arrow_error = |error: arrow_schema::ArrowError| crate::PlanError {
+            status: sirius_sys::plan::SIRIUS_EXECUTION_FAILURE,
+            message: error.to_string(),
+        };
+        let reader = ArrowArrayStreamReader::try_new(stream).map_err(arrow_error)?;
+        let schema = reader.schema();
+        let batches = reader.collect::<Result<Vec<_>, _>>().map_err(arrow_error)?;
+        Ok(crate::PlanResult { schema, batches })
     }
 }

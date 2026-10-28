@@ -57,3 +57,6 @@ pub use ffi::{Context, make_context, make_context_from_config};
 
 /// Raw configuration and context bindings to the public C ABI.
 pub mod c_api;
+
+/// Raw plan-construction C ABI.
+pub mod plan;

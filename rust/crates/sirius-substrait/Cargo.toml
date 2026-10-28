@@ -1,0 +1,19 @@
+[package]
+name = "sirius-substrait"
+version.workspace = true
+edition.workspace = true
+description = "A minimal Substrait consumer built on Sirius's public plan API."
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+sirius = { path = "../sirius" }
+substrait = "0.65"
+prost = "0.14"
+url = "2"
+
+[dev-dependencies]
+arrow-array = "60"
+arrow-schema = "60"
+parquet = "60"
+tempfile = "3"

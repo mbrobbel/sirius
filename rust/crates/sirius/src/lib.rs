@@ -5,13 +5,16 @@
 //! — the entry point for driving Sirius from Rust.
 //!
 //! Build immutable configurations with [`ContextConfigBuilder`] and construct an
-//! engine with [`Context`]. Existing execution is available through [`SiriusContext`].
+//! engine with [`Context`]. Construct immutable plans with [`Relation`] and execute
+//! them with [`Context::execute_plan`]. Legacy execution remains in [`SiriusContext`].
 
 mod config;
 mod context;
 mod diagnostic;
+mod plan;
 pub use config::{ConfigError, ContextConfig, ContextConfigBuilder};
 pub use context::{Context, ContextError};
+pub use plan::{Comparison, Expression, I64Field, Plan, PlanError, PlanResult, Relation};
 
 use std::path::Path;
 
