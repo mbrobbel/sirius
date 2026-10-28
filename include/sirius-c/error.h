@@ -19,7 +19,9 @@ enum {
   SIRIUS_ALLOCATION_FAILURE     = 4, /**< Allocation failed; no diagnostic is required. */
   SIRIUS_INVALID_ARGUMENT       = 5, /**< A required pointer or argument is invalid. */
   SIRIUS_INTERNAL_ERROR         = 6, /**< An unexpected implementation failure occurred. */
-  SIRIUS_CONTEXT_INITIALIZATION = 7  /**< Hardware resolution or engine initialization failed. */
+  SIRIUS_CONTEXT_INITIALIZATION = 7, /**< Hardware resolution or engine initialization failed. */
+  SIRIUS_INVALID_PLAN           = 8, /**< Invalid or unsupported plan. */
+  SIRIUS_EXECUTION_FAILURE      = 9  /**< Plan preparation or execution failed. */
 };
 /** An owned diagnostic. Release with sirius_error_destroy(), never free(). */
 typedef struct sirius_error sirius_error;

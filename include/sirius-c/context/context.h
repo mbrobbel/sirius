@@ -40,7 +40,9 @@ typedef struct sirius_context sirius_context;
 SIRIUS_EXPORT sirius_status sirius_context_create(const sirius_context_config* config,
                                                   sirius_context** out_context,
                                                   sirius_error** out_error) SIRIUS_C_NOEXCEPT;
-/** Destroy an engine and release its resources. A null handle is allowed.
+/** Release the context handle. A null handle is allowed.
+ * Outstanding materialized Arrow streams retain the runtime until released;
+ * release them before creating another context in this process.
  * An unrecoverable failure to stop workers or destroy resources terminates the process.
  * The handle must not be used or destroyed again after this call.
  * @code{.c}
