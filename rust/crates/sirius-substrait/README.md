@@ -53,7 +53,7 @@ Build the native library first, then run the example on a machine with a support
 
 ```bash
 pixi run cmake --build build/release --target sirius_shared -j 8
-LD_LIBRARY_PATH="$PWD/build/release/extension/sirius${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+LD_LIBRARY_PATH="$PWD/build/release${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
   pixi run cargo run --manifest-path rust/Cargo.toml -p sirius-substrait --example scan_filter
 ```
 

@@ -37,6 +37,8 @@ impl std::error::Error for ContextError {}
 /// context may succeed, but shared runtime resources can interfere with each other.
 /// Destruction does not reset all process-wide settings: changing
 /// `sirius.executor.downgrade.copy_chunk_bytes` after a successful creation is unsupported.
+/// Spill-compression defaults persist after destruction or failed creation; the next
+/// initialization replaces them from its configuration.
 /// CUDA/NVTX initialization persists even after failed creation; NVTX injection settings
 /// must remain unchanged for the process lifetime.
 /// An unrecoverable failure to stop workers or destroy resources terminates the process.

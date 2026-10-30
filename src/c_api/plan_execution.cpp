@@ -4,7 +4,6 @@
 #include "c_api/plan_internal.hpp"
 #include "core_functions_extension.hpp"
 #include "duckdb/common/arrow/arrow_wrapper.hpp"
-#include "duckdb/common/arrow/result_arrow_wrapper.hpp"
 #include "duckdb/main/connection.hpp"
 #include "duckdb/main/database.hpp"
 #include "duckdb/main/extension_helper.hpp"
@@ -12,6 +11,7 @@
 #include "duckdb/main/relation/table_function_relation.hpp"
 #include "duckdb/parser/statement/relation_statement.hpp"
 #include "duckdb/planner/planner.hpp"
+#include "exec/arrow_result_stream.hpp"
 #include "expression/ast/node.hpp"
 #include "op/sirius_physical_filter.hpp"
 #include "op/sirius_physical_result_collector.hpp"
@@ -165,7 +165,7 @@ duckdb::unique_ptr<duckdb::QueryResult> execute(execution_resources& resources,
     execution.execute();
     auto result = execution.get_result();
     if (!result) { throw std::runtime_error("Execution returned no result"); }
-    if (result->HasError()) { result->ThrowError(); }
+    result->ThrowIfError();
     window.finish();
     connection.Commit();
     return result;
@@ -195,9 +195,7 @@ sirius_status sirius_context_execute_plan(sirius_context* context,
       auto result       = std::make_unique<result_stream>();
       result->resources = std::make_unique<execution_resources>(context->engine);
       auto data         = execute(*result->resources, *plan->root);
-      auto arrow = std::make_unique<duckdb::ResultArrowArrayStreamWrapper>(std::move(data), 65536);
-      result->inner = arrow->stream;
-      arrow.release();  // The Arrow stream callback owns its wrapper.
+      sirius::exec::export_arrow_result(std::move(data), result->inner, 65536);
       *out = {result_stream::schema,
               result_stream::next,
               result_stream::error,

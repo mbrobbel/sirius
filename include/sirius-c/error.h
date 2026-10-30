@@ -23,11 +23,16 @@ enum {
   SIRIUS_INVALID_PLAN           = 8, /**< Invalid or unsupported plan. */
   SIRIUS_EXECUTION_FAILURE      = 9  /**< Plan preparation or execution failed. */
 };
-/** An owned diagnostic. Release with sirius_error_destroy(), never free(). */
+/** An owned diagnostic. Release with sirius_error_destroy(), never free().
+ * @par Thread safety
+ * Ownership may be transferred between threads. Concurrent reads are safe;
+ * destruction must not overlap any access to the handle or its borrowed message.
+ */
 typedef struct sirius_error sirius_error;
 
 /** Borrow a NUL-terminated diagnostic until its handle is destroyed.
  * Returns an empty string for a null handle. The wording is not a stable interface.
+ * Messages may contain embedded NUL bytes; sirius_error_message_size() is authoritative.
  * @code{.c}
  * const char *message = sirius_error_message(error);
  * @endcode
