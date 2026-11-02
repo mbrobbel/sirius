@@ -57,7 +57,7 @@ existing `SiriusContext` API.
 Run the context example with a YAML file and the build-tree shared library:
 
 ```bash
-LD_LIBRARY_PATH="$PWD/build/release/extension/sirius${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+LD_LIBRARY_PATH="$PWD/build/release${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
   pixi run cargo run --manifest-path rust/Cargo.toml -p sirius --example context -- sirius.yaml
 ```
 
