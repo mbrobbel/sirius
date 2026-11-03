@@ -6,7 +6,7 @@ Crates for driving [Sirius](https://github.com/sirius-db/sirius) from Rust
 | Crate | Role |
 |-------|------|
 | [`sirius-sys`](crates/sirius-sys) | Raw bindings and native library linking for the public C ABI. |
-| [`sirius`](crates/sirius) | Safe configuration wrappers over `sirius-sys`. |
+| [`sirius`](crates/sirius) | Safe configuration and context wrappers over `sirius-sys`. |
 | [`sirius-ffi`](crates/sirius-ffi) | Existing C++ FFI bridge, execution wrappers, and object-store bindings. |
 
 (The `telemetry/*` crates are unrelated — Rust linked *into* the C++ extension via
@@ -30,9 +30,37 @@ sharing immutable settings. The file is read only by `from_yaml()`; later file
 changes do not affect a loaded builder. Configuration errors retain their
 I/O, YAML syntax, or invalid-setting category in `ConfigError`.
 
-Configuration construction calls the C ABI directly. Building `sirius`
-and `sirius-sys` requires no C++ compilation. The configuration types
+Configuration and context construction call the C ABI directly. Building `sirius`
+and `sirius-sys` requires no C++ compilation. The configuration and context types
 are neither `Send` nor `Sync`.
+
+## Public context
+
+Construct an engine from a configuration; dropping the handle releases it:
+
+```rust
+use sirius::{Context, ContextConfigBuilder};
+
+fn create_engine() -> Result<Context, Box<dyn std::error::Error>> {
+    let config = ContextConfigBuilder::from_yaml("sirius.yaml")?.build()?;
+    Ok(Context::new(&config)?)
+}
+```
+
+`ContextError` reports initialization, allocation, and unexpected native failures. The configuration
+can be dropped after construction. Only one active engine context per process is
+supported, including the existing `SiriusContext` execution wrapper and other Sirius
+integrations. This restriction is not enforced; callers must ensure context lifetimes
+do not overlap. Forking with an active context is unsupported. The public `Context`
+currently exposes construction and destruction; query execution remains on the
+`sirius_ffi::SiriusContext` API.
+
+Run the context example with a YAML file and the build-tree shared library:
+
+```bash
+LD_LIBRARY_PATH="$PWD/build/release${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  pixi run cargo run --manifest-path rust/Cargo.toml -p sirius --example context -- sirius.yaml
+```
 
 ## Existing execution and object-store API
 
@@ -46,7 +74,8 @@ The raw C++ bridge previously exposed by `sirius-sys` is now available through
 `sirius_ffi::bridge` and re-exported from the `sirius-ffi` crate root, including
 `ObjectStoreConfigArgs` and its factories. StarRocks and Doris use this crate.
 This API remains supported without deprecation warnings while the public C API
-adds execution support.
+adds execution support. Its contexts share the same one-active-context-per-process
+limit with `sirius::Context`.
 
 ## Building & testing
 
@@ -59,8 +88,8 @@ pixi run make                       # builds the Sirius extension (+ artifact + 
 pixi run cargo test --no-run --manifest-path rust/Cargo.toml -p sirius -p sirius-sys -p sirius-ffi
 ```
 
-The `sirius-ffi` execution tests need a GPU; the public configuration tests do not
-initialize the engine. Point the runtime loader at the build-tree library:
+The context lifecycle and `sirius-ffi` execution tests need a GPU; the configuration
+tests do not initialize the engine. Point the runtime loader at the build-tree library:
 
 ```bash
 LD_LIBRARY_PATH="$PWD/build/release${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
@@ -107,7 +136,7 @@ only for documentation, leaving it unset for normal builds and tests.
 
 `sirius-sys/build.rs` supplies library linking for both API paths.
 `sirius-ffi/build.rs` compiles the execution bridge against the public `include`
-directory. Configuration uses the C declarations in
+directory. Configuration and context use the C declarations in
 `sirius-sys/src/c_api.rs`. Neither path includes internal engine headers.
 
 ## Environment

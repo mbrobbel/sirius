@@ -16,6 +16,7 @@ pub const SIRIUS_INVALID_CONFIGURATION: u32 = 3;
 pub const SIRIUS_ALLOCATION_FAILURE: u32 = 4;
 pub const SIRIUS_INVALID_ARGUMENT: u32 = 5;
 pub const SIRIUS_INTERNAL_ERROR: u32 = 6;
+pub const SIRIUS_CONTEXT_INITIALIZATION: u32 = 7;
 
 /// Opaque immutable configuration handle.
 #[repr(C)]
@@ -26,6 +27,12 @@ pub struct SiriusContextConfig {
 /// Opaque immutable builder handle.
 #[repr(C)]
 pub struct SiriusContextConfigBuilder {
+    _private: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+/// Opaque uniquely owned engine handle.
+#[repr(C)]
+pub struct SiriusContext {
     _private: [u8; 0],
     _marker: PhantomData<(*mut u8, PhantomPinned)>,
 }
@@ -92,4 +99,17 @@ unsafe extern "C" {
     /// # Safety
     /// The caller must own a reference, and no borrower may outlive the last reference.
     pub fn sirius_context_config_release(config: *mut SiriusContextConfig);
+    /// Resolve hardware and initialize an engine; only one active engine per process is supported.
+    /// # Safety
+    /// `config` must remain live; output slots must be writable and empty (`error` may be null).
+    /// Context lifetimes must not overlap, including engines owned by other integrations.
+    pub fn sirius_context_create(
+        config: *const SiriusContextConfig,
+        out: *mut *mut SiriusContext,
+        error: *mut *mut SiriusError,
+    ) -> u32;
+    /// Destroy an engine; null is allowed. Unrecoverable teardown failures terminate the process.
+    /// # Safety
+    /// The caller must uniquely own the live context, and all uses must have ended.
+    pub fn sirius_context_destroy(context: *mut SiriusContext);
 }

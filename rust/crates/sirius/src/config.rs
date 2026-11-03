@@ -59,7 +59,7 @@ fn configuration_error(status: u32, diagnostic: Diagnostic) -> ConfigError {
 /// availability and capacity are checked when the engine is constructed.
 /// No thread-safety guarantees are exposed yet: this type is neither `Send` nor `Sync`.
 pub struct ContextConfig {
-    inner: NonNull<c_api::SiriusContextConfig>,
+    pub(crate) inner: NonNull<c_api::SiriusContextConfig>,
 }
 
 impl ContextConfig {

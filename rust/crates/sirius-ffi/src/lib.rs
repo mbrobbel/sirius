@@ -2,7 +2,7 @@
 //!
 //! This API remains supported while the public C API gains execution support.
 //! It requires a C++20 compiler and a matching Sirius C++ toolchain.
-//! Use `sirius` for the public C ABI configuration API.
+//! Use `sirius` for the public C ABI configuration and context API.
 
 // Retain this dependency so its native library link directives reach consumers.
 use sirius_sys as _;
@@ -34,7 +34,8 @@ use cxx::{Exception, UniquePtr, let_cxx_string};
 ///
 /// The engine keeps process-global GPU state, so it currently supports a single
 /// live context per process; constructing or holding more than one concurrently
-/// is unsupported and is not prevented by a runtime check.
+/// is unsupported and is not prevented by a runtime check. This restriction also
+/// applies to contexts created through the public C ABI.
 pub struct SiriusContext {
     // RAII handle owning the C++ engine context for its lifetime.
     inner: UniquePtr<bridge::Context>,
