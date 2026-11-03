@@ -120,7 +120,7 @@ impl Context {
         plan: &crate::Plan,
     ) -> Result<crate::PlanResult, crate::PlanError> {
         use arrow_array::RecordBatchReader;
-        use arrow_array::ffi_stream::{ArrowArrayStreamReader, FFI_ArrowArrayStream};
+        use arrow_array::ffi_stream::{FFI_ArrowArrayStream, RecordBatchStreamReader};
         let mut stream = FFI_ArrowArrayStream::empty();
         let mut diagnostic = Diagnostic(std::ptr::null_mut());
         // SAFETY: both handles remain borrowed, self is exclusive, and stream is an
@@ -138,9 +138,37 @@ impl Context {
             status: sirius_sys::plan::SIRIUS_EXECUTION_FAILURE,
             message: error.to_string(),
         };
-        let reader = ArrowArrayStreamReader::try_new(stream).map_err(arrow_error)?;
+        let reader = RecordBatchStreamReader::try_new(stream).map_err(arrow_error)?;
         let schema = reader.schema();
         let batches = reader.collect::<Result<Vec<_>, _>>().map_err(arrow_error)?;
         Ok(crate::PlanResult { schema, batches })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn public_context_recreates_and_recovers_from_resolution_failure() {
+        use crate::{Context, ContextConfigBuilder, ContextError};
+        let file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(
+            file.path(),
+            "sirius:\n  memory:\n    gpu:\n      usage_limit_bytes: 18446744073709551615\n",
+        )
+        .unwrap();
+        let invalid = ContextConfigBuilder::from_yaml(file.path())
+            .unwrap()
+            .build()
+            .unwrap();
+        assert!(matches!(
+            Context::new(&invalid),
+            Err(ContextError::Initialization(_))
+        ));
+        for _ in 0..2 {
+            let config = ContextConfigBuilder::new().unwrap().build().unwrap();
+            let context = Context::new(&config).unwrap();
+            drop(config);
+            drop(context);
+        }
     }
 }

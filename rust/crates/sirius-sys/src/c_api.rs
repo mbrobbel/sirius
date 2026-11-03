@@ -47,6 +47,7 @@ unsafe extern "C" {
     /// Return the C ABI revision implemented by the linked library.
     pub safe fn sirius_abi_version() -> u32;
     /// Borrow diagnostic bytes, terminated by NUL, until the handle is destroyed.
+    /// Always returns a non-null pointer; a null diagnostic yields an empty message.
     /// # Safety
     /// `error` must be null or a live diagnostic handle.
     pub fn sirius_error_message(error: *const SiriusError) -> *const c_char;

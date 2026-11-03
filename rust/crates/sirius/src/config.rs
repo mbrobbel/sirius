@@ -271,7 +271,7 @@ mod tests {
         ));
     }
 
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     #[test]
     fn preserves_non_utf8_path_bytes() {
         use std::os::unix::ffi::OsStrExt;

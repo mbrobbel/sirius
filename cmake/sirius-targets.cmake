@@ -173,10 +173,9 @@ endforeach()
 target_link_options(sirius_shared PRIVATE "LINKER:--gc-sections"
                     "LINKER:--allow-multiple-definition")
 
-# The sirius-sys + sirius Rust crates are built by cargo, not CMake (unlike the
-# telemetry bridge above, which CMake drives via Corrosion). Their build.rs
-# discovers the Sirius headers (repo + conda) and links the libsirius artifact
-# this build produces under build/<preset>/; see rust/crates/sirius-sys.
+# Cargo builds the Rust API crates separately from the telemetry bridge above.
+# sirius-sys links libsirius from build/<preset>; sirius-ffi additionally
+# compiles its C++ bridge against include/. See rust/README.md.
 
 # NVML's static stub cannot be embedded safely; the real library is supplied by
 # the NVIDIA driver. Keep this requirement in the exported support target.

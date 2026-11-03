@@ -8,6 +8,7 @@ members = [
     "crates/telemetry/server",
     "crates/sirius-sys",
     "crates/sirius",
+    "crates/sirius-ffi",
     "crates/sirius-substrait"
 ]
 
