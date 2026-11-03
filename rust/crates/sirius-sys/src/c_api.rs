@@ -1,0 +1,95 @@
+//! Raw declarations matching `include/sirius-c/`.
+//!
+//! Handles are allocated and released by Sirius. Never free them with Rust's allocator.
+//! Output slots must not contain unreleased handles. Diagnostics are optional;
+//! always inspect the status even when the diagnostic pointer is null.
+
+use std::ffi::c_char;
+use std::marker::{PhantomData, PhantomPinned};
+
+/// Reserved for future ABI versioning. Zero provides no compatibility guarantee.
+pub const SIRIUS_ABI_VERSION: u32 = 0;
+pub const SIRIUS_SUCCESS: u32 = 0;
+pub const SIRIUS_CONFIGURATION_IO: u32 = 1;
+pub const SIRIUS_MALFORMED_YAML: u32 = 2;
+pub const SIRIUS_INVALID_CONFIGURATION: u32 = 3;
+pub const SIRIUS_ALLOCATION_FAILURE: u32 = 4;
+pub const SIRIUS_INVALID_ARGUMENT: u32 = 5;
+pub const SIRIUS_INTERNAL_ERROR: u32 = 6;
+
+/// Opaque immutable configuration handle.
+#[repr(C)]
+pub struct SiriusContextConfig {
+    _private: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+/// Opaque immutable builder handle.
+#[repr(C)]
+pub struct SiriusContextConfigBuilder {
+    _private: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+/// Opaque owned diagnostic.
+#[repr(C)]
+pub struct SiriusError {
+    _private: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+
+unsafe extern "C" {
+    /// Return the C ABI revision implemented by the linked library.
+    pub safe fn sirius_abi_version() -> u32;
+    /// Borrow diagnostic bytes, terminated by NUL, until the handle is destroyed.
+    /// Always returns a non-null pointer; a null diagnostic yields an empty message.
+    /// # Safety
+    /// `error` must be null or a live diagnostic handle.
+    pub fn sirius_error_message(error: *const SiriusError) -> *const c_char;
+    /// Return the diagnostic length, excluding its terminator.
+    /// # Safety
+    /// `error` must be null or a live diagnostic handle.
+    pub fn sirius_error_message_size(error: *const SiriusError) -> usize;
+    /// Release a diagnostic; null is allowed.
+    /// # Safety
+    /// A non-null handle must be live and owned by the caller; all borrows must end.
+    pub fn sirius_error_destroy(error: *mut SiriusError);
+    /// Construct a builder using defaults, without GPU access.
+    /// # Safety
+    /// `out` must be writable; `error` must be null or writable. Slots must be empty.
+    pub fn sirius_context_config_builder_create(
+        out: *mut *mut SiriusContextConfigBuilder,
+        error: *mut *mut SiriusError,
+    ) -> u32;
+    /// Read and validate a YAML file without GPU access.
+    /// # Safety
+    /// `path` must address `length` readable bytes. Output slots follow `sirius_context_config_builder_create`.
+    pub fn sirius_context_config_builder_from_yaml(
+        path: *const c_char,
+        length: usize,
+        out: *mut *mut SiriusContextConfigBuilder,
+        error: *mut *mut SiriusError,
+    ) -> u32;
+    /// Build an immutable snapshot without accessing hardware.
+    /// # Safety
+    /// `builder` must remain live; output slots must be writable and empty (`error` may be null).
+    pub fn sirius_context_config_builder_build(
+        builder: *const SiriusContextConfigBuilder,
+        out: *mut *mut SiriusContextConfig,
+        error: *mut *mut SiriusError,
+    ) -> u32;
+    /// Add an owned reference to a builder; null is allowed.
+    /// # Safety
+    /// A non-null handle must remain live throughout the call.
+    pub fn sirius_context_config_builder_retain(builder: *mut SiriusContextConfigBuilder);
+    /// Release an owned builder reference; null is allowed.
+    /// # Safety
+    /// The caller must own a reference, and no borrower may outlive the last reference.
+    pub fn sirius_context_config_builder_release(builder: *mut SiriusContextConfigBuilder);
+    /// Add an owned reference to a configuration; null is allowed.
+    /// # Safety
+    /// A non-null handle must remain live throughout the call.
+    pub fn sirius_context_config_retain(config: *mut SiriusContextConfig);
+    /// Release an owned configuration reference; null is allowed.
+    /// # Safety
+    /// The caller must own a reference, and no borrower may outlive the last reference.
+    pub fn sirius_context_config_release(config: *mut SiriusContextConfig);
+}
