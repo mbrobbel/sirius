@@ -1,83 +1,28 @@
 ---
 name: update-docs
-description: >
-  Use this skill to update Super Sirius documentation after code changes. Trigger when the user says
-  "update docs", "refresh documentation", "sync docs with code changes", or after merging PRs that
-  changed the Super Sirius codebase. Inspects merged PRs since the last update and patches affected
-  doc files.
+description: Update Super Sirius reference documentation to match code changes. Use when asked to refresh or sync those docs with a specified change or range.
 ---
 
 # Update Super Sirius Documentation
 
-## Instructions
-
-### Step 1: Read Last Update Marker
-Read `docs/super-sirius/README.md` and extract the commit hash from the HTML comment at the bottom:
-`<!-- last-updated-commit: COMMIT_HASH -->`
-
-If no marker exists, ask the user which commit to start from, or default to the initial docs commit.
-
-### Step 2: Identify Changed PRs
-Run `git log --oneline --merges LAST_COMMIT..HEAD` to find merge commits.
-Run `gh pr list --state merged --limit 100 --base main` to list merged PRs.
-Cross-reference to find PRs merged since the last update.
-
-### Step 3: Inspect Each PR
-For each PR found:
-1. Run `gh pr view PR_NUMBER` to get title, description, and labels
-2. Run `gh pr diff PR_NUMBER --name-only` to get changed files
-3. Classify the PR using the change classification guide in `references/change-classification-guide.md`
-
-### Step 4: Update Documentation
-For each classified change:
-
-- **Component rename/restructure**: Update class names, file paths, method names in affected docs
-- **Functional/design changes**: Update the relevant component document with new behavior
-- **New operators**: Add to `operators.md`; if custom `get_next_task_hint()`, also update `task-creator.md`
-- **New optimizations**: Add entry to `optimizations.md` with: PR#, motivation, mechanism, code path, config
-- **Pipeline splitting changes**: Update `physical-plan-generation.md` Part 3
-- **Config changes**: Update `configuration.md`
-
-CRITICAL: Read the actual source code for any changed files before updating documentation. Do not guess based on PR titles alone.
-
-IMPORTANT: Present proposed changes one file at a time for user review. Do not apply all changes at once. Show the user what will change in each file and wait for approval before proceeding to the next file.
-
-STYLE: Do not use changelog language ("replaced X with Y", "extracted from", "previously X, now Y"). Describe the current design as-is. These are reference docs, not a changelog. Only include PR numbers in `optimizations.md` entries.
-
-DEPTH: Keep descriptions at the right level of abstraction for the doc file. Don't add overly detailed implementation specifics (e.g., specific deadlock fixes, internal bug fixes) — focus on concepts, interfaces, and behavior that a developer reading the docs needs to understand.
-
-### Step 5: Update Commit Marker
-Replace the commit hash in `docs/super-sirius/README.md`:
-`<!-- last-updated-commit: NEW_HEAD_HASH -->`
-
-### Step 6: Report Summary
-Print a summary of:
-- Number of PRs inspected
-- Which doc files were updated
-- What was added/changed in each file
-- Any PRs that were skipped (e.g., build-only, CI changes)
-
-## Examples
-
-Example 1: User says "update the docs"
-1. Reads marker: `abc1234`
-2. Finds 5 PRs merged since then
-3. PR #500 changed `src/op/sirius_physical_hash_join.cpp` -> updates `operators.md`
-4. PR #501 titled "Optimize sort partition" -> updates `optimizations.md`
-5. Updates marker to current HEAD
-
-Example 2: User says "update docs" but no changes affect Super Sirius
-1. Reads marker, finds 3 PRs
-2. All PRs are CI/build changes with no `src/` modifications
-3. Reports "No documentation updates needed" and updates marker
-
-## Common Issues
-
-### No commit marker found
-If `docs/super-sirius/README.md` doesn't contain the marker comment, ask the user which commit to use as baseline, or use `git log --oneline docs/super-sirius/ | head -1` to find when docs were last modified.
-
-### PR diff too large to inspect
-For PRs with 50+ changed files, focus only on files matching the source paths in the classification guide. Skip test files, build files, and third-party changes.
-
-### Ambiguous changes
-If a PR touches multiple areas, update all affected docs. If unsure whether a change warrants a doc update, err on the side of updating.
+1. Determine the scope. Use the user's specified changes or commit range when provided. Otherwise,
+   read `docs/super-sirius/README.md` for a `<!-- last-updated-commit: HASH -->` marker. Verify
+   that the marker resolves to an ancestor of the intended target commit. If it is missing, invalid,
+   or not an ancestor, inspect the docs' history for a plausible baseline and explain the uncertainty;
+   ask for a baseline if the intended coverage cannot be determined. A docs commit's date alone does
+   not establish that it covered every preceding code change.
+2. Inspect the changes in the selected range. Sirius squash-merges PRs, so do not restrict discovery
+   to merge commits. Use `git log --first-parent --oneline BASE..TARGET` and
+   `git diff --name-only BASE TARGET`, then inspect relevant commits and source files. PR numbers in
+   commit subjects can provide context via `gh pr view`; local commits and changes without PR numbers
+   still need inspection. Include uncommitted changes when they are part of the requested scope.
+   Use [the classification guide](references/change-classification-guide.md) to find affected docs.
+3. Update the affected docs to describe the current design. Read the actual source before editing;
+   do not infer behavior from PR titles. Document concepts, interfaces, and behavior at the level of
+   each page; avoid changelog language and internal fixes that do not help readers. Include PR numbers
+   only in `optimizations.md` entries.
+4. If a valid marker was used and the full range through the target has been inspected, advance it to
+   the target commit. Do not advance or add a marker for a partial review or an uncertain baseline,
+   since that would imply coverage that was not established.
+5. Report the range, files updated, changes inspected, and any gaps or uncertainty. If no doc changes
+   are needed, report that along with the scope checked.

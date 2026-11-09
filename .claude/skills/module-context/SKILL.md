@@ -1,6 +1,6 @@
 ---
 name: module-context
-description: Automatically identify which dependency library modules are relevant to a task and load their API documentation into context. Use PROACTIVELY before implementing features, fixing bugs, or writing new operators — analyzes the task description and loads cudf, rmm, duckdb, cucascade module docs to improve code quality. Trigger when the user asks to implement, add, fix, or modify GPU operators, pipeline components, memory management, joins, aggregations, sorting, expressions, or data I/O.
+description: Find dependency API context for Sirius operator, memory, expression, and I/O work using the module maps and current dependency headers.
 ---
 
 # Module Context Loader
@@ -9,7 +9,12 @@ You are a context-routing skill for the Sirius GPU SQL engine. Your job is to an
 
 ## Available Documentation
 
-Module docs are pre-generated at `.claude/skills/module-discover/docs/`. Each library has:
+Module docs are pre-generated at `.claude/skills/module-discover/docs/`. They are a discovery aid,
+not authoritative: API signatures, version information, and Sirius usage examples can become stale.
+Verify APIs needed for the task against the headers for the dependency version used by this checkout,
+and verify usage examples against current source. Follow the project's dependency pins and build
+configuration to locate those headers. If they are unavailable, say so rather than presenting an
+unverified signature as current. Each library has:
 - `README.md` — Module map with USED/UNUSED status and file-to-module mappings
 - `modules/<name>.md` — Per-module API reference with signatures, descriptions, and usage examples
 
@@ -126,9 +131,9 @@ Read the user's task description and identify which **functional areas** it touc
 
 For each identified module:
 
-1. Read the module's `.md` file from `.claude/skills/module-discover/docs/<library>/modules/<module>.md`
-2. Extract the **API Reference** section (signatures + descriptions)
-3. Extract the **Our Usage** examples (existing call sites in our codebase)
+1. Read the relevant parts of `.claude/skills/module-discover/docs/<library>/modules/<module>.md`.
+2. Find and read the corresponding current dependency headers and relevant Sirius call sites.
+3. Extract the APIs and usage patterns needed by the task, noting any unresolved discrepancies.
 
 **Loading priority** (if context is limited):
 1. APIs we already use (highest — patterns to follow)
@@ -165,7 +170,7 @@ Output a structured context block that the implementing agent can reference:
 
 If the task requires functionality that:
 - Exists in an UNUSED module → mention the module and suggest loading its docs
-- Doesn't exist in any documented library → flag it explicitly
+- Is not found in the checked headers → report where you searched; the module maps may be incomplete
 - Requires a version-specific API → note the version condition
 
 ## Guidelines
@@ -175,4 +180,4 @@ If the task requires functionality that:
 3. **Include the file-to-module mapping** from the README when relevant, so the implementer knows which existing files to look at.
 4. **Cross-reference libraries.** Most tasks span multiple libraries (e.g., a join needs cudf/join + duckdb/planner + rmm/streams + cucascade/data).
 5. **Surface version gotchas.** cudf has significant API differences between 25.04 and 26.04+. Always note when a loaded API has version-conditional behavior.
-6. **Read the actual module docs.** Don't summarize from memory — read the `.md` files to get accurate signatures.
+6. **Verify signatures.** Use the module docs to find candidates, then check the pinned headers and current call sites.
