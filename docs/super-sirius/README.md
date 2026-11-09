@@ -14,6 +14,23 @@ SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_returnflag;
 
 ## Table of Contents
 
+Start with the sections relevant to your task, then follow links and check the current code and
+tests. For a broad introduction, read [Architecture Overview](architecture-overview.md) and
+[Execution Flow](execution-flow.md) first.
+
+| Task | Starting points |
+|------|-----------------|
+| Plan translation or pipeline construction | [Physical Plan Generation](physical-plan-generation.md), [Operators](operators.md) |
+| Operator execution or expressions | [Operators](operators.md), [Expression Evaluator](expression-executor.md) |
+| Scheduling, task completion, or query lifetime | [Pipeline Execution](pipeline-execution.md), [Task Creator](task-creator.md), [Query Lifecycle](query-lifecycle.md) |
+| Scans, I/O, or CPU replay | [Scan](scan.md), [Scan Contracts](scan-contracts-design.md) |
+| Memory, spilling, or data ownership | [Memory Management](memory-management.md), [Data Management](data-management.md) |
+| Concurrent queries or multi-GPU execution | [Concurrent Queries](concurrent-queries.md), [Multi-GPU Architecture](multi-gpu-architecture.md) |
+| Distributed fragments or streaming | [Streaming Sessions](streaming-sessions.md), [Streaming Fragments](streaming-fragments.md) |
+| Settings, performance, or debugging | [Configuration](configuration.md), [Optimizations](optimizations.md), [Debugging](debugging.md) |
+
+The full index follows.
+
 | Document | Description |
 |----------|-------------|
 | [Architecture Overview](architecture-overview.md) | Component diagram, thread model, ownership hierarchy, execution lifecycle |
@@ -40,18 +57,3 @@ SELECT l_returnflag, SUM(l_quantity) FROM lineitem GROUP BY l_returnflag;
 | [Late Materialization](late-materialization.md) | Carrying a pin-order rowid instead of wide column values — the scan/port pair, group-by-rowid rides, riders, the pin-time uniqueness proof, and the `SIRIUS_EXP_LATE_MAT_*` gates |
 | [Dynamic Filters](dynamic-filters.md) | Ordered hash-build publication, zone-map/IN-list/Bloom consumers, multi-GPU replicas, join-edge (SIP) endpoint placement, and the refinement design that remains future work |
 | [Debugging](debugging.md) | Practical guide to debugging crashes and races — building/running with ASan & TSan, the `tsan.supp` file, and capturing/inspecting core dumps with gdb |
-
-## Suggested Reading Order
-
-1. **Architecture Overview** — understand the component layout and thread model
-2. **Execution Flow** — trace a query end-to-end through the system
-3. **Physical Plan Generation** — how DuckDB logical plans become Sirius pipelines
-4. **Operators** — what each operator does on the GPU
-5. **Expression Evaluator** — how expressions are evaluated on GPU
-6. **Pipeline Execution** — how tasks are dispatched and executed
-7. **Task Creator** — how the system decides when to create tasks
-8. **Scan** — how data enters the system from storage
-9. **Memory Management** — GPU memory tiers, reservations, spilling
-10. **Data Management** — data batch lifecycle and port wiring
-11. **Configuration** — tuning knobs and runtime settings
-12. **Optimizations** — performance improvements and their mechanisms

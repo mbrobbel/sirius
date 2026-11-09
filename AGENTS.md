@@ -7,23 +7,10 @@ on the GPU — no special syntax needed.
 
 ## Contributions & PRs
 
-**The default branch is `main`** — branch and open PRs against it. If your local clone or a
-stack still references `dev`, see `CONTRIBUTING.md`'s "Migrating your local clone" section.
-
-Before opening a PR, read `CONTRIBUTING.md`'s "PR branching strategy" section to determine which
-of the three approved paths applies — most work is **Self-contained** (push to a personal fork,
-not `origin`); dependent changes use **Stacked PRs**; CI/critical changes that need same-repo
-write permissions are the third, narrower exception.
-
-**Doing a chain of dependent changes (Stacked PRs)?** Read `CONTRIBUTING.md`'s "Stacked PRs" and
-"Merging a stack" sections first. One thing worth knowing without opening that doc: never use
-"Enqueue stack" or `gh stack merge`, they don't reliably work with this repo's merge queue;
-stacks merge bottom-up instead.
-
-Before marking **any** PR ready for review (self-contained or stacked), check it against
-`CONTRIBUTING.md`'s "PR reviewability" checklist. Open as a Draft until it meets that bar, then
-convert to "Ready for review"; converting too early pings a reviewer before there's anything to
-review, which is the exact problem that checklist exists to prevent.
+Branch and open PRs against `main`. Before opening a PR, follow [CONTRIBUTING.md](CONTRIBUTING.md)'s
+branching strategy: self-contained changes normally go to a personal fork. Open as Draft until the
+PR meets its reviewability checklist. For dependent changes, read its stacked PR and merging
+sections; merge stacks bottom-up, never with "Enqueue stack" or `gh stack merge`.
 
 ## Build & test
 
@@ -51,8 +38,9 @@ Logs go to `build/release/test/cpp/log/<process>/`.
 **Python API**: the default Pixi environment includes DuckDB's Python package. Load the built
 Sirius extension from Python as shown in [docs/README.md](docs/README.md#python-api).
 
-**Worktrees**: submodules are not auto-initialized — after creating one, run
-`git submodule update --init --recursive`.
+**Worktrees**: submodules are not auto-initialized. Run `git submodule update --init --recursive`
+when the work requires them, such as for a build or to verify documentation against dependency
+source. Pure wording or navigation edits usually do not need them.
 
 **Agent-assisted SQL fuzzing**: use the repository's
 [sirius-fuzz skill](.agents/skills/sirius-fuzz/SKILL.md) for requests to run the fuzzer or check
@@ -63,30 +51,18 @@ interception before a bounded run. CLI details live in [test/fuzz/README.md](tes
 
 **Super Sirius** is the live engine: namespace `sirius`, source under `src/op/` (operators),
 `src/planner/` (plan builders + `sirius_physical_plan_generator.cpp`), `src/pipeline/`,
-`src/cuda/` (GPU kernels). **Read `docs/super-sirius/` before modifying Super Sirius code** —
-see its [README](docs/super-sirius/README.md) for reading order.
+`src/cuda/` (GPU kernels). Before modifying Super Sirius code, use the
+[documentation index](docs/super-sirius/README.md) to read the sections relevant to the task;
+check the current implementation and tests for the behavior being changed.
 
-The I/O layer (`cucascade::io`: io_uring / REST / kvikIO backends, the pinned `fs_cache`,
-`cucascade::io::datasource`) comes from the cuCascade submodule, linked as
-`cuCascade::cucascade_io` (the `cudf::io::datasource` bridge is in `cuCascade::cucascade_cudf`); `src/io/` keeps only Sirius glue (`path_utils`, `ioctx_resolver`,
-`parquet_helpers`, `s3/sirius_httpfs`). The shared `src/exec/` primitives (`semi_future`, `try_t`, `completion_controller`, ...)
-re-export `cucascade::exec`; `thread_pool.hpp` and `scoped_dispatcher.hpp` retain Sirius's
-priority queues and dispatch-failure handling. The io internals are
-documented in the doc comments of cuCascade's headers under `cucascade/include/cucascade/io/`.
+I/O implementation lives in cuCascade; `src/io/` contains Sirius glue. See
+[Scan](docs/super-sirius/scan.md) and the headers under `cucascade/include/cucascade/io/`.
+Shared `src/exec/` primitives mostly re-export `cucascade::exec`; Sirius retains its own thread
+pool and scoped dispatcher.
 
 All new work targets Super Sirius. Memory spilling / CPU fallback is handled by the downgrade executor
 (`src/downgrade/`, `src/creator/`); see `docs/super-sirius/memory-management.md`.
 
-Before implementing operators / memory / expression / I/O work, run `/module-context <task>` to
-load accurate cudf/rmm/duckdb/cucascade API docs.
-
-## Usage
-
-Load the extension and run normal SQL — Sirius intercepts it transparently and runs supported
-queries on the GPU (controlled by the `gpu_execution` setting, on by default):
-
-```sql
-LOAD 'sirius-duckdb/build/release/extension/sirius/sirius.duckdb_extension';
-SELECT ...;                  -- transparently routed to the GPU
--- SET gpu_execution = false;  -- to disable interception
-```
+For dependency APIs, the checked-out headers and implementation are authoritative. The
+[module-context skill](.claude/skills/module-context/SKILL.md) can help navigate cached cuDF,
+RMM, DuckDB, and cuCascade documentation; verify relevant signatures against the checkout.
