@@ -16,9 +16,11 @@
 
 #include "exec/stream_plan_bindings.hpp"
 
+#include "documented_table_function.hpp"
 #include "duckdb/catalog/catalog.hpp"
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"  // IWYU pragma: keep
 #include "duckdb/main/client_context.hpp"
+#include "duckdb/main/extension/extension_loader.hpp"
 #include "duckdb/storage/statistics/node_statistics.hpp"
 #include "helper/type_conversions.hpp"
 #include "sirius/exception.hpp"
@@ -77,14 +79,34 @@ void stream_source_function(duckdb::ClientContext&, duckdb::TableFunctionInput&,
     "streaming input and is only valid inside a GPU-executed fragment plan");
 }
 
+/// Idempotent: the extension load and explicit callers may both register.
+duckdb::CreateTableFunctionInfo stream_source_function_info()
+{
+  auto info =
+    documented_table_function(
+      get_stream_source_function(),
+      {.description =
+         "Internal: stands in for input stream stream_id of a Sirius fragment plan, which the GPU "
+         "plan replaces with a streaming source; not meant to be called directly. It binds only "
+         "to a stream declared on the connection, returning that stream's columns, and DuckDB "
+         "cannot execute it.",
+       .examples   = {"CREATE OR REPLACE VIEW main.sirius_stream_0 AS SELECT * FROM "
+                        "sirius_stream_source(0);"},
+       .categories = {"internal"}})
+      .create_info();
+  info.on_conflict = duckdb::OnCreateConflict::IGNORE_ON_CONFLICT;
+  return info;
+}
+
 }  // namespace
 
 duckdb::TableFunction get_stream_source_function()
 {
-  duckdb::TableFunction stream_source(kStreamSourceFunctionName,
-                                      {duckdb::LogicalType::BIGINT},
-                                      stream_source_function,
-                                      stream_source_bind);
+  duckdb::TableFunction stream_source(
+    kStreamSourceFunctionName,
+    duckdb::FunctionSignature().AddPositionalOnly("stream_id", duckdb::LogicalType::BIGINT),
+    stream_source_function,
+    stream_source_bind);
   // Set here, not at registration: the scan contract compares a planned scan's callbacks,
   // cardinality included, against this definition.
   stream_source.cardinality = stream_source_cardinality;
@@ -96,13 +118,13 @@ void register_stream_source_function(duckdb::DatabaseInstance& instance)
 {
   auto transaction = duckdb::CatalogTransaction::GetSystemTransaction(instance);
   auto& catalog    = duckdb::Catalog::GetSystemCatalog(instance);
-
-  auto stream_source = get_stream_source_function();
-
-  duckdb::CreateTableFunctionInfo info(stream_source);
-  // Idempotent: extension callback and explicit callers may both register.
-  info.on_conflict = duckdb::OnCreateConflict::IGNORE_ON_CONFLICT;
+  auto info        = stream_source_function_info();
   catalog.CreateTableFunction(transaction, info);
+}
+
+void register_stream_source_function(duckdb::ExtensionLoader& loader)
+{
+  loader.RegisterFunction(stream_source_function_info());
 }
 
 }  // namespace sirius::exec

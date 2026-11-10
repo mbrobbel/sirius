@@ -21,6 +21,10 @@
 #include "duckdb/main/database.hpp"
 #include "exec/stream_bind_catalog.hpp"
 
+namespace duckdb {
+class ExtensionLoader;
+}  // namespace duckdb
+
 namespace sirius::exec {
 
 inline constexpr const char* kStreamSourceFunctionName = "sirius_stream_source";
@@ -44,8 +48,10 @@ struct stream_source_bind_data : public duckdb::FunctionData {
 };
 
 /// Register sirius_stream_source(id). Bind reads stream_bind_catalog; body never runs
-/// (replaced by STREAMING_SOURCE).
+/// (replaced by STREAMING_SOURCE). A no-op if the function is already registered.
 void register_stream_source_function(duckdb::DatabaseInstance& instance);
+/// The same, as a function of the extension \p loader is loading.
+void register_stream_source_function(duckdb::ExtensionLoader& loader);
 duckdb::TableFunction get_stream_source_function();
 
 }  // namespace sirius::exec

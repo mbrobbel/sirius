@@ -34,11 +34,26 @@ static void LoadInternal(ExtensionLoader& loader)
     auto& cache = loader.GetDatabaseInstance().GetObjectCache();
     cache.Put(SiriusBackendInitStarted::KEY, make_shared_ptr<SiriusBackendInitStarted>());
   }
+  loader.SetDescription(SiriusExtension::Description());
   sirius::register_duckdb_extension(loader);
 }
 
 void SiriusExtension::Load(ExtensionLoader& loader) { LoadInternal(loader); }
 std::string SiriusExtension::Name() { return SIRIUS_STRINGIFY(SIRIUS_EXTENSION_NAME); }
+
+std::string SiriusExtension::Description()
+{
+  std::string const name = SIRIUS_STRINGIFY(SIRIUS_EXTENSION_NAME);
+  std::string const behavior =
+    ": once loaded, DuckDB runs the queries Sirius supports on NVIDIA "
+    "GPUs and the rest on its CPU engine, with no changes to the SQL. "
+    "SET gpu_execution = false turns this off.";
+  if (name == "sirius_cuda12" || name == "sirius_cuda13") {
+    return "Sirius GPU SQL engine, CUDA " + name.substr(name.size() - 2) + " backend" + behavior +
+           " Loaded through the sirius extension, sirius_status() reports the selected backend.";
+  }
+  return "Sirius GPU SQL engine" + behavior;
+}
 
 std::string SiriusExtension::Version() const { return SIRIUS_EXTENSION_VERSION; }
 

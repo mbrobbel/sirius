@@ -31,6 +31,7 @@ struct compression_config;
 
 namespace duckdb {
 struct DBConfig;
+class ExtensionLoader;
 
 // Bind-time payload for the sirius_read_parquet table function. Carries the
 // canonical URI (also passed in parameters[0] — the pipeline converter still
@@ -84,7 +85,8 @@ class SiriusRegistration {
   static void InitialGPUConfigs(DBConfig& db,
                                 const sirius::operator_params& operator_defaults,
                                 const sirius::compression_config& compression_defaults);
-  static void RegisterGPUFunctions(DatabaseInstance& catalog);
+  /// Register Sirius's table functions as functions of the extension @p loader is loading.
+  static void RegisterGPUFunctions(ExtensionLoader& loader);
   static void GPUExecutionFunction(ClientContext& context,
                                    TableFunctionInput& data_p,
                                    DataChunk& output);

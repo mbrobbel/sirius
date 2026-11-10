@@ -370,6 +370,7 @@ set(TEST_SOURCES
     test/cpp/scan/test_scan_output_assembly.cpp
     test/cpp/scan/test_scan_schema_normalization.cpp
     test/cpp/scan/test_stream_lineage_item5.cpp
+    test/cpp/sirius_extension/test_function_docs.cpp
     test/cpp/sirius_extension/test_sirius_read_parquet_cardinality.cpp
     test/cpp/sql/test_sirius_sql_rewrite.cpp
     test/cpp/telemetry/test_telemetry_context.cpp

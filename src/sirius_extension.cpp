@@ -37,6 +37,7 @@ extern "C" int cudaProfilerStart();
 extern "C" int cudaProfilerStop();
 #include "compression/plan_utils.hpp"
 #include "compression/spill_compression.hpp"
+#include "documented_table_function.hpp"
 #include "duckdb/catalog/catalog.hpp"
 #include "duckdb/catalog/catalog_entry/duck_table_entry.hpp"
 #include "duckdb/catalog/catalog_entry/schema_catalog_entry.hpp"
@@ -330,10 +331,11 @@ unique_ptr<NodeStatistics> SiriusReadParquetCardinality(ClientContext&,
 
 TableFunction GetSiriusReadParquetFunction()
 {
-  TableFunction sirius_read_parquet("sirius_read_parquet",
-                                    {LogicalType::VARCHAR},
-                                    SiriusReadParquetFunction,
-                                    SiriusReadParquetBind);
+  TableFunction sirius_read_parquet(
+    "sirius_read_parquet",
+    FunctionSignature().AddPositionalOnly("uri", LogicalType::VARCHAR),
+    SiriusReadParquetFunction,
+    SiriusReadParquetBind);
   sirius_read_parquet.cardinality         = SiriusReadParquetCardinality;
   sirius_read_parquet.get_virtual_columns = SiriusReadParquetVirtualColumns;
   sirius_read_parquet.projection_pushdown = true;
@@ -2433,18 +2435,17 @@ static void SiriusSetSessionLabelFunction(ClientContext& context,
   data.finished = true;
 }
 
-void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
+void SiriusRegistration::RegisterGPUFunctions(ExtensionLoader& loader)
 {
   // A fragment plan reads each of its input streams through sirius_stream_source(id). Register
   // it wherever Sirius is loaded, not just on the FFI's embedded DuckDB, so a fragment plan binds
   // on the transparent path too.
-  sirius::exec::register_stream_source_function(instance);
+  sirius::exec::register_stream_source_function(loader);
 
-  auto transaction = CatalogTransaction::GetSystemTransaction(instance);
-  auto& catalog    = Catalog::GetSystemCatalog(instance);
+  sirius::table_function_registrar const registrar(loader);
 
   TableFunction gpu_execution("gpu_execution",
-                              {LogicalType::VARCHAR},
+                              FunctionSignature().AddPositionalOnly("sql", LogicalType::VARCHAR),
                               GPUExecutionFunction,
                               SiriusRegistration::GPUExecutionBind,
                               SiriusRegistration::GPUExecutionInitGlobal);
@@ -2452,58 +2453,109 @@ void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
     options.Add(ENABLE_OPTIMIZER_PARAM_KEY, LogicalType::BOOLEAN);
     options.Add(QUERY_LABEL_PARAM_KEY, LogicalType::VARCHAR);
   });
-  CreateTableFunctionInfo gpu_execution_info(gpu_execution);
-  catalog.CreateTableFunction(transaction, gpu_execution_info);
+  registrar.add(sirius::documented_table_function(
+    std::move(gpu_execution),
+    {.description =
+       "Runs a SQL query on the GPU with Sirius and returns its result. While the gpu_execution "
+       "setting is true (the default) Sirius already runs supported queries on the GPU "
+       "transparently, so this is only needed to run one query explicitly. sql must be exactly "
+       "one SQL statement, normally a SELECT query. If GPU execution fails, the query is run "
+       "again on DuckDB's CPU engine unless enable_duckdb_fallback is false; queries that read "
+       "s3:// have no CPU fallback. Named parameters: query_label (VARCHAR) names the query in "
+       "Sirius telemetry and takes precedence over sirius_set_query_label; enable_optimizer "
+       "(BOOLEAN, default true) set to false skips DuckDB's optimizer for the plan Sirius runs, "
+       "a debugging aid under which more queries fall back to the CPU.",
+     .examples   = {"SELECT * FROM gpu_execution('SELECT l_returnflag, sum(l_quantity) AS sum_qty "
+                      "FROM lineitem GROUP BY l_returnflag ORDER BY l_returnflag');",
+                    "SELECT * FROM gpu_execution('SELECT count(*) FROM "
+                      "read_parquet(''lineitem/*.parquet'')', query_label => 'lineitem_count');",
+                    "SELECT * FROM gpu_execution('SELECT count(*) FROM lineitem', "
+                      "enable_optimizer => false);"},
+     .categories = {"execution"}}));
 
   // Sirius-owned S3 parquet entry point. gpu_execution rewrites
   // read_parquet('s3://...') to this table function so the bind runs through
   // Sirius's footer-only S3 path instead of DuckDB's native read_parquet.
   // Registered so the rewrite's output binds, but INTERNAL — not a public
   // surface: users query S3 Parquet with read_parquet('s3://...'), not this.
-  auto sirius_read_parquet = GetSiriusReadParquetFunction();
-  CreateTableFunctionInfo sirius_read_parquet_info(sirius_read_parquet);
-  catalog.CreateTableFunction(transaction, sirius_read_parquet_info);
+  registrar.add(sirius::documented_table_function(
+    GetSiriusReadParquetFunction(),
+    {.description =
+       "Internal: the Sirius scan of S3 Parquet that gpu_execution puts in place of "
+       "read_parquet('s3://...'), so the query binds through Sirius's own S3 reader; not meant "
+       "to be called directly, and DuckDB cannot execute it. Query S3 Parquet with "
+       "read_parquet('s3://...') instead.",
+     .examples   = {"SELECT * FROM gpu_execution('SELECT count(*) FROM "
+                      "read_parquet(''s3://my-bucket/events/part-0.parquet'')');"},
+     .categories = {"internal"}}));
 
-  TableFunction analyze_parquet("sirius_analyze_parquet",
-                                {LogicalType::VARCHAR},
-                                SiriusAnalyzeParquetFunction,
-                                SiriusAnalyzeParquetBind,
-                                SiriusAnalyzeParquetInit);
-  CreateTableFunctionInfo analyze_parquet_info(analyze_parquet);
-  catalog.CreateTableFunction(transaction, analyze_parquet_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("sirius_analyze_parquet",
+                  FunctionSignature().AddPositionalOnly("path", LogicalType::VARCHAR),
+                  SiriusAnalyzeParquetFunction,
+                  SiriusAnalyzeParquetBind,
+                  SiriusAnalyzeParquetInit),
+    {.description =
+       "Reads the footer statistics of the Parquet files matching a path or glob into Sirius's "
+       "process-wide cache, so the first multi-file scan of them can give DuckDB's optimizer "
+       "their merged column statistics (see the parquet_footer_statistics setting) without "
+       "reading every footer while planning. Returns one row with files (UBIGINT), the number "
+       "of matching files, cached ones included. Errors if no file matches. Only scans with "
+       "DuckDB's default "
+       "Parquet options reuse these statistics, and only while a file is unchanged; a local "
+       "file modified moments ago is read but not cached.",
+     .examples   = {"SELECT files FROM sirius_analyze_parquet('lineitem/*.parquet');"},
+     .categories = {"cache", "parquet"}}));
 
-  TableFunction set_query_label("sirius_set_query_label",
-                                {LogicalType::VARCHAR},
-                                SiriusSetQueryLabelFunction,
-                                SiriusSetQueryLabelBind);
-  CreateTableFunctionInfo set_query_label_info(set_query_label);
-  catalog.CreateTableFunction(transaction, set_query_label_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("sirius_set_query_label",
+                  FunctionSignature().AddPositionalOnly("label", LogicalType::VARCHAR),
+                  SiriusSetQueryLabelFunction,
+                  SiriusSetQueryLabelBind),
+    {.description =
+       "Names the next query Sirius runs on this connection in Sirius telemetry (Quent); the "
+       "label applies to that one query, and queries without a label are recorded as "
+       "unnamed_query. A gpu_execution call takes the label when it is bound (prepared), and a "
+       "query_label passed to it takes precedence. Returns one row with ok = true.",
+     .examples   = {"CALL sirius_set_query_label('tpch_q1');"},
+     .categories = {"telemetry"}}));
 
-  TableFunction set_session_label("sirius_set_session_label",
-                                  {LogicalType::VARCHAR},
-                                  SiriusSetSessionLabelFunction,
-                                  SiriusSetSessionLabelBind);
-  CreateTableFunctionInfo set_session_label_info(set_session_label);
-  catalog.CreateTableFunction(transaction, set_session_label_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("sirius_set_session_label",
+                  FunctionSignature().AddPositionalOnly("label", LogicalType::VARCHAR),
+                  SiriusSetSessionLabelFunction,
+                  SiriusSetSessionLabelBind),
+    {.description =
+       "Groups the following Sirius queries on this connection under one telemetry query group "
+       "(Quent) until the label is changed; an empty string restores the default group. Returns "
+       "one row with ok = true.",
+     .examples   = {"CALL sirius_set_session_label('nightly_tpch');",
+                    "CALL sirius_set_session_label('');"},
+     .categories = {"telemetry"}}));
 
-  // Profiler control functions for nsys --capture-range=cudaProfilerApi
-  TableFunction profiler_start(
-    "profiler_start", {}, ProfilerStartFunction, ProfilerBind, ProfilerInit);
-  CreateTableFunctionInfo profiler_start_info(profiler_start);
-  catalog.CreateTableFunction(transaction, profiler_start_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("profiler_start", {}, ProfilerStartFunction, ProfilerBind, ProfilerInit),
+    {.description =
+       "Starts CUDA profiler data collection (cudaProfilerStart), so that nsys profile "
+       "--capture-range=cudaProfilerApi records only what runs until profiler_stop(); a "
+       "developer tool. Returns one row with ok = true.",
+     .examples   = {"CALL profiler_start();"},
+     .categories = {"developer", "profiling"}}));
 
-  TableFunction profiler_stop(
-    "profiler_stop", {}, ProfilerStopFunction, ProfilerBind, ProfilerInit);
-  CreateTableFunctionInfo profiler_stop_info(profiler_stop);
-  catalog.CreateTableFunction(transaction, profiler_stop_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("profiler_stop", {}, ProfilerStopFunction, ProfilerBind, ProfilerInit),
+    {.description =
+       "Stops CUDA profiler data collection (cudaProfilerStop), ending the range profiler_start() "
+       "began for nsys profile --capture-range=cudaProfilerApi; a developer tool. Returns one row "
+       "with ok = true.",
+     .examples   = {"CALL profiler_stop();"},
+     .categories = {"developer", "profiling"}}));
 
   // pin_table takes either a positional path (parquet) or no positional (duckdb,
-  // where 'name' is the catalog table reference) — register both arities as a set.
-  TableFunctionSet pin_table_set("pin_table");
-  auto add_pin_table_overload = [&](vector<LogicalType> positional_args) {
-    TableFunction pin_table(
-      "pin_table", std::move(positional_args), PinTableFunction, PinTableBind);
-    pin_table.GetSignature().WithTypedKwargs("options", [](TypedKwargs& options) {
+  // where 'name' is the catalog table reference).
+  auto pin_table = [](FunctionSignature signature) {
+    TableFunction function("pin_table", std::move(signature), PinTableFunction, PinTableBind);
+    function.GetSignature().WithTypedKwargs("options", [](TypedKwargs& options) {
       options.Add("tier", LogicalType::VARCHAR);
       options.Add("name", LogicalType::VARCHAR);
       options.Add("cols", LogicalType::LIST(LogicalType::VARCHAR));
@@ -2511,21 +2563,69 @@ void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
       options.Add("format", LogicalType::VARCHAR);
       options.Add("schema_name", LogicalType::VARCHAR);
     });
-    pin_table_set.AddFunction(std::move(pin_table));
+    return function;
   };
-  add_pin_table_overload({LogicalType::VARCHAR});
-  add_pin_table_overload({});
-  CreateTableFunctionInfo pin_table_info(pin_table_set);
-  catalog.CreateTableFunction(transaction, pin_table_info);
+  registrar.add(
+    sirius::documented_table_function(
+      pin_table(FunctionSignature().AddPositionalOnly("path", LogicalType::VARCHAR)),
+      {.description =
+         "Pins Parquet files (a path or glob) in GPU memory, pinned host memory or the I/O "
+         "cache, so later Sirius queries over the same files skip reading them, and with tier "
+         "'gpu' or 'host' decoding them too. "
+         "Named parameters: name (VARCHAR, required) is the key unpin_table takes, while "
+         "queries find the pin by its files; tier (VARCHAR, required) is 'gpu' or 'host' for "
+         "decoded columns, or 'parquet' for the undecoded column chunks, which needs "
+         "sirius.executor.scan_manager.cache.mode 'cucs' in the Sirius config and stays pinned "
+         "only with cache eviction 'lru' and eviction_threshold_fraction 1.0; cols (VARCHAR[]) "
+         "pins only these columns (default all); compression (BOOLEAN, default the "
+         "pin_table_compression setting) "
+         "compresses the pin when pin_table_input_compression_plan_dir holds a plan for name; "
+         "format (VARCHAR) is 'parquet' or 'duckdb' and is inferred from a .parquet, .db or "
+         ".duckdb suffix when omitted, and format 'duckdb' pins the DuckDB table called name, "
+         "as the form without a path does. Returns one row with Success = true.",
+       .examples =
+         {"CALL pin_table('lineitem/*.parquet', name => 'lineitem', tier => 'gpu');",
+          "CALL pin_table('lineitem/*.parquet', name => 'lineitem', tier => 'host', cols => "
+          "['l_orderkey', 'l_quantity', 'l_extendedprice']);",
+          "CALL pin_table('lineitem/*.parquet', name => 'lineitem_bytes', tier => 'parquet');"},
+       .categories = {"cache"}})
+      .add_overload(
+        pin_table(FunctionSignature()),
+        {.description =
+           "Pins a table of a file-backed DuckDB database in GPU or pinned host memory, so later "
+           "Sirius queries that scan it skip reading and decoding it. Pass format => 'duckdb'. "
+           "Named parameters: name (VARCHAR, required) is the table, optionally qualified, and the "
+           "key to unpin it with; tier (VARCHAR, required) is 'gpu' or 'host'; schema_name "
+           "(VARCHAR, default 'main') is the schema of an unqualified name, resolved through "
+           "DuckDB's catalog search path; cols (VARCHAR[]) pins only these columns (default all); "
+           "compression (BOOLEAN, default the pin_table_compression setting) compresses the pin "
+           "when pin_table_input_compression_plan_dir holds a plan for name. Run CHECKPOINT "
+           "after loading the table and before pinning it. Pinning turns off automatic WAL "
+           "checkpoints for the whole DuckDB instance, and unpin_table does not turn them back "
+           "on. Returns one row with Success = true.",
+         .examples   = {"CALL pin_table(name => 'orders', format => 'duckdb', tier => 'gpu');",
+                        "CALL pin_table(name => 'lineitem', format => 'duckdb', tier => 'host', "
+                          "cols => ['l_orderkey', 'l_quantity']);"},
+         .categories = {"cache"}}));
 
-  TableFunction unpin_table(
-    "unpin_table", {LogicalType::VARCHAR}, UnpinTableFunction, UnpinTableBind);
-  CreateTableFunctionInfo unpin_table_info(unpin_table);
-  catalog.CreateTableFunction(transaction, unpin_table_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("unpin_table",
+                  FunctionSignature().AddPositionalOnly("name", LogicalType::VARCHAR),
+                  UnpinTableFunction,
+                  UnpinTableBind),
+    {.description =
+       "Releases a pin that pin_table made under the given name, freeing its GPU, host or I/O "
+       "cache memory; an unknown name is not an error. ANN indexes built on the table keep their "
+       "GPU memory until sirius_drop_ann_index drops them, and a re-pinned table needs its index "
+       "rebuilt. Returns one row with Success = true.",
+     .examples   = {"CALL unpin_table('lineitem');"},
+     .categories = {"cache"}}));
 
   // sirius_create_ann_index(table, column, metric=>, index_type=>, n_lists=>, schema_name=>)
   TableFunction create_ann_index("sirius_create_ann_index",
-                                 {LogicalType::VARCHAR, LogicalType::VARCHAR},
+                                 FunctionSignature()
+                                   .AddPositionalOnly("table_name", LogicalType::VARCHAR)
+                                   .AddPositionalOnly("column_name", LogicalType::VARCHAR),
                                  SiriusCreateAnnIndexFunction,
                                  SiriusCreateAnnIndexBind,
                                  SiriusCreateAnnIndexInit);
@@ -2535,12 +2635,26 @@ void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
     options.Add("n_lists", LogicalType::BIGINT);
     options.Add("schema_name", LogicalType::VARCHAR);
   });
-  CreateTableFunctionInfo create_ann_index_info(create_ann_index);
-  catalog.CreateTableFunction(transaction, create_ann_index_info);
+  registrar.add(sirius::documented_table_function(
+    std::move(create_ann_index),
+    {.description =
+       "Builds a GPU IVF-Flat approximate nearest neighbor index on a FLOAT[N] column of a "
+       "DuckDB table pinned with pin_table tier => 'gpu', for sirius_knn_search; it replaces an "
+       "index on the same column and metric. Named parameters: metric (VARCHAR) is 'l2' "
+       "(default) or 'cosine'; n_lists (BIGINT) is the number of IVF lists, 0 (default) for "
+       "min(1024, sqrt(rows)); index_type (VARCHAR) is 'ivf_flat' (the default and only type); "
+       "schema_name (VARCHAR, default 'main') is the schema of an unqualified table. Returns "
+       "one row with Success = true.",
+     .examples   = {"CALL sirius_create_ann_index('items', 'embedding');",
+                    "CALL sirius_create_ann_index('items', 'embedding', metric => 'cosine', "
+                      "n_lists => 64);"},
+     .categories = {"vector_search"}}));
 
   // sirius_drop_ann_index(table, column, metric =>, schema_name =>)
   TableFunction drop_ann_index("sirius_drop_ann_index",
-                               {LogicalType::VARCHAR, LogicalType::VARCHAR},
+                               FunctionSignature()
+                                 .AddPositionalOnly("table_name", LogicalType::VARCHAR)
+                                 .AddPositionalOnly("column_name", LogicalType::VARCHAR),
                                SiriusDropAnnIndexFunction,
                                SiriusDropAnnIndexBind,
                                SiriusDropAnnIndexInit);
@@ -2548,13 +2662,24 @@ void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
     options.Add("metric", LogicalType::VARCHAR);
     options.Add("schema_name", LogicalType::VARCHAR);
   });
-  CreateTableFunctionInfo drop_ann_index_info(drop_ann_index);
-  catalog.CreateTableFunction(transaction, drop_ann_index_info);
+  registrar.add(sirius::documented_table_function(
+    std::move(drop_ann_index),
+    {.description =
+       "Drops the ANN indexes sirius_create_ann_index built on a column and frees their GPU "
+       "memory: with metric (VARCHAR, 'l2' or 'cosine') only that metric's index, otherwise "
+       "the index of every metric. schema_name (VARCHAR, default 'main') is the schema of an "
+       "unqualified table. Returns one row with Dropped = true if an index was removed.",
+     .examples   = {"CALL sirius_drop_ann_index('items', 'embedding');",
+                    "CALL sirius_drop_ann_index('items', 'embedding', metric => 'cosine');"},
+     .categories = {"vector_search"}}));
 
   // sirius_knn_search(table, column, query, k =>, output_columns =>, metric =>,
   // use_index =>, n_probes =>, index_type =>, schema_name =>)
   TableFunction vector_search("sirius_knn_search",
-                              {LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::ANY},
+                              FunctionSignature()
+                                .AddPositionalOnly("table_name", LogicalType::VARCHAR)
+                                .AddPositionalOnly("column_name", LogicalType::VARCHAR)
+                                .AddPositionalOnly("query", LogicalType::ANY),
                               SiriusVectorSearchFunction,
                               SiriusVectorSearchBind,
                               SiriusVectorSearchInit);
@@ -2567,15 +2692,37 @@ void SiriusRegistration::RegisterGPUFunctions(DatabaseInstance& instance)
     options.Add("index_type", LogicalType::VARCHAR);
     options.Add("schema_name", LogicalType::VARCHAR);
   });
-  CreateTableFunctionInfo vector_search_info(vector_search);
-  catalog.CreateTableFunction(transaction, vector_search_info);
+  registrar.add(sirius::documented_table_function(
+    std::move(vector_search),
+    {.description =
+       "Returns up to k rows of a GPU-pinned DuckDB table whose FLOAT[N] column is nearest to a "
+       "query vector, nearest first, each followed by its distance (FLOAT). query is a FLOAT[N] "
+       "array or a list of N numbers. Named parameters: k (BIGINT, default 10); output_columns "
+       "(VARCHAR[], default every pinned column) are the columns returned before distance; "
+       "metric (VARCHAR) is 'l2' (Euclidean distance, default) or 'cosine' (cosine distance); "
+       "use_index (BOOLEAN, default true) searches the index sirius_create_ann_index built for "
+       "the metric, and false searches exactly; n_probes (BIGINT) is the number of IVF lists "
+       "searched, 0 (default) for min(n_lists, 32); index_type (VARCHAR) is 'ivf_flat' (the "
+       "default and only type); schema_name (VARCHAR, default 'main') is the schema of an "
+       "unqualified table. Index searches with metric 'cosine' allow k up to 256.",
+     .examples   = {"SELECT * FROM sirius_knn_search('items', 'embedding', [0.1, 0.2, "
+                      "0.3]::FLOAT[3], k => 5);",
+                    "SELECT id, distance FROM sirius_knn_search('items', 'embedding', [0.1, 0.2, "
+                      "0.3]::FLOAT[3], k => 20, metric => 'cosine', use_index => false, "
+                      "output_columns => ['id']);"},
+     .categories = {"vector_search"}}));
 
   // Drop and rebuild the prefetching caches — a benchmark that wants each
   // iteration to pay its own IO has no other way to get a cold cache.
-  TableFunction reset_sirius_cache(
-    "reset_sirius_cache", {}, ResetSiriusCacheFunction, ResetSiriusCacheBind);
-  CreateTableFunctionInfo reset_sirius_cache_info(reset_sirius_cache);
-  catalog.CreateTableFunction(transaction, reset_sirius_cache_info);
+  registrar.add(sirius::documented_table_function(
+    TableFunction("reset_sirius_cache", {}, ResetSiriusCacheFunction, ResetSiriusCacheBind),
+    {.description =
+       "Drops and rebuilds Sirius's prefetching I/O caches so that the next query reads its data "
+       "from storage again, for cold-cache benchmarks. Parquet-tier pins (pin_table tier => "
+       "'parquet') are dropped with the cache; GPU and host pins are kept. Returns one row with "
+       "Success = true.",
+     .examples   = {"CALL reset_sirius_cache();"},
+     .categories = {"cache", "benchmarking"}}));
 }
 
 // Process-global Config writes are refused once the Sirius runtime is
@@ -3831,7 +3978,7 @@ static void LoadInternal(ExtensionLoader& loader)
   // per-connection options register with.
   SiriusRegistration::InitialGPUConfigs(
     config, callback_ptr->get_operator_defaults(), callback_ptr->get_compression_defaults());
-  SiriusRegistration::RegisterGPUFunctions(db);
+  SiriusRegistration::RegisterGPUFunctions(loader);
   if (!sirius_disabled) { sirius::planner::register_scan_source_callbacks(db); }
 
   // SIRIUS_S3 is Sirius's S3 secret type. Registering it here lets clients use

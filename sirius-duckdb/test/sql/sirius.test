@@ -18,6 +18,31 @@ SELECT extension_name FROM duckdb_extensions() WHERE extension_name = 'sirius' A
 ----
 sirius
 
+query I
+SELECT description LIKE 'Sirius GPU SQL engine: %' FROM duckdb_extensions() WHERE extension_name = 'sirius';
+----
+true
+
+# One row per overload, each attributed to the extension and documented.
+query I
+SELECT count(*) FROM duckdb_functions() WHERE extension_name = 'sirius' AND function_type = 'table';
+----
+15
+
+query I
+SELECT count(*) FROM duckdb_functions()
+WHERE extension_name = 'sirius'
+  AND (description IS NULL OR examples[1] IS NULL OR categories[1] IS NULL);
+----
+0
+
+query I
+SELECT count(*) FROM (
+  SELECT unnest(parameters) AS parameter FROM duckdb_functions() WHERE extension_name = 'sirius'
+) WHERE regexp_full_match(parameter, 'col[0-9]+');
+----
+0
+
 # Check registration, not just the empty extension entrypoint.
 query I
 SELECT current_setting('gpu_execution')::INTEGER;
