@@ -89,7 +89,7 @@ def provenance(shell: str | None, extension: str | None) -> dict[str, Any]:
 
 def runtime_info(session: Any) -> dict[str, Any]:
     rows = session.query(
-        "SELECT name, value FROM duckdb_settings() WHERE name IN "
+        "SELECT name, value FROM duckdb_settings(include_all := true) WHERE name IN "
         "('threads', 'TimeZone', 'default_null_order', 'default_order', 'preserve_insertion_order', 'disabled_optimizers', "
         "'expression_evaluator_strategy', 'hash_partition_bytes', 'max_build_hash_table_bytes', 'max_sort_partition_bytes')"
     )

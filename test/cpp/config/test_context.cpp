@@ -118,7 +118,8 @@ TEST_CASE("Sirius settings are registered", "[sirius][config][isolated_context]"
   for (auto const* name : settings) {
     CAPTURE(name);
     auto result =
-      con.Query("SELECT count(*) FROM duckdb_settings() WHERE name = '" + std::string(name) + "'");
+      con.Query("SELECT count(*) FROM duckdb_settings(include_all := true) WHERE name = '" +
+                std::string(name) + "'");
     REQUIRE(result != nullptr);
     REQUIRE_FALSE(result->HasError());
     REQUIRE(result->Collection().GetValue(0, 0).GetValue<int64_t>() == 1);

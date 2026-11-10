@@ -756,7 +756,7 @@ class Session:
 
     def setting_supported(self, name: str) -> bool:
         rows = self.query(
-            f"SELECT value FROM duckdb_settings() WHERE name = {sql_literal(name)}"
+            f"SELECT value FROM duckdb_settings(include_all := true) WHERE name = {sql_literal(name)}"
         )
         if not rows:
             return False

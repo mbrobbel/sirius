@@ -132,25 +132,57 @@ constexpr char ENABLE_OPTIMIZER_PARAM_KEY[] = "enable_optimizer";
 
 namespace {
 
-bool test_options_enabled() noexcept
-{
-  auto const* value = std::getenv("SIRIUS_ENABLE_TEST_OPTIONS");
-  return value != nullptr && std::string_view{value} == "1";
-}
+/// Where a Sirius setting is listed.
+enum class option_visibility {
+  /// Listed by duckdb_settings().
+  user,
+  /// Low-level heuristic: settable, but listed only by duckdb_settings(debug := true).
+  tuning,
+  /// Old name kept working: listed only by duckdb_settings(deprecated := true).
+  deprecated,
+  /// Test hook: registered only when SIRIUS_ENABLE_TEST_OPTIONS=1.
+  internal,
+};
 
-enum class option_visibility { user, internal };
+/// Registers session-scoped Sirius settings, each with its declared visibility.
+class option_registrar {
+ public:
+  explicit option_registrar(DBConfig& config)
+    : config_(config), test_options_(test_options_enabled())
+  {
+  }
 
-template <typename... Args>
-void add_sirius_option(DBConfig& config,
-                       option_visibility visibility,
-                       const std::string& name,
-                       std::string description,
-                       Args&&... args)
-{
-  if (visibility == option_visibility::internal && !test_options_enabled()) { return; }
-  if (visibility == option_visibility::internal) { description = "TEST ONLY: " + description; }
-  config.AddExtensionOption(Identifier(name), description, std::forward<Args>(args)...);
-}
+  void add(option_visibility visibility,
+           char const* name,
+           std::string description,
+           LogicalType type,
+           Value default_value,
+           set_option_callback_t set_function = nullptr) const
+  {
+    if (visibility == option_visibility::internal) {
+      if (!test_options_) { return; }
+      description = "TEST ONLY: " + description;
+    }
+    config_.AddExtensionOption(Identifier(name),
+                               ExtensionOption(std::move(description),
+                                               std::move(type),
+                                               set_function,
+                                               std::move(default_value),
+                                               SetScope::SESSION,
+                                               visibility == option_visibility::tuning,
+                                               visibility == option_visibility::deprecated));
+  }
+
+ private:
+  static bool test_options_enabled() noexcept
+  {
+    auto const* value = std::getenv("SIRIUS_ENABLE_TEST_OPTIONS");
+    return value != nullptr && std::string_view{value} == "1";
+  }
+
+  DBConfig& config_;
+  bool test_options_;
+};
 
 std::uint64_t count_narrowed_columns(
   sirius::pinned_column_storage_matrix const& column_storage) noexcept
@@ -3273,597 +3305,593 @@ void SiriusRegistration::InitialGPUConfigs(DBConfig& config,
                                            const sirius::compression_config& compression_defaults)
 {
   std::lock_guard log_lock(Config::logging_mutex);
-  config.AddExtensionOption(
+  option_registrar const options(config);
+
+  options.add(
+    option_visibility::user,
     "expression_evaluator_strategy",
-    "Strategy for the expression_evaluator: 'materialize', 'ast_interpret', or "
-    "'ast_jit'",
+    "How the GPU evaluates expressions: 'ast_interpret' runs each expression tree in one "
+    "interpreted kernel, 'ast_jit' compiles expression trees into kernels at runtime, and "
+    "'materialize' computes each operation into an intermediate column.",
     LogicalType::VARCHAR,
     Value(std::string(sirius::strategy_to_string(operator_defaults.expression_strategy))),
     SetExpressionEvaluatorStrategy);
 
-  // Deprecated alias for `expression_evaluator_strategy`; remove in a future release.
-  config.AddExtensionOption(
-    "expression_executor_strategy",
-    "[DEPRECATED - use expression_evaluator_strategy] Strategy for the expression_evaluator: "
-    "'materialize', 'ast_interpret', or 'ast_jit'",
-    LogicalType::VARCHAR,
-    Value(std::string(sirius::strategy_to_string(operator_defaults.expression_strategy))),
-    SetExpressionExecutorStrategyDeprecated);
+  // Remove in a future release.
+  options.add(option_visibility::deprecated,
+              "expression_executor_strategy",
+              "Deprecated setting. Use expression_evaluator_strategy instead.",
+              LogicalType::VARCHAR,
+              Value(std::string(sirius::strategy_to_string(operator_defaults.expression_strategy))),
+              SetExpressionExecutorStrategyDeprecated);
 
-  add_sirius_option(
-    config,
-    option_visibility::user,
-    "enable_duckdb_fallback",
-    "Whether to enable fallback to duckdb execution after an error is detected",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(true),  // literal default: never seed from a process-global that a
-                           // prior connection's SET may have mutated (that leaked the
-                           // fallback policy into every freshly-created database).
-    SetEnableDuckdbFallback);
+  options.add(option_visibility::user,
+              "enable_duckdb_fallback",
+              "Whether to run a query on DuckDB's CPU engine when the GPU cannot plan or execute "
+              "it. When false, such queries fail with the GPU error. Queries that read s3:// paths "
+              "through Sirius never fall back.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(true),  // literal default: never seed from a process-global that a
+                                     // prior connection's SET may have mutated (that leaked the
+                                     // fallback policy into every freshly-created database).
+              SetEnableDuckdbFallback);
 
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_gpu_task_oom",
-                    "latched execution test injection",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_gpu_task_launch_error",
-                    "latched execution test injection",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_gpu_task_retry_limit",
-                    "latched execution test injection",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(100));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_gpu_task_retry_backoff_ms",
-                    "latched execution test injection",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(50));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_override_read_only",
-                    "latched execution test injection",
-                    LogicalType::BOOLEAN,
-                    Value());
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_transaction_mismatch",
-                    "latched execution test injection",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_interrupt_before_replay",
-                    "latched execution test injection",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_non_rollbackable_state",
-                    "latched execution test injection",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_hold_footer_index",
-                    "latched execution test injection",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_hold_published_batch",
-                    "latched execution test injection",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_gpu_task_oom",
+              "latched execution test injection",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_gpu_task_launch_error",
+              "latched execution test injection",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_gpu_task_retry_limit",
+              "latched execution test injection",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(100));
+  options.add(option_visibility::internal,
+              "sirius_test_gpu_task_retry_backoff_ms",
+              "latched execution test injection",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(50));
+  options.add(option_visibility::internal,
+              "sirius_test_override_read_only",
+              "latched execution test injection",
+              LogicalType::BOOLEAN,
+              Value());
+  options.add(option_visibility::internal,
+              "sirius_test_inject_transaction_mismatch",
+              "latched execution test injection",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_interrupt_before_replay",
+              "latched execution test injection",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_non_rollbackable_state",
+              "latched execution test injection",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_hold_footer_index",
+              "latched execution test injection",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_hold_published_batch",
+              "latched execution test injection",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
 
   // Keep internal policy and test hooks out of the normal duckdb_settings() surface. The
   // unittest harness opts in before constructing a database. Centralizing visibility here keeps
   // option registration from growing scattered environment checks.
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_certification_delay_ms",
-                    "Test-only inject_certification_delay_ms",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_certification_bytes",
-                    "Test-only inject_certification_bytes",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_budget_declines",
-                    "Test-only budget_declines",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_scan_verdict",
-                    "Test-only inject_scan_verdict",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_iceberg_discovery",
-                    "Test-only inject_iceberg_discovery",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_pause_after_certify_ms",
-                    "Test-only pause_after_certify_ms",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_lineage_unmodelled",
-                    "Test-only lineage_unmodelled",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_synthetic_parquet_codec",
-                    "Test-only synthetic_parquet_codec",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_synthetic_native_segment",
-                    "Test-only synthetic_native_segment",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_invalidate_pin_witness",
-                    "Test-only invalidate resident query token before publication",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_strip_encryption_evidence",
-                    "Test-only strip_encryption_evidence",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_pin_registry_change",
-                    "simulate a pin or unpin landing between the finalize and execution windows",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_transparent_gpu_error",
-                    "force transparent GPU execution to fail at runtime with this message",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_read_view_mismatch",
-                    "inject finalize/execute read-view comparison failures",
-                    LogicalType::VARCHAR,
-                    Value("off"));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_pause_native_after_prepare_ms",
-                    "pause before a native execution window is entered",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_pause_native_decode_ms",
-                    "pause after native metadata preparation while its checkpoint key is held",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(0));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_native_walk_failure",
-                    "fail a native metadata walk for '*' or the named table",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_native_decode_failure",
-                    "fail native decode for '*' or the named table after its lease is taken",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_internal_start_mode",
-                    "component-only internal transaction start probe: read_only or read_write",
-                    LogicalType::VARCHAR,
-                    Value("read_only"));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_sync_native_checkpoint",
-                    "enable the native checkpoint test observer for this session",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_sync_cpu_replay",
-                    "wait at the CPU replay test rendezvous after this window releases its slot",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_checkpoint_cleanup_failure",
-                    "fail cleanup before scan-manager reset while checkpoint keys remain held",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_mark_runtime_unavailable_before_window",
-                    "latch runtime unavailability immediately before execution-window entry",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_read_view_churn_path",
-                    "path used by read-view churn integration tests",
-                    LogicalType::VARCHAR,
-                    Value(""));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "sirius_test_inject_provenance_failure",
-                    "make connection provenance classification fail on this connection",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(false));
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_pinned_zone_map_pruning",
-                    "disable automatic pinned-table zone-map capture and pruning",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_pinned_zone_map_pruning),
-                    SetEnablePinnedZoneMapPruning);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_decimal_sum_stats_bound",
-                    "decide decimal SUM widening from base-table statistics at plan time; off "
-                    "measures every batch",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_decimal_sum_stats_bound),
-                    SetEnableDecimalSumStatsBound);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_dynamic_filter",
-                    "disable runtime dynamic-filter discovery for eligible hash joins "
-                    "(probe-side scan and join-edge targets)",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_dynamic_filter),
-                    SetEnableDynamicFilter);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_dynamic_zone_map_filter",
-                    "enable the clustered-keyset dynamic zone-map path",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_dynamic_zone_map_filter),
-                    SetEnableDynamicZoneMapFilter);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "scan_task_batch_size",
-                    "override the internally derived scan batch target",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(operator_defaults.scan_task_batch_size),
-                    SetDefaultScanTaskBatchSize);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "fuse_merge_pipelines",
-                    "toggle merge pipeline fusion",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(true),
-                    SetFuseMergePipelines);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_runtime_distinct_build_probe",
-                    "toggle the internal runtime distinct-build probe",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_runtime_distinct_build_probe),
-                    SetEnableRuntimeDistinctBuildProbe);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "enable_dense_count_join",
-                    "runtime override for dense count-join planning",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_dense_count_join),
-                    SetEnableDenseCountJoin);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "dense_count_join_max_bytes",
-                    "internal test hook for the dense count-join histogram budget",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(operator_defaults.dense_count_join_max_bytes),
-                    SetDenseCountJoinMaxBytes);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "dense_count_join_memory_fraction",
-                    "internal test hook for the derived dense count-join histogram budget",
-                    LogicalType::DOUBLE,
-                    Value::DOUBLE(operator_defaults.dense_count_join_memory_fraction),
-                    SetDenseCountJoinMemoryFraction);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "concat_batch_bytes",
-                    "override the internally derived CONCAT batch target",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(operator_defaults.concat_batch_bytes),
-                    SetConcatBatchBytes);
-  add_sirius_option(config,
-                    option_visibility::internal,
-                    "cross_join_task_bytes",
-                    "override the internally derived output target of a cross product task",
-                    LogicalType::UBIGINT,
-                    Value::UBIGINT(operator_defaults.cross_join_task_bytes),
-                    SetCrossJoinTaskBytes);
-
-  // Add in config options for special JIT implementation for regex
-  add_sirius_option(config,
-                    option_visibility::user,
-                    "enable_regex_jit_impl",
-                    "Whether to use special JIT implementation for particular regex evaluation",
-                    LogicalType::BOOLEAN,
-                    Value::BOOLEAN(operator_defaults.enable_regex_jit),
-                    SetEnableRegexJitImpl);
-
-  // Add in config option for the multi-literal LIKE SWAR fast path
-  config.AddExtensionOption(
-    "like_swar_fastpath",
-    "Whether '%lit1%lit2%...%' LIKE patterns take the SWAR digram fast-path kernel instead of "
-    "cudf::strings::like",
+  options.add(option_visibility::internal,
+              "sirius_test_inject_certification_delay_ms",
+              "Test-only inject_certification_delay_ms",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_certification_bytes",
+              "Test-only inject_certification_bytes",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_budget_declines",
+              "Test-only budget_declines",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_scan_verdict",
+              "Test-only inject_scan_verdict",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_iceberg_discovery",
+              "Test-only inject_iceberg_discovery",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_pause_after_certify_ms",
+              "Test-only pause_after_certify_ms",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_lineage_unmodelled",
+              "Test-only lineage_unmodelled",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_synthetic_parquet_codec",
+              "Test-only synthetic_parquet_codec",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_synthetic_native_segment",
+              "Test-only synthetic_native_segment",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_invalidate_pin_witness",
+              "Test-only invalidate resident query token before publication",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_strip_encryption_evidence",
+              "Test-only strip_encryption_evidence",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_pin_registry_change",
+              "simulate a pin or unpin landing between the finalize and execution windows",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_transparent_gpu_error",
+              "force transparent GPU execution to fail at runtime with this message",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_read_view_mismatch",
+              "inject finalize/execute read-view comparison failures",
+              LogicalType::VARCHAR,
+              Value("off"));
+  options.add(option_visibility::internal,
+              "sirius_test_pause_native_after_prepare_ms",
+              "pause before a native execution window is entered",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_pause_native_decode_ms",
+              "pause after native metadata preparation while its checkpoint key is held",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(0));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_native_walk_failure",
+              "fail a native metadata walk for '*' or the named table",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_native_decode_failure",
+              "fail native decode for '*' or the named table after its lease is taken",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_internal_start_mode",
+              "component-only internal transaction start probe: read_only or read_write",
+              LogicalType::VARCHAR,
+              Value("read_only"));
+  options.add(option_visibility::internal,
+              "sirius_test_sync_native_checkpoint",
+              "enable the native checkpoint test observer for this session",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_sync_cpu_replay",
+              "wait at the CPU replay test rendezvous after this window releases its slot",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_checkpoint_cleanup_failure",
+              "fail cleanup before scan-manager reset while checkpoint keys remain held",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_mark_runtime_unavailable_before_window",
+              "latch runtime unavailability immediately before execution-window entry",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(option_visibility::internal,
+              "sirius_test_read_view_churn_path",
+              "path used by read-view churn integration tests",
+              LogicalType::VARCHAR,
+              Value(""));
+  options.add(option_visibility::internal,
+              "sirius_test_inject_provenance_failure",
+              "make connection provenance classification fail on this connection",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(false));
+  options.add(
+    option_visibility::internal,
+    "enable_pinned_zone_map_pruning",
+    "capture per-chunk min/max statistics while pinning and use them to skip pinned chunks "
+    "that cannot match a scan filter",
     LogicalType::BOOLEAN,
-    Value::BOOLEAN(true),
-    SetEnableLikeSwarFastpath);
+    Value::BOOLEAN(operator_defaults.enable_pinned_zone_map_pruning),
+    SetEnablePinnedZoneMapPruning);
+  options.add(option_visibility::internal,
+              "enable_decimal_sum_stats_bound",
+              "decide decimal SUM widening from base-table statistics at plan time; off "
+              "measures every batch",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_decimal_sum_stats_bound),
+              SetEnableDecimalSumStatsBound);
+  options.add(option_visibility::internal,
+              "enable_dynamic_filter",
+              "publish runtime filters from eligible hash-join builds to probe-side scans and join "
+              "edges",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_dynamic_filter),
+              SetEnableDynamicFilter);
+  options.add(option_visibility::internal,
+              "enable_dynamic_zone_map_filter",
+              "enable the clustered-keyset dynamic zone-map path",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_dynamic_zone_map_filter),
+              SetEnableDynamicZoneMapFilter);
+  options.add(option_visibility::internal,
+              "scan_task_batch_size",
+              "override the internally derived scan batch target",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.scan_task_batch_size),
+              SetDefaultScanTaskBatchSize);
+  options.add(option_visibility::internal,
+              "fuse_merge_pipelines",
+              "toggle merge pipeline fusion",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(true),
+              SetFuseMergePipelines);
+  options.add(option_visibility::internal,
+              "enable_runtime_distinct_build_probe",
+              "toggle the internal runtime distinct-build probe",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_runtime_distinct_build_probe),
+              SetEnableRuntimeDistinctBuildProbe);
+  options.add(option_visibility::internal,
+              "enable_dense_count_join",
+              "runtime override for dense count-join planning",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_dense_count_join),
+              SetEnableDenseCountJoin);
+  options.add(option_visibility::internal,
+              "dense_count_join_max_bytes",
+              "internal test hook for the dense count-join histogram budget",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.dense_count_join_max_bytes),
+              SetDenseCountJoinMaxBytes);
+  options.add(option_visibility::internal,
+              "dense_count_join_memory_fraction",
+              "internal test hook for the derived dense count-join histogram budget",
+              LogicalType::DOUBLE,
+              Value::DOUBLE(operator_defaults.dense_count_join_memory_fraction),
+              SetDenseCountJoinMemoryFraction);
+  options.add(option_visibility::internal,
+              "concat_batch_bytes",
+              "override the internally derived CONCAT batch target",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.concat_batch_bytes),
+              SetConcatBatchBytes);
+  options.add(option_visibility::internal,
+              "cross_join_task_bytes",
+              "override the internally derived output target of a cross product task",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.cross_join_task_bytes),
+              SetCrossJoinTaskBytes);
 
-  config.AddExtensionOption(
-    "parquet_footer_statistics",
-    "Whether a scan of several Parquet files gives DuckDB's optimizer the merged statistics of "
-    "all their footers, which DuckDB itself reads only with union_by_name",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(true));
+  options.add(option_visibility::tuning,
+              "enable_regex_jit_impl",
+              "Whether regexp_replace with the pattern '^https?://(?:www\\.)?([^/]+)/.*$' and the "
+              "replacement '\\1' uses a hand-written GPU kernel instead of cuDF's regex engine. No "
+              "other pattern is affected.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_regex_jit),
+              SetEnableRegexJitImpl);
 
-  // Add in config option for sort partition size
-  config.AddExtensionOption("max_sort_partition_bytes",
-                            "Maximum bytes per sort partition (0 = auto based on "
-                            "max_sort_partition_memory_fraction of GPU memory)",
-                            LogicalType::UBIGINT,
-                            Value::UBIGINT(operator_defaults.max_sort_partition_bytes),
-                            SetMaxSortPartitionBytes);
-  config.AddExtensionOption(
-    "max_sort_partition_memory_fraction",
-    "Fraction of available GPU memory per sort partition when max_sort_partition_bytes is 0",
-    LogicalType::DOUBLE,
-    Value::DOUBLE(operator_defaults.max_sort_partition_memory_fraction),
-    SetMaxSortPartitionMemoryFraction);
+  options.add(option_visibility::tuning,
+              "like_swar_fastpath",
+              "Whether LIKE and NOT LIKE patterns made of literals separated and surrounded by %, "
+              "such as '%abc%def%', use a specialized GPU kernel instead of cuDF's general LIKE.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(true),
+              SetEnableLikeSwarFastpath);
 
-  // Logging configuration
-  config.AddExtensionOption("sirius_log_backend",
-                            "Logging backend for Sirius (duckdb, spdlog, noop)",
-                            LogicalType::VARCHAR,
-                            Value(Config::LOG_BACKEND),
-                            SetLogBackend);
-  config.AddExtensionOption("sirius_log_level",
-                            "Log level for Sirius (trace, debug, info, warn, error, critical, off)",
-                            LogicalType::VARCHAR,
-                            Value(Config::LOG_LEVEL),
-                            SetLogLevel);
-  config.AddExtensionOption("sirius_log_dir",
-                            "Directory for Sirius log files",
-                            LogicalType::VARCHAR,
-                            Value(Config::LOG_DIR),
-                            SetLogDir);
-  config.AddExtensionOption("sirius_log_flush_seconds",
-                            "Interval in seconds between automatic log flushes (0 disables)",
-                            LogicalType::INTEGER,
-                            Value::INTEGER(Config::LOG_FLUSH_SECONDS),
-                            SetLogFlushSeconds);
+  options.add(option_visibility::user,
+              "parquet_footer_statistics",
+              "Whether to give DuckDB's optimizer column statistics merged from the footers of all "
+              "files in a multi-file Parquet scan, for better filter and join estimates. DuckDB "
+              "itself reads them only with union_by_name.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(true));
 
-  config.AddExtensionOption("hash_partition_bytes",
-                            "Target size in bytes per hash partition",
-                            LogicalType::UBIGINT,
-                            Value::UBIGINT(operator_defaults.hash_partition_bytes),
-                            SetHashPartitionBytes);
-
-  config.AddExtensionOption("sort_sample_bytes",
-                            "Target bytes to sample before computing sort partition boundaries",
-                            LogicalType::UBIGINT,
-                            Value::UBIGINT(operator_defaults.sort_sample_bytes),
-                            SetSortSampleBytes);
-
-  config.AddExtensionOption("max_build_hash_table_bytes",
-                            "Maximum per-GPU estimated BUILD_PROBE hash-table bytes (measured "
-                            "build rows x 16 B) for a hash join to build a reusable hash table "
-                            "(i.e. BUILD_PROBE mode)",
-                            LogicalType::UBIGINT,
-                            Value::UBIGINT(operator_defaults.max_build_hash_table_bytes),
-                            SetMaxBuildHashTableBytes);
-
-  config.AddExtensionOption(
-    "max_build_probe_resident_bytes",
-    "Maximum per-GPU decoded folded build-side bytes a BUILD_PROBE hash join may "
-    "keep GPU-resident (un-spillable) for the whole probe stream",
+  options.add(
+    option_visibility::user,
+    "max_sort_partition_bytes",
+    "Target size in bytes of one ORDER BY partition on the GPU, used to choose how many "
+    "partitions a sort splits into. 0 derives it from max_sort_partition_memory_fraction of the "
+    "GPU memory available when the sort starts.",
     LogicalType::UBIGINT,
-    Value::UBIGINT(operator_defaults.max_build_probe_resident_bytes),
-    SetMaxBuildProbeResidentBytes);
+    Value::UBIGINT(operator_defaults.max_sort_partition_bytes),
+    SetMaxSortPartitionBytes);
+  options.add(option_visibility::user,
+              "max_sort_partition_memory_fraction",
+              "Fraction of the available GPU memory, from 0 to 1, used as the target ORDER BY "
+              "partition size when max_sort_partition_bytes is 0. 0 sorts the whole input as one "
+              "partition.",
+              LogicalType::DOUBLE,
+              Value::DOUBLE(operator_defaults.max_sort_partition_memory_fraction),
+              SetMaxSortPartitionMemoryFraction);
 
-  config.AddExtensionOption("max_broadcast_join_size",
-                            "Maximum build-side size in bytes for a broadcast join, where the "
-                            "(small) build table is replicated to every GPU instead of "
-                            "hash-partitioned across GPUs",
-                            LogicalType::UBIGINT,
-                            Value::UBIGINT(operator_defaults.max_broadcast_join_size),
-                            SetMaxBroadcastJoinSize);
+  options.add(
+    option_visibility::user,
+    "sirius_log_backend",
+    "Where Sirius writes its log: 'spdlog' to daily files sirius_YYYY-MM-DD.log in "
+    "sirius_log_dir, "
+    "'duckdb' to DuckDB's log with type 'Sirius', or 'noop' nowhere. Applies to the whole "
+    "process; defaults to the SIRIUS_LOG_BACKEND environment variable when set.",
+    LogicalType::VARCHAR,
+    Value(Config::LOG_BACKEND),
+    SetLogBackend);
+  options.add(option_visibility::user,
+              "sirius_log_level",
+              "Minimum level of Sirius log messages: trace, debug, info, warn, error, critical or "
+              "off. The 'duckdb' backend uses DuckDB's log level instead. Applies to the whole "
+              "process; defaults to the SIRIUS_LOG_LEVEL environment variable when set.",
+              LogicalType::VARCHAR,
+              Value(Config::LOG_LEVEL),
+              SetLogLevel);
+  options.add(
+    option_visibility::user,
+    "sirius_log_dir",
+    "Directory of the Sirius log files, one per day named sirius_YYYY-MM-DD.log, when "
+    "sirius_log_backend is 'spdlog'; relative paths resolve against the working directory. "
+    "Applies to the whole "
+    "process; defaults to the SIRIUS_LOG_DIR environment variable when set.",
+    LogicalType::VARCHAR,
+    Value(Config::LOG_DIR),
+    SetLogDir);
+  options.add(option_visibility::user,
+              "sirius_log_flush_seconds",
+              "Seconds between automatic flushes of the Sirius log file when sirius_log_backend is "
+              "'spdlog'; 0 disables periodic flushing. Applies to the whole process.",
+              LogicalType::INTEGER,
+              Value::INTEGER(Config::LOG_FLUSH_SECONDS),
+              SetLogFlushSeconds);
 
-  config.AddExtensionOption(
+  options.add(
+    option_visibility::user,
+    "hash_partition_bytes",
+    "Target size in bytes, greater than 0, of one hash partition in GPU joins and "
+    "aggregations; smaller values lower peak GPU memory per task but create more tasks. "
+    "Defaults to 1/40 of the smallest GPU's memory, clamped to 512 MiB-5 GiB; a GPU memory "
+    "limit in sirius.yaml can lower it.",
+    LogicalType::UBIGINT,
+    Value::UBIGINT(operator_defaults.hash_partition_bytes),
+    SetHashPartitionBytes);
+
+  options.add(option_visibility::tuning,
+              "sort_sample_bytes",
+              "Bytes of ORDER BY input to collect before choosing the sort's partition boundaries; "
+              "0 uses only the first batch. "
+              "Defaults to 1/40 of the smallest GPU's memory, clamped to 512 MiB-5 GiB; a GPU "
+              "memory limit in sirius.yaml can lower it.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.sort_sample_bytes),
+              SetSortSampleBytes);
+
+  options.add(
+    option_visibility::tuning,
+    "max_build_hash_table_bytes",
+    "Maximum estimated hash table size in bytes per GPU, at 16 bytes per build row, for a "
+    "hash join to build its table once and reuse it for every probe batch; 0 disables "
+    "reusable builds. Defaults to 8 times hash_partition_bytes as configured at startup.",
+    LogicalType::UBIGINT,
+    Value::UBIGINT(operator_defaults.max_build_hash_table_bytes),
+    SetMaxBuildHashTableBytes);
+
+  options.add(option_visibility::tuning,
+              "max_build_probe_resident_bytes",
+              "Maximum build-side data in bytes per GPU that a hash join reusing one build table "
+              "may keep in GPU memory, unspillable, while it probes; 0 disables reusable builds. "
+              "Defaults to 1/5 of the smallest GPU's memory, clamped to 4-40 GiB; a GPU memory "
+              "limit in sirius.yaml can lower it.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.max_build_probe_resident_bytes),
+              SetMaxBuildProbeResidentBytes);
+
+  options.add(option_visibility::user,
+              "max_broadcast_join_size",
+              "Largest build side in bytes that a hash join copies to every GPU, instead of "
+              "partitioning it across GPUs, when the probe side is much larger. Build sides under "
+              "16 MiB per GPU are eligible regardless.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.max_broadcast_join_size),
+              SetMaxBroadcastJoinSize);
+
+  options.add(
+    option_visibility::tuning,
     "mark_join_build_switch_ratio",
-    "For STANDARD-mode MARK joins, build on the left/output side via cudf::mark_join when the "
-    "right (probe) side has at least this many times more rows than the left side (0 disables). "
-    "Hardware-dependent — recalibrate per GPU.",
+    "For mark joins, which evaluate some IN and EXISTS subqueries, build the hash table on "
+    "the left side when the right side has at least this many times more rows. 0 always "
+    "builds on the right side. The best value depends on the GPU.",
     LogicalType::DOUBLE,
     Value::DOUBLE(operator_defaults.mark_join_build_switch_ratio),
     SetMarkJoinBuildSwitchRatio);
 
-  config.AddExtensionOption(
-    "gpu_execution",
-    "Whether to transparently intercept SQL queries and execute them on GPU",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(true),
-    SetEnableGpuExecution);
+  options.add(option_visibility::user,
+              "gpu_execution",
+              "Whether to transparently run supported queries on the GPU. When false, queries run "
+              "on DuckDB's CPU engine unless passed to the gpu_execution table function.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(true),
+              SetEnableGpuExecution);
 
-  config.AddExtensionOption(
+  options.add(
+    option_visibility::user,
     "pin_table_compression",
-    "Default for pin_table calls that omit the compression named "
-    "parameter. Takes effect only when pin_table_input_compression_plan_dir "
-    "is non-empty and contains a matching table plan",
+    "Whether pin_table compresses a table when its compression parameter is omitted. "
+    "Compression needs a plan file for the table in pin_table_input_compression_plan_dir; "
+    "tables without one are pinned uncompressed.",
     LogicalType::BOOLEAN,
     Value::BOOLEAN(compression_defaults.enable_pin_table_compression),
     SetEnablePinTableCompression);
 
-  config.AddExtensionOption(
+  options.add(
+    option_visibility::user,
     "spill_compression",
-    "Store batches spilled to the host or disk tier Simpatico-compressed, and decode them on "
-    "their way back to the GPU. Applies to the whole process, not just this session",
+    "Whether to compress batches spilled to host memory or disk, and decompress them when "
+    "they are loaded back. Applies to the whole process, not just this session.",
     LogicalType::BOOLEAN,
     Value::BOOLEAN(compression_defaults.enable_spill_compression),
     SetEnableSpillCompression);
 
-  config.AddExtensionOption(
-    "pin_table_input_compression_plan_dir",
-    "Directory containing per-table Simpatico plan files for pin_table compression. "
-    "Files are named '<table_name>.<ext>'; their contents are the multi-column plan DSL. "
-    "May be set before a compression-enabled pin_table call. Tables with no matching file are "
-    "pinned uncompressed. No effect on spill compression.",
-    LogicalType::VARCHAR,
-    Value(compression_defaults.input_plan_dir),
-    SetPinTableInputCompressionPlanDir);
+  options.add(option_visibility::user,
+              "pin_table_input_compression_plan_dir",
+              "Directory of compression plan files for pin_table, one per table, named after "
+              "pin_table's name parameter with any extension. Tables without a plan file are "
+              "pinned uncompressed; empty disables pin_table compression.",
+              LogicalType::VARCHAR,
+              Value(compression_defaults.input_plan_dir),
+              SetPinTableInputCompressionPlanDir);
 
-  config.AddExtensionOption(
-    "pin_table_compression_min_batch_size_bytes",
-    "Minimum uncompressed batch size in bytes below which active pin_table compression is skipped; "
-    "inert until compression is enabled and a matching plan resolves",
-    LogicalType::UBIGINT,
-    Value::UBIGINT(compression_defaults.min_batch_size_bytes),
-    SetPinTableCompressionMinBatchSizeBytes);
+  options.add(option_visibility::user,
+              "pin_table_compression_min_batch_size_bytes",
+              "Minimum uncompressed size in bytes of a batch for pin_table to compress it; smaller "
+              "batches are pinned uncompressed.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(compression_defaults.min_batch_size_bytes),
+              SetPinTableCompressionMinBatchSizeBytes);
 
-  config.AddExtensionOption(
-    "pin_table_compression_max_compressed_fraction",
-    "Discard the compressed form and pin uncompressed when the compressed size exceeds this "
-    "finite, non-negative fraction of the batch's original size (values above 1 permit "
-    "expansion); inert until compression is enabled and a matching plan resolves",
-    LogicalType::DOUBLE,
-    Value::DOUBLE(compression_defaults.max_compressed_fraction),
-    SetPinTableCompressionMaxCompressedFraction);
+  options.add(option_visibility::user,
+              "pin_table_compression_max_compressed_fraction",
+              "Largest compressed size, as a fraction of the uncompressed size, at which pin_table "
+              "keeps a batch compressed; otherwise the batch is pinned uncompressed. 0.75 requires "
+              "at least 25% savings, and values above 1 accept compressed batches that grew.",
+              LogicalType::DOUBLE,
+              Value::DOUBLE(compression_defaults.max_compressed_fraction),
+              SetPinTableCompressionMaxCompressedFraction);
 
-  config.AddExtensionOption(
+  options.add(
+    option_visibility::user,
     "pin_table_prove_unique_keys",
-    "Prove pinned parquet columns distinct at pin time, and let joins whose build key was proven "
-    "distinct take the single-pass distinct hash join, as for a PRIMARY KEY",
+    "Whether pin_table checks which integer columns of pinned Parquet files have no "
+    "duplicate values, so joins on them can use the faster hash join for unique keys, as with a "
+    "PRIMARY KEY. When false, joins also ignore uniqueness found by earlier pins.",
     LogicalType::BOOLEAN,
     Value::BOOLEAN(operator_defaults.prove_unique_keys),
     SetPinTableProveUniqueKeys);
 
-  config.AddExtensionOption(
-    "pin_table_unique_exact_max_bytes",
-    "Cap in bytes on one column in pin_table's exact uniqueness check (a sort of the whole column; "
-    "peak GPU use is about three times the cap). 0 = 10% of the GPU memory space capacity",
-    LogicalType::UBIGINT,
-    Value::UBIGINT(operator_defaults.unique_exact_max_bytes),
-    SetPinTableUniqueExactMaxBytes);
+  options.add(option_visibility::user,
+              "pin_table_unique_exact_max_bytes",
+              "Maximum GPU memory in bytes that pin_table keeps, across all columns, for its exact "
+              "uniqueness check; peak use is about three times this. 0 uses 10% of the GPU memory "
+              "Sirius manages.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.unique_exact_max_bytes),
+              SetPinTableUniqueExactMaxBytes);
 
-  add_sirius_option(
-    config,
-    option_visibility::internal,
-    "enable_dynamic_filter_multi_partition",
-    "Enable Bloom accumulation for eligible non-broadcast hash builds with more than one "
-    "partition; requires enable_dynamic_filter",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(operator_defaults.enable_dynamic_filter_multi_partition),
-    SetEnableDynamicFilterMultiPartition);
+  options.add(option_visibility::internal,
+              "enable_dynamic_filter_multi_partition",
+              "Enable Bloom accumulation for eligible non-broadcast hash builds with more than one "
+              "partition; requires enable_dynamic_filter",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_dynamic_filter_multi_partition),
+              SetEnableDynamicFilterMultiPartition);
 
-  add_sirius_option(
-    config,
-    option_visibility::internal,
-    "max_dynamic_filter_bloom_bytes_per_gpu",
-    "Aggregate aligned Bloom-array budget in bytes per GPU for multi-partition accumulation; "
-    "must be greater than zero",
-    LogicalType::UBIGINT,
-    Value::UBIGINT(operator_defaults.max_dynamic_filter_bloom_bytes_per_gpu),
-    SetMaxDynamicFilterBloomBytesPerGpu);
+  options.add(option_visibility::internal,
+              "max_dynamic_filter_bloom_bytes_per_gpu",
+              "Aggregate aligned Bloom-array budget in bytes per GPU for multi-partition "
+              "accumulation; must be greater than zero",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.max_dynamic_filter_bloom_bytes_per_gpu),
+              SetMaxDynamicFilterBloomBytesPerGpu);
 
-  config.AddExtensionOption(
-    "dynamic_filter_domain_coverage_threshold",
-    "Skip publishing a key's dynamic filters when the hash-join build covers at least this "
-    "fraction of the key's domain; values above 1.0 disable the gate",
-    LogicalType::DOUBLE,
-    Value::DOUBLE(operator_defaults.dynamic_filter_domain_coverage_threshold),
-    SetDynamicFilterDomainCoverageThreshold);
+  options.add(option_visibility::tuning,
+              "dynamic_filter_domain_coverage_threshold",
+              "Skip runtime join filters on a join key that is unique in its table when the join's "
+              "build side keeps at least this fraction of that table's rows, since such filters "
+              "remove few rows. Must be greater than 0; values above 1 never skip.",
+              LogicalType::DOUBLE,
+              Value::DOUBLE(operator_defaults.dynamic_filter_domain_coverage_threshold),
+              SetDynamicFilterDomainCoverageThreshold);
 
-  config.AddExtensionOption(
-    "dynamic_filter_inlist_max_l2_fraction",
-    "Maximum estimated cuco-set size for the exact hash IN-list dynamic filter, as a fraction of "
-    "the smallest probe-GPU L2 cache, in [0, 1]; larger sets publish a Bloom filter, 0 always "
-    "publishes the Bloom when supported, and 1.0 reproduces the legacy L2-fit rule",
-    LogicalType::DOUBLE,
-    Value::DOUBLE(operator_defaults.dynamic_filter_inlist_max_l2_fraction),
-    SetDynamicFilterInlistMaxL2Fraction);
+  options.add(option_visibility::tuning,
+              "dynamic_filter_inlist_max_l2_fraction",
+              "Largest exact-match runtime join filter, as a fraction of the GPU's L2 cache size "
+              "from 0 to 1; larger key sets use a Bloom filter. 0 uses a Bloom filter whenever "
+              "possible, except for very small key sets.",
+              LogicalType::DOUBLE,
+              Value::DOUBLE(operator_defaults.dynamic_filter_inlist_max_l2_fraction),
+              SetDynamicFilterInlistMaxL2Fraction);
 
-  config.AddExtensionOption(
+  options.add(
+    option_visibility::tuning,
     "dynamic_filter_keep_threshold",
-    "Disable a probe scan's post-decode dynamic filtering once a measured split keeps more than "
-    "this fraction of its rows (too unselective to repay the mask kernel); in [0.0, 1.0], 1.0 "
-    "keeps filtering always on",
+    "Stop applying runtime join filters to a scan once together they keep more than this "
+    "fraction of its rows, from 0 to 1, until new filters arrive. 1 disables this cutoff; "
+    "single filters that keep most rows can still be skipped.",
     LogicalType::DOUBLE,
     Value::DOUBLE(operator_defaults.dynamic_filter_keep_threshold),
     SetDynamicFilterKeepThreshold);
 
   // Default from the YAML-loaded params, so a sirius.yaml value is what connections inherit.
-  config.AddExtensionOption(
-    "enable_compressed_materialization",
-    "Keep eligible integer and fixed-point DECIMAL columns in value-preserving narrow cuDF "
-    "carriers selected from exact pin-time bounds; restore native carriers at type-sensitive "
-    "boundaries (on by default)",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(operator_defaults.enable_compressed_materialization),
-    SetEnableCompressedMaterialization);
+  options.add(option_visibility::user,
+              "enable_compressed_materialization",
+              "Whether pin_table stores integer and DECIMAL columns in the narrowest type that "
+              "holds their values, to save memory. Query results are unchanged, and tables pinned "
+              "earlier keep their storage.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_compressed_materialization),
+              SetEnableCompressedMaterialization);
 
-  config.AddExtensionOption(
-    "use_hw_decompression",
-    "Enable cuDF hardware (on-GPU) decompression for compressed parquet scans. Off by default "
-    "(opt-in). When enabled and every GPU reports hardware-decompression support in cucascade "
-    "topology, Sirius exports LIBCUDF_HW_DECOMPRESSION=ON for the lifetime of the context. Only "
-    "enable this on GPUs known to support hardware decompression",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(operator_defaults.use_hw_decompression),
-    SetUseHwDecompression);
+  options.add(option_visibility::tuning,
+              "use_hw_decompression",
+              "Whether Parquet scans use the GPU's hardware decompression engine when every GPU "
+              "supports it. Read-only: set sirius.operator_params.use_hw_decompression in "
+              "sirius.yaml instead.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.use_hw_decompression),
+              SetUseHwDecompression);
 
-  config.AddExtensionOption(
-    "admission_bytes_per_gpu",
-    "Target projected scan-output bytes per GPU at admission; 0 disables the estimate and "
-    "leaves the allocation to topology.gpus_per_query",
-    LogicalType::UBIGINT,
-    Value::UBIGINT(operator_defaults.admission_bytes_per_gpu),
-    SetAdmissionBytesPerGpu);
+  options.add(option_visibility::user,
+              "admission_bytes_per_gpu",
+              "Estimated scan output in bytes per GPU, used to choose how many GPUs a query runs "
+              "on, up to sirius.topology.gpus_per_query in sirius.yaml. 0 uses every GPU that "
+              "gpus_per_query allows.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.admission_bytes_per_gpu),
+              SetAdmissionBytesPerGpu);
 
-  config.AddExtensionOption(
-    "avg_variable_column_bytes",
-    "Per-row width assumed for variable-width columns (VARCHAR, LIST, STRUCT, ARRAY) when "
-    "estimating scan output at admission; must be greater than zero",
-    LogicalType::UBIGINT,
-    Value::UBIGINT(operator_defaults.avg_variable_column_bytes),
-    SetAvgVariableColumnBytes);
+  options.add(option_visibility::user,
+              "avg_variable_column_bytes",
+              "Assumed size in bytes of each value of a variable-width column, such as VARCHAR or "
+              "LIST, when estimating scan output for admission_bytes_per_gpu. Must be greater than "
+              "0; unused when admission_bytes_per_gpu is 0.",
+              LogicalType::UBIGINT,
+              Value::UBIGINT(operator_defaults.avg_variable_column_bytes),
+              SetAvgVariableColumnBytes);
 
-  config.AddExtensionOption(
-    "enable_runtime_size_estimation",
-    "Let a grouped aggregation's PARTITION size itself from a projected input total instead of "
-    "waiting for its whole input, turning that hard barrier into a partial one. Off by default",
-    LogicalType::BOOLEAN,
-    Value::BOOLEAN(operator_defaults.enable_runtime_size_estimation),
-    SetEnableRuntimeSizeEstimation);
+  options.add(option_visibility::tuning,
+              "enable_runtime_size_estimation",
+              "Whether grouped aggregations choose their partition count from a projected input "
+              "size instead of waiting for all of their input, so they can start sooner. "
+              "Experimental.",
+              LogicalType::BOOLEAN,
+              Value::BOOLEAN(operator_defaults.enable_runtime_size_estimation),
+              SetEnableRuntimeSizeEstimation);
 }
 
 // Publish the transparent optimizer mask once at extension load, unioned
