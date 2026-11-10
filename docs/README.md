@@ -227,6 +227,10 @@ Sirius loads its settings from a YAML config file, searched in this order:
 
 If no config file is found, built-in defaults apply (95% GPU memory, 8 GiB pinned host memory per NUMA node). See the [Configuration reference](super-sirius/configuration.md) for all options: memory tiers, thread pools, operator parameters, and runtime `SET` variables. An example config is provided at [`test/cpp/integration/integration.yaml`](../test/cpp/integration/integration.yaml).
 
+The [SQL reference](sql-reference.md) documents the table functions and `SET` settings of the Sirius
+CUDA backend. It is generated from a build with `pixi run python scripts/generate_sql_reference.py`;
+rerun it when they change.
+
 ## Logging
 Sirius uses [spdlog](https://github.com/gabime/spdlog) for logging messages during query execution. Default log directory is `log` (relative to the current working directory) and default log level is `info`.
 
