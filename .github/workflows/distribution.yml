@@ -5,6 +5,10 @@
 #     - Explicitly allowed third-party actions:
 #       prefix-dev/setup-pixi@*
 #       mozilla-actions/sccache-action@*
+#       duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@*
+#       duckdb/duckdb-ci/detect-runners@8302ae16ba47cc90bc9ba77b3cf825beab371b4d
+#       endersonmenezes/free-disk-space@7901478139cff6e9d44df5972fd8ab8fcade4db1
+#       hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03
 #     - Require actions to be pinned to a full-length commit SHA: NO
 #
 # Adding a new action? You must:
@@ -27,24 +31,22 @@ concurrency:
 jobs:
   cuda-13:
     if: github.event_name != 'pull_request'
-    uses: sirius-db/extension-ci-tools/.github/workflows/_extension_distribution.yml@sirius
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@c286b12cee2aa16b714e76d0b46e530fcdb6dc05 # v2.0-cyanoptera
     with:
       extension_name: sirius
       duckdb_version: v2.0.0
-      ci_tools_version: sirius
-      extension_directory: sirius-duckdb
+      ci_tools_version: c286b12cee2aa16b714e76d0b46e530fcdb6dc05 # v2.0-cyanoptera
+      build_directory: sirius-duckdb
       exclude_archs: "linux_amd64_musl;linux_arm64_musl;osx_amd64;osx_arm64;windows_amd64;windows_arm64;windows_amd64_mingw;wasm_mvp;wasm_eh;wasm_threads"
-      extra_toolchains: "cuda;rust;libclang;lld"
+      extra_toolchains: "cuda;rust"
       vcpkg_url: "https://github.com/microsoft/vcpkg.git"
       vcpkg_commit: "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
-      vcpkg_binary_cache_enabled: true
       skip_tests: true
       save_cache: ${{ github.ref == 'refs/heads/main' }}
       reduced_ci_mode: "disabled"
-      override_ci_tools_repository: "sirius-db/extension-ci-tools"
       build_duckdb_shell: false
-      vcpkg_overlay_ports: "sirius-duckdb/vcpkg_ports"
-      vcpkg_overlay_triplets: "sirius-duckdb/vcpkg_triplets"
+      vcpkg_overlay_ports: "vcpkg_ports"
+      vcpkg_overlay_triplets: "vcpkg_triplets"
       cuda_archs: "75-real;80-real;86-real;89-real;90a-real;100f-real;120f-real"
       cuda_version: "13"
       artifact_postfix: "-cuda13"
@@ -52,24 +54,22 @@ jobs:
 
   cuda-12:
     if: github.event_name != 'pull_request'
-    uses: sirius-db/extension-ci-tools/.github/workflows/_extension_distribution.yml@sirius
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@c286b12cee2aa16b714e76d0b46e530fcdb6dc05 # v2.0-cyanoptera
     with:
       extension_name: sirius
       duckdb_version: v2.0.0
-      ci_tools_version: sirius
-      extension_directory: sirius-duckdb
+      ci_tools_version: c286b12cee2aa16b714e76d0b46e530fcdb6dc05 # v2.0-cyanoptera
+      build_directory: sirius-duckdb
       exclude_archs: "linux_amd64_musl;linux_arm64_musl;osx_amd64;osx_arm64;windows_amd64;windows_arm64;windows_amd64_mingw;wasm_mvp;wasm_eh;wasm_threads"
-      extra_toolchains: "cuda;rust;libclang;lld"
+      extra_toolchains: "cuda;rust"
       vcpkg_url: "https://github.com/microsoft/vcpkg.git"
       vcpkg_commit: "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
-      vcpkg_binary_cache_enabled: true
       skip_tests: true
       save_cache: ${{ github.ref == 'refs/heads/main' }}
       reduced_ci_mode: "disabled"
-      override_ci_tools_repository: "sirius-db/extension-ci-tools"
       build_duckdb_shell: false
-      vcpkg_overlay_ports: "sirius-duckdb/vcpkg_ports"
-      vcpkg_overlay_triplets: "sirius-duckdb/vcpkg_triplets"
+      vcpkg_overlay_ports: "vcpkg_ports"
+      vcpkg_overlay_triplets: "vcpkg_triplets"
       cuda_archs: "75-real;80-real;86-real;89-real;90a-real;100-real;120-real"
       cuda_version: "12"
       artifact_postfix: "-cuda12"
