@@ -24,6 +24,11 @@ on:
   merge_group:
   pull_request:
   workflow_dispatch:
+    inputs:
+      public_runner_test:
+        description: Test CUDA 12 and 13 on GitHub-hosted x86-64 runners for sm_80
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,14 +48,17 @@ jobs:
       vcpkg_commit: "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
       skip_tests: true
       save_cache: ${{ github.ref == 'refs/heads/main' }}
-      reduced_ci_mode: "disabled"
+      reduced_ci_mode: ${{ inputs.public_runner_test && 'enabled' || 'disabled' }}
       build_duckdb_shell: false
       vcpkg_overlay_ports: "vcpkg_ports"
       vcpkg_overlay_triplets: "vcpkg_triplets"
-      cuda_archs: "75-real;80-real;86-real;89-real;90a-real;100f-real;120f-real"
+      cuda_archs: ${{ inputs.public_runner_test && '80-real' || '75-real;80-real;86-real;89-real;90a-real;100f-real;120f-real' }}
       cuda_version: "13"
       artifact_postfix: "-cuda13"
-      runners: '{"linux_x64": ["self-hosted", "ubuntu-24.04", "cpu-xl"], "linux_arm64": ["self-hosted", "ubuntu-24.04", "arm-xl"]}'
+      runners: >-
+        ${{ inputs.public_runner_test && '{}' || '{"linux_x64": ["self-hosted", "ubuntu-24.04", "cpu-xl"], "linux_arm64": ["self-hosted", "ubuntu-24.04", "arm-xl"]}' }}
+      test_config: >-
+        ${{ inputs.public_runner_test && '{"test_env_variables":{"VCPKG_MAX_CONCURRENCY":"2","CMAKE_BUILD_PARALLEL_LEVEL":"2","CARGO_BUILD_JOBS":"2"}}' || '{}' }}
 
   cuda-12:
     if: github.event_name != 'pull_request'
@@ -66,14 +74,17 @@ jobs:
       vcpkg_commit: "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
       skip_tests: true
       save_cache: ${{ github.ref == 'refs/heads/main' }}
-      reduced_ci_mode: "disabled"
+      reduced_ci_mode: ${{ inputs.public_runner_test && 'enabled' || 'disabled' }}
       build_duckdb_shell: false
       vcpkg_overlay_ports: "vcpkg_ports"
       vcpkg_overlay_triplets: "vcpkg_triplets"
-      cuda_archs: "75-real;80-real;86-real;89-real;90a-real;100-real;120-real"
+      cuda_archs: ${{ inputs.public_runner_test && '80-real' || '75-real;80-real;86-real;89-real;90a-real;100-real;120-real' }}
       cuda_version: "12"
       artifact_postfix: "-cuda12"
-      runners: '{"linux_x64": ["self-hosted", "ubuntu-22.04", "cpu-xl"], "linux_arm64": ["self-hosted", "ubuntu-22.04", "arm-xl"]}'
+      runners: >-
+        ${{ inputs.public_runner_test && '{}' || '{"linux_x64": ["self-hosted", "ubuntu-22.04", "cpu-xl"], "linux_arm64": ["self-hosted", "ubuntu-22.04", "arm-xl"]}' }}
+      test_config: >-
+        ${{ inputs.public_runner_test && '{"test_env_variables":{"VCPKG_MAX_CONCURRENCY":"2","CMAKE_BUILD_PARALLEL_LEVEL":"2","CARGO_BUILD_JOBS":"2"}}' || '{}' }}
 
   validation-host:
     if: github.event_name == 'merge_group'
