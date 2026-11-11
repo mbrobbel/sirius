@@ -3804,12 +3804,6 @@ static void LoadInternal(ExtensionLoader& loader)
   auto* callback_ptr         = callback.get();
   bool const sirius_disabled = callback_ptr->is_disabled();
 
-  // The ctor already installed the db-independent backend; reinstall now that the
-  // DatabaseInstance exists so the duckdb backend (which needs it) is built and an
-  // unknown backend name is reported here rather than swallowed by the ctor. Before
-  // initialize_context, so its records (and cuCascade's) reach the duckdb backend.
-  install_configured_log_sink(&db);
-
   if (!sirius_disabled) {
     check_cuda_driver_version();
     // Config parsing above must remain NVTX-free. initialize_context creates Quent
@@ -3817,6 +3811,11 @@ static void LoadInternal(ExtensionLoader& loader)
     callback_ptr->initialize_context();
   }
   config.GetCallbackManager().Register(std::move(callback));
+
+  // The ctor already installed the db-independent backend; reinstall now that the
+  // DatabaseInstance exists so the duckdb backend (which needs it) is built and an
+  // unknown backend name is reported here rather than swallowed by the ctor.
+  install_configured_log_sink(&db);
 
   // The callback constructor above already read sirius.yaml, so its params are the defaults the
   // per-connection options register with.
