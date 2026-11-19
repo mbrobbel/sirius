@@ -423,7 +423,7 @@ class HostCompatibilityTests(unittest.TestCase):
         (self.here / "source-build.json").write_bytes(builder.RECIPE.read_bytes())
         (self.root / "pixi.lock").write_text("test lock")
         self.git("init", "--quiet")
-        self.commit_pins(self.recipe["sources"]["duckdb"]["commit"])
+        self.commit_pin(self.recipe["sources"]["duckdb"]["commit"])
         self.trace = self.root / "cli-invocations"
         self.cli = self.root / "duckdb"
         self.write_cli()
@@ -447,13 +447,9 @@ class HostCompatibilityTests(unittest.TestCase):
             text=True,
         )
 
-    def commit_pins(self, commit, wrapper=None):
-        for path, pin in (
-            ("duckdb", commit),
-            ("sirius-duckdb/duckdb", wrapper or commit),
-        ):
-            self.git("update-index", "--add", "--cacheinfo", f"160000,{pin},{path}")
-        self.git("commit", "--quiet", "--allow-empty", "-m", "test host pins")
+    def commit_pin(self, commit):
+        self.git("update-index", "--add", "--cacheinfo", f"160000,{commit},duckdb")
+        self.git("commit", "--quiet", "-m", "test host pin")
 
     def write_cli(self, version=None, source_id=None):
         version = version or self.recipe["duckdb_version"]
@@ -487,7 +483,7 @@ class HostCompatibilityTests(unittest.TestCase):
             timeout=20,
         )
 
-    def test_matching_pins_and_cli_check_without_build_output(self):
+    def test_matching_pin_and_cli_check_without_build_output(self):
         # An inherited Git override must not redirect inspection to another tree.
         result = self.invoke(
             True, {**self.env, "GIT_DIR": str(self.root / "wrong.git")}
@@ -498,19 +494,15 @@ class HostCompatibilityTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_source_drift_refused_before_cli_download_or_output(self):
-        pin = self.recipe["sources"]["duckdb"]["commit"]
-        for engine, wrapper in (("a" * 40, "a" * 40), (pin, "b" * 40)):
-            self.commit_pins(engine, wrapper)
-            for check_only in (False, True):
-                with self.subTest(
-                    engine=engine, wrapper=wrapper, check_only=check_only
-                ):
-                    result = self.invoke(check_only)
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertIn("recipe needs migration", result.stderr)
-                    self.assertNotIn("Fetching", result.stdout)
-                    self.assertFalse(self.output.exists())
-                    self.assertFalse(self.trace.exists())
+        self.commit_pin("a" * 40)
+        for check_only in (False, True):
+            with self.subTest(check_only=check_only):
+                result = self.invoke(check_only)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("recipe needs migration", result.stderr)
+                self.assertNotIn("Fetching", result.stdout)
+                self.assertFalse(self.output.exists())
+                self.assertFalse(self.trace.exists())
 
     def test_wrong_cli_version_or_source_refused_before_download_or_output(self):
         for overrides, diagnostic in (

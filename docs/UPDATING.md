@@ -6,7 +6,7 @@ as follows:
 ## Steps
 
 1. Bump submodules
-    - `./duckdb` and `./sirius-duckdb/duckdb` should be set to latest tagged release and match (see verify below)
+    - Set `./duckdb` to the latest tagged release. The engine and wrapper share this checkout.
     - `./substrait` only needs bumping on a *major* DuckDB API break (e.g. v1->v2), not a routine
       patch/minor release -- there's no static rule, the real test is whether `substrait/`'s
       sources still compile against the new `./duckdb`
@@ -18,7 +18,7 @@ as follows:
     - Check [conda-forge channel](https://anaconda.org/channels/conda-forge/packages/python-duckdb/overview) for packages first
     - Open PRs if needed for missing/new versions [conda-forge/python-duckdb-feedstock](https://github.com/conda-forge/python-duckdb-feedstock/pulls)
 3. Bump versions in `.github/workflows`
-    - `duckdb_version` input in `distribution.yml` should be set to latest tagged release (e.g. `v2.0.0`) or matching SHA with submodules in 1
+    - `duckdb_version` input in `distribution.yml` should be set to latest tagged release (e.g. `v2.0.0`) or the DuckDB commit from step 1
     - The reusable `sirius-db/extension-ci-tools` workflow ref and `ci_tools_version` input should be updated only when the remote CI tooling branch changes
 4. Map the submodule commit to its release version (`DUCKDB_EXPLICIT_VERSION`) in
    `sirius-duckdb/Makefile` and `cmake/sirius-duckdb-provider.cmake`, and update the
@@ -33,8 +33,6 @@ Test `check.yml`'s DuckDB consistency gates locally before pushing:
 
 ```bash
 engine=$(git rev-parse HEAD:duckdb)
-wrapper=$(git rev-parse HEAD:sirius-duckdb/duckdb)
-[[ "$engine" == "$wrapper" ]] && echo "PASS: engine == wrapper" || echo "FAIL: mismatch"
 
 declared=$(grep -m1 'duckdb_version:' .github/workflows/distribution.yml | sed -E 's/.*duckdb_version:[[:space:]]*//' | tr -d '"[:space:]')
 tag=

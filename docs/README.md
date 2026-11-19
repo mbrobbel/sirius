@@ -73,7 +73,7 @@ Build from source to use the latest code on `main`, make changes to Sirius, or r
 ```bash
 git clone --no-recurse-submodules https://github.com/sirius-db/sirius.git
 cd sirius
-git submodule update --init --depth=1 --jobs 5 duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
+git submodule update --init --depth=1 --jobs 4 duckdb substrait cucascade sirius-duckdb/extension-ci-tools
 pixi run make TEST_BUILD_TARGET=
 pixi run duckdb
 ```

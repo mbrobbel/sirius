@@ -1,4 +1,3 @@
-# Keep the engine and wrapper DuckDB gitlinks on the same revision.
 [submodule "duckdb"]
 	path = duckdb
 	url = https://github.com/duckdb/duckdb.git
@@ -29,10 +28,6 @@
 	path = experimental/doris/doris
 	url = https://github.com/apache/doris
 	shallow = true
-[submodule "sirius-duckdb/duckdb"]
-	path = sirius-duckdb/duckdb
-	url = https://github.com/duckdb/duckdb.git
-	branch = v2.0-cyanoptera
 [submodule "sirius-duckdb/extension-ci-tools"]
 	path = sirius-duckdb/extension-ci-tools
 	url = https://github.com/duckdb/extension-ci-tools.git

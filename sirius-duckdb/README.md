@@ -4,8 +4,14 @@ DuckDB extension wrapper for an installed Sirius CMake package. The wrapper stay
 here until it can move to `sirius-db/sirius-duckdb`. Its Makefile uses DuckDB's
 normal extension build infrastructure.
 
-Use matching DuckDB revisions and compatible C++ toolchains for Sirius and the
-wrapper. The engine and wrapper gitlinks record the supported revision.
+Sirius and the wrapper share the root `duckdb` submodule. Use compatible C++
+toolchains for both builds.
+
+If you are upgrading from a revision with a separate wrapper checkout, move any
+remaining `sirius-duckdb/duckdb` directory aside to preserve local work. Move
+`sirius-duckdb/build` aside as well, or pass `WRAPPER_BUILD_DIR` to `pixi run make`
+to use a fresh wrapper build directory. The existing CMake cache points to the
+previous source path.
 
 ## Shared development build
 
@@ -14,7 +20,7 @@ Conda/Pixi environment. The root Makefile builds Sirius and its tests, installs
 Sirius into `build/release/install`, then builds the wrapper against it:
 
 ```sh
-git submodule update --init duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
+git submodule update --init duckdb substrait cucascade sirius-duckdb/extension-ci-tools
 pixi run make
 ```
 
@@ -52,7 +58,7 @@ Hosts that statically link their C++ runtime must export its exception-handling
 symbols. The supplied DuckDB build enables this with `EXPORT_DYNAMIC_SYMBOLS=ON`.
 
 ```sh
-git submodule update --init duckdb substrait cucascade sirius-duckdb/vcpkg sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
+git submodule update --init duckdb substrait cucascade sirius-duckdb/vcpkg sirius-duckdb/extension-ci-tools
 pixi run -e vcpkg make -C sirius-duckdb release \
   SIRIUS_DUCKDB_LINKAGE=static \
   VCPKG_TOOLCHAIN_PATH="$PWD/sirius-duckdb/vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -222,7 +228,7 @@ mkdir -p "$prebuilt"
 cp sirius-duckdb/build/release/src/libduckdb_static.a \
   sirius-duckdb/build/release/src/main/extension/libduckdb_loadable_extensions.a \
   sirius-duckdb/build/release/src/main/http/libduckdb_httplib.a "$prebuilt/"
-pixi run cmake -S sirius-duckdb/duckdb -B build/loader -G Ninja \
+pixi run cmake -S duckdb -B build/loader -G Ninja \
   -DDUCKDB_EXPLICIT_VERSION=v2.0.0 \
   -DCMAKE_BUILD_TYPE=Release -DBUILD_UNITTESTS=ON -DBUILD_SHELL=OFF \
   -DEXTENSION_STATIC_BUILD=ON -DDUCKDB_LINKER=bfd \

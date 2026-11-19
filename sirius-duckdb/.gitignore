@@ -1,1 +1,5 @@
 log/
+
+# Alias created by extension-ci-tools targets. Keep old checkout directories visible.
+/duckdb
+!/duckdb/

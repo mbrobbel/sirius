@@ -47,7 +47,7 @@ def read_recipe():
 
 
 def validate_checkout_recipe(recipe):
-    """The recipe must follow both committed Sirius host pins, never a branch tip."""
+    """The recipe must follow the committed Sirius DuckDB pin."""
     env = {
         key: value for key, value in os.environ.items() if not key.startswith("GIT_")
     }
@@ -57,10 +57,10 @@ def validate_checkout_recipe(recipe):
             "-C",
             str(ROOT),
             "ls-tree",
+            "--format=%(objectmode) %(objecttype) %(objectname)",
             "HEAD",
             "--",
             "duckdb",
-            "sirius-duckdb/duckdb",
         ],
         env=env,
         text=True,
@@ -68,16 +68,11 @@ def validate_checkout_recipe(recipe):
         check=True,
     )
     expected = recipe["sources"]["duckdb"]["commit"]
-    pins = {}
-    for line in result.stdout.splitlines():
-        metadata, path = line.split("\t", 1)
-        mode, kind, commit = metadata.split()
-        if mode == "160000" and kind == "commit":
-            pins[path] = commit
-    if pins != {"duckdb": expected, "sirius-duckdb/duckdb": expected}:
+    pin = result.stdout.strip()
+    if pin != f"160000 commit {expected}":
         raise ValueError(
             f"Paimon recipe needs migration: recipe DuckDB={expected}; "
-            f"Sirius HEAD pins={pins}. Update the reader recipe and requalify it; "
+            f"Sirius HEAD duckdb={pin or 'missing'}. Update the reader recipe and requalify it; "
             "do not bypass this check."
         )
 

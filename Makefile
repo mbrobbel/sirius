@@ -38,6 +38,7 @@ sirius-duckdb: release
 	$(CMAKE) --install "$(BUILD_DIR)/release" --prefix "$(abspath $(BUILD_DIR))/release/install" --component sirius_library
 	$(MAKE) -C sirius-duckdb sirius-release SIRIUS_DUCKDB_LINKAGE=shared \
 		BUILD_DIR="$(abspath $(WRAPPER_BUILD_DIR))" \
+		DUCKDB_SRCDIR="$(abspath $(DUCKDB_DIR))" \
 		SIRIUS_INSTALL_DIR="$(abspath $(BUILD_DIR))/release/install" \
 		EXT_FLAGS="$(EXT_FLAGS) -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
 

@@ -56,10 +56,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Check DuckDB source revisions
-        run: |
-          [[ "$(git rev-parse HEAD:duckdb)" == "$(git rev-parse HEAD:sirius-duckdb/duckdb)" ]]
-
       - name: Test thread sweep harness
         run: |
           set -o pipefail
@@ -160,7 +156,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Init build submodules
-        run: git submodule update --init --depth=1 --jobs 4 duckdb sirius-duckdb/duckdb substrait cucascade
+        run: git submodule update --init --depth=1 --jobs 3 duckdb substrait cucascade
 
       - name: Init vcpkg with full history for version overrides
         if: matrix.build.environment == 'vcpkg'
@@ -215,11 +211,9 @@ jobs:
           grep -E '(FAILED:|: error:|: fatal error:)' /tmp/build.log | head -60 >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Check the pinned DuckDB revisions
+      - name: Check the pinned DuckDB revision
         run: |
           engine=$(git rev-parse HEAD:duckdb)
-          wrapper=$(git rev-parse HEAD:sirius-duckdb/duckdb)
-          [[ "$engine" == "$wrapper" ]]
 
           declared=$(grep -m1 'duckdb_version:' .github/workflows/distribution.yml | sed -E 's/.*duckdb_version:[[:space:]]*//' | tr -d '"[:space:]')
           tag=

@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Init build submodules
-        run: git submodule update --init --depth=1 --jobs 5 duckdb substrait cucascade sirius-duckdb/duckdb sirius-duckdb/extension-ci-tools
+        run: git submodule update --init --depth=1 --jobs 4 duckdb substrait cucascade sirius-duckdb/extension-ci-tools
 
       - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
         with:
@@ -110,7 +110,7 @@ jobs:
           cp sirius-duckdb/build/release/src/libduckdb_static.a \
             sirius-duckdb/build/release/src/main/extension/libduckdb_loadable_extensions.a \
             sirius-duckdb/build/release/src/main/http/libduckdb_httplib.a "$prebuilt/"
-          cmake -S sirius-duckdb/duckdb -B build/loader -G Ninja \
+          cmake -S duckdb -B build/loader -G Ninja \
             -DDUCKDB_EXPLICIT_VERSION=v2.0.0 \
             -DCMAKE_BUILD_TYPE=Release -DBUILD_UNITTESTS=ON -DBUILD_SHELL=OFF \
             -DEXTENSION_STATIC_BUILD=ON -DDUCKDB_LINKER=bfd \
