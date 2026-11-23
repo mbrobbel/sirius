@@ -1,9 +1,9 @@
 # Runtime values in the engine
 
-A runtime filter can arrive after a scan has started. A hash router waiting for a partition
-count has no such freedom. The proposed value channel serves both cases. Only a `Filter` is
-optional. A consumer that depends on a `Statistics`, `Decision`, `Boundaries` or `Assignment`
-needs the value before it can do that work. [Value kinds](../part-2/05-runtime-filters.md#data-edges-and-value-edges)
+A runtime filter can arrive after a scan has started. A hash router waiting for a partition count
+has no such freedom. The proposed value channel serves both cases. Only a `Filter` is optional. A
+consumer that depends on any other value kind must wait for it. [Value
+kinds](../part-2/05-runtime-filters.md#data-edges-and-value-edges)
 
 ## Today's filter channel
 
@@ -12,9 +12,10 @@ key to a scan or inserts a filter operator. It registers the join's right to pub
 freezes registration before execution. Each producer ends once, with `PUBLISHED`, `SKIPPED`,
 `FAILED` or `CANCELLED`. The set becomes terminal after every producer ends.
 
-At each checkpoint the scan takes a snapshot. A late filter can prune subsequent batches.
-A filter built from an incomplete key set could discard a matching row, so an abandoned build
-must skip publication. [Filter implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/dynamic_filter/sirius_dynamic_filter.hpp)
+At each checkpoint the scan takes a snapshot. A late filter can prune subsequent batches. A filter
+built from an incomplete key set could discard a matching row, so an abandoned build must skip
+publication. [Filter
+implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/dynamic_filter/sirius_dynamic_filter.hpp)
 
 ## A typed channel per value
 
@@ -28,7 +29,6 @@ filter or decision left by the first.
 In Q7, each orders worker builds `f2` before its hash exchange. The workers merge those
 partial filters into `f3`, and the lineitem scans wait up to 20 ms for it. The abbreviated
 plan shows the build and probe inputs of the join. [Q7 builder and full plan](../part-3/07-a-multi-stage-query.md)
-
 
 ```text
 Plan "q7_shipping_priority" (joined)
@@ -47,8 +47,6 @@ values:
          └─ Project [o_orderkey, o_orderdate, o_shippriority]
             └─ ...
 ```
-
-Each of the three value nodes lowers onto a part the engine already has.
 
 ### RuntimeFilterBuild: the path follows the position
 
@@ -77,7 +75,9 @@ The OR is valid because every partial shares one `accumulated_bloom_geometry` (i
 `src/op/dynamic_filter/complete_build_inventory.hpp`). It is sized before any insert, from the
 certified total build row count.
 
-The distributed SQL engine already all-gathers partial Bloom arrays and combines them with bitwise OR. A missing contribution can disable publication for the query. [Cross-rank filter merge](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#dynamic-filters-across-ranks)
+The distributed SQL engine already all-gathers partial Bloom arrays and combines them with bitwise
+OR. A missing contribution can disable publication for the query. [Cross-rank filter
+merge](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#dynamic-filters-across-ranks)
 
 The root-GPU merge is a `ValueExchange merge` among the workers of one process. The explicit plan
 makes two changes:
@@ -89,12 +89,11 @@ makes two changes:
   filter's kind. The merged filter is published only if every partial was
   ([Merging to global](../part-2/05-runtime-filters.md#merging-to-global)).
 
-Every merge rule is associative and commutative, so the order in which partials meet cannot change
-the merged value. The engine chooses the shape: all-to-all, a tree, a ring, or one GPU per host as
-in today's root-GPU merge. See
-[The logical edge and its physical shape](../part-2/01-everything-in-the-plan.md#the-logical-edge-and-its-physical-shape)
-and
-[Value merges at scale](08-running-at-scale.md#value-merges-all-to-all-in-the-plan-a-tree-on-the-wire).
+Bloom OR gives the same bits in any merge order when the geometry and key hashing agree. The engine
+chooses the shape: all-to-all, a tree, a ring, or one GPU per host as in today's root-GPU merge. See
+[The logical edge and its physical
+shape](../part-2/01-everything-in-the-plan.md#the-logical-edge-and-its-physical-shape) and [Value
+merges at scale](08-running-at-scale.md#value-merges-all-to-all-in-the-plan-a-tree-on-the-wire).
 
 The filter **kind** follows the same split. Today the publisher picks an in-list, a hashed in-list
 or a Bloom filter at run time, from the build size and the probe GPU's L2 cache size. In the
@@ -147,14 +146,17 @@ sequenceDiagram
   C-->>TC: READY
 ```
 
-Registering the hook and testing readiness must cover publication during registration. Otherwise the consumer can miss its only wakeup. Once registered, the hook only enqueues work, freeing the task-creator slot. The consumer's pending input waits in its input repository, where the
-downgrade executor can spill it.
+The task creator must register the hook before testing readiness, or use an equivalent
+synchronized check. Otherwise the consumer can miss its only wakeup. While the value is pending,
+input batches wait in a spillable repository.
 
 ## Boundaries instead of a pointer
 
 Today's distributed sort samples its input in `SORT_SAMPLE`, which overrides its task hint to wait
 for enough samples, then computes splitters. `SORT_PARTITION` reads the splitters through a raw
-pointer installed with `set_sample_op`. When several ranks participate, a hook pools their samples. The current sample and Bloom collectives can occupy a GPU worker thread while waiting for other ranks. [Issue #2375](https://github.com/sirius-db/sirius/issues/2375)
+pointer installed with `set_sample_op`. When several ranks participate, a hook pools their samples.
+The current sample and Bloom collectives can occupy a GPU worker thread while waiting for other
+ranks. [Issue #2375](https://github.com/sirius-db/sirius/issues/2375)
 
 Q6b (full sort) from [Sort, top-N and limit](../part-3/06-sort-top-n-and-limit.md) makes that edge
 explicit:

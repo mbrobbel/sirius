@@ -1,20 +1,9 @@
 # Plan notation
 
-Sirius gives you two views of the same plan:
-
-- **text trees** (` ```text ` blocks, `explain()`) show every node with its parameters and
-  value edges, for detail;
-- **Mermaid diagrams** (` ```mermaid ` blocks, `to_mermaid()`) show stages, exchanges and value
-  edges, for topology.
-
-Both views are for people. The book's trees use the notation of `explain()`, and two printouts
-from one build can be diffed. Neither output is a stable or parseable interface: spacing,
-abbreviation and parameter order may change between releases, so do not parse the text, store it
-as a key or compare it across releases. A program reads a plan through its accessors
-(`fingerprint()`, `stages()`, `inputs()`, `worker_sets()` and the
-[node view](api-at-a-glance.md#node-view)) and an error through its code and location.
-
-The node vocabulary is in the [Node catalog](node-catalog.md).
+A text tree shows nodes, their inputs and their parameters. A stage diagram shows which stages
+exchange rows or runtime values. Both are for reading and comparing plans. Code can inspect the
+plan through `stages()`, `inputs()`, `worker_sets()` and the [node view](api-at-a-glance.md#node-view).
+The printed layout can change between releases.
 
 ## Text trees
 
@@ -431,16 +420,8 @@ front of `PARTITION` instead (see
 
 ## Mermaid diagrams
 
-Diagrams show topology, never node detail.
-
-- `flowchart LR` for stage graphs; `flowchart TB` for API object flows and worker-to-endpoint maps;
-  `sequenceDiagram` only for protocol timelines.
-- One `subgraph` per stage, with id `S1` and label `"S1 · compute[4]"`. Inside it, one node
-  summarizes the chain with `→`: `S1n["Scan lineitem → Filter → Aggregate partial"]`.
-- Data edges are solid and labelled with the exchange: `S1 -->|"x1 hash(l_returnflag, l_linestatus)"| S2`.
-- Value edges are dotted and labelled with ids: `S2 -.->|"f1 → f2 merge"| S1`.
-- Worker maps use nodes `c0..c3` and `h0` inside host subgraphs `"host A"` and `"host B"`.
-- No colors, no `classDef`, every label quoted, and at most about 12 nodes.
+Each box groups one stage's work. Solid lines carry rows. Dotted lines carry runtime values such
+as a filter assembled from several workers' contributions.
 
 The Q4 stage graph:
 
@@ -505,24 +486,3 @@ operators and internals, workers, worker sets and queries. The notation adds thr
 - Message keys appear in prose only, never in a tree, written in field order:
   `(E, 0, 0, x1, compute#0, compute#2, 17)` is execution E, attempt 0, epoch 0, exchange `x1`,
   sender `compute#0`, receiver `compute#2`, sequence 17.
-
-## Code pairs
-
-Every key example appears in both languages: a ` ```cpp ` block followed directly by a
-` ```rust ` block. The only block longer than 25 lines is the Q7 builder in
-[A multi-stage query](../part-3/07-a-multi-stage-query.md). The other rules are in
-[Code comes in pairs](../conventions.md#code-comes-in-pairs).
-
-```cpp
-SIRIUS_TRY(scan, Relation::scan(nation, ScanOptions::defaults()));
-SIRIUS_TRY(key, scan.column("n_nationkey"));
-SIRIUS_TRY(small, key.lt(Expression::literal(Value::int32(5))));
-SIRIUS_TRY(filtered, scan.filter(small));
-```
-
-```rust
-let scan = Relation::scan(&nation, ScanOptions::default())?;
-let key = scan.column("n_nationkey")?;
-let small = key.lt(&Expression::literal(Value::int32(5)))?;
-let filtered = scan.filter(&small)?;
-```

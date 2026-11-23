@@ -96,14 +96,12 @@ value holds the keys and the list of sets, and `aggregate_sets` aggregates every
 per set.
 
 ```cpp
-// a fresh scenario: shipped and quantity as in pricing_summary
 SIRIUS_TRY(sum_qty, Measure::sum("sum_qty", quantity));
 SIRIUS_TRY(sets, GroupingSets::create({"l_returnflag", "l_linestatus"},
                                       {{"l_returnflag", "l_linestatus"}, {"l_returnflag"}, {}}));
 SIRIUS_TRY(subtotals, shipped.aggregate_sets(sets, {sum_qty, Measure::count_star("count_order")}));
 ```
 ```rust
-// a fresh scenario: shipped and quantity as in pricing_summary
 let sum_qty = Measure::sum("sum_qty", &quantity)?;
 let sets = GroupingSets::try_new(&["l_returnflag", "l_linestatus"],
                                  &[&["l_returnflag", "l_linestatus"], &["l_returnflag"], &[]])?;
@@ -323,7 +321,7 @@ limit](../part-3/06-sort-top-n-and-limit.md) shows two ways.
 
 ## Top-N
 
-`top_n` returns the first `n` rows in some order. This one returns the ten most expensive orders of
+`top_n` keeps up to `n` rows per worker using the supplied sort keys. This one returns the ten most expensive orders of
 1996, ties broken by order key.
 
 ```cpp
@@ -607,7 +605,6 @@ order date.
 to the BUILDING customers, and projected to three order columns.
 
 ```cpp
-// a fresh scenario: items and buyers as described above
 SIRIUS_TRY(on, JoinOn::keys({{"l_orderkey", "o_orderkey"}}));
 SIRIUS_TRY(joined, items.join(buyers, JoinType::inner, std::move(on), JoinOptions::defaults()));
 SIRIUS_TRY(rev, joined.column("rev"));
@@ -617,7 +614,6 @@ SIRIUS_TRY(top, grouped.top_n(10, {SortKey::desc("revenue"), SortKey::asc("o_ord
 SIRIUS_TRY(plan, Plan::from_root(top));
 ```
 ```rust
-// a fresh scenario: items and buyers as described above
 let on = JoinOn::keys(&[("l_orderkey", "o_orderkey")])?;
 let joined = items.join(&buyers, JoinType::Inner, on, JoinOptions::default())?;
 let rev = joined.column("rev")?;

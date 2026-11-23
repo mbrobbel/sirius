@@ -1,14 +1,9 @@
 # Partitioned join and runtime filters
 
-The [previous chapter](03-broadcast-join.md) broadcast a tiny build side. When both sides are
-large, a partitioned join sends every row with order key 7 to the same worker, from both sides.
-Its two hash exchanges must partition the same way.
-
-This chapter also adds the first **runtime filter** that crosses workers. The join's build side
-records which order keys exist, and a value edge carries that back to the lineitem scan, so rows
-that cannot match never leave their worker. The hash schemes, the filter's kind and geometry, and
-its route to the scan are plan parameters and nodes
-([rules 1 and 2](../part-2/01-everything-in-the-plan.md#the-ownership-rule)).
+Q4 hashes orders and line items on the order key so matching rows reach the same worker.
+A Bloom filter can save some of that traffic. Once the orders workers have merged their filters,
+the lineitem scan can discard keys the filter rules out. Earlier rows and false positives still
+go through the exchange.
 
 ## The question
 
@@ -16,9 +11,8 @@ its route to the scan are plan parameters and nodes
 compute the total discounted revenue of its line items, `l_extendedprice * (1 - l_discount)`, and
 return it with the order key and order date.
 
-Two facts shape the plan. `lineitem` (256 files) and `orders` (64 files) are the two largest
-tables, so neither is a broadcast candidate in general. The filter on `orders` is selective, so
-most line items have no partner.
+The example assumes a selective orders predicate and partitions both inputs. File counts alone
+cannot tell us whether the filtered orders would fit in a broadcast.
 
 ## The single-worker plan
 
@@ -251,12 +245,10 @@ flowchart LR
 
 S1 and S2 start together. S1 does not wait for the filter (`wait=never`): its first batches may
 pass unfiltered, and once `f2` is published the scan prunes from its next checkpoint on
-([Waiting, or not](../part-2/05-runtime-filters.md#waiting-or-not)). The orders side is four times
-smaller and heavily filtered, so `f2` usually arrives early.
+([Waiting, or not](../part-2/05-runtime-filters.md#waiting-or-not)). A selective orders predicate can help `f2` arrive early. File counts alone cannot predict its arrival.
 
 The answer is the same either way. A filter is an
-[optional value](../part-2/05-runtime-filters.md#data-edges-and-value-edges): a missing, skipped
-or late one lets every row through.
+[optional value](../part-2/05-runtime-filters.md#data-edges-and-value-edges): rows pass unfiltered while the filter is unavailable.
 
 ## One worker's view
 
@@ -296,7 +288,7 @@ sender, including senders with no matching rows.
 ### Partition scope: build the filter after the exchange
 
 Move the `RuntimeFilterBuild` above `x2`. Its input is now `hashed` by `x2` on the filter key, so
-the filter on `compute#2` holds exactly the urgent March order keys of partition 2. Its scope is
+the filter on `compute#2` covers all urgent March order keys of partition 2. Its scope is
 `partition(x2)`: valid for rows that `x2`'s signature would also send to partition 2. Those rows
 arrive through `x1`, so the filter is applied above `x1`:
 
@@ -317,9 +309,8 @@ Output "result" on head[1]
                      └─ Scan orders [o_orderkey, o_orderdate, o_orderpriority]  on compute[4]  shards=files_round_robin
 ```
 
-The filter never leaves its worker, so there is no `ValueExchange` and no `values:` block. It saves
-join work but no network: the line items have already crossed `x1`. The canonical plan pays one
-merge of four 8 MiB Bloom filters so that unmatched line items never leave their scan worker.
+The filter never leaves its worker, so there is no `ValueExchange` and no `values:` block. It can save
+join work. It cannot reduce shuffle traffic because the line items have already crossed `x1`. The first plan merges four 8 MiB Bloom filters so the scan can reject definite misses before the shuffle.
 
 In code, only the position of the two calls changes:
 
@@ -355,7 +346,7 @@ suggests applying the filter above `Exchange x1` or merging it with `merge_to(co
 
 Merging the partition shares is legal: together they cover every key, so `merge_to(compute)` turns
 them into a `global` filter. The cost is timing. A filter built above `x2` cannot publish until
-`x2` has delivered every orders row; the canonical filter publishes as soon as each worker's
+`x2` has delivered every orders row; the pre-shuffle filter can publish as soon as each worker's
 orders scan ends.
 
 A host that schedules stages itself may build its filters this way, as partition shares merged
@@ -380,29 +371,13 @@ before they reach the scan; [Part IV](../part-4/02-starrocks.md) shows one.
 
 ## On one machine
 
-To run Q4 on four GPUs of one host, keep the plan and change the bindings:
-
-```cpp
-  SIRIUS_TRY(prepared, context.prepare(plan, Bindings::local()));
-  SIRIUS_TRY(result, std::move(prepared).collect());
-```
-```rust
-    let prepared = context.prepare(&plan, Bindings::local())?;
-    let result = prepared.collect()?;
-```
-
-The plan text and its fingerprint do not change
-([Same plan, different machines](../part-2/04-stages-and-bindings.md#same-plan-different-machines)).
-`x1`, `x2` and the `f1 -> f2` merge become in-process movements between the four GPUs.
+With `Bindings::local()`, the two hash exchanges and the Bloom merge all run between GPUs of
+one process. The workers still use the same hash scheme and Bloom geometry.
 
 ## What the engine does
 
-Today the engine runs this query on one machine and does most of what the plan says, implicitly.
-It wraps a hash join's children in `CONCAT` over `PARTITION`, the plan's `x1` and `x2`. It
-discovers the runtime filter while planning the join (the `RuntimeFilterApply` edge), ORs the
-per-GPU Bloom partials on one GPU (`ValueExchange f2`), and never makes the scan wait for the
-filter (`wait=never`).
-
-[Runtime values in the engine](../part-5/03-runtime-values-in-the-engine.md) has the details, and
-[Exchanges in the engine](../part-5/02-exchanges-in-the-engine.md) shows how `x1` and `x2` lower to
-`PARTITION` on one machine and to exchange sinks and sources across machines.
+In one process Sirius wraps eligible hash joins in `CONCAT` and `PARTITION` operators. The
+planner discovers consumers for the join's dynamic filters. In distributed mode each participating
+rank can contribute a Bloom filter of the same geometry. The publisher merges them across ranks
+before it lets a probe scan exclude keys. The proposed `ValueExchange` exposes that dependency.
+[Upstream Bloom merge](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#dynamic-filters-across-ranks)

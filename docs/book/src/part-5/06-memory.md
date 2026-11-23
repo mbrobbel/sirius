@@ -1,17 +1,11 @@
 # Memory
 
-Memory tiers and spilling belong to the engine
-([Everything in the plan](../part-2/01-everything-in-the-plan.md)). A plan never names a memory
-tier and never changes because a GPU is nearly full.
+A batch waiting for a slow receiver can leave GPU memory. A hash table that a running
+join needs may have to stay. This distinction matters when a plan sends most of a table to
+one worker. The engine can spill every queued batch and still fail to fit the join's working set.
 
-The plan's shape still decides *where data waits*: in front of a blocking input, behind a required
-value, in an exchange queue whose receiver is slow. The engine has one rule for all of them:
-**every place data waits is a repository, and every repository is spillable**. That is why
-exchanges inside a process need no backpressure.
-
-The plan also decides *how much* each worker must process, so the engine needs local operators
-that work on more data than fits in GPU memory
-([Out-of-core local operators](#out-of-core-local-operators)).
+The proposal keeps memory limits in engine configuration and execution options. An exchange
+specifies what a worker receives. The engine decides where the batches wait.
 
 ## Tiers, spaces and configuration
 
@@ -28,8 +22,9 @@ limit and two thresholds. When reserved memory crosses the *trigger* fraction, t
 data down a tier until it reaches the *stop* fraction. The defaults are 0.8 and 0.6 for GPU memory
 and 0.9 and 0.8 for host memory.
 
-The YAML file that `ContextConfigBuilder::from_yaml` reads sets all of this
-([Configuration](../part-1/02-configuration.md)):
+Host capacity defaults to a fraction of each backing NUMA node's RAM. Disk spilling requires a
+configured spill directory. Here the explicit host limit is 25 GB per NUMA node. [Configuration
+reference](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/configuration.md)
 
 ```yaml
 sirius:
@@ -39,28 +34,7 @@ sirius:
       downgrade_trigger_fraction: 0.8
       downgrade_stop_fraction: 0.6
     host: { capacity_bytes: 25GB }
-    disk: { disk_id: 0, capacity_bytes: 1000000000000, downgrade_root_dirs: "/tmp/sirius_disk_memory" }
-```
-
-```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-Result<Context> create_context() {
-  SIRIUS_TRY(builder, ContextConfigBuilder::from_yaml("sirius.yaml"));
-  SIRIUS_TRY(config, builder.build());   // validates without touching hardware
-  return Context::create(config);        // resolves devices and memory spaces
-}
-```
-
-```rust
-use sirius::prelude::*;
-
-fn create_context() -> sirius::Result<Context> {
-    let builder = ContextConfigBuilder::from_yaml("sirius.yaml")?;
-    let config = builder.build()?;   // validates without touching hardware
-    Ok(Context::try_new(&config)?)   // resolves devices and memory spaces
-}
+    disk: { downgrade_root_dirs: "/tmp/sirius_disk_memory" }
 ```
 
 ### Workers and memory spaces
@@ -68,62 +42,44 @@ fn create_context() -> sirius::Result<Context> {
 A worker is bound to one endpoint. It uses that device's GPU memory space and the HOST space of the
 device's NUMA node. Two things follow from the bindings, not from the plan:
 
-- Workers on GPUs of the same NUMA node share one HOST space. On the cluster from the
+- Within one engine, workers on GPUs of the same NUMA node can share a HOST space. On the cluster from the
   [running example](../part-3/00-running-example.md), if host A's two GPUs sit on one NUMA node,
   `compute#0` and `compute#1` spill into the same pinned host memory.
 - Workers that share an endpoint share a GPU pool. `head#0` and `compute#0` both live on host A's
   GPU 0, so the final gather and a compute stage instance draw on the same reservations.
 
-The plan text is the same whether `compute[4]` is bound to four GPUs of one machine or to two
-hosts with two GPUs each. Only the memory each worker can use changes.
+The same `compute[4]` plan can use four GPUs on one machine or two GPUs on each of two machines. The
+binding changes both memory sharing and the cost of transfers.
 
-Data pinned in GPU memory with `pin_table` is the one place where memory and the plan can
-disagree. A pinned chunk already lives on one GPU, but scan splits are assigned to workers when the
-plan is built, and the bindings place those workers later. How a scan should follow pinned data is
-[open question 34](../reference/open-questions.md#34-scans-over-gpu-resident-data).
+A chunk loaded with `pin_table` already lives on a particular GPU. With fixed shards, the plan
+assigns the chunk to a logical worker and the bindings later select that worker's GPU. The two
+placements can disagree. How a scan should follow pinned data is [open question
+34](../reference/open-questions.md#34-scans-over-gpu-resident-data).
 
 ## Reservations and retries
 
-Before a GPU executor runs a task, its manager loop reserves memory for it. The size comes from
-the pipeline's memory history, a small ring buffer of each past task's input size and observed
-peak. The predicted peak is a weighted average of past tasks, with the most similar inputs
-weighted highest. The request adds the bytes needed to bring the task's inputs onto its device,
-such as a host-resident batch or a batch cloned from another GPU, and is clamped to the most the
-space can ever grant.
+The executor estimates a task's peak GPU memory from earlier tasks in its pipeline. It weights
+peak-to-estimate ratios more heavily for tasks of similar size and accounts for bringing the
+inputs onto the device. A request is capped at the most the GPU space can grant.
 
-Every allocation during execution is charged against that reservation. If it runs out, the
-operator throws `oom_reschedule_exception`, which carries the partial results and the index of the
-operator to resume from. The executor backs off for 50 milliseconds and reschedules the task, up
-to 100 times. Each failure raises the recorded peak, so the next attempt reserves more. When the
-retries are exhausted the query fails; the proposed API reports it as an `execution` error.
-
-An explicit plan changes none of this. Reservations are per task, tasks are per pipeline, and
-pipelines come from the lowering rules in [From plan to pipelines](01-from-plan-to-pipelines.md).
+After a recoverable allocation failure, the executor can save intermediate data and the operator
+index, release its locks and requeue the task for a fresh reservation. Some allocation failures
+raise the task's reservation floor. The normal limit is 100 retries with a 50 ms backoff. After
+exhaustion the query fails. These retries stay within one stage attempt. [GPU
+executor](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/pipeline/gpu_pipeline_executor.cpp)
 
 ## The downgrade executor
 
-Each memory space has a `downgrade_executor` in `src/downgrade/`. It frees memory by moving idle
-batches to the next tier down. Two things drive it:
+A memory monitor requests reclamation when a space crosses its trigger threshold. The GPU
+executor can also request space for a waiting task. Reclamation can release unused staging
+buffers and move idle batches from data repositories, followed by inputs of queued tasks. A
+batch locked by a running task stays put.
 
-- A monitor thread watches each space. When usage crosses the trigger, it requests enough
-  downgrades to reach the stop fraction.
-- When a task's reservation comes up short, the GPU executor requests downgrades until that
-  reservation can be made, so it spills only as much as the task needs.
-
-Candidates are fetched in a fixed order:
-
-1. **Data repositories first.** For each repository, idle GPU-resident batches are taken from the
-   back of the queue, one at a time.
-2. **Then the task queue.** Input batches of tasks that are queued but not yet running can move
-   down too.
-
-A batch that a task is reading is locked and never moves. A spilled batch moves back to the GPU when
-a task needs it, and that task's reservation includes the cost. Spill copies are chunked, so a
-large batch does not block in one transfer. Optional spill compression shrinks what lands on host
-memory or disk.
-
-In the design a spill is cancellable: the executor checks for cancellation between batches. Today
-a query blocked on a spill is not cancelled promptly.
+The downgrade executor considers candidates in the source memory space. On GPU pressure it can try
+host memory and then disk when configured. A later task that needs the data on a GPU must reserve
+room to materialize it again. The design calls for cancellation checks during long spills.
+[Downgrade
+executor](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/downgrade/downgrade_executor.cpp)
 
 ## Every place data waits is a repository
 
@@ -141,7 +97,7 @@ executor looks in every repository. That covers every place an explicit plan mak
 
 The second row is the one an explicit plan adds. Rows queue in the router's input repository
 because no destination is known until the value arrives; see
-[The lineitem side waits](04-adaptivity-in-the-engine.md#the-lineitem-side-waits-and-that-is-fine).
+[The lineitem side waits](04-adaptivity-in-the-engine.md#where-the-lineitem-rows-wait).
 The spool in the last row is an ordinary repository that stays full and moves down to host memory
 and disk like any other
 ([Durability](07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled)).
@@ -162,43 +118,34 @@ flowchart LR
 
 ## No backpressure inside a process, by design
 
-Inside a process, the engine never slows a sender down when its receiver falls behind. It has no
-"slow down" task hint and no channel-level backpressure: a backlog spills. The explicit plan keeps
-that design for exchanges:
+Current in-process streaming channels can queue idle batches in spillable repositories.
+A slow consumer can therefore create host or disk traffic. Device reservations, lower-tier capacity
+and available spill space still limit how much the producer can get ahead.
 
-- **One slow receiver never holds up the others.** Each destination has its own send repository,
-  so a sender keeps producing for every destination while one falls behind.
-- **The limit is capacity, not speed.** If no lower tier can accept more data, tasks reschedule
-  until memory frees up or their retries run out, and the execution fails with an `execution`
-  error.
+The distributed SQL transport uses credits and fixed receive rings. Queued sends normally block
+around the 1 GiB limit. Unordered batches already in a receive repository can spill, while early
+arrivals, ordered-gather batches and batches for unattached streams can remain outside repositories.
+The proposal would put more of this backlog in spillable send and receive repositories. The limit on
+a host writing to a future live input is a separate API decision. [Exchange buffering
+limits](https://github.com/sirius-db/sirius/issues/2376) · [Repository
+backpressure](https://github.com/sirius-db/sirius/issues/1276) · [Public API
+scope](https://github.com/sirius-db/sirius/issues/2461)
 
-Between processes, staging buffers are finite, so transports use receiver credits
-([The receiver half](02-exchanges-in-the-engine.md#the-receiver-half-repositories-are-the-queues)).
-In the design, spilling is the buffer behind them. What a receiver accepts lands in a spillable
-receive repository, and a batch that has no credit yet waits in its spillable send repository. A
-slow link therefore throttles the transfer, and the pipeline that produced the batch keeps
-running until the tiers below are full.
-
-The prototype ([The protocol](02-exchanges-in-the-engine.md#the-protocol)) spills only what a
-receiver has accepted: a queued send stays on the GPU, and a sender blocks once 1 GiB of sends is
-queued.
-
-This keeps flow-control vocabulary out of the plan. The trade-off is that a pathological skew
-turns into disk traffic instead of a stall. Buffers are still bounded, so the waits a plan creates
-could block each other. V1 checks that they cannot; see
-[Credits and deadlock freedom](08-running-at-scale.md#credits-and-deadlock-freedom) and
-[open question 5](../reference/open-questions.md#5-backpressure).
+V1 checks waits the plan describes. Progress also depends on the transport returning credits,
+control messages getting through, and the spill path running or reporting that storage is full.
+[Credits and deadlock freedom](08-running-at-scale.md#credits-and-deadlock-freedom)
 
 ### Transport buffers
 
 The credits stand for real memory. A network transport needs registered memory for its send and
 receive buffers, so that the network card can read and write it directly. In the design the engine
-carves that memory out of the budget it manages; the prototype allocates its rings outside that
-budget. Either way it does not spill, because a registered buffer must stay where the transport
-registered it.
+carves that memory out of the budget it manages; the current NIXL transport allocates its rings
+outside that budget. Either way it does not spill, because a registered buffer must stay where the
+transport registered it.
 
-Every peer needs its own share of credits, so the registered memory grows with the number of
-peers. On a large cluster that is a significant share of the budget.
+With today's fixed allocation per peer, registered memory grows with the rank count. Dynamic credit
+allocation is one proposed way to cap it. [Transport credit
+allocation](https://github.com/sirius-db/sirius/issues/2371)
 
 ## Out-of-core local operators
 
@@ -207,8 +154,7 @@ a hash table over its whole build input, a sort orders its whole input, and toda
 and `MERGE_GROUP_BY` concatenate a whole partition before they work on it. None of that fits if
 the input is larger than GPU memory, and a cuDF column must hold fewer than 2^31 rows in any case.
 
-Today the engine avoids the problem through its adaptive partition count, which both routes rows
-to GPUs and bounds the average size of a partition
+Today the engine sizes partitions from measured bytes. This routes rows to GPUs and targets an average partition size
 ([Where each decision goes](04-adaptivity-in-the-engine.md#where-each-decision-goes)). In the
 explicit plan the exchange's partition count only routes. With `Partitions::fixed(16)` on
 `compute[4]`, each worker owns four partitions of whatever size the data has, and a skewed key can
@@ -228,8 +174,10 @@ So the engine needs operators that bound their own working set, however the plan
   batch at a time instead of being concatenated first, so the output never has to exist as one
   column.
 
-None of the four exists in the engine today. Without them, a correct plan can fail with an
-out-of-memory `execution` error, because the plan chose how much data each worker holds.
+Local partitioning, sorted runs and chunked join builds already exist in Sirius. They do not give
+every operator a bounded working set on arbitrary input. A single hot key, for example, stays
+together under any hash seed. A plan that sends too much data to one such task can still exhaust
+memory. [Distributed execution and chunked builds](https://github.com/sirius-db/sirius/pull/2337)
 
 All four are local sub-partitioning and algorithm variants, which the engine owns. None changes
 what a worker ends up with, so the engine uses them without changing the plan. If a node offers a
@@ -269,6 +217,6 @@ let result = prepared.collect()?;
 println!("{} spill records", result.report.spills().len());
 ```
 
-If a run spills more than you expect, look at the exchange or value that made data wait. A
-resolved plan from [Plan-to-plan rewrites](05-plan-to-plan-rewrites.md) lets you rerun with the
-other alternative and compare.
+If a run spills more than you expect, look at the exchange or value that made data wait. A resolved
+plan from [Plan-to-plan rewrites](05-plan-to-plan-rewrites.md) lets you rerun with that fixed
+choice. To compare alternatives, prepare plans that select different choices.

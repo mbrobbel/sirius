@@ -1,8 +1,7 @@
 # Scan, filter and project
 
-Q1 has no join and no aggregate. Its plan still says which worker reads which file (a shard rule),
-where the result rows go (an `Exchange`) and how many result streams your program gets (the worker
-set of the `Output` node).
+The 256 lineitem files can be scanned and filtered independently. Where the result is needed
+determines whether the plan ends with one stream or four.
 
 ## The question
 
@@ -233,35 +232,10 @@ Output "result" on compute[4]
                        on compute[4]  shards=files_round_robin
 ```
 
-In code, call `Plan::from_root(projected)` without the exchange. An `Output` gives one reader per
-worker of its set, so `start()` returns four `OutputReader`s, each tagged with its worker:
-
-```cpp
-  SIRIUS_TRY(prepared, context.prepare(plan, Bindings::local()));
-  SIRIUS_TRY(started, std::move(prepared).start());
-  for (auto& out : started.outputs) {          // one per compute worker
-    while (true) {
-      SIRIUS_TRY(batch, out.reader.next());
-      if (!batch) break;                        // clean end of this worker's stream
-      write_part(out.worker, *batch);
-    }
-  }
-  SIRIUS_TRY(report, std::move(started.execution).wait());
-```
-```rust
-    let prepared = context.prepare(&plan, Bindings::local())?;
-    let StartedExecution { execution, outputs } = prepared.start()?;
-    for out in outputs {                         // one per compute worker
-        for batch in out.reader {
-            write_part(&out.worker, batch?);
-        }
-    }
-    let report = execution.wait()?;
-```
-
-A real program would read the four streams on four threads. A reader's end of stream means only
-that this worker's output is complete. `wait()` reports the outcome of the execution (see [End of
-stream is not success](../part-1/06-prepare-and-execute.md#end-of-stream-is-not-success)).
+Call `Plan::from_root(projected)` before adding the gather. With local bindings, `start()`
+returns four readers, each tagged with its worker. A program writing four output files can drain
+the streams concurrently, writing each batch to the file for that worker. Once all streams end,
+`wait()` reports whether the execution succeeded. [End of stream is not success](../part-1/06-prepare-and-execute.md#end-of-stream-is-not-success)
 
 The result shape is part of the plan, so `explain()` shows it and the fingerprint covers it.
 [Routing moves into the plan](../part-2/01-everything-in-the-plan.md#routing-moves-into-the-plan)
@@ -372,9 +346,10 @@ statistics and can apply a row filter during decode, keeping the full predicate 
 `FILTER` and `PROJECTION` stream batch by batch, and `PROJECTION` passes `l_orderkey` and
 `l_linenumber` through without copying.
 
-What changes is who chooses the splits. Today the scan manager coalesces row groups into splits
-and balances them onto the GPUs of one process. With the plan, each worker reads the splits the
-plan lists for it.
+Within a process, the scan manager coalesces row groups and schedules work across GPUs.
+Across ranks, upstream's distributed planner assigns byte ranges for eligible local files and
+assigns remote files by rank. Q1 instead fixes a per-worker file list when it builds the scan.
+[Upstream scan splitting](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#the-plan-rewrite)
 
 `x1` lowers by endpoint pair: a hand-off on the same device, a copy between GPUs in one process,
 and the exchange sink and source operators across processes. `Output` lowers to the result sink

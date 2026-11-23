@@ -25,9 +25,8 @@ flowchart TB
   CA["CancellationHandle"] -->|"request_cancel"| EX
 ```
 
-The plan is unchanged throughout, and batches and the report are plain immutable data. Every other
-object except the `CancellationHandle` is a *capability*: a move-only object that stands for the
-right to do one thing, consumed when you use it.
+The plan, batches and report are immutable. Preparing takes ownership of the input sources.
+Starting consumes the prepared plan. Waiting consumes the execution handle.
 
 ## Preparing a plan
 
@@ -135,7 +134,9 @@ fn run_collected(context: &Context, plan: &Plan) -> sirius::Result<()> {
 
 `collect()` returns a `Collected{batches, report}`, and succeeds only if the whole execution
 succeeded. It holds every batch in memory at once, so it suits small results and tests. Read
-anything larger as a stream.
+anything larger as a stream. Use `start()` when named outputs must stay distinct. Its readers
+identify both output and worker. The flat `Collected.batches` sketch loses that information.
+[Open result-routing question](../reference/open-questions.md#4-coordination-and-failure)
 
 ## Consuming transitions
 
@@ -350,41 +351,10 @@ let mut writer = writers.remove(0);
 
 ### Writing and finishing
 
-Each writer knows its channel and its producer slot, so a write takes only a batch. Hand the
-writer to a producer thread, write, and finish:
-
-```cpp
-// batches: the std::vector<RecordBatch> to send
-std::jthread producer([&writer, batches = std::move(batches)]() mutable {
-  for (RecordBatch& batch : batches) {
-    if (!writer.write(std::move(batch))) break;   // not accepted: closed or failed
-  }
-  (void)std::move(writer).finish();               // consumes the writer
-});
-while (true) {
-  SIRIUS_TRY(batch, started.outputs.front().reader.next());
-  if (!batch) break;
-  consume(*batch);
-}
-producer.join();
-SIRIUS_TRY(report, std::move(started.execution).wait());
-```
-```rust
-// batches: the Vec<RecordBatch> to send
-let producer = std::thread::spawn(move || {
-    for batch in batches {
-        if writer.write(batch).is_err() { break; }   // not accepted: closed or failed
-    }
-    writer.finish()                                  // consumes the writer
-});
-for batch in &mut outputs[0].reader {
-    consume(&batch?);
-}
-let _ = producer.join();
-let report = execution.wait()?;
-```
-
-The writer contract:
+After `start()`, the producer and consumer can run concurrently. Give each producer one writer.
+The producer sends batches, checks the result of each write, then calls `finish()`. A reader
+drains the output while the producer runs. Once both have finished, `wait()` reports the query
+outcome. If either task fails, cancel the execution before joining any task blocked on the channel.
 
 - **A write accepts the whole batch or returns it.** `write()` blocks until the channel accepts the
   batch. A failure hands the batch back. Acceptance means the channel owns the batch, not that it
@@ -399,40 +369,29 @@ The writer contract:
 - **A dropped, unfinished writer aborts the input.** It never counts as a clean end of stream.
 - **Start before blocking.** A channel buffers batches before the execution starts, up to its
   limits. Once it is full, a blocking write stalls because nothing consumes. Start the execution
-  first, as the snippet does.
+  before the first blocking write.
 - **Receiver closure is not failure.** If the plan no longer needs the input (for example, a
   `Limit` above it is satisfied), writes fail because the receiver closed. The execution can
   still succeed; `wait()` is the authority.
 
-The snippet shows only the successful path. If reading fails or the producer cannot launch, request
-cancellation before you join blocked producer threads, so that nothing waits forever on a channel
-nobody serves. Sirius prescribes no thread pool or async runtime; this coordination belongs to your
-application.
 
 ## Cancelling
 
 `execution.cancellation()` returns a `CancellationHandle`, a small, copyable value with one
 method, `request_cancel()`. Use it for a deadline, a Ctrl-C or a host aborting a query.
 
+A host can give its timeout or interrupt handler a copy of the token. The thread reading the
+output can continue to drain its readers and then call `wait()`.
+
 ```cpp
-CancellationHandle cancel = started.execution.cancellation();
-std::thread([cancel] {
-  std::this_thread::sleep_for(std::chrono::seconds(30));
-  cancel.request_cancel();     // idempotent; harmless after the execution has finished
-}).detach();
-auto report = std::move(started.execution).wait();
-if (!report && report.error().code == ErrorCode::cancelled) std::cout << "timed out\n";
+auto cancel = started.execution.cancellation();
+// In the host's timeout handler:
+cancel.request_cancel();
 ```
 ```rust
 let cancel = execution.cancellation();
-std::thread::spawn(move || {
-    std::thread::sleep(std::time::Duration::from_secs(30));
-    cancel.request_cancel();   // idempotent; harmless after the execution has finished
-});
-match execution.wait() {
-    Err(ExecutionError::Cancelled) => println!("timed out"),
-    other => { other?; }
-}
+// In the host's timeout handler:
+cancel.request_cancel();
 ```
 
 A cancellation request:
@@ -442,8 +401,7 @@ A cancellation request:
   error (this arrives with the later delivery);
 - **does not terminate immediately**: workers stop at safe points, and `wait()` returns once they
   have;
-- **stays safe after completion**: the handle outlives the execution, so the detached timer above
-  is fine.
+- **stays safe after completion**: a token retained by a host timeout handler remains safe to call.
 
 Dropping the `Execution` also requests cancellation, then waits for workers to stop safely, so the
 destructor may block. It never throws or terminates the process, and you need not drain readers

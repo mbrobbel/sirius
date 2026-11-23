@@ -4,7 +4,7 @@ This example uses the proposed plan API to read two columns from a Parquet file 
 with a key below five. It runs on one logical worker. Building and inspecting the plan requires
 only a CPU. Preparing and running it requires an engine and a GPU.
 
-## The whole program
+## Build and run a filter
 
 ```cpp
 #include <sirius/sirius.hpp>
@@ -56,6 +56,8 @@ fn hello() -> sirius::Result<()> {
     Ok(())
 }
 ```
+
+`SIRIUS_TRY` propagates C++ errors in these examples. [Helper definition](../conventions.md#the-sirius_try-helper)
 
 `TableSource::parquet` records the file path and the schema. A file can contain additional
 columns. `Field::required` promises that the named column contains no nulls.

@@ -1,8 +1,6 @@
 # Glossary
 
-The book uses each term below in one sense. Where a word means something else inside the engine,
-the entry says so. The [terminology rules](#terminology-rules) list the words the book avoids and
-what it writes instead.
+Terms used in the proposed API, the current engine and the host systems discussed in Part IV.
 
 ## Plan and API terms
 
@@ -30,15 +28,15 @@ what it writes instead.
 | **Data edge** | An edge that carries batches with a schema, then an end of stream from each sender. | [Node catalog](node-catalog.md) |
 | **Data file** | One file of a table source, written `DataFile`: a URI and, optionally, its size in bytes. A *sized file* declares its size, a plan fact the fingerprint covers; `Shards::byte_ranges` needs every file sized. Unrelated to a *sized worker set*. | [Workers and distribution](../part-2/02-workers-and-distribution.md#sized-files) |
 | **Decision** | A required runtime value that names one label out of a fixed list. A `Decide` node produces it from global statistics with a pure policy (`threshold` or `partition_count`). | [Adaptive plans](../part-2/06-adaptive-plans.md) |
-| **Determinism class** | `deterministic`, `per_execution` (bound to a literal when the plan is built, such as `now()`) or `volatile` (such as `random()`). Every function and node has one; a `volatile` node over a `replicated` input makes it `arbitrary`. | [Extension points](extension-points.md#determinism-classes) |
+| **Determinism class** | `deterministic`, `per_execution` (bound to a literal when the plan is built, such as `now()`) or `volatile` (such as `random()`). Every function and node has one; a volatile operation on replicated rows may give different answers on each worker. | [Extension points](extension-points.md#determinism-classes) |
 | **Dialect** | A host's own semantics for functions, types, overflow and aggregate state layouts, such as Spark's or Presto's. A plan speaks a dialect through translator casts and through functions and state types registered in the host's namespace (`spark.hash`). | [Plans from other systems](../part-4/05-plans-from-other-systems.md#dialect-semantics) |
 | **Distribution** | The derived property that says how a node's rows are spread over its worker set: `single`, `arbitrary`, `hashed`, `replicated`, `ranged` or `decided`. | [Workers and distribution](../part-2/02-workers-and-distribution.md) |
 | **Durability** | A property of every exchange. `pipelined` (the default): rows flow as they are produced. `spooled`: the sender's output is retained until the execution ends, and a receiver consumes an attempt's output only after that attempt completed. Printed `durability=spooled`; part of the edge signature. | [Failure, cancellation and recovery](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) |
 | **Dynamic shards** | The shard kind `Shards::dynamic()`, printed `shards=dynamic`: the workers of a sized set claim a scan's splits at run time, exactly once each. The output is `arbitrary(W)`; the report and the resolved plan record the claims. | [Running at scale](../part-5/08-running-at-scale.md#dynamic-splits) |
 | **Edge signature** | The record both sides of an exchange or value edge compare at start in an open plan: id, execution id, mode and parameters, schema, hash scheme, partition count (and assignment), ordered destinations, the sender set (name and size) and durability, plus the IR version, the wire version and the identities of everything on the edge. It never includes the membership of the side that only sends. | [Stages and bindings](../part-2/04-stages-and-bindings.md) |
 | **Endpoint** | A (process, device) pair that workers are bound to. Opaque, comparable, and shareable between processes as bytes. | [Stages and bindings](../part-2/04-stages-and-bindings.md) |
-| **EOS** | End of stream. Every sender sends it to every receiver of an exchange, even after zero rows and even after the receiver closed. A receiver is complete after one EOS from each sender. | [Exchanges](../part-2/03-exchanges.md) |
-| **Epoch** | A reserved field in every message key, end of stream and value completion, always 0 today, so iteration and streaming can come later. Not the *binding epoch*. | [Extension points](extension-points.md#reserved-now-epochs) |
+| **EOS** | End of stream. Every sender sends it to every receiver of an exchange, even after zero rows and even after the receiver closed. A receiver waits for each sender’s EOS and all batches through its final sequence number. | [Exchanges](../part-2/03-exchanges.md) |
+| **Epoch** | A reserved field in every message key, end of stream and value completion, zero in the proposed protocol, so iteration and streaming can come later. Not the *binding epoch*. | [Extension points](extension-points.md#reserved-now-epochs) |
 | **Exchange** | A node that moves rows between workers. Its **mode** is gather, hash, broadcast, range, round_robin, forward or decided_by. | [Exchanges](../part-2/03-exchanges.md) |
 | **Exchange summary** | The per-exchange report record from `report.exchange_summaries()`: rows, bytes, quantiles of the bytes per receiver and per sender-receiver pair, and the heaviest receivers. | [Running at scale](../part-5/08-running-at-scale.md#observability-at-scale) |
 | **Execution** | One run of a `PreparedPlan`, identified by an `ExecutionId`, which is single use per hosted worker. It ends with an `ExecutionReport` from `wait()`, or with an error. | [Prepare and execute](../part-1/06-prepare-and-execute.md) |
@@ -158,36 +156,13 @@ from those chapters are the authority.
 
 ## Terminology rules
 
-- **Logical and physical plan.** The IR is never a "logical plan" or a "physical plan". The book
-  writes *single-worker plan*, *joined plan* or *engine pipelines*. A host's own plan is "the
-  host's optimized plan", and another system's logical or physical plan keeps its name, such as
-  Axiom's logical plan or Spark's physical plan. *Logical edge* and *physical shape* describe one
-  edge, never a plan. Upstream's issue titles and the C headers of its plan builder call the IR a
-  *physical plan*.
-- **Fragment.** Only a host's own fragment in Part IV (StarRocks, Axiom, Velox and Bolt), and the
-  engine's `exec::streaming_fragment` in Part V. The IR has stages.
-- **Shuffle.** Informal only, or Spark's own shuffle under Bolt. The node is a *hash
-  exchange*.
-- **Broadcast.** An exchange mode only. For values, the book writes *merge to* or *deliver*.
-- **Partition.** Besides exchange destinations, only Spark's own partitions under Bolt.
-  The engine operator is always `PARTITION` in code font. A shard or split is never a partition.
-  SQL's `PARTITION BY` names a `Window`'s *window keys*, and the rows that share them are a *window
-  group*, never a partition.
-- **Runtime filter.** *Dynamic filter* appears only next to engine names or as another system's own
-  term, such as Axiom's dynamic filter design.
-- **Side channel.** Only for today's hidden implementation. In the plan, it is a *dotted value
-  edge*.
-- **GPU and worker.** The book writes *worker* where it means a worker, although each worker is
-  bound to one GPU.
-- **Rank.** Never a process or a worker; the book writes *worker*. `rank` in code font is the
-  window function.
-- **"The engine decides".** Never used for anything the ownership rule assigns to the plan.
-- **Context and session.** Unqualified, *context* means only the public `Context` type and
-  *session* only the later planning `Session`. The engine's internal sessions are always the
-  *stream session* and the *publication session*.
-- **Engine and runtime.** A `Context` is never called the engine. The book says *the engine*;
-  *the runtime* is its internal name, introduced in [The context](../part-1/03-context-and-session.md#the-context-your-handle-to-the-engine).
-- **Node, relation, operator.** Never used for one another. Another system's plan nodes and
-  operators keep their own names in code font (`HashJoinNode`).
-- **Task.** In Part V, the engine's task. In Part IV, a host's unit of work, such as a Spark task or
-  a Velox or Bolt `Task`, named with its system.
+A *worker* in the proposed IR is a logical slot bound to one GPU. Upstream distributed execution
+also uses *rank* for a participating process. The window function `rank` ranks rows.
+
+A *stage* is part of a Sirius plan. *Fragment* refers to a unit in a host such as StarRocks or
+Velox, or to the engine's `exec::streaming_fragment`. A host may translate one fragment into a
+stage or into a concrete instance plan.
+
+A *split* is a unit of scan work. A *partition* in a hash exchange is a subset of rows with a
+particular hash partition ID. A window's SQL `PARTITION BY` defines groups of rows over which the
+window function runs. These three uses refer to different sets of rows.

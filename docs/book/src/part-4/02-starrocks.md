@@ -1,35 +1,15 @@
 # Under someone else's scheduler: StarRocks
 
-> [!TIP]
-> **TL;DR**
->
-> - StarRocks plans and schedules. Each compute node builds one open instance plan per fragment
->   instance with `Plan::create_instance`. First step: closed plans, chained by completed inputs.
-> - Cross-plan edges are nodes with frontend ids: `exchange_sink`/`exchange_source`,
->   `value_sink`/`value_source`.
-> - Only the hosting set may be unsized (`frag1[?]`), and only where the plan does not depend on
->   its size (V24).
-> - Scan ranges go into the plan as `Shards::splits`; bindings hold only execution id and endpoints.
-> - Peers compare edge signatures at start (V25). `HashScheme::v1()` means every worker in a hash
->   exchange must be a Sirius worker.
-> - `partition(x12)` filter shares merge into one global filter. Filters are optional and waits
->   are bounded (`up_to(30s)`).
-> - `rewrite::join_stages` composes the instance plans into one joined plan for diffing.
+StarRocks schedules *fragment instances*. For a four-way hash join it can give one compute node
+a scan range, a hash key and destinations for the rows. That node can describe its part of the
+join without holding the whole query plan. The example below follows one such order key from
+the scan to the join and a runtime filter in the other direction.
 
-With sirius-duckdb in the [previous chapter](01-duckdb-extension.md), Sirius sees the whole plan
-and all its workers live in one process. StarRocks is the opposite case. Its frontend plans the
-query, cuts it into *fragments*, and decides how many instances of each run and where. Sirius gets
-one piece at a time and never sees the whole query.
-
-The same Plan IR still works. Each Sirius compute node builds a small **open instance plan** for
-every fragment instance it runs. Each exchange and runtime filter that crosses to another fragment
-is a node in that plan, with an id the frontend chose. What peers must agree on, such as an
-exchange's hash scheme and partition count, is written in each piece
-([rule 2](../part-2/01-everything-in-the-plan.md#the-ownership-rule)).
-
-Apache Doris works the same way: a frontend plans the query, cuts it into fragments, and schedules
-fragment instances onto backends. What this chapter says about StarRocks applies to Doris with
-Doris's own names for the same parts.
+The upstream experimental compute node sends serialized Substrait to a dedicated engine
+thread and collects Arrow batches. The open instance plans below are a proposed interface
+for running several communicating fragments. Apache Doris also schedules fragments, but its
+experimental backend has its own protocol and translation path.
+[StarRocks engine bridge](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/experimental/starrocks/src/engine.rs) · [StarRocks tracking issue](https://github.com/sirius-db/sirius/issues/826) · [Doris backend](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/experimental/doris/README.md)
 
 ## The host's role
 
@@ -49,8 +29,7 @@ the bindings.
 
 ## Mapping the frontend's vocabulary
 
-Every concept the frontend uses to describe a fragment instance has a place in the IR. None needs
-a new node. [Open instance plans](#open-instance-plans) defines the terms in the right column.
+For this join the frontend supplies the following information. [Open instance plans](#open-instance-plans) defines the terms in the right column.
 
 | The frontend says | Plan IR |
 |---|---|
@@ -131,7 +110,7 @@ For Q4 below, that gives:
 With six lineitem instances instead of four, the plan for `frag1#2` would change only in the
 splits it reads. The `frag3` plans would say `frag1[6]`, because they count the senders. If the
 frontend then started only five of the six, every edge signature would still match, and `frag3`
-would wait for a sender that never comes. The
+would wait for the missing sender. The
 [first-contact deadline](../part-5/07-failure-cancellation-and-recovery.md#the-first-contact-deadline)
 turns that into a `transport` error.
 
@@ -367,17 +346,16 @@ ExchangeSink x11 hash(l_orderkey) -> frag3[4]  partitions->workers {0:#0, 1:#1, 
                     splits=[lineitem/07.parquet[0, 256MiB), lineitem/07.parquet[256MiB, 512MiB), lineitem/19.parquet] (3 splits)
 ```
 
-Every line names `frag3`, never another worker of `frag1`. Two choices come straight from the
-frontend:
+The frontend chooses the scan ranges and the filter budget.
 
 - **The splits.** `splits=[...]` lists the frontend's scan ranges for instance 2. A `Split` is a
   file plus an optional byte range, and a row group belongs to the split that holds its start
   offset. The frontend gives the instances disjoint ranges, so together they read every row
   exactly once.
 - **The wait.** `wait=up_to(30s)` holds the scan back until the filter arrives, for at most 30
-  seconds, then runs it unfiltered. The wait cannot deadlock: `f22` depends only on `frag2`'s
-  rows, and the `frag3` instances that build it run alongside `frag1` (see
-  [What prepare binds](#what-prepare-binds)).
+  seconds, then lets batches through. A late filter may prune later batches. The filter depends on
+  the orders scan in `frag2`. Scheduling must allow `frag2` and the join in `frag3` to make
+  progress. [What prepare binds](#what-prepare-binds)
 
 ### frag2 and frag0
 
@@ -391,7 +369,8 @@ ScanOptions orders_options = ScanOptions::on(frag2)
                                  .with_columns({"o_orderkey", "o_orderdate", "o_orderpriority"})
                                  .with_shards(std::move(orders_shards));
 SIRIUS_TRY(orders_scan, Relation::scan(orders, std::move(orders_options)));
-SIRIUS_TRY(urgent_orders, orders_scan.filter(predicate));   // Q4's predicate, as in Part III
+// Build Q4's March date and priority predicate against this orders_scan.
+SIRIUS_TRY(urgent_orders, orders_scan.filter(predicate));
 SIRIUS_TRY(frag2_sink, urgent_orders.exchange_sink(x12, Exchange::hash({"o_orderkey"}, frag3)));
 SIRIUS_TRY(frag2_plan, Plan::create_instance(frag2.at(k), {frag2_sink}));
 ```
@@ -402,7 +381,8 @@ let orders_options = ScanOptions::on(&frag2)
     .with_columns(&["o_orderkey", "o_orderdate", "o_orderpriority"])
     .with_shards(Shards::splits(splits_for(&scan_ranges))?);   // host code: the ranges
 let orders_scan = Relation::scan(&orders, orders_options)?;
-let urgent_orders = orders_scan.filter(&predicate)?;   // Q4's predicate, as in Part III
+// Build Q4's March date and priority predicate against this orders_scan.
+let urgent_orders = orders_scan.filter(&predicate)?;
 let by_o = Exchange::hash(&["o_orderkey"], &frag3, Partitions::one_per_worker(), HashScheme::v1());
 let frag2_sink = urgent_orders.exchange_sink(x12, &by_o)?;
 let frag2_plan = Plan::try_new_instance(&frag2.at(k), vec![frag2_sink], vec![])?;
@@ -481,22 +461,24 @@ When the same node prepares `frag3#k`, it binds all four workers of `frag1` with
 `workers(frag1, ...)`, because that plan's exchange source counts them.
 
 All of a node's instance plans for the query share one execution id, which is allowed because an
-`ExecutionId` is single use per hosted worker. The node admits those plans as one unit, so they
-all wait or all run, and `frag1#k` never holds the engine while `frag3#k` waits for it. How the
-node starts them as one unit is not designed yet
+`ExecutionId` is single use per hosted worker. They need compatible admission. Otherwise `frag1#k` can hold the only execution slot while
+waiting for `frag3#k` to start. Admitting the local fragments together is one proposal.
+The API for doing so remains open
 ([open question 15](../reference/open-questions.md#15-one-context-per-process)). Across nodes,
-[gang admission](../part-5/08-running-at-scale.md#admission-across-processes) does the same.
+[gang admission](../part-5/08-running-at-scale.md#admission-across-processes) addresses the corresponding problem.
 
-The frontend carries no Sirius field. For each destination it ships what it already sends: the
-instance's id and its backend address. A compute node fetches each peer's `device_endpoints()`
-once and caches them; that lookup is `endpoints_of(destinations)` above.
+The example assumes the host can resolve each frontend destination to a current Sirius
+endpoint. `endpoints_of(destinations)` stands for that host lookup. A backend address alone
+does not identify a GPU or distinguish a restarted process.
 
 When the instance plans start, peers compare the
 [edge signature](../part-2/04-stages-and-bindings.md#every-process-prepares-the-same-plan) of
 every exchange and value edge they share. They never compare the membership of a side that only
 sends: `frag1#2` names itself and its set, and the receivers' sized `frag1[4]` supplies the count.
-If `frag1#2`'s sink and `frag3#2`'s source disagree on any part of a signature, both fail with
-`binding_mismatch` before a row moves (V25):
+If `frag1#2`'s sink and `frag3#2`'s source disagree on any part of a signature, the handshake fails with
+`binding_mismatch` before rows cross that edge (V25). Other fragments may already be running.
+An edge signature also cannot establish that a remote join may safely prune these rows. The
+frontend, which sees both the join and its scan, must preserve that relationship.
 
 ```text
 binding_mismatch: V25: exchange x11: frag1#2 hashes into 16 partitions, but frag3#2 expects 4.
@@ -512,7 +494,7 @@ exchange (see [Hash](../part-2/03-exchanges.md#hash)).
 `v1` is defined by Sirius and does not reproduce StarRocks's own hash, so **every worker in a hash
 exchange must be a Sirius worker**. A native StarRocks backend cannot send rows into `x11` or
 receive rows from it, and the frontend has to schedule the whole data path of a query on Sirius
-compute nodes. In return, no hash has to be compatible across engines. Whether `v1` stays stable
+compute nodes. A host-carried edge has a different contract. The host can translate and route the rows itself if both fragments agree on the resulting partitions. Whether `v1` stays stable
 across releases is
 [open question 18](../reference/open-questions.md#18-hash-scheme-stability).
 
@@ -581,28 +563,18 @@ Everything else is the same plan, and the engine runs it the same way whether th
 `rewrite::split` or from a StarRocks frontend. Because the frontend placed `frag1#k` and `frag3#k`
 on the same compute node, the part of `x11` that stays on node k never leaves the GPU.
 
-## Today versus explicit
+## Exchanges in the StarRocks experiments
 
-There are two prototypes. The first materializes every exchange. It runs fragments across several
-compute nodes on GPUs, and the compute node moves exchange data between nodes itself. It
-translates each fragment instance on its own and turns that instance's scan ranges into explicit
-files or byte-range splits in the translated plan, which is the instance plan's `Shards::splits`.
+Several upstream PRs explore how to run a multi-fragment query. One connects fragments inside
+a single compute node. Another moves batches between nodes over NIXL. A further experiment
+merges runtime filters across nodes. These are distinct from the single-fragment engine bridge
+on the upstream revision described in the introduction. [Local exchange](https://github.com/sirius-db/sirius/pull/2038) · [Cross-node exchange](https://github.com/sirius-db/sirius/pull/2258) · [Partitioned runtime filters](https://github.com/sirius-db/sirius/pull/2114)
 
-A newer prototype also puts exchange sources and sinks, with their ids, senders and destinations,
-into the translated plan and runs them inside Sirius. That is the open instance plan of this
-chapter, minus the value edges. Much of the rest is today held next to the plan or inside the
-compute node:
-
-| Today, in the prototypes | In the plan |
-|---|---|
-| In the materialized prototype, the translated plan does not contain the data stream sink. The sink mode, hash keys and destinations are passed beside it, through a sequence of imperative calls. | `ExchangeSink x11 hash(l_orderkey) -> frag3[4]  partitions->workers {0:#0, 1:#1, 2:#2, 3:#3}` |
-| An exchange input is a named stream view. Its schema, sender set and row counts are declared through separate calls. | `ExchangeSource x11 partition=2/4 <- senders=[frag1#0..3]`, with its schema |
-| Partial and final aggregates are two independent translations that must agree on the state layout, including an extra count column for averages that no plan shows. | State types in the schema, checked by V5 |
-| Runtime filters live in the compute node: filter streams use reserved id ranges, the share header is encoded in output column names, and an extra request to the merge node finds the probers. | `value_sink f21` and `value_source f22`, with a typed spec |
-| A second copy of each plan without filters is kept in case the filter keys are gone. | Filters are optional: an absent filter lets every row pass, so one plan suffices. |
-| A probing scan is deferred until its filter arrives, for up to 30 seconds, and then runs unfiltered. The filter is applied as a join after the full scan and partitioning. | `RuntimeFilterApply ... wait=up_to(30s)`, which the host can fuse into the scan with `rewrite::push_filters_into_scans` |
-| In the materialized prototype, every exchange is fully materialized, and each compute node runs its fragments one at a time. None of this ordering is written down. | Exchanges with a streaming protocol. A materialized boundary is an exchange with `durability=spooled` (see [Durability](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) and [open question 9](../reference/open-questions.md#9-open-plan-composition)). |
-| The materialized prototype's compute node runs its own transport, configured outside Sirius. The newer prototype runs a NIXL agent per context, with exchange sink and source operators, and speaks no StarRocks exchange protocol. | Endpoints in bindings; Sirius picks the transport for each endpoint pair. |
+Two details explain why the book puts exchanges in the plan. First, two independently
+translated aggregates must agree on the state crossing a fragment boundary. An average needs
+both a sum and a count. Second, a scan that receives filter shares must know which workers
+contributed. A missing share could rule out a real match. An explicit state schema and sender
+set let the two ends check these assumptions.
 
 ### Getting there
 
@@ -657,7 +629,7 @@ node's GPU, so the exchange runs inside one process. `start()` gives the node fo
 `Output` carries the frontend's id in its name. A sink with a single destination, such as the
 gather `x13`, needs no exchange: its plan ends in an `Output` on `local[1]`.
 
-The node reads each output to its end. The host carries output *d* to the node that runs instance
+The node drains all destination readers. With bounded live outputs, they must make progress together so a full destination cannot stall the one being drained. The host carries output *d* to the node that runs instance
 *d* of the consumer. That node binds the batches from all producers of an exchange as one
 completed input, then executes the consumer, a closed plan on `local[1]` that reads `Input "x11"`
 and `Input "x12"`.
@@ -667,7 +639,6 @@ These are [host-carried edges](../part-2/04-stages-and-bindings.md#host-carried-
 Each producer's plan still states its hash scheme and partition count, but nothing in Sirius
 checks them across plans: the frontend must give the producers of both join sides the same ones.
 
-Value edges need both plans running, so in this step a runtime filter between fragments stays in
-the compute node, as in the prototypes. Where the frontend splits an aggregate across fragments,
+A filter that would have to travel back to an already completed scan cannot prune that scan. It can be omitted for this inner join. Where the frontend splits an aggregate across fragments,
 that input carries state types, which the API cannot declare yet
 ([open question 31](../reference/open-questions.md#31-dialect-semantics)).

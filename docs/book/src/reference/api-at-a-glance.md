@@ -1,10 +1,8 @@
 # API at a glance
 
-This page lists the whole public surface of Sirius, C++ and Rust side by side. The namespace and the
-crate are both `sirius` (`use sirius::prelude::*;`). Signatures are sketches: they omit move, copy
-and destructor boilerplate and Rust's `pub`.
-
-Every program follows one path, and the plan is the only entry point:
+These are proposed C++ and Rust signatures for building and running a plan. The namespaces
+and imports follow the proposal. For the subset available upstream, see the
+[implementation notes](../introduction.md) and the [published headers](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/include).
 
 ```mermaid
 flowchart TB
@@ -15,7 +13,8 @@ flowchart TB
   F -->|"rewrite::*"| F
   C -->|"prepare(plan, bindings)"| G["PreparedPlan"]
   F --> G
-  G -->|"start() / collect()"| H["Execution + BatchReaders"]
+  G -->|"start()"| H["Execution + BatchReaders"]
+  G -->|"collect()"| J["Batches + report"]
   H -->|"wait()"| I["ExecutionReport"]
 ```
 
@@ -36,14 +35,13 @@ every type on this page, the five error enums and the `rewrite` module; `sirius:
   `RecordBatch`.
 - **Move-only capabilities:** `Context`, `PreparedPlan`, `Execution`, `BatchReader`, `InputWriter`,
   `InputSource`.
-- **Retained, not borrowed.** `Context`, `PreparedPlan`, `Execution`, its readers and every
+- **Engine lifetime.** `Context`, `PreparedPlan`, `Execution`, its readers and every
   `RecordBatch` handed to you each keep the engine alive. Handles never borrow from each other:
-  there is no required drop order, Rust handles carry no lifetime parameters, and in C every
-  `*_destroy` releases one handle. Dropping a handle never throws or terminates the process.
+  handles can be dropped in any order and Rust handles carry no lifetime parameters. Dropping a handle never throws or terminates the process.
 - **Enums are non-exhaustive**, so a new member never breaks callers
   ([Versioning](extension-points.md#versioning)).
 
-**Threads.** These contracts are targets, pending an audit of the engine:
+**Thread safety.** These contracts are targets, pending an engine audit.
 
 | Types | Contract |
 |---|---|
@@ -54,7 +52,7 @@ every type on this page, the five error enums and the `rewrite` module; `sirius:
 | `CancellationHandle` | Concurrent requests |
 | `RecordBatch` | Immutable once built; cheap to copy (`Clone`), movable and shareable (`Send + Sync`) |
 
-**Rust traits.** Beyond the signatures in the tables:
+**Proposed Rust traits.** Beyond the signatures in the tables:
 
 | Types | Traits |
 |---|---|
@@ -65,7 +63,7 @@ every type on this page, the five error enums and the `rewrite` module; `sirius:
 | `ScanOptions`, `JoinOptions`, `ExplainOptions`, `PrepareOptions` | `Default`, where C++ has `defaults()` |
 | `WorkerSet`, `WorkerRef`, `DataType`, `ExchangeId` | `Display`, as in [Plan notation](plan-notation.md): `compute[4]`, `compute#2`, `decimal(15,2)`, `x1` |
 | `BatchReader` | `Iterator<Item = Result<RecordBatch, ExecutionError>>` |
-| The error enums | `Display`, `std::error::Error`, `Clone`, `PartialEq`, `Eq` |
+| Error enums (proposed) | `Display`, `std::error::Error`, `Clone`, `PartialEq`, `Eq`. The current `ConfigError` implements `Debug`, `Display` and `std::error::Error`. |
 | `sirius::Error` | `From` each of the five layer enums, which is what `?` uses |
 
 `Expression` and `Relation` do not implement `PartialEq`: `eq` builds a comparison. No `TryFrom`
@@ -108,9 +106,9 @@ enum of its layer, and `sirius::Error` wraps all five
 | `binding_mismatch` | `PrepareError::BindingMismatch` from `prepare` and the bindings builders; `ExecutionError::BindingMismatch` from `start` on | Bindings incomplete or inconsistent, or peers disagree at the handshake, which runs eagerly at `start`. Also an `ExecutionId` started again for a worker that already ran under it, a bindings digest (with its binding epoch) that differs after a retry, and a priority that differs between peers at admission. |
 | `transport` | `ExecutionError::Transport` | Peer unreachable, timeout, protocol mismatch, a first-contact deadline that expired. |
 | `execution` | `ExecutionError::Failed` | This query failed and the engine is fine: I/O, a recoverable device error, out of memory after retry, a quota that retries and spilling cannot meet, a failed required value, a sum that overflows its result type, a null or negative count in a `Repeat`, a decision, boundaries or assignment digest that differs between sender and receiver, a re-published value share whose digest differs from the merged one. |
-| `source_mismatch` | `PrepareError::SourceMismatch` from `prepare`; `ExecutionError::SourceMismatch` from readers and `wait` | C `SIRIUS_SOURCE_MISMATCH`. A scanned file does not match the plan: a scanned column is absent or has another type, a `required` column holds a null, or the file's size differs from its declared size. Returned by the execution when a worker opens or reads the file, and by `prepare` under `SourceCheck::at_prepare`, where an unreadable file also counts. Carries the scan as its location. A file that is missing or unreadable at run time is `execution`. See [The source check](../part-1/05-relations-and-plans.md#the-source-check). |
+| `source_mismatch` | `PrepareError::SourceMismatch` from `prepare`; `ExecutionError::SourceMismatch` from readers and `wait` | Proposed C code `SIRIUS_SOURCE_MISMATCH`. A scanned file does not match the plan: a scanned column is absent or has another type, a `required` column holds a null, or the file's size differs from its declared size. Returned by the execution when a worker opens or reads the file, and by `prepare` under `SourceCheck::at_prepare`, where an unreadable file also counts. Carries the scan as its location. A file that is missing or unreadable at run time is `execution`. See [The source check](../part-1/05-relations-and-plans.md#the-source-check). |
 | `cancelled` | `ExecutionError::Cancelled` | The execution was cancelled. |
-| `runtime_unavailable` | `RuntimeUnavailable`, in `ContextError`, `PrepareError` and `ExecutionError`, by the call that returns it | C `SIRIUS_RUNTIME_UNAVAILABLE`. The engine is down for this process after a fatal device error or GPU work whose completion could not be confirmed. Returned by the execution that hit the fault and by every later call on any handle. `Context::create` returns it only after the engine was abandoned. Permanent until the process restarts; nothing is replayed on the CPU. See [How long a context lives](../part-1/03-context-and-session.md#how-long-a-context-lives). |
+| `runtime_unavailable` | `RuntimeUnavailable`, in `ContextError`, `PrepareError` and `ExecutionError`, by the call that returns it | Proposed C code `SIRIUS_RUNTIME_UNAVAILABLE`. The engine is down for this process after a fatal device error or GPU work whose completion could not be confirmed. Returned by the execution that hit the fault and by subsequent operations requiring a healthy runtime. `Context::create` returns it only after the engine was abandoned. Permanent until the process restarts; nothing is replayed on the CPU. See [How long a context lives](../part-1/03-context-and-session.md#how-long-a-context-lives). |
 
 ### Rust error enums
 
@@ -207,7 +205,7 @@ passed to the engine, such as one with a NUL byte.
 
 | Enum | Returned by |
 |---|---|
-| `ConfigError` | `ContextConfigBuilder::try_new`, `from_yaml`, `build`; `DeviceSelection::ids`; `TransportConfig::network` |
+| `ConfigError` | `ContextConfigBuilder::new`, `from_yaml`, `build`; `DeviceSelection::ids`; `TransportConfig::network` |
 | `ContextError` | `Context::try_new` |
 | `PlanError` | Every call that builds something without an engine: types, schemas, values, `RecordBatch::from_arrow`, the registry, expressions, measures, grouping sets, worker sets, sources, relations, exchanges, runtime values, plans and rewrites |
 | `PrepareError` | `Context::check`, `prepare`, `prepare_with`; the values that bindings are made of: `Endpoint::from_bytes`, `ExecutionId::from_bytes`, `WorkerBinding::to`, `BindingsBuilder::build`, `InputSource::completed`, `InputChannel::try_new`, `ProducerCount::from_size` |
@@ -215,9 +213,12 @@ passed to the engine, such as one with a NUL byte.
 
 ## Configuration
 
+The default builder, `from_yaml` and `build` are available in C++ and Rust. The setters and
+their argument types below belong to the proposal. [Configuration](../part-1/02-configuration.md)
+
 | C++ | Rust | Notes |
 |---|---|---|
-| `ContextConfigBuilder()` | `ContextConfigBuilder::try_new() -> Result<Self, ConfigError>` | Starts from defaults. Rust returns a failed allocation as `ConfigError::AllocationFailure`. |
+| `ContextConfigBuilder()` | `ContextConfigBuilder::new() -> Result<Self, ConfigError>` | Starts from defaults. Rust returns a failed allocation as `ConfigError::AllocationFailure`. |
 | `static Result<ContextConfigBuilder> from_yaml(const std::filesystem::path&)` | `fn from_yaml(path: impl AsRef<Path>) -> Result<Self, ConfigError>` | YAML layered over defaults. |
 | `ContextConfigBuilder with_devices(DeviceSelection devices) &&` | `fn with_devices(self, devices: DeviceSelection) -> Self` | |
 | `ContextConfigBuilder with_memory(MemoryLimits limits) &&` | `fn with_memory(self, limits: MemoryLimits) -> Self` | |
@@ -282,7 +283,8 @@ support, resolves `auto` properties and binds, in that order
 
 A `RecordBatch` is the unit of data you pass in (`Relation::values`, `InputSource::completed`,
 `InputWriter::write`) and read out (`BatchReader::next`, `collect`). It crosses the API through
-the Arrow C Data Interface.
+the Arrow C Data Interface. The existing engine also supports bounded input from host and device
+memory through a separate interface. [Arrow scan support](https://github.com/sirius-db/sirius/pull/2426)
 
 | C++ | Rust | Notes |
 |---|---|---|
@@ -632,8 +634,8 @@ builder, so the result is validated like any other plan.
 | `const Plan& PreparedPlan::plan() const` | `fn plan(&self) -> &Plan` | The plan you built, with every `auto` property resolved. |
 | `std::span<const WorkerRef> local_workers() const` | `fn local_workers(&self) -> &[WorkerRef]` | Workers hosted by this process. |
 | `const ExecutionId& execution_id() const` | `fn execution_id(&self) -> &ExecutionId` | |
-| `Result<StartedExecution> start() &&` | `fn start(self) -> Result<StartedExecution, ExecutionError>` | Consumes the prepared plan. Returns once every peer has admitted the execution (gang admission) and agreed in the handshake (V25), before any batch moves; fails with `transport` at the first-contact deadline. |
-| `Result<Collected> collect() &&` | `fn collect(self) -> Result<Collected, ExecutionError>` | Start, read every output, wait. |
+| `Result<StartedExecution> start() &&` | `fn start(self) -> Result<StartedExecution, ExecutionError>` | Consumes the prepared plan. Starts admission and peer agreement (V25). An exchange may carry rows once its peers agree. The first-contact deadline bounds the wait for missing peers. |
+| `Result<Collected> collect() &&` | `fn collect(self) -> Result<Collected, ExecutionError>` | Drains the hosted output readers and waits. Identifying individual outputs in the flat batch list is [open](open-questions.md#4-coordination-and-failure). |
 | `struct StartedExecution { Execution execution; std::vector<OutputReader> outputs; }` | `struct StartedExecution { execution: Execution, outputs: Vec<OutputReader> }` | |
 | `struct OutputReader { std::string output; WorkerRef worker; BatchReader reader; }` | `struct OutputReader { output: String, worker: WorkerRef, reader: BatchReader }` | One per hosted worker of each `Output`. Result routing is an `Exchange` before `Output`; preparation only binds readers ([Where did output routing go?](../part-1/06-prepare-and-execute.md#where-did-output-routing-go)). Dropping a reader before its end closes that output; if every output is closed, the execution ends `closed`. |
 | `const Schema& BatchReader::schema() const` | `fn schema(&self) -> &Schema` | |
@@ -735,59 +737,3 @@ The adapter turns Velox plan nodes into builder calls and returns an ordinary `P
 
 A node the adapter cannot translate fails with `unsupported`, and the message names the first such
 node by its Velox plan node id.
-
-## The canonical program
-
-The same program in both languages, from [Your first plan](../part-1/01-hello-plan.md). `SIRIUS_TRY`
-is a book-only helper defined in [Conventions](../conventions.md).
-
-```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-Result<void> hello() {
-  SIRIUS_TRY(config, ContextConfigBuilder{}.build());
-  SIRIUS_TRY(context, Context::create(config));
-
-  SIRIUS_TRY(schema, Schema::create({Field::required("n_nationkey", DataType::int32()),
-                                     Field::required("n_name", DataType::string())}));
-  SIRIUS_TRY(nation, TableSource::parquet("nation", {"data/nation.parquet"}, schema));
-
-  SIRIUS_TRY(scan, Relation::scan(nation, ScanOptions::defaults()));
-  SIRIUS_TRY(key, scan.column("n_nationkey"));
-  SIRIUS_TRY(small, key.lt(Expression::literal(Value::int32(5))));
-  SIRIUS_TRY(filtered, scan.filter(small));
-  SIRIUS_TRY(plan, Plan::from_root(filtered));
-  std::cout << plan.explain();
-
-  SIRIUS_TRY(prepared, context.prepare(plan, Bindings::local()));
-  SIRIUS_TRY(result, std::move(prepared).collect());
-  std::cout << result.batches.size() << " batches\n";
-  return {};
-}
-```
-
-```rust
-use sirius::prelude::*;
-
-fn hello() -> sirius::Result<()> {
-    let config = ContextConfigBuilder::try_new()?.build()?;
-    let context = Context::try_new(&config)?;
-
-    let schema = Schema::try_new(vec![Field::required("n_nationkey", DataType::int32()),
-                                      Field::required("n_name", DataType::string())])?;
-    let nation = TableSource::parquet("nation", ["data/nation.parquet"], &schema)?;
-
-    let scan = Relation::scan(&nation, ScanOptions::default())?;
-    let key = scan.column("n_nationkey")?;
-    let small = key.lt(&Expression::literal(Value::int32(5)))?;
-    let filtered = scan.filter(&small)?;
-    let plan = Plan::from_root(&filtered, "result")?;
-    println!("{}", plan.explain(&ExplainOptions::default()));
-
-    let prepared = context.prepare(&plan, Bindings::local())?;
-    let result = prepared.collect()?;
-    println!("{} batches", result.batches.len());
-    Ok(())
-}
-```

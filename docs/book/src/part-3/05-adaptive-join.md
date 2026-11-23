@@ -1,14 +1,9 @@
 # Adaptive join
 
-In the [previous chapter](04-partitioned-join-and-runtime-filters.md) you chose hash or broadcast
-when you wrote the plan. Often you cannot know which is better: a filter for one day's orders might
-keep a few hundred rows or a few million. With few orders, broadcasting them is cheapest, because
-the line items stay where they were scanned. With many, broadcasting copies a large table four
-times, and hashing both sides is better.
-
-Sirius puts the choice in the plan. `Observe` measures the build side, a `ValueExchange` merges the
-measurement so every worker sees the same number, `Decide` applies a pure rule to it, and two
-exchanges take the alternative the rule names. The report says which one ran.
+For a single day's orders, the filtered build side might be small enough to broadcast. Q5
+measures its size before choosing. Both join inputs must follow the same decision: if one worker
+keeps its line items locally while another expects them to arrive by hash partition, they can
+miss matches.
 
 ## The question
 
@@ -76,8 +71,8 @@ fn q5_plan(lineitem: &TableSource, orders: &TableSource,
 
 Each worker's `s1` counts only its own rows, so it is `partial`. `merge_to(compute)` inserts a
 `ValueExchange` that sums the four counts and delivers the total, `s2`, to every compute worker.
-That makes `s2` `global` on `compute[4]`. A `Decide` must read a value that is `global` on every set
-it controls (V15).
+That makes `s2` `global` on `compute[4]`. Here every compute worker evaluates the decision from the same value. A leader can
+also evaluate it once and deliver its label to the other workers (V15).
 
 ### Step 2: decide
 
@@ -401,12 +396,8 @@ plan text and the decision rule do not change.
 
 ## What the engine does
 
-Today this choice lives inside the hash join operator. Its `choose_layouts` callback receives the
-measured input bytes and rows and picks broadcast or hash, the partition count, and the in-worker
-join algorithm. Nothing in the plan shows the result.
-
-In the explicit plan the measurement is `Observe`, the agreement is `ValueExchange`, the rule is
-`Decide`, and the outcome is a `DecisionRecord` in the report. The engine evaluates `Decide` where
-`choose_layouts` runs today. The in-worker algorithm stays engine-owned, because no other worker
-must agree on it. [Adaptivity in the engine](../part-5/04-adaptivity-in-the-engine.md) walks
-through the lowering.
+For a local multi-GPU join, the layout callback in Sirius already uses measurements and
+estimates to choose among eligible strategies. For a cross-rank join, the distributed planner
+chooses the exchange earlier from estimates. Q5 instead makes the measured statistic, threshold
+and two routing alternatives visible before the run. The report records the chosen label.
+[Local and cross-rank policies](../part-2/06-adaptive-plans.md#adaptivity-today)

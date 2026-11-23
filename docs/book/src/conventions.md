@@ -64,8 +64,6 @@ the examples.
 | A default argument | The argument, written out | Rust has no default arguments. |
 | `std::move(x).start()` | `x.start()` | A consuming method takes `self`. |
 
-
-
 ## The `SIRIUS_TRY` helper
 
 The book defines this helper for C++ examples. It evaluates a fallible expression once,
@@ -162,8 +160,6 @@ flowchart LR
   S3 -->|"x3 gather"| S4
 ```
 
-
-
 ## Naming
 
 `Exchange` names a plan node, `Relation::exchange` the public builder method, and
@@ -221,18 +217,27 @@ reason to believe the rows are partitioned on it.
 
 ## The C ABI underneath
 
-The public C builder illustrates how ownership and errors cross the language boundary. A filter
-takes a plan node and predicate and returns a new node through an output parameter.
+Given a scan node and its Boolean predicate, the public C builder returns a new filter node
+through an output parameter.
 
 ```c
 #include <sirius-c/plan/plan.h>
 
-sirius_plan_node* filtered = NULL;
-sirius_error* error = NULL;
-sirius_status status = sirius_plan_filter(scan, predicate, &filtered, &error);
-/* On success, use filtered. On failure, inspect status and any diagnostic. */
-sirius_error_destroy(error);
-sirius_plan_node_release(filtered);
+#include <stdio.h>
+
+void inspect_filter(const sirius_plan_node* scan, const sirius_expression* predicate) {
+    sirius_plan_node* filtered = NULL;
+    sirius_error* error = NULL;
+    sirius_status status = sirius_plan_filter(scan, predicate, &filtered, &error);
+    if (status == SIRIUS_SUCCESS) {
+        printf("node kind %u\n", (unsigned)sirius_plan_node_get_kind(filtered));
+    } else {
+        fprintf(stderr, "filter failed (%u): %s\n", (unsigned)status,
+                sirius_error_message(error));
+    }
+    sirius_error_destroy(error);
+    sirius_plan_node_release(filtered);
+}
 ```
 
 Zero means success. A nonzero status is authoritative even if allocating a diagnostic failed.

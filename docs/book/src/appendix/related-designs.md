@@ -1,22 +1,9 @@
 # Related designs
 
-Other systems put distribution into a plan before Sirius did. This appendix compares the Sirius
-Plan IR with four groups of designs:
-
-- Apache DataFusion, where every physical operator declares properties and requirements and the
-  optimizer inserts the data movement that satisfies them.
-- Ballista, datafusion-distributed and Comet, which take DataFusion plans across processes.
-- Spark, Trino and Snowflake, which solved the same problems at scale with a coordinator in the
-  middle.
-- The Velox family (Velox, Axiom, Bolt and Apache Gluten), which splits planning and execution
-  into separate projects.
-
-It credits the ideas Sirius borrows and says where Sirius chooses differently. Sirius is an
-explicit, checkable layer *under* a planner and does not replace one.
-
-The descriptions of other systems follow their public documentation and papers, linked inline.
-Several DataFusion APIs named here change between releases; the linked documentation is the
-authority.
+When two inputs to a join are partitioned differently, someone has to move rows. DataFusion's
+physical optimizer can insert a repartition. Spark can revise the plan once the shuffle sizes
+are known. The Sirius builder proposed here lets a host make those choices, then check the plan
+it produced. The sections below follow that distinction through aggregates, filters and recovery.
 
 ## Apache DataFusion
 
@@ -48,7 +35,7 @@ What an operator *needs* from its inputs is a separate set of trait methods:
 - a required input distribution per child, a
   [`Distribution`](https://docs.rs/datafusion/latest/datafusion/physical_plan/enum.Distribution.html):
   unspecified, a single partition, or partitioned so that equal key values land in the same
-  partition (`HashPartitioned`, `KeyPartitioned` in recent releases);
+  partition (`KeyPartitioned` in DataFusion 55, previously `HashPartitioned`);
 - a required input ordering per child;
 - whether the operator maintains its input order, and whether it benefits from more input
   partitions.
@@ -163,34 +150,24 @@ by a fingerprint.
 
 ## DataFusion across processes
 
-Three projects take DataFusion plans beyond one process. They differ in who plans and who
-schedules. All three build the plan once and ship it to the processes that run it.
+Ballista and datafusion-distributed distribute DataFusion plans. Comet embeds DataFusion
+inside Spark tasks and leaves the stage scheduler to Spark.
 
 ### Ballista
 
-[Ballista](https://datafusion.apache.org/ballista/contributors-guide/architecture.html) is a
-distributed engine with a scheduler and executors. The scheduler plans the query with DataFusion and
-breaks the physical plan into stages wherever the partitioning changes. Each `RepartitionExec`
-becomes a pair: its input is wrapped in a `ShuffleWriterExec`, and an `UnresolvedShuffleExec` holds
-its place in the consuming stage. Executors poll the scheduler for tasks, and each task runs one
-stage's plan over its share of the input.
+Ballista breaks a query into stages at shuffle boundaries. The scheduler assigns tasks to
+executors. A writer materializes its output, and a downstream stage starts once its inputs
+are complete and the scheduler knows where to find their partitions. This frees the producer's
+execution slots before the consumer needs them. [Ballista architecture](https://datafusion.apache.org/ballista/contributors-guide/architecture.html)
 
-The [shuffle](https://datafusion.apache.org/ballista/contributors-guide/shuffle.html) is blocking. A
-stage runs to completion and writes its output to the executor's local storage, one file per output
-partition per task, before any downstream stage starts. When every input stage is complete, the
-scheduler replaces each `UnresolvedShuffleExec` with a `ShuffleReaderExec` that knows the concrete
-locations, and the reader fetches the files locally or from the producing executor.
+The blocking shuffle gives the scheduler a recovery point. When a fetch fails, the scheduler
+can roll back the affected consumer and regenerate missing partitions. Ballista also has an
+adaptive planning path that uses statistics from completed stages. Failure handling on that
+path has separate limitations. [Shuffle design](https://datafusion.apache.org/ballista/contributors-guide/shuffle.html) · [Adaptive scheduler](https://datafusion.apache.org/ballista/contributors-guide/architecture.html)
 
-Materialized shuffle output makes recovery cheap. When a fetch fails or an executor is lost, the
-scheduler rolls back the consuming stage and re-runs only the map tasks whose output was lost. A
-retry budget caps repeated failures. Ballista can also build stages incrementally, re-optimizing
-the rest of the plan after each shuffle stage from observed row counts and sizes.
-
-The closest Sirius shape is an exchange with `Durability::spooled()`, which retains the sender's
-output so that a failed stage instance can re-run under a new attempt. The plan chooses spooling
-per exchange; pipelined is the default. See
-[Durability](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) and
-[Retrying a stage instance](../part-5/07-failure-cancellation-and-recovery.md#retrying-a-stage-instance).
+The proposed Sirius counterpart is a spooled exchange. A surviving spool can feed another
+attempt. A lost spool raises a harder question if a downstream stage has already used its
+contents. [Retrying a stage instance](../part-5/07-failure-cancellation-and-recovery.md#retrying-a-stage-instance)
 
 ### datafusion-distributed
 
@@ -206,9 +183,7 @@ boundaries and picks a task count for each stage. Any node can act as the coordi
 the plan and sends each task's stage to one of the available workers; a user-supplied handler can
 choose which.
 
-Sirius ships no such planner; that work belongs to its front-ends. The front-end writes the
-exchanges, with its own planner or by hand, so they are nodes from the start, and the validator
-checks each one before anything runs.
+In the proposed API the frontend chooses the exchanges. The Sirius validator checks the properties each consumer requires.
 
 ### Comet
 
@@ -223,8 +198,7 @@ The shuffle is the relevant part for Sirius. Native and Spark operators must agr
 row goes, so Comet's
 [native shuffle](https://datafusion.apache.org/comet/contributor-guide/native_shuffle.html)
 implements Spark-compatible hash partitioning: Murmur3 with seed 42, then the hash modulo the
-partition count. Comet's round robin does not place rows where Spark's would, so it is off by
-default. For a range partitioning, Spark samples the data and computes the boundaries on the
+partition count. Round-robin shuffles raise a separate replay question. A different input order on retry can send rows to different partitions. For a range partitioning, Spark samples the data and computes the boundaries on the
 driver, and Comet uses them.
 
 Sirius calls this contract a hash scheme. In Comet it is an engineering promise between two code
@@ -255,8 +229,7 @@ both sides on the join keys; in Sirius, partitioning declared by a source is
 workers, connected by exchanges. The coordinator asks the connectors for the splits of each table
 and hands them to tasks as the query runs. Its
 [dynamic filters](https://trino.io/docs/current/admin/dynamic-filtering.html) are applied locally
-for broadcast joins; for partitioned joins the coordinator collects them and sends them to the
-workers. Execution is pipelined by default. With
+for broadcast joins; for partitioned joins the coordinator collects and distributes the filters. It can also use filters during split enumeration. Execution is pipelined by default. With
 [fault-tolerant execution](https://trino.io/docs/current/admin/fault-tolerant-execution.html)
 enabled, the retry policy `QUERY` retries a whole query and `TASK` retries individual tasks, which
 requires an exchange manager that spools intermediate data. Sirius is also pipelined by default
@@ -294,10 +267,7 @@ Part IV.
 - **Axiom.** [Axiom](https://github.com/facebookincubator/axiom) is Meta's set of front-end
   components for Velox, with a cost-based optimizer that cuts the plan into fragments with explicit
   exchanges. It hands its decisions over as a public object, which is what a layer under a planner
-  needs; see [Plans from other systems](../part-4/05-plans-from-other-systems.md#a-multi-fragment-plan-from-axiom). Its design for
-  cross-fragment dynamic filters, not implemented yet, is close to Sirius value edges, except that
-  its scans block until the filter arrives
-  ([question 6](../reference/open-questions.md#6-filter-waits)).
+  needs; see [Plans from other systems](../part-4/05-plans-from-other-systems.md#a-multi-fragment-plan-from-axiom).
 - **Bolt.** [Bolt](https://github.com/bytedance/bolt) is ByteDance's execution library, initially
   derived from Velox, also without an optimizer or scheduler. Its main use is inside Spark tasks;
   see [Plans from other systems](../part-4/05-plans-from-other-systems.md#one-task-at-a-time-bolt-under-spark).
@@ -308,127 +278,45 @@ Part IV.
   side must still route rows exactly as Spark would, the contract [Comet](#comet) keeps with its
   native shuffle.
 
-The family shows that planning and execution can live in different projects and still agree, as
-long as the plan between them is complete; Axiom's multi-fragment plan is close to what the Plan IR
-asks for. The agreements that cross a process boundary (partition functions, aggregate state
-layouts, function semantics) are engineering promises between code bases, as in Comet. Sirius
-makes them named, versioned parts of the plan: hash schemes
-([question 18](../reference/open-questions.md#18-hash-scheme-stability)) and registered dialect
-functions and state types ([question 31](../reference/open-questions.md#31-dialect-semantics)).
 
-## Side by side
-
-| Concept | DataFusion | Sirius |
-|---|---|---|
-| Unit of parallelism | A partition: one stream inside one process | A worker: one logical slot on one GPU, in any process |
-| Output facts | `PlanProperties`: partitioning, equivalence properties, emission, boundedness | `Distribution` on a worker set, plus `sorted(keys)`, derived for every node |
-| Input requirements | Trait methods per child: distribution, ordering | Declared as data in the [node contract](../reference/extension-points.md#requirements-are-data) |
-| Who inserts movement | The optimizer (`EnforceDistribution`, `EnforceSorting`, now `EnsureRequirements`) | The front-end that writes the plan; Sirius inserts nothing on its own and validates every exchange |
-| Final check | `SanityCheckPlan` | `Plan::create` (V1-V20, V24, V26-V28), `Context::check`, `Context::prepare` ([Validation](../part-2/07-validation.md)) |
-| Hash partitioning | `Hash(exprs, n)`; the function is the engine's | `hashed(keys, sig)`; the signature names the scheme, key types, partition count and target set |
-| Equal columns | Equivalence classes and constants | Inner join outputs count as hashed on either key list; general classes are [question 27](../reference/open-questions.md#27-requirements-as-data-and-equivalence-properties) |
-| Aggregate phases | `Partial`, `Final`, `FinalPartitioned`, `Single`, `SinglePartitioned`, `PartialReduce` | `single`, `partial`, `combine`, `final`; the input distribution decides legality (V6) |
-| Intermediate state | Accumulator `state()` values, described by `state_fields()` | A state type in the schema, with a fixed layout and named combine and final functions |
-| Runtime filters | `DynamicFilterPhysicalExpr`: shared, updatable, in one process | `RuntimeFilterBuild`, `ValueExchange`, `RuntimeFilterApply`: value edges with a scope |
-| Refinement | A filter updates many times; a generation counter tracks it | One value per producing worker; refinable values are additive later |
-| Adaptivity | Re-optimization between stages in Ballista, as in Spark | `Decide` among labeled alternatives in the plan: exchange modes, partition counts and `Choose` arms |
-| Across processes | Added by a distributed layer; plans built once and shipped | Exchanges and value edges are in the plan from the start; peers check edge signatures at start |
-| Extension | Traits for tables, functions, nodes and optimizer rules | Registered members with identities, in an immutable `Registry` that construction takes; a node contract stated as data |
 
 ## What Sirius borrows
 
-Four ideas come from this lineage.
-
-- **Requirements as data, without the insertion pass.** DataFusion and Spark let each operator say
-  what it needs and let one optimizer pass meet every need. Sirius keeps the first half. Every node
-  declares its required input distributions and orderings as values
-  ([Requirements are data](../reference/extension-points.md#requirements-are-data)). The validator
-  fails closed with `invalid_plan` and an error that says what to insert, and a front-end planner
-  reads the same declarations to place its exchanges. How far requirements as data and equivalence
-  properties go is
-  [question 27](../reference/open-questions.md#27-requirements-as-data-and-equivalence-properties).
-  A small helper that spreads a plan over the GPUs of one machine, never over many, is
-  [question 36](../reference/open-questions.md#36-a-distribution-helper-for-one-machine).
-- **Equivalence properties.** The rule that an inner join's output is hashed on either key list is
-  a small equivalence class: after `l_orderkey == o_orderkey`, the two columns are interchangeable
-  for any requirement. DataFusion tracks such classes, and constants, in general; question 27 asks
-  whether Sirius should too. Equivalence must respect join types. After a left join an unmatched
-  line item has a null `o_orderkey` on the worker its `l_orderkey` hashed to, so the two columns
-  are not equivalent there
-  ([The Distribution property](../part-2/02-workers-and-distribution.md#the-distribution-property)).
-- **State as a schema plus a named merge.** DataFusion describes an aggregate's intermediate state
-  with `state_fields` and merges it in `merge_batch`; each accumulator defines the state, which can
-  vary with the implementation. A Sirius state type is an Arrow schema plus combine and final
-  functions identified by namespace, name, signature and version
-  ([Closed and open lists](../reference/extension-points.md#closed-and-open-lists)). A partial
-  aggregate prints its state types, such as `sum_state<decimal(38,0)>` for an integer sum, and V5
-  checks that a final aggregate reads exactly the keys and states of one partial signature. A
-  final aggregate in another process, or in another engine build, needs only the schema
-  ([State types](../part-2/03-exchanges.md#state-types-travel-in-the-schema)).
-- **Refinable values.** A TopK dynamic filter improves while the query runs, and a consumer may
-  use any snapshot: each is correct, only less selective. Sirius filters already allow this on the
-  consumer side: `wait=never` takes a snapshot at each checkpoint. A value kind that publishes
-  more than once, each time tighter, such as a top-N bound, is listed as
-  [additive later](../reference/extension-points.md#additive-later). It fits because filters are
-  optional and their merge rules are associative and commutative: a monotone sequence of shares
-  merges to the same final value whatever arrives first. Today's engine already publishes such a
-  bound from its top-N operator, inside one process and under the conditions that
-  [Runtime filters today](../part-2/05-runtime-filters.md#runtime-filters-today) lists.
+- **Input requirements.** Suppose an inner equijoin matches `l_orderkey` to `o_orderkey`.
+  Either key can describe the partitioning of matched rows. After a left outer join, an
+  unmatched line item still belongs to its original partition even though its `o_orderkey` is
+  null. A planner reusing a distribution must account for the join type.
+  [Equivalence properties](../reference/open-questions.md#27-requirements-as-data-and-equivalence-properties)
+- **Aggregate states.** DataFusion's accumulator declares state fields and knows how to merge
+  them. A distributed average, for example, must preserve enough information to weight each
+  partial result. Sirius proposes naming the state type and its merge and final functions so
+  a receiving worker can check their identity. [State types](../reference/node-catalog.md#aggregate-state-types)
+- **Refinable filters.** A top-N bound can become tighter as better rows arrive. A scan can
+  use an older bound safely if it only prunes rows that cannot enter the result. Supporting
+  several publications of one value would need a rule for which updates a consumer can use.
+  [Refinable values](../reference/extension-points.md#additive-later)
 
 ## Where Sirius differs
 
-DataFusion's properties are promises inside one process, between operators compiled together.
-Sirius's properties are promises between workers that may live in different processes, built by
-different code, sometimes by different hosts, so every promise must be checkable on both sides.
+In a cross-worker hash join, “four partitions” is insufficient. Both senders must agree on how
+to encode keys, hash them and assign partitions to workers. Naming a scheme gives the peers
+something to compare. Independently built implementations also need a specification precise
+enough to compute the same result. [Hash scheme stability](../reference/open-questions.md#18-hash-scheme-stability)
 
-- **Checkable cross-process partitioning signatures.** In one process, `Hash(exprs, 4)` is enough:
-  one hash function, one partition count, one address space. Across processes it is not, as
-  Comet's match of Spark's Murmur3 seed shows. A Sirius `hashed` distribution carries a
-  [partitioning signature](../part-2/03-exchanges.md#the-partitioning-signature-and-co-partitioning),
-  and two edges are co-partitioned only when their signatures are equal, which every worker can
-  check. The one exception is a `mark` join, whose build exchange may route nulls `to_all` against
-  a `hashed` probe.
-- **Scoped value edges.** A DataFusion dynamic filter is shared memory, so every consumer sees the
-  producer's view, whatever rows that view covered. A Sirius runtime filter carries a
-  [scope](../part-2/05-runtime-filters.md#scope-which-rows-does-a-filter-know-about), and a
-  `partial` filter cannot be applied (V16) until a `ValueExchange` has merged every share, so a
-  filter built from a quarter of the keys cannot drop rows that match the other three quarters.
-- **Coordinator-free decisions.** Spark's adaptive execution and Ballista's stage-by-stage
-  planning decide on a driver or scheduler that sees all statistics, and Trino collects
-  partitioned dynamic filters at its coordinator. A Sirius `Decide` reads a global value, and
-  every worker computes the same label from it with a pure policy
-  ([Adaptive plans](../part-2/06-adaptive-plans.md#why-every-worker-picks-the-same-label)); an
-  `AssignPartitions` policy works the same way. A plan that wants one place to decide names a
-  leader explicitly.
-- **Edge signatures.** DataFusion-based systems agree on a plan because one process built it and
-  shipped it. Sirius allows that but does not rely on it. In a closed plan every process builds
-  the same plan and compares fingerprints. In an open plan, such as one StarRocks fragment
-  instance, each side compares an
-  [edge signature](../part-2/04-stages-and-bindings.md#every-process-prepares-the-same-plan) at
-  start, which covers the edge's parameters, the IR version, the wire version and the identity of
-  every registered item on the edge. A mismatch fails before the first row moves. How whole plans
-  might travel between processes is
-  [question 1](../reference/open-questions.md#1-how-plans-travel).
-- **No re-planning.** Systems that re-optimize between stages can change the stage graph halfway
-  through a query. In Sirius every alternative is in the plan (an exchange mode, a partition count
-  or a whole subtree under a
-  [`Choose`](../part-2/06-adaptive-plans.md#choosing-between-subtrees)), so the stage graph is
-  fixed, and `report.resolved_plan()` shows which alternative ran. `prepare` never rewrites the
-  plan; it only resolves worker-local `auto` properties, such as a join's
-  [build side](../reference/node-catalog.md#join). That gives up some adaptivity, such as
-  inventing a join order mid-query, for a plan that is fully known before it starts. Whether a
-  host should be able to chain plans and re-plan between them is
-  [question 33](../reference/open-questions.md#33-re-planning-beyond-the-plans-alternatives).
+The equivalent issue for a runtime filter is coverage. A filter built from one quarter of the
+orders cannot reject line items on the other three workers until the necessary shares have
+been combined. Naming the producer, key and scope lets a consumer check what it can infer.
+[Runtime filter scope](../part-2/05-runtime-filters.md#scope-which-rows-does-a-filter-know-about)
+
+An open fragment only describes its own side of a boundary. Comparing signatures can detect
+a schema or routing mismatch on that edge. Questions about the whole query, such as whether
+a filter removes rows an outer join should preserve, require more information.
+[Open-plan composition](../reference/open-questions.md#9-open-plan-composition)
 
 ## Positioning: the layer under a planner
 
-DataFusion, Spark and Trino are planners and engines at once. They parse SQL, choose join orders
-from costs, decide where to repartition, and then run the result. Sirius does not plan. It takes a
-plan whose decisions are already made, or are made by a pure rule inside the plan, states them in
-one printable IR, checks that they are consistent before anything runs, and runs them on GPUs.
-
-Each host hands over its decisions in its own shape, from a whole query to one task at a time
-([Who owns what](../part-4/04-one-ir-three-integrations.md#who-owns-what)). A planner of the
-DataFusion kind could sit on top in the same way: its requirement passes would decide where data
-moves, and the Plan IR would record those decisions in a form that every worker can check. The
-optimizer and its choices stay the host's.
+The proposed `prepare` takes a plan whose distribution choices are already recorded. A
+frontend can use cost estimates to choose an exchange, or supply alternatives and a rule for
+choosing among them during execution. This places a clear limit on adaptivity. A worker can
+choose a listed broadcast join after observing a small build, but choosing a new join order
+would require a new plan. [Re-planning beyond a plan's alternatives](../reference/open-questions.md#33-re-planning-beyond-the-plans-alternatives)

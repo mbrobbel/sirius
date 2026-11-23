@@ -1,36 +1,15 @@
 # Plans from other systems: Velox and Substrait
 
-> [!TIP]
-> **TL;DR**
->
-> - Velox plan nodes and Substrait are plan descriptions, not hosts. A converter library turns
->   one into builder calls and returns an ordinary `Plan`.
-> - The description supplies operators, types and functions. The converter's caller supplies what
->   it lacks: worker sets, scan splits, and often the exchanges.
-> - Axiom's multi-fragment plan arrives with every exchange chosen, so it becomes one closed plan:
->   fragments become stages, shuffles become `Exchange` nodes.
-> - A Substrait plan usually has no exchanges and runs on `local[1]`; one with exchange relations
->   maps them onto sets the caller names.
-> - Bolt under Spark is the smallest case: one closed single-worker plan per task, with Spark
->   carrying every edge between tasks.
-> - A plan the converter cannot translate is `unsupported`, before anything runs. The host's
->   dialect (functions, hashing, overflow, state layouts) is the main gap.
+A plan from another engine can tell Sirius to join two tables and still leave a crucial
+question open. What does the host expect if a 64-bit sum overflows? Translation is safe only
+when Sirius can preserve the host's result, including errors, ordering and the layout of
+values exchanged with the host.
 
-The first three chapters of this part describe engines that Sirius plugs into: each keeps its
-catalog, optimizer and scheduler, and builds Sirius plans from its own. This chapter covers the
-other kind of integration. A **plan description** is an agreed-upon way to write a plan down, and
-any system that produces one can reach Sirius through a converter. The book looks at two:
-
-- **Velox plan nodes**, the physical plans that [Velox](https://github.com/facebookincubator/velox)
-  and its derivatives run. [Axiom](https://github.com/facebookincubator/axiom) produces them for a
-  whole distributed query, and Apache Gluten produces them for one Spark task at a time.
-- **[Substrait](https://substrait.io)**, a cross-language specification for relational plans.
-
-The Plan IR stays the only entry point into execution. A converter is a library on top of the
-builder API, outside the core Sirius API. Its result is a `Plan` you can print, check and rewrite
-like any other, so [rule 5](../part-2/01-everything-in-the-plan.md#the-ownership-rule) (builders
-may help; plans may not hide) holds. The facts about other projects come from their public
-repositories and specifications.
+This chapter sketches two adapters. The first takes physical plan nodes from Velox or a
+Velox-based system. The second takes Substrait, which describes relational plans independently
+of an engine. Upstream already accepts Substrait through the older execution bridge. A
+consumer built on the public physical plan builder is tracked separately. The adapter names
+and signatures below are proposals. [Velox](https://github.com/facebookincubator/velox) · [Substrait](https://substrait.io/) · [Sirius consumer issue](https://github.com/sirius-db/sirius/issues/2192)
 
 ## What a description carries
 
@@ -40,13 +19,13 @@ difference through options.
 | A Sirius plan needs | Velox plan nodes | Substrait |
 |---|---|---|
 | Relational operators and expressions | Yes | Yes |
-| Types and nullability | Velox types | Substrait types, each with nullability |
-| Function identity | A name in Velox's Presto or Spark function library | An extension URI, a name and a signature |
-| Exchanges between workers | In Axiom's multi-fragment plan: every one. In a single fragment: none | Optional exchange relations; most producers emit none |
-| Worker sets and their sizes | Task counts per fragment, some left to the runtime | None |
+| Types and nullability | Velox types, with nullability supplied or inferred separately | Substrait types with declared nullability |
+| Function identity | A name in Velox's Presto or Spark function library | An extension identifier and function declaration |
+| Exchanges between workers | Axiom's multi-fragment plan connects both ends. A single fragment can name a remote edge without its peer | Optional exchange relations |
+| Worker sets and their sizes | Counts or constraints from the fragment scheduler | An exchange can specify partition count and targets. It has no Sirius worker-set identity. |
 | Scan splits per worker | Supplied by the host next to the plan | File lists with byte ranges, or a table name to resolve |
-| Partial aggregate state types | Velox's own intermediate layouts | An aggregation phase per measure, no layout |
-| Runtime filters and adaptive decisions | None | None |
+| Partial aggregate state types | Velox's own intermediate layouts | An aggregation phase per measure. A decomposable function declares its intermediate output type |
+| Runtime filters and adaptive decisions | Depends on the producer | Hints may refer to a saved Bloom filter. They do not specify the Sirius merge, wait or decision policy. |
 
 Whatever the converter derives or the caller supplies ends up in the plan, where `explain()` shows
 it and the validator checks it.
@@ -55,7 +34,7 @@ it and the validator checks it.
 
 ### The Velox plan adapter
 
-The converter for Velox is `sirius::velox`, an adapter library. It is C++ only, because Velox is.
+The proposed `sirius::velox` adapter would expose a C++ interface to Velox plan nodes.
 It reads Velox plan nodes and makes builder calls. If a node cannot be translated, it returns an
 `unsupported` error that names the node by its Velox plan node id.
 
@@ -97,23 +76,22 @@ Sirius scan's splits are fixed when the plan is built, so the caller drains ever
 first. By default the adapter deals each list over the scan's set with `Shards::explicit_splits`;
 with `with_dynamic_splits()` it uses `Shards::dynamic()`.
 
-The adapter places no exchanges by default. Asked to put an exchange-free plan on `compute[N]`, it
-returns `unsupported`. Where the adapter lives and what it covers is
+The example adapter defaults to one worker for an exchange-free plan. Distributing that plan requires the caller to choose the exchanges. Where the adapter lives and what it covers is
 [open question 32](../reference/open-questions.md#32-a-velox-plan-adapter).
 
 ### Mapping Velox's vocabulary
 
 | Velox | Sirius Plan IR |
 |---|---|
-| A plan fragment | A stage. It is derived by cutting at exchanges, never declared |
+| A fragment bounded by exchanges | A stage when the fragment boundaries match Sirius exchange boundaries |
 | `PartitionedOutputNode` on keys, with its `ExchangeNode` | `Exchange::hash(keys, T)` with `HashScheme::v1`. Both ends are Sirius, so the hash need not match Velox's |
 | `PartitionedOutputNode` broadcast, arbitrary, single | `Exchange::broadcast(T)`, `Exchange::round_robin(T)`, `Exchange::gather(head)` |
 | `MergeExchangeNode` | `Exchange::gather(head, GatherOrder::merge(keys))` over sorted input |
-| `LocalPartitionNode`, `LocalMergeNode` | Dropped. Movement between threads inside one worker is the engine's |
+| `LocalPartitionNode`, `LocalMergeNode` | Worker-local routing can be omitted if no consumer relies on it. A local merge that establishes ordering must preserve that order |
 | `AggregationNode` single, partial, intermediate, final | `aggregate`, `aggregate_partial`, `aggregate_combine`, `aggregate_final`, with Sirius state types. A partial and final pair with only a local exchange between them becomes one `aggregate` |
-| `GroupIdNode` directly below an `AggregationNode` | `aggregate_sets`: the grouping sets become the `sets` list and the group id column the grouping id, cast to Velox's `BIGINT` in a `Project` |
+| `GroupIdNode` directly below an `AggregationNode` | `aggregate_sets`: preserve the grouping-set order and cast the zero-based ordinal to Velox’s `BIGINT`. SQL’s `GROUPING` bitmask is a separate projection |
 | `WindowNode` | `Window`, for the three forms the IR defines |
-| `HashJoinNode` | `Join`. The mode is derived: `broadcast_build` over a broadcast build, `co_partitioned` over two matching hash exchanges, `single` on one worker |
+| `HashJoinNode` | `Join` for supported key, residual and null semantics. Its mode is derived from the inputs: `broadcast_build` over a broadcast build, `co_partitioned` over two matching hash exchanges, `single` on one worker |
 | `TopNNode`, `LimitNode`, `OrderByNode` | `TopN`, `Limit`, `Sort` per worker, a gather, and the final step on `head[1]` |
 | `TopNRowNumberNode` that emits no row number | `top_n_per_key` |
 | `TableScanNode` with its splits | `Relation::scan` over a `TableSource`, with `explicit_splits` or `dynamic` shards |
@@ -129,7 +107,7 @@ and how each one partitions. The output is a `MultiFragmentPlan`: a tree of frag
 plan nodes, each with a type that says how many tasks run it (`kSource`, `kFixed`, `kSingle`).
 Execution is left to a pluggable `Runner`; the open-source one runs every fragment in one process.
 
-Because the plan arrives with every exchange chosen, the adapter needs only the two sets:
+Two worker sets suffice for the illustrated plan. Fragment counts, partition assignments and the number of outputs must still agree.
 
 | Axiom | Sirius Plan IR |
 |---|---|
@@ -140,8 +118,7 @@ Because the plan arrives with every exchange chosen, the adapter needs only the 
 | One `TaskStats` per fragment | The `ExecutionReport`, one stage per fragment |
 
 Take Q7 from [A multi-stage query](../part-3/07-a-multi-stage-query.md#the-question), planned for
-four GPUs. Axiom broadcasts the filtered customers and hash-partitions both sides of the big join
-on the order key, which gives five fragments (sketched with Velox class names):
+four GPUs. Suppose the optimizer broadcasts the filtered customers and hashes both sides of the second join on order key. This gives five illustrative fragments:
 
 ```text
 A  kSource            PartitionedOutputNode broadcast
@@ -176,8 +153,7 @@ choices:
 `rewrite::split` cuts that plan at its four exchanges, the places where Axiom cut its fragments.
 Every distribution fact is Axiom's, and the validator checks each: the join is `co_partitioned`
 because both exchanges hash an int64 key into the same four partitions (V8), and the single-phase
-`Aggregate` is legal because its input is hashed on a group key (V6). Had the adapter
-mistranslated one, `Plan::create` would reject the plan with `invalid_plan`.
+`Aggregate` is legal because its input is hashed on a group key (V6). A structurally invalid translation fails validation. A translator that chooses the wrong column consistently can still produce a valid plan with the wrong meaning.
 
 The caller is an Axiom `Runner` subclass. It prepares the plan with `Bindings::local()`, reads the
 one `Output` on `head#0`, and turns each batch into a Velox `RowVector` through the Arrow C data
@@ -186,26 +162,17 @@ interface. Fallback happens once, before anything runs: if the adapter or `prepa
 
 ### Runtime filters across fragments
 
-Axiom's plan is static. The Plan IR can add what it cannot say, and the first addition is a
-runtime filter that crosses fragments. Velox pushes a join's build keys into the probe-side scan
-only inside one fragment. Axiom has a design for filters across fragments that matches the value
-edges of [Runtime filters](../part-2/05-runtime-filters.md):
+Consider adding a filter to the join between line items and orders. If each task receives
+the complete build side, a filter built by one task covers all orders. If the build side is
+partitioned, one task's filter covers only its partition. Pruning the lineitem scan before its
+exchange requires contributions from every build partition.
 
-| Axiom's design | Plan IR |
-|---|---|
-| The optimizer places each filter: producing join, consuming scan, key mapping | `RuntimeFilterBuild` and `RuntimeFilterApply`, placed when the plan is built |
-| Bloom size fixed from the build estimate, so per-task filters combine exactly | One fixed `BloomGeometry` for every share (V13) |
-| Partitioned build: the runner collects every task's filter and ORs them | `scope=partial` or `partition(xK)`, merged by a `ValueExchange` |
-| Broadcast build: the runner takes any one task's filter | `scope=global` on `replicated` input; no merge |
-| The consumer scan blocks until the filter arrives, with no timeout | `wait=up_to(t)`, a bounded wait, or `wait=never` |
+The proposed translator could add `RuntimeFilterBuild` at the orders input, merge compatible
+Bloom filters with a `ValueExchange`, and apply the merged filter at the lineitem scan.
+`wait=never` lets that scan start immediately. A bounded wait gives the build a head start.
+Neither choice changes which rows the join is allowed to return. [Runtime filters](../part-2/05-runtime-filters.md)
 
-In Sirius the merge is a node the validator checks, and every wait is bounded, so a slow build
-costs at most `t` of scan time. Whether an unbounded wait should exist is
-[open question 6](../reference/open-questions.md#6-filter-waits). The caller adds the filters by
-running `rewrite::insert_runtime_filters` on the translated plan; the result is the filtered Q7 of
-Part III.
-
-The second addition is an adaptive broadcast. Axiom chooses broadcast from an estimate. Where the
+An adaptive broadcast would defer a second decision. Where the
 estimate is close to the limit, the caller can build the join with
 `JoinOptions::with_adaptive_broadcast`, which leaves the choice to measured bytes
 ([Adaptive plans](../part-2/06-adaptive-plans.md)). The join output is then `arbitrary`, so an
@@ -213,11 +180,7 @@ aggregate above it must be two-phase (V6).
 
 ## Substrait
 
-Substrait describes a plan as a tree of relations over typed expressions, in a form any language
-can produce. A producer needs no Sirius code: it emits a Substrait plan, and the converter,
-`sirius::substrait`, turns it into builder calls. Like the Velox adapter it sits on top of the
-builder API and returns an ordinary `Plan`, or `unsupported` naming the relation it stopped at. Its
-scope is part of [open question 32](../reference/open-questions.md#32-a-velox-plan-adapter).
+The proposed `sirius::substrait` adapter translates supported relations to a Sirius plan and identifies the first unsupported relation. Its scope is part of [open question 32](../reference/open-questions.md#32-a-velox-plan-adapter).
 
 ```cpp
 #include <sirius/sirius.hpp>
@@ -248,55 +211,51 @@ fn from_substrait(bytes: &[u8], local: &WorkerSet,
 | `ReadRel` over local files, each with a start and a length | `Relation::scan` with `Shards::explicit_splits` |
 | `ReadRel` over a virtual table | `Relation::values` |
 | A filter or projection inside a `ReadRel` | A `Filter` or `Project` above the `Scan` |
-| `FilterRel`, `ProjectRel` | `Filter`, `Project` |
+| `FilterRel`, `ProjectRel` | `Filter`; for a projection, pass through the input fields, append the computed fields, then apply any emit mapping |
 | `AggregateRel` with one grouping | `Aggregate` |
 | `AggregateRel` with several groupings | `Aggregate` with grouping sets |
 | `JoinRel` | `Join`: equality terms of the condition become key pairs, the rest the residual |
-| `SortRel`, `FetchRel` | `Sort`, `Limit`; a fetch directly above a sort becomes `TopN` |
+| `SortRel`, `FetchRel` | `Sort`, `Limit`; an ordered fetch with an offset must preserve the skipped rows, for example with a top-(offset + count) followed by the slice |
 | `SetRel` | `Union`, or the [set-operation compositions](../part-1/07-aggregates-joins-and-ordering.md#set-operations) |
 | `ConsistentPartitionWindowRel` | `Window`, for the three forms the IR defines |
-| `ExchangeRel`: scatter by fields, single bucket, round robin, broadcast | `Exchange::hash`, `gather`, `round_robin`, `broadcast`, onto sets the caller names |
+| `ExchangeRel` | Translate supported scatter, broadcast and round-robin semantics with their specified count and targets. A bucket expression may choose a different target for each row. Only a constant single destination is a gather |
 | The emit list of any relation | A `Project` that selects and orders the columns |
 | A type with its nullability | A `DataType` and a required or nullable `Field` |
-| A function reference: extension URI, name and signature | A function looked up in the caller's `Registry` |
-| The plan's root names | The `Output`'s column names |
+| A function reference resolved through its extension declaration | A function looked up in the caller's `Registry` |
+| The plan's root names | Name the projected fields in order before constructing the output |
 
 ### What Substrait leaves to the caller
 
-- **Where the plan runs.** Substrait has no worker sets. A plan without exchange relations becomes
-  a plan on `local[1]`. To run it on several GPUs the caller writes the exchanges, as
-  sirius-duckdb does for DuckDB's plans
-  ([Embedded in a host](01-duckdb-extension.md)), or produces Substrait that already carries them.
-- **Agreement between workers.** An exchange relation says which fields to scatter by. It does not
-  say which hash function, how many partitions or where nulls go. The converter writes
-  `HashScheme::v1` and a partition count from its options, so those facts are in the Sirius plan
-  even though the description lacks them.
-- **Aggregate state.** A measure carries an aggregation phase (initial to intermediate,
-  intermediate to result) but no state layout. The converter maps the phases to
-  `aggregate_partial` and `aggregate_final` with Sirius state types, which works when both halves
-  are in the same Substrait plan.
-- **Function semantics.** An extension URI names a function; it does not define overflow or
-  rounding. Each function the converter accepts maps to a built-in or registered function with the
+- **Where the plan runs.** Substrait has no worker sets. The example adapter maps an exchange-free plan to `local[1]`. A caller targeting several GPUs must choose a distribution when the incoming plan leaves it open.
+- **Agreement between workers.** Substrait's `ExchangeRel` has a partition count and can map
+  partition IDs to targets. Its scatter-by-fields form names fields without fixing a hash
+  algorithm. Map the declared routing to worker sets and bindings. Reject a route the adapter
+  cannot reproduce, including an exact round robin if the Sirius exchange only balances
+  approximately. [Substrait exchange definition](https://github.com/substrait-io/substrait/blob/main/proto/substrait/algebra.proto#L475-L525)
+
+- **Aggregate state.** A decomposable Substrait aggregate declares its intermediate output type.
+  The call specifies the phase. If an intermediate result is visible to another engine, the
+  converter must produce the type and values that engine expects. When Sirius owns the partial,
+  merge and final operations and the state is private to them, it can use its own representation.
+  [Substrait aggregate functions](https://substrait.io/expressions/aggregate_functions/)
+- **Function semantics.** Resolve the function and its options against the referenced extension, including overflow and rounding behavior. Each function the converter accepts maps to a built-in or registered function with the
   same behavior, and anything else is `unsupported`
   ([Dialect semantics](#dialect-semantics)).
 - **Types.** Substrait types without a `DataType` (time, timestamp with time zone, interval, map,
   binary) are `unsupported` ([Additive later](../reference/extension-points.md#additive-later)).
-- **Runtime filters and adaptive choices.** Substrait has neither. The caller adds them to the
-  translated plan with the rewrites and builders of Part II.
+- **Runtime filters and adaptive choices.** Substrait has hints for saving and loading computations such as Bloom filters. The adapter still needs scope and completion rules to turn a hint into a safe filter edge. A host can add Sirius decision policies explicitly.
 
 ## One task at a time: Bolt under Spark
 
 [Bolt](https://github.com/bytedance/bolt) is a C++ execution library derived from Velox, with no
 optimizer or scheduler. Its main use is as a native backend for Spark through
-[Apache Gluten](https://github.com/apache/gluten). The Spark driver plans the query, cuts it into
-stages at every shuffle, and sends each executor one *task* at a time: one partition of one stage.
+[Apache Gluten](https://github.com/apache/gluten). Spark divides the work into stages at shuffle boundaries. A task processes one partition of a stage. An executor may run several tasks concurrently.
 Gluten builds the task's plan nodes and attaches the file splits Spark assigned to it.
 
 That task plan is the adapter's first kind of input: one fragment with no remote exchanges. It
 becomes one closed plan on `local[1]`. If the whole task translates, Sirius runs it on the GPU in
 place of the Bolt task, and its output goes to the same places through Arrow. Spark keeps its
-shuffle, adaptive re-planning, retries and speculation: none of them can tell which engine
-produced a task's output.
+shuffle, adaptive re-planning, retries and speculation. Mixed execution is safe only if either engine produces an output the next stage can read with the same meaning.
 
 | Bolt or Spark | Plan IR |
 |---|---|
@@ -334,10 +293,7 @@ every row of both inputs is on its one worker.
 The Bloom filter arrives resolved. Spark's driver evaluates it before the lineitem stage runs, so
 the task sees a constant, and the plan has no value edge, scope or wait.
 
-A task Sirius cannot run goes to Bolt's CPU path, and nothing else changes. The translator stops
-at the first node, type or function it cannot translate, and `Context::check` answers for the
-engine build. Every task of a stage has the same plan apart from its splits, so the host can cache
-the answer per stage.
+If a task fails the support check before starting, the host can use its existing CPU path. The translator checks the operators, types and function semantics, and `Context::check` checks engine support. A host can cache checks shared by tasks, but each task's bindings and device still need validation.
 
 ### Dialect semantics
 
@@ -351,9 +307,11 @@ The same holds for Presto's dialect behind Axiom, and for any Substrait producer
 | Partition ids | `pmod(murmur3(keys, 42), n)`, hashing each key by its Spark type | `HashScheme::v1` | `spark.hash` and `spark.pmod` in a `Project`; never a hash exchange |
 | Runtime filter probes | `xxhash64` with seed 42, Spark's Bloom filter format | The `bloom` filter kind, engine-defined | `spark.xxhash64`, `spark.might_contain` |
 | Decimal arithmetic | Operands widened, precision and scale derived by Spark's rules | Operands of one type and [no implicit conversion](../part-1/04-schemas-and-expressions.md#no-implicit-conversion) | Explicit casts to Spark's operand and result types |
-| Integer `sum` | Returns `bigint`; overflow raises an error under ANSI mode and wraps without it | Returns `decimal(38,0)` | ANSI mode: a checked cast to `int64`. Otherwise a registered Spark-compatible `sum` |
+| Integer `sum` | Returns `bigint`; overflow raises an error under ANSI mode and wraps without it | Returns `decimal(38,0)` | Use an aggregate with Spark's update and merge semantics, or prove every intermediate fits |
 
-Two patterns cover the table.
+A final cast cannot reproduce an intermediate overflow. On one task, adding 1 to the largest
+signed 64-bit value overflows even if a later row contributes −1. A wider accumulator would
+finish with an in-range total and miss the ANSI error. [Spark sum implementation](https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/expressions/aggregate/Sum.scala)
 
 - **Translator casts.** When Sirius computes the right values in a different type, the translator
   adds a `Project` with a cast.
@@ -367,7 +325,7 @@ Aggregate state needs the same care. When Spark puts a shuffle between a partial
 aggregate, the state columns cross an edge Sirius does not own, and Spark's buffers are not
 Sirius's [state types](../reference/node-catalog.md#aggregate-state-types). Either both halves run
 on Sirius, which gives up per-task fallback for those two stages, or the states are registered
-Spark-compatible state types that either engine can read. The first can ship first. Which dialect
+Spark-compatible state types that either engine can read. Using Sirius states at both ends would also require a way to declare a state-typed input after the shuffle. Which dialect
 items become registered functions and state types is
 [open question 31](../reference/open-questions.md#31-dialect-semantics).
 
@@ -411,13 +369,13 @@ A converter can meet a system at other levels than the two above.
 
 ## Gaps
 
-None of these needs a new structural concept in the IR.
+A translator can report these cases before submitting a task.
 
 | Gap | In this design | Where it is tracked |
 |---|---|---|
 | Types: time, timestamp with time zone, interval, map, binary | No `DataType` yet; such a plan is `unsupported`. Spark's Bloom filter literal needs the binary type | [Additive later](../reference/extension-points.md#additive-later) |
 | Window functions and frames outside the three `Window` forms; generators | No form | [Open question 29](../reference/open-questions.md#29-windows-over-a-global-order-prefix-value-mode) |
-| Writes | No write node | [Additive later](../reference/extension-points.md#additive-later) |
+| Writes | The proposed public IR has no write node. Upstream SQL supports [Parquet output](https://github.com/sirius-db/sirius/pull/2575). | [Additive later](../reference/extension-points.md#additive-later) |
 | Dialects: function names and behavior, hashing, overflow, decimal rules, aggregate state layouts | Translator casts or registered functions; until they exist, the plan or task falls back | Open questions [16](../reference/open-questions.md#16-expression-semantics) and [31](../reference/open-questions.md#31-dialect-semantics) |
 | State-typed inputs | The API cannot declare an `Input` with state types, which a reduce task that receives Sirius states needs | [Open question 31](../reference/open-questions.md#31-dialect-semantics) |
 | Null-aware joins that also replicate one arbitrary row | `NullRouting::to_all` covers the nulls; a global build row count through `JoinOptions::with_build_rows` gives the same fact | [Open question 17](../reference/open-questions.md#17-join-coverage) |

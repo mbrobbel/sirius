@@ -1,8 +1,8 @@
 # Validation
 
-Sirius states its plan rules as numbered **invariants**, V1 to V28. This chapter lists each with
-its reason and the error a violation returns. The plan holds every fact two workers must agree on,
-so most checks need only the plan.
+Most mistakes show up before a worker starts. A join can reject mismatched partition keys as you
+build it. A valid plan may still need a function a particular engine lacks, or a GPU the host has
+not bound. The proposed API reports these failures separately.
 
 ## Three gates
 
@@ -14,12 +14,11 @@ Checks run at three points, in this order:
 | `Context::check` | V21-V22 | `unsupported` | a context, so it knows this engine build |
 | `Context::prepare` and start | V21-V22 again and V23 at `prepare`; V25 at start | `unsupported`, `binding_mismatch` | bindings, so it knows the bound devices, and at start, the peers |
 
-The catalog below groups V24 with the worker rules, V26 with the exchange and decision rules, and
-V27 and V28 with the distribution rules.
-
-**A `Plan` value is always valid.** If `Plan::create` returns a plan, V1-V20, V24 and V26-V28 hold
-on every form of it. You can build and check plans in a unit test or a planning service with no
-GPUs.
+A successful constructor returns a structurally valid plan. You can exercise these checks in a
+unit test with no GPU. Open plans can check only the nodes and edges visible to them. For example, an isolated scan
+fragment can check a filter's type and scope but cannot tell whether an unseen downstream outer
+join preserves the rows it discards (V18). A matching edge signature does not prove that property.
+Who supplies this proof when the host never assembles the whole plan is still open.
 
 Builder methods check what is local to the node they create. Column scope, types and key names
 (V4, V5) fail on the call that introduces them. A node that cannot derive its output, such as a
@@ -42,68 +41,27 @@ In C++ these are the fields `code`, `message`, `location` and `worker` of `Error
 variant is the code and holds the rest, for example `PlanError::Invalid` at the first gate
 ([API at a glance](../reference/api-at-a-glance.md#errors) lists every code with its variant).
 
-In this mistake, the lineitem side is hashed into 16 partitions and the orders side into the
-default, one partition per worker:
+Here the lineitem side is hashed into 16 partitions and the orders side into four. Both target
+the same four workers. The join still rejects the inputs because the exchange signatures differ.
 
 ```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-Result<void> mismatched(const Relation& lineitem, const Relation& urgent,
-                        const WorkerSet& compute, const WorkerSet& head) {
-  SIRIUS_TRY(sixteen, Partitions::fixed(16));
-  SIRIUS_TRY(left, lineitem.exchange(Exchange::hash({"l_orderkey"}, compute, sixteen)));
-  SIRIUS_TRY(right, urgent.exchange(Exchange::hash({"o_orderkey"}, compute)));
-  SIRIUS_TRY(on, JoinOn::keys({{"l_orderkey", "o_orderkey"}}));
-  SIRIUS_TRY(joined, left.join(right, JoinType::inner, std::move(on), JoinOptions::defaults()));
-  SIRIUS_TRY(gathered, joined.exchange(Exchange::gather(head)));
-
-  auto plan = Plan::from_root(gathered);
-  if (!plan && plan.error().code == ErrorCode::invalid_plan) {
-    const std::optional<PlanLocation>& where = plan.error().location;   // the Join, stage S3
-    std::cerr << plan.error().message << "\n";
-  }
-  return {};
-}
+auto joined = left.join(right, JoinType::inner, std::move(on), JoinOptions::defaults());
+if (!joined) std::cerr << joined.error().message << '\n';
 ```
 ```rust
-use sirius::prelude::*;
-
-fn mismatched(lineitem: &Relation, urgent: &Relation, compute: &WorkerSet, head: &WorkerSet)
-    -> Result<(), PlanError> {
-    let sixteen = Partitions::fixed(16)?;
-    let left = lineitem.exchange(&Exchange::hash(&["l_orderkey"], compute, sixteen,
-                                                 HashScheme::v1()))?;
-    let right = urgent.exchange(&Exchange::hash(&["o_orderkey"], compute,
-                                                Partitions::one_per_worker(), HashScheme::v1()))?;
-    let on = JoinOn::keys(&[("l_orderkey", "o_orderkey")])?;
-    let joined = left.join(&right, JoinType::Inner, on, JoinOptions::default())?;
-    let gathered = joined.exchange(&Exchange::gather(head, GatherOrder::any()))?;
-
-    match Plan::from_root(&gathered, "result") {
-        Err(PlanError::Invalid { message, location, .. }) => {
-            let _where = location; // the Join, stage S3
-            eprintln!("{message}");
-        }
-        _ => {}
-    }
-    Ok(())
+if let Err(error) = left.join(&right, JoinType::Inner, on, JoinOptions::default()) {
+    eprintln!("{error}");
 }
 ```
 
-The message names the invariant, the node and the fix:
-
 ```text
-invalid_plan: V8: Join inner keys=[l_orderkey == o_orderkey] has no legal mode: both inputs are
-  hashed, but not co-partitioned. x1 hash(l_orderkey) partitions=16 -> compute[4] and
-  x2 hash(o_orderkey) -> compute[4] (4 partitions) have different partitioning signatures.
+invalid_plan: V8: Join inner keys=[l_orderkey == o_orderkey] has no legal mode:
+  hash(l_orderkey) partitions=16 and hash(o_orderkey) partitions=4 have different signatures.
   Use the same Partitions on both exchanges.
-  at: Join inner keys=[l_orderkey == o_orderkey] (stage S3)
 ```
 
-A tool can use the location to highlight the node in `explain()` output without parsing the
-message. The code, the leading V-number and the location are part of the API. The wording of the
-message is not.
+When validation runs on an assembled plan, the diagnostic can also identify the join and its stage
+in `explain()`. A builder error can occur before either has a canonical id.
 
 ## The invariants
 
@@ -122,8 +80,9 @@ tables and worker sets.
   RuntimeFilterBuild that produces f21.`
 - *Waits:* the **wait-for graph** holds the data and value edges, the ordered waits, and a credit
   wait from each producer into each streaming queue it feeds, because with bounded buffers a
-  sender can also wait for its receiver. Deadlock freedom within one execution is therefore a
-  property of the plan
+  sender can also wait for its receiver. V1 rules out cycles among the waits visible in this plan.
+  Progress also depends on the runtime scheduling runnable work, making buffer space and
+  propagating close or failure
   ([Credits and deadlock freedom](../part-5/08-running-at-scale.md#credits-and-deadlock-freedom)).
 
 **V2. Every referenced set is declared. All nodes of a stage share one set.**
@@ -181,7 +140,7 @@ one.**
 - *Example:* `invalid_plan: V7: Aggregate partial reads replicated(compute[4]) from Scan nation
   shards=replicated; every row would be counted 4 times.`
 
-**V8. A join is co_partitioned, broadcast_build, single or decided.**
+**V8. A join has a legal input distribution for each possible decision.**
 
 - *Why:* rows with equal keys must meet on one worker. These four modes guarantee it.
 - *Example:* the co-partitioning error above.
@@ -193,23 +152,24 @@ one.**
 - *Example:* `invalid_plan: V9: Join right keys=[c_nationkey == n_nationkey] build=right preserves
   build rows, so its build cannot be broadcast; hash both sides instead.`
 
-**V10. `mark` with a co-partitioned build and a plain key pair requires exactly one key pair, (a)
+**V10. A key-only `mark` with a co-partitioned build and an ordinary equality pair requires exactly one key pair, (a)
 `NullRouting::to_all` on the build exchange and (b) a global `rows` Statistics of the build input
 through `with_build_rows`. Decided joins are checked per label, and both exchanges use the same
 Decision.**
 
-- *Rule:* V10 applies when the join has a plain key pair. A mark join whose pairs are all
+- *Rule:* V10 applies when the join has a plain key pair. A key-only mark join whose pairs are all
   null-safe never answers null and is checked by V8 alone. The build is the join's right input,
   as for every `mark` join. (a) is the one signature difference co-partitioning allows: the build
   exchange routes nulls `to_all`, the probe exchange `hashed`, and every other field is equal.
-  For (b), the value comes from an `Observe rows()` directly below the build exchange, with
-  nothing between them that can change whether the input is empty (no `Filter` or `Limit`), merged
+  For (b), a zero count is evidence of emptiness only if the observation is complete. The value
+  comes from an `Observe rows()` below the build exchange, with nothing between them that can change whether the input is empty (no `Filter` or `Limit`), merged
   into a global value.
 - *Why:* with one key pair, a mark join's null and false answers depend on whether the whole build
   holds a null key and whether it is empty
   ([Mark joins need the whole build](03-exchanges.md#mark-joins-need-the-whole-build)). A join on
-  several key pairs uses a broadcast or single build, which needs neither (a) nor (b). A decided
-  join must be legal under every label it might take.
+  several key pairs that include ordinary equality uses a broadcast or single build, which needs neither (a) nor (b). A decided
+  join must be legal under every label it might take. This reasoning assumes a key-only predicate.
+  Mark joins with an additional residual need a separate rule. [Join coverage](../reference/open-questions.md#17-join-coverage)
 - *Example:* `invalid_plan: V10: mark Join keys=[c_custkey == o_custkey] is co_partitioned, but it
   reads no global row count of its build input; observe rows() below x2, merge it with
   merge_to(compute), and pass it with JoinOptions::with_build_rows.` Without (a):
@@ -286,11 +246,11 @@ keys.**
 - *Example:* `invalid_plan: V14: Exchange x2 gather order=merge[o_orderdate asc] reads input that is
   not sorted on [o_orderdate asc]; add a Sort below it.`
 
-**V15. A `Decide`, `ComputeBoundaries` or `AssignPartitions` input is global on every set it
-controls.**
+**V15. A `Decide`, `ComputeBoundaries` or `AssignPartitions` reads a global value where it runs.
+Every worker it controls must receive the corresponding result.**
 
-- *Why:* without a coordinator, every worker must compute the same label, splitters or
-  partition-to-worker map. A `Decide` on a leader such as `head[1]` reads a value that is global
+- *Why:* every worker that uses a label, splitters or a partition-to-worker map must agree on
+  its value. A `Decide` on a leader such as `head[1]` reads a value that is global
   there, and its `Decision` reaches the controlled set through a one-sender `ValueExchange`, which
   is global by construction.
 - *Example:* `invalid_plan: V15: Decide threshold(s1.bytes) reads s1, which is partial on
@@ -312,7 +272,7 @@ signature on the corresponding columns, on the same worker.**
   arbitrary(compute[4]) rows from Scan lineitem.`
 
 **V18. A filter is applied only on the probe-side lineage of the join whose build feeds it. The
-lineage passes only key-preserving nodes (Filter, plain Project, and Exchange of any mode,
+lineage passes only key-preserving nodes (Filter, Project that passes the filtered keys unchanged, and Exchange of any mode,
 including decided exchanges), and the join type discards non-matching probe rows. A filter with a
 key from a null-safe pair of that join has `NullKeys::pass`.**
 
@@ -431,7 +391,7 @@ endpoint; of an unsized hosting set, only the hosting worker. Every `Input` inst
 - *Example:* `invalid_plan: V24: Scan lineitem uses files_round_robin on frag1[?]; a shard rule
   needs a sized set.`
 
-**V25. Peers agree at start.**
+**V25. Each communicating pair checks agreement at start, before transferring rows on its edge.**
 
 - *Why:* without a coordinator, peers check agreement and never negotiate it. Closed plans
   compare the execution id, plan fingerprint and bindings digest (which covers the binding epoch
@@ -447,9 +407,10 @@ endpoint; of an unsized hosting set, only the hosting worker. Every `Input` inst
 
 ## What validation does not check
 
-The invariants guarantee that a plan means something and that every worker agrees on what it
-means. They do not check plan quality: a broadcast of a huge table or a filter that prunes nothing
-passes. The `ExecutionReport` is where you find those.
+A broadcast of a huge table or a filter that prunes nothing passes validation. Transfer counts and
+filter statistics in the execution report can help explain the cost. Validation also cannot infer
+query intent. A per-worker `TopN 10` on four workers is a legal plan that may return 40 rows. If
+the caller wanted the global top ten, its planner must add the final step on one worker.
 
 Whether the files match the schemas and sizes a plan declares is not a plan property. The engine
 checks each file when a worker opens it and fails with `source_mismatch`
@@ -461,8 +422,6 @@ happened at. A fatal device error makes the engine unavailable for the whole pro
 call on a handle returns `runtime_unavailable` until the process restarts
 ([How long a context lives](../part-1/03-context-and-session.md#how-long-a-context-lives)).
 
-One kind of agreement can be checked only while the plan runs. V15 makes every worker decide from
-a global value, but the label is computed at run time. The label on a decided exchange and every
-delivered `Boundaries` or `Assignment` value therefore travel with a digest, and a receiver that
-sees a digest other than its own fails with `execution` ([Why every worker picks the same
-label](06-adaptive-plans.md#why-every-worker-picks-the-same-label)).
+A receiver checks a decision label when it receives a message on a decided exchange.
+Each such message carries a digest of the chosen label. Deliveries of boundaries and partition
+assignments carry a digest of the value. A mismatch fails the execution. [Decision agreement](06-adaptive-plans.md#why-every-worker-picks-the-same-label)

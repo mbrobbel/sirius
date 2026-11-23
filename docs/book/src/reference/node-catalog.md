@@ -1,13 +1,8 @@
 # Node catalog
 
-This page lists every node of the Sirius Plan IR, the facts each node carries, and the rules the
-validator enforces. Each entry gives the builder call, the input requirements, the output
-guarantees, and the text-tree form ([Plan notation](plan-notation.md)). The engine operators that
-implement the nodes are in [From plan to pipelines](../part-5/01-from-plan-to-pipelines.md).
-
-Every movement and every shared fact is a node or a parameter, so this catalog is the complete list
-of what a plan can say. What the engine may choose is under Physical shape in
-[Protocol facts](#protocol-facts).
+The catalog describes the proposed Plan IR. Each entry gives the operator's inputs, output
+properties and builder call. For how the current engine executes a stage, see
+[From plan to pipelines](../part-5/01-from-plan-to-pipelines.md).
 
 ## Node index
 
@@ -69,7 +64,8 @@ Every node carries:
 - a determinism class (`deterministic`, `per_execution` or `volatile`) and a side-effect class
   (`none`, `idempotent` or `effectful`).
 
-Every node, built in or registered, declares these as part of its
+Data-producing nodes declare these properties. Value producers instead declare their value kind,
+scope and completion rules. See the
 [node contract](extension-points.md#the-node-contract).
 
 A relation exposes the schema, distribution and set through `schema()`, `distribution()` and
@@ -78,8 +74,7 @@ kind and data inputs through `kind()` and `children()` ([Node view](api-at-a-gla
 
 ### Ids
 
-`Plan::create` assigns ids in post-order: children before parents, left before right. The same
-builder code always yields the same ids, so plan fingerprints are stable.
+`Plan::create` assigns ids in post-order: children before parents, left before right. Identical canonical graphs yield identical ids within the same IR version.
 
 | Thing | Ids | Rule |
 |---|---|---|
@@ -111,7 +106,10 @@ derives it for every node and checks it wherever a node depends on where its row
 | `decided(d, [..])` | One of several distributions, chosen at run time by the Decision `d`. |
 
 **Meet.** Downstream checks treat `decided(d, [..])` as the **meet** of its alternatives: the
-weakest guarantee they all share. The meet of `replicated` and `hashed` is `arbitrary`.
+weakest guarantee they all share. A choice between `replicated` and `hashed` loses the common placement guarantee. It may
+still produce several copies of each row. Treating it as ordinary partitioned input can multiply
+the result of a subsequent gather or aggregate. The rule for consuming such a choice is unresolved.
+[open question 27](open-questions.md#27-requirements-as-data-and-equivalence-properties).
 
 **Size-1 sets.** On a set of size 1, `arbitrary(W)` and `single(W)` coincide, and checks treat any
 non-replicated distribution on it as `single(W)`. So single-phase aggregates and `mode=single`
@@ -277,7 +275,7 @@ The split-form halves of a [`ValueExchange`](#valueexchange).
 - **Semantics:** keeps the rows whose predicate is true and drops those where it is false or null
   ([Nulls and NaN](../part-1/04-schemas-and-expressions.md#nulls-and-nan)). The output schema is
   the input schema.
-- **Distribution:** preserves distribution and ordering.
+- **Distribution:** preserves ordering and placement. A volatile predicate on replicas can accept different rows on different workers. Downstream multiplicity is unresolved ([open question 27](open-questions.md#27-requirements-as-data-and-equivalence-properties)).
 
 ### Project
 
@@ -326,11 +324,10 @@ Grouped or ungrouped aggregation in one of four phases.
 - **Distribution:** grouped single and final need `single`, or `hashed` on a subset of the keys
   (V6). For a single-phase aggregate with grouping sets, only keys that are in every set count, so
   with a `()` set it needs `single`; for a final, the grouping id counts as a key. Ungrouped
-  single and final need `single`. Single and final preserve their input's distribution. Partial
-  and combine accept anything and preserve the distribution, except that a partial with grouping
-  sets keeps `hashed` or `ranged` only on keys that are in every set and is `arbitrary(W)`
-  otherwise: a subtotal row has a null where its input row had the key. Partial and single never
-  take `replicated` on \|W\| > 1 (V7).
+  single and final need `single`. A hash or range property survives only when the output retains
+  the distribution keys with the same values. For a partial with grouping sets, those keys must occur in every set.
+  A partial grouping by `a` on input hashed by `b` drops `b` and yields `arbitrary(W)`.
+  Partial and single reject multi-worker replicated input (V7).
 - **Prints as:** `Aggregate partial keys=[l_returnflag] measures=[sum_qty = sum(l_quantity)]`;
   the single phase prints as plain `Aggregate`, and an ungrouped aggregate omits `keys=`. Grouping
   sets print after the keys, `sets=[(l_returnflag, l_linestatus), (l_returnflag), ()]`.
@@ -369,7 +366,7 @@ Grouped or ungrouped aggregation in one of four phases.
   pads with nulls (the right side of `left`, the left side of `right`, both sides of `full`) are
   nullable in the output.
 - **Mark:** the `mark` column follows SQL's `IN`: true when some build row matches, null when
-  none matches but some comparison is unknown, and false otherwise. With one key pair, a
+  none matches but some comparison is unknown, and false otherwise. For one plain key pair without a residual, a
   non-matching probe row is null when the whole build holds a null key. A probe row with a null
   key is null when the whole build has any rows, and false when the build is empty. Under
   `co_partitioned` a worker sees only its share of the build, so the join has extra requirements
@@ -377,9 +374,9 @@ Grouped or ungrouped aggregation in one of four phases.
   [Mark joins need the whole build](../part-2/03-exchanges.md#mark-joins-need-the-whole-build)).
   The build row count is a required value: the join holds back only its null-key probe rows until
   it arrives, and it adds an edge to the wait-for graph (V1). A null-safe comparison is never
-  unknown, so a mark join whose key pairs are all null-safe answers only true or false, and V10
+  unknown, so a mark join with only null-safe key pairs and no residual answers only true or false, and V10
   does not apply to it. A mark join that mixes plain and null-safe pairs uses a broadcast or
-  single build.
+  single build. The proof for an additional residual predicate is open. [Join coverage](open-questions.md#17-join-coverage)
 
 The derived mode is one of four (V8):
 
@@ -430,8 +427,8 @@ exchange".
   a local step, a hash exchange on the keys, and a final step.
 - **Ties:** which rows are kept among rows that tie on the whole order, within one key in the
   per-key form, is the engine's choice.
-- **Distribution:** preserves distribution, except that `replicated(W)` on \|W\| > 1 becomes
-  `arbitrary(W)`: the tie rule lets the copies differ. A global top-n holds only on `single`; a
+- **Distribution:** preserves placement. With multi-worker replicated input, tied rows kept on
+  each worker can differ, but simply gathering them still counts several copies ([open question 27](open-questions.md#27-requirements-as-data-and-equivalence-properties)). A global top-n holds only on `single`; a
   global top-n per key holds only on `single`, or on `hashed` on a subset of the keys (V14).
 - **Prints as:** `TopN 10 [revenue desc, o_orderdate asc]`; per key,
   `TopN 1 [o_orderdate desc, o_orderkey asc]  per=[o_custkey]`, or `TopN 1  per=[o_custkey]` with
@@ -505,7 +502,7 @@ A node has one of three forms:
 
 - **Inputs:** k x S. A bag union. Input types are identical, names come from input 0, a field is
   nullable if it is nullable in any input, and all inputs are on the same set.
-- **Distribution:** the common `hashed` if all signatures are equal; `replicated` if all inputs are
+- **Distribution:** the common `hashed` if all signatures match and all arms hash on the same output positions in the same order; `replicated` if all inputs are
   replicated; otherwise `arbitrary`. Mixing replicated and non-replicated inputs is rejected (V11).
 - **Set operations:** `Union` is the only set operation with a node of its own. The others are
   compositions: distinct `UNION`, `INTERSECT` and `EXCEPT` of `Union`, `Join` and `Aggregate`,
@@ -627,9 +624,12 @@ The plan fixes the carrier of each state; it is never chosen per batch.
 | `stddev_samp(T)` | `var_state` | struct{n int64, mean float64, m2 float64} | parallel-variance merge | sqrt(m2/(n-1)), null if n<2 |
 | `count_distinct(T)` | `distinct_state<T>` | list\<T\> as a set | set union | cardinality |
 
+- Floating-point sum, mean and variance can round differently when workers combine states in
+  a different order. The reproducibility guarantee is [open](open-questions.md#16-expression-semantics).
 - A sum's result type is its storage type. A sum over any integer type, signed or unsigned, returns
-  `decimal(38,0)`, which covers the range of DuckDB's `HUGEINT` sum, so summing int64 values does
-  not wrap. A sum outside `decimal(38,0)` fails the execution with `execution`.
+  `decimal(38,0)`. Its maximum is 10³⁸ − 1. DuckDB's signed 128-bit `HUGEINT` extends to
+  2¹²⁷ − 1, so some values in DuckDB’s result type exceed this decimal range. A sum outside the proposed result
+  type fails the execution with `execution`.
 - `min` and `max` compare with the order of
   [Nulls and NaN](../part-1/04-schemas-and-expressions.md#nulls-and-nan). Over a floating-point
   type, the `max` of a group that holds a NaN is NaN, and its `min` is NaN only when every
@@ -732,7 +732,9 @@ Every value has a `ValueScope`:
   counts encoded, compressed or device bytes, so two engines, or a spilled and a resident batch,
   report the same number.
 - **Semantics:** never blocks; publishes at its input's EOS. If its stage closes early, it
-  publishes what it saw, flagged `truncated`; a merged value is truncated if any share is.
+  publishes what it saw, flagged `truncated`. A merged value is truncated if any share is. A
+  truncated count of zero cannot prove that a mark join's build was empty. If that proof is
+  still required, the producer must finish counting or the execution must fail.
 - **Prints as:** `Observe bytes ~> s1`, or `Observe partition_bytes(o_custkey, 16) ~> s1`
 
 ### ComputeBoundaries
@@ -740,7 +742,8 @@ Every value has a `ValueScope`:
 - **In -> out:** `<~ Statistics` (a global key sample) -> `~> Boundaries`.
 - **Semantics:** pure and deterministic; produces \|T\|-1 splitters for a range exchange to T. It
   reads the pooled sample in sender order and weights each worker's sample by the number of rows
-  that worker saw. The value is digest-checked ([Protocol facts](#protocol-facts)).
+  that worker saw. The proposal does not specify what the required value carries if the whole
+  sample is empty and there is more than one destination. The value is digest-checked ([Protocol facts](#protocol-facts)).
 - **Prints as** a `values:` line: `b1 = ComputeBoundaries s2 -> compute[4]`
 
 ### Decide
@@ -748,8 +751,8 @@ Every value has a `ValueScope`:
 - **In -> out:** `<~ Statistics` (global) -> `~> Decision`.
 - **Semantics:** a pure policy. `threshold(metric, at_most)` yields `[label_at_most, label_above]`;
   `partition_count(target_bytes, min, max)` yields ceil(bytes / target) clamped to [min, max]. Its
-  input must be global on every set it controls (V15), so every worker computes the same label
-  with no coordinator. Policy inputs are integers or decimals only (`Metric::rows`,
+  input must be global wherever the policy runs (V15). Each dependent worker receives the same
+  label, whether it evaluates the policy itself or receives a delivered decision. Policy inputs are integers or decimals only (`Metric::rows`,
   `Metric::bytes` and integer targets), so floating-point rounding cannot make two workers
   disagree. Each decision is recorded in the `ExecutionReport`.
 - **Prints as** a `values:` line:
@@ -761,7 +764,7 @@ Every value has a `ValueScope`:
 - **Semantics:** a pure policy that maps each of the histogram's P partitions to a worker of the set
   it controls. `balanced` takes partitions largest first, ties by partition index, and gives each to
   the least-loaded worker so far, ties by worker index. Its inputs are integers, and its input must
-  be global on every set it controls (V15), so every worker computes the same map. The `Assignment`
+  be global wherever the policy runs (V15). Every consumer must receive the same map. The `Assignment`
   is a required value and is digest-checked ([Protocol facts](#protocol-facts)).
 - **Used by:** `Partitions::assigned_by(assignment)` on a hash exchange; both sides of a
   co-partitioned join use the same assignment (V20).
@@ -776,7 +779,7 @@ configuration.
 
 - **EOS.** Every sender sends end of stream to every receiver of every exchange, even after zero
   rows. End of stream carries its sequence number, so a receiver can tell a complete stream from one
-  with a gap. A receiver is complete after \|S\| distinct EOS messages. Duplicates are idempotent.
+  with a gap. A receiver is complete after EOS from every sender and delivery of each stream through its final sequence number. Duplicates are idempotent.
   The non-target workers of a gather have no `ExchangeSource` instance.
 - **Close.** A satisfied `Limit` over unsorted input closes its input. Across an exchange, close
   goes upstream to every sender. A sender drops further batches for that receiver, still sends
@@ -789,8 +792,8 @@ configuration.
   failed stage instance. Failure travels along the plan's edges in both directions, downstream to
   receivers and upstream to senders, so an open plan needs no participant list. The instance where
   the error happened ends `failed`; every instance stopped by the failure ends `cancelled`. The
-  first error wins: the origin's error, with its worker and plan location, is delivered to every
-  reader and to `wait()`. A failure that affects only a filter degrades that filter to `skipped`
+  origin is preserved in the diagnostic. If failures race, choosing one origin for all readers
+  and `wait()` would require an agreement rule. [Coordination and failure](open-questions.md#4-coordination-and-failure). A failure that affects only a filter degrades that filter to `skipped`
   ([Failure, cancellation and
   recovery](../part-5/07-failure-cancellation-and-recovery.md#fail-stop-along-the-edges)).
 - **Cancellation.** Cancellation is idempotent, and any participant can issue it. It travels along
@@ -808,7 +811,8 @@ configuration.
 - **Durability.** A `spooled` [exchange](#exchange) lets a host re-run one stage instance under a
   new attempt
   ([Durability](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled)).
-- **Agreement.** Every process checks its edges at `start`, before any stage produces a batch.
+- **Agreement.** Each process initiates peer agreement at `start`. An edge must agree before it carries rows.
+  Agreement on one edge of an open plan provides no readiness guarantee for unrelated fragments.
   Closed plans compare (ExecutionId, plan fingerprint, bindings digest); the bindings digest covers
   the binding epoch, which a retry that moves a worker increases. Open plans compare the edge
   signature of every exchange and value edge they share, durability included; a dynamic scan's
@@ -849,7 +853,7 @@ example error for each.
 
 | # | Invariant | Why |
 |---|---|---|
-| V1 | The wait-for graph is acyclic: the data and value edges, the ordered waits (a required value before rows, a join's build before its probe, every sender before a merge step), and the credit waits into streaming queues. | A value cannot wait on rows that wait on that value, and bounded buffers cannot block each other. |
+| V1 | The wait-for graph is acyclic: the data and value edges, the ordered waits (a required value before rows, a join's build before its probe, every sender before a merge step), and the credit waits into streaming queues. | Rules out cycles among the waits represented in the plan. Runtime scheduling, memory and spill progress are separate obligations. |
 | V2 | Every referenced set is declared. All nodes of a stage share one set. | Every node needs a place to run, and a stage instance runs on one worker. |
 | V3 | Output names are unique. Inputs are unique by name. Exchange and value ids are unique. | Readers, input bindings and wire messages address them by name or id. |
 | V4 | Expressions reference only their input scope. Operands of arithmetic and comparisons have the same type. Predicates are boolean. Both keys of a join pair have the same type, and `Union` inputs have identical types. No cast is inserted. | Nothing is converted implicitly, and keys of one type hash and compare alike on every worker. |
@@ -858,17 +862,17 @@ example error for each.
 | V7 | Partial and single never consume `replicated` on \|W\| > 1. | Each worker would count the same rows again. |
 | V8 | A join is co_partitioned, broadcast_build, single or decided. | Matching rows must meet on the same worker. |
 | V9 | No broadcast_build where the build side is preserved (right/full with build=right; left/full with build=left; right_semi/right_anti with build=right; left_semi/left_anti with build=left). | Every worker would emit the unmatched build rows, duplicating them. |
-| V10 | `mark` with a co-partitioned build and a plain key pair requires exactly one key pair, (a) `NullRouting::to_all` on the build exchange, which may differ from the probe's `hashed` in that one field, and (b) a global `rows` Statistics of the build input through `with_build_rows`, merged from an `Observe rows()` that sits directly below the build exchange with no `Filter` or `Limit` between them. The join reads only whether rows > 0. Decided joins are checked per label, and both exchanges use the same Decision. A broadcast or single mark join needs neither, and neither does a mark join whose key pairs are all null-safe. The build is the right input, as for every `mark` join. | A probe row's mark depends on the whole build, not one worker's share; each label must be a legal join. |
+| V10 | `mark` with a co-partitioned build and a plain key pair requires exactly one key pair, (a) `NullRouting::to_all` on the build exchange, which may differ from the probe's `hashed` in that one field, and (b) a global `rows` Statistics of the build input through `with_build_rows`, merged from an `Observe rows()` that sits directly below the build exchange with no `Filter` or `Limit` between them. For this key-only test the join needs to know whether any build row exists. A truncated zero cannot establish this. Decided joins are checked per label, and both exchanges use the same Decision. A broadcast or single mark join needs neither, and neither does a mark join whose key pairs are all null-safe. The build is the right input, as for every `mark` join. | A probe row's mark depends on the whole build, not one worker's share; each label must be a legal join. |
 | V11 | `Union` and `Output` reject a mix of `replicated` and non-replicated inputs. | Replicated rows would be counted once per worker. |
 | V27 | The input of a `Window` with keys is `single`, or `hashed` on a subset of the window keys. The input of a `Window` without keys is `single`. | Every row of a window group must be on one worker. |
 | V28 | A hash exchange with `NullRouting::to_all` is read only by a `mark` join, as its build input. | Rows with a null key are on every worker, so any other reader would see them once per worker. |
 | V12 | A value edge between different sets, or from a non-global scope to another worker, passes through a `ValueExchange`. | Everything that moves between workers is a node. |
 | V13 | Merged filter partials share kinds, geometry (`fixed`, or `sized_by` the same global statistic), hash, key domain and null rule. | Bloom OR and in-list union are only correct over identical layouts. |
-| V14 | Global TopN, a global Limit (over sorted input or not) and an ordered Output sit on `single`. A global per-key TopN sits on `single`, or on `hashed` on a subset of its keys. `gather merge` input is sorted on its keys. `range` uses a global Boundaries on the same keys. | Global order and global counts need one worker or agreed boundaries; a key's rows need one worker. |
-| V15 | A `Decide`, `ComputeBoundaries` or `AssignPartitions` input is global on every set it controls. | Every worker must compute the same result from the same value. |
+| V14 | A TopN or Limit over multiple workers gives a per-worker bound. A single worker proves a global bound, and hashing on a subset of the group keys proves a per-key bound. An offset requires `single`. `gather merge` input is sorted on its keys. `range` uses a global Boundaries on the same keys. | Checks the guarantees the constructed plan supplies. Omitting a global step can produce a valid plan for a different query. |
+| V15 | Inputs to `Decide`, `ComputeBoundaries` and `AssignPartitions` are global on the workers evaluating the policy. The resulting value reaches every worker it controls. | Computing the policy locally or delivering its result must produce one common value. |
 | V16 | A `partial` filter is never applied. | It would drop rows that match on another worker. |
 | V17 | A `partition(xK)` filter is applied only on the same set, to a relation `hashed` with xK's signature on the corresponding columns, on the same worker. | It is complete only for the rows that partition holds. |
-| V18 | A filter is applied only on the probe-side lineage of the join whose build feeds it. The lineage passes only key-preserving nodes (Filter, plain Project, and Exchange of any mode, including decided exchanges), and the join type discards non-matching probe rows. A filter with a key from a null-safe pair of that join has `NullKeys::pass`. | Pruning must remove only rows the join would discard anyway, and a null-safe pair can match a null key. |
+| V18 | In a closed plan a filter is applied only on the probe-side lineage of the join whose build feeds it. The lineage passes only key-preserving nodes (Filter, Project passing the filter keys through unchanged, and Exchange of any mode, including decided exchanges), and the join type discards non-matching probe rows. A filter with a key from a null-safe pair of that join has `NullKeys::pass`. | Pruning must remove only rows the join would discard anyway, and a null-safe pair can match a null key. |
 | V19 | `forward` has T = S. `gather` has \|T\| = 1. All alternatives of a decided exchange share T. | Forward moves nothing, a gather has one destination, and the stage graph must be the same under every label. |
 | V20 | Partitions decided by a Decision, or assigned by an Assignment, are used identically on both sides of a co-partitioned join. | Both sides need the same partition count, and the same partition-to-worker map, to stay co-partitioned. |
 | V26 | A `Choose` has one arm per label of its Decision, all with the same schema. Its handles are the Decision and one-sender deliveries of it, global together on every set that runs a node of any arm. The Decision's inputs come from outside every arm, and a value made inside an arm is consumed only inside it. | Every worker that might run an arm knows the label without asking, and an arm that is not chosen never publishes a value. |
@@ -883,6 +887,11 @@ each builder call resolves the function, state type, policy, hash scheme, scan k
 names in its [registry](extension-points.md#closed-and-open-lists); an unknown name fails with
 `invalid_plan` too.
 
+In an open fragment the join that justifies a runtime filter may lie outside the graph.
+A matching value-edge signature identifies the key and filter layout. It cannot prove that an
+unseen join discards nonmatches. The host and validator still need a contract for this proof.
+[Open-plan composition](open-questions.md#9-open-plan-composition)
+
 ### Checked by `Context::check`
 
 `prepare` runs these checks again for the bound devices. A plan that fails them fails with
@@ -890,7 +899,7 @@ names in its [registry](extension-points.md#closed-and-open-lists); an unknown n
 
 | # | Invariant | Why |
 |---|---|---|
-| V21 | Every node, type, function and value kind is supported by this engine build, including types that cross exchanges and key types the hash scheme defines. | A host learns about an `unsupported` plan before anything runs. |
+| V21 | Every node, type, function and value kind is supported by this engine build, including types that cross exchanges and key types the hash scheme defines. | The host can report an unsupported operator or type before running the plan. |
 | V22 | Registered scan kinds are implemented. | A host-registered source needs its reader in this process. |
 
 ### Checked by `prepare`
@@ -898,8 +907,13 @@ names in its [registry](extension-points.md#closed-and-open-lists); an unknown n
 | # | Invariant | Why |
 |---|---|---|
 | V23 | Every worker of every set touched by a hosted stage is bound exactly once to an existing endpoint; of an unsized hosting set, only the hosting worker. Every `Input` instance is bound. | Every logical worker needs exactly one place to run. |
-| V25 | Peers agree (see [Protocol facts](#protocol-facts)) at start. | Workers with different plans would route rows differently. |
 
 `prepare` also resolves relative scan paths. It opens no file unless `SourceCheck::at_prepare` asks
 for the early source check. That check is not a plan invariant: it compares files with the plan
 and fails with `source_mismatch` ([Scan](#scan)).
+
+### Checked at start
+
+| # | Invariant | Why |
+|---|---|---|
+| V25 | Peers agree (see [Protocol facts](#protocol-facts)) at start. | Workers with different plans would route rows differently. |

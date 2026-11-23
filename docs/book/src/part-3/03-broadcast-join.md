@@ -1,11 +1,8 @@
 # Broadcast join
 
-A join needs matching rows on the same worker. You can hash both sides on the join key, or, when
-one side is small, copy that side to every worker and leave the big side where it is. This chapter
-covers the second way.
-
-The broadcast is an `Exchange` node you put in the plan. The join derives its mode from its inputs
-and never picks its own distribution.
+Q3 joins customers to the 25 nations. Copying those 25 rows to each customer worker lets the
+large customer table stay where it was scanned. The replicated input tells the join it can
+build a complete nation lookup table on every worker.
 
 ## The question
 
@@ -132,8 +129,8 @@ A `broadcast_build` join keeps the *probe's* distribution: each customer row is 
 was read, so the output is `arbitrary(compute[4])`.
 
 Rows for one nation can come out of all four workers, so the aggregate above the join has two
-phases. Each worker emits at most 25 partial rows, so the plan gathers them to `head#0` and
-finishes there, plan B from [Aggregation](02-aggregation.md).
+phases. Each worker contributes to at most 25 groups, though it may emit several partial states for a
+group. The gather sends those states to `head#0` to finish. [Aggregation](02-aggregation.md)
 
 ## Stages
 
@@ -238,15 +235,15 @@ A replicated scan also produces `replicated(compute[4])`, so the mode is still `
 The plan has one exchange fewer (the remaining one is now `x1`) and one stage fewer.
 
 You trade network traffic for I/O: four reads of one small file instead of one read plus a
-fan-out. For a 25-row table on shared storage, the replicated scan is usually the better plan. A
+fan-out. Latency and caching on the shared storage determine which costs less. A
 table only one worker can read, or an input computed by other nodes, needs the broadcast exchange.
 
 ### Hash both sides
 
 You could hash both inputs on the nation key, the co-partitioned join of the
 [next chapter](04-partitioned-join-and-runtime-filters.md). That is legal here but a poor choice: it
-moves every BUILDING customer across the network to save copying 25 rows, and 25 distinct keys
-spread unevenly over four workers. Hashing pays off when *both* sides are large.
+repartitions all BUILDING customers to save copying 25 rows. Popular nations can also concentrate
+much of the work on one worker. Hashing pays off when *both* sides are large.
 
 When you cannot tell in advance, [Adaptive join](05-adaptive-join.md) decides between broadcast
 and hash from the measured size of the build side. That decision is a plan node too.
@@ -309,8 +306,7 @@ outer joins with a preserved broadcast build are
 
 ## On one machine with four GPUs
 
-Prepare the same plan with `Bindings::local()`. The plan text is unchanged. Only the transport
-under `x1` changes ([Two deployments](00-running-example.md#two-deployments)).
+Prepare the same plan with `Bindings::local()`. The plan text is unchanged. Both the broadcast and the gather now stay within one process ([Two deployments](00-running-example.md#two-deployments)).
 
 `head#0` and `compute#0` share GPU 0, so that copy stays on one device. The copies to
 `compute#1..3` move between GPUs in one process. On the cluster, the copies to `compute#2` and
@@ -323,14 +319,10 @@ The `Join` lowers to `HASH_JOIN`. Each worker builds a hash table from its own c
 rows. The engine's multi-GPU broadcast join works the same way today: the small build is
 replicated to one slot per GPU and each GPU joins its local probe rows.
 
-The *decision* moves out of the operator. Today the hash join picks broadcast or hash from
-measured inputs while the query runs
+The *decision* moves out of the operator. In one process the hash join considers measured build size,
+cardinality estimates and memory budgets when it chooses its layout
 ([Adaptivity in the engine](../part-5/04-adaptivity-in-the-engine.md)). In the plan it is the
 exchange you wrote, or a `Decide` node ([Adaptive join](05-adaptive-join.md)).
 
 The local join algorithm stays with the engine. A worker may keep one resident hash table, or
 split its build into local sub-partitions to fit in memory.
-
-Part V has the details: [From plan to pipelines](../part-5/01-from-plan-to-pipelines.md) for
-blocking inputs and [Exchanges in the engine](../part-5/02-exchanges-in-the-engine.md) for how
-`x1` fans out.

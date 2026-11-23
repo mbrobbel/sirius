@@ -1,11 +1,8 @@
 # The running example
 
-Part III works through one query per chapter, from a plain scan to a five-stage plan with a
-runtime filter that crosses hosts. Every chapter uses the tables, files, worker sets and machines
-set up here.
-
-Each walkthrough answers the questions of a distributed execution: who reads what, where rows go,
-what workers tell each other. Each answer is a node or an edge you can print.
+The examples use four tables from TPC-H. Each plan has four workers for the main computation
+and one for results. The same logical workers can run on one four-GPU machine or on two
+two-GPU machines. The query numbers belong to this book.
 
 ## The tables
 
@@ -86,8 +83,7 @@ fn lineitem_schema() -> Result<Schema, PlanError> {
 
 ## Table sources
 
-A multi-file table lists its files in a fixed order. `parquet_table` is a book helper, not part
-of Sirius.
+The examples use a helper, `parquet_table`, to list files in a fixed order.
 
 ```cpp
 // Book helper: data/<name>/part-000.parquet, part-001.parquet, ... in this order.
@@ -159,8 +155,7 @@ fn running_example() -> Result<Example, PlanError> {
 }
 ```
 
-This code needs no context, GPU or network: worker sets and table sources are plain immutable
-values. Every plan in Part III builds and prints on a laptop.
+In the proposed API, building and printing these plans needs only the file lists and schemas.
 
 ## Two worker sets
 
@@ -177,7 +172,7 @@ to. A worker set names no machine. The bindings decide at `prepare` which GPU ea
 
 ## Two deployments
 
-Every query in Part III runs unchanged on two deployments.
+The walkthroughs use two example deployments.
 
 **The cluster** is two hosts with two GPUs each. `compute#0` and `compute#1` run on host A,
 `compute#2` and `compute#3` on host B. `head#0` shares host A's GPU 0 with `compute#0`.
@@ -243,17 +238,14 @@ fn cluster(ex: &Example, id: ExecutionId,
 
 The bindings say where each worker runs, never what the plan does (rule 4,
 [Bindings: where, never what](../part-2/04-stages-and-bindings.md#bindings-where-never-what)). So
-each walkthrough shows one plan text for both deployments, with the same fingerprint and the same
-rows at every receiving worker. Only the route of the bytes changes: network transfers between
-hosts become copies between GPUs in one process.
+both deployments use the same plan and fingerprint. A hash exchange preserves the same key-to-worker
+assignment. Arrival order, filter timing and the rows selected by an unordered limit can vary.
 
-To run a plan, each walkthrough creates a `Context`
-([The context](../part-1/03-context-and-session.md)), calls `context.prepare(plan, bindings)`,
+To run a plan, the host would create a `Context`
+([The context](../part-1/03-context-and-session.md)), call `context.prepare(plan, bindings)`,
 then `collect()` or `start()` ([Prepare and execute](../part-1/06-prepare-and-execute.md)).
 
 ## The queries
-
-Each query has a number and a short title. Each chapter introduces one main idea.
 
 | Query | The question, in short | What it teaches | Chapter |
 |---|---|---|---|

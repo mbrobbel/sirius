@@ -377,8 +377,7 @@ conversion as a column of its own. With more workers, cast before the rows are s
 that key: the cast column is a new column, and rows hashed on the old one are not hashed on it.
 
 Identical key types also let workers agree: every worker must hash equal keys to the same bits,
-or equal keys land on different workers. With one type on both sides, the hash depends on the
-type alone.
+or equal keys land on different workers. Using the same key types and hash scheme on both sides gives equal keys the same hash.
 [Hash canonicalization in v1](../reference/extension-points.md#hash-canonicalization-in-v1) says
 how each type hashes.
 
@@ -416,7 +415,7 @@ How `and`, `or`, arithmetic and function calls treat nulls is part of
 
 ## Keys are names, values are expressions
 
-Everything built in this chapter is a *value*, a scoped expression. *Keys* are different: group
+A computed value is an expression. Columns give it a scope, while a literal can be used in any scope. *Keys* are different: group
 keys, window keys, join keys, hash keys, runtime-filter keys and sort keys are plain column
 **names** of the input. To group or join on something computed, project it first and use its
 name. [Conventions](../conventions.md#keys-are-names-values-are-expressions) explains why.

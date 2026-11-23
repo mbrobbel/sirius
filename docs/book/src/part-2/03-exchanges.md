@@ -100,18 +100,18 @@ scale-preserving 128-bit form. A row goes to partition `h_v1(canon(keys)) mod P`
 goes to worker `p mod |T|`.
 
 - **`Partitions`** sets P. `one_per_worker()` makes P equal to \|T\|. `fixed(count)` sets it
-  directly: with `fixed(64)` on `compute[4]`, worker `compute#2` receives partitions 2, 6, 10 and
+  directly. With `fixed(64)` on `compute[4]`, worker `compute#2` receives partitions 2, 6, 10 and
   so on, 16 of the 64. `decided_by(decision)` lets a runtime `Decision` choose P
   ([Adaptive plans](06-adaptive-plans.md)). `assigned_by(assignment)` takes P from an observed
   histogram and replaces `p mod |T|` with a partition-to-worker map computed at run time, which
-  balances skewed partitions
+  can balance the total weight of partitions assigned to each worker
   ([Skew](../part-5/08-running-at-scale.md#skew-more-partitions-than-workers)). Non-default
   partitions print as `partitions=64`, `partitions=<~d2` or `partitions=16 assign=<~a1`.
 - **`HashScheme`** fixes the hash function, its seed and the key canonicalization.
   `HashScheme::v1()` is the only scheme the proposed API defines. It is Sirius-defined, so every
   worker in a hash exchange must be a Sirius worker.
 - **`NullRouting`** says where rows with a null key go. The default, `hashed`, treats null as a
-  value like any other. `to_all` sends null-key rows to every worker. A co-partitioned mark join
+  value like any other. `to_all` sends null-key rows to every worker. A co-partitioned mark join with an ordinary equality key
   requires it on its build exchange (V10,
   [Mark joins need the whole build](#mark-joins-need-the-whole-build)). Any other node would see
   those rows once per worker, so nothing else may read a `to_all` exchange (V28).
@@ -214,7 +214,7 @@ pair, the other two answers depend on the whole build:
   worker.
 - A probe row with a null key gets null when the build has any rows, and false when it is empty.
   A worker whose own share is empty cannot tell, so the join needs the global row count of its
-  build input.
+  build input. A truncated row count of zero cannot establish that the build is empty.
 
 With several key pairs, these two rules do not hold. A probe row (3, 4) against a build row
 (1, NULL) is false, because 3 differs from 1. A probe row (1, NULL) against a build row (1, 5) is
@@ -222,11 +222,15 @@ null, but the two rows hash to different workers. A co-partitioned mark join wit
 exactly one key pair (V10). With several pairs including ordinary equality, use a broadcast or
 single build. A partitioned form for this case is [open question 17](../reference/open-questions.md#17-join-coverage).
 
-Both rules exist because a comparison with a null is null
-([Nulls and NaN](../part-1/04-schemas-and-expressions.md#nulls-and-nan)). A null-safe comparison is
-never null, so a mark join whose pairs are all null-safe answers only true or false. It takes any
-number of pairs, needs neither `to_all` nor the row count, and is co-partitioned like any other
-join. A mark join that mixes plain and null-safe pairs uses a broadcast or single build.
+This argument assumes the join predicate consists of its key comparisons alone. With an extra
+predicate that is false for every build row, even a null probe can get false on a nonempty
+build. Rules for residual predicates on mark joins remain open.
+[Join coverage](../reference/open-questions.md#17-join-coverage)
+
+Both rules exist because an ordinary equality comparison with a null yields null
+([Nulls and NaN](../part-1/04-schemas-and-expressions.md#nulls-and-nan)). A key-only mark
+join whose pairs are all null-safe always answers true or false. It can hash on any number of
+such pairs without a global count or special null routing. A mark join that mixes plain and null-safe pairs uses a broadcast or single build.
 
 The build row count is a global `Statistics` value
 ([Runtime filters](05-runtime-filters.md#data-edges-and-value-edges)) passed with
@@ -265,7 +269,7 @@ Join mark keys=[c_custkey == o_custkey] build=right  build_rows<~s2  mode=co_par
 ```
 
 The `Observe` sits directly below the build exchange, with nothing between them that can drop
-rows, so the count is zero exactly when the build is empty. The join reads only whether the count
+rows. If the observation ran to completion, its count is zero exactly when the build is empty. The join reads only whether the count
 is above zero, and holds back only its null-key probe rows until `s2` arrives.
 
 A broadcast or single mark join sees the whole build on every worker, so it needs neither `to_all`
@@ -398,6 +402,10 @@ saw. The exchange line shows the source of the boundaries as `<~ b1`.
 [Sort, top-N and limit](../part-3/06-sort-top-n-and-limit.md) builds the whole range, sort and
 gather chain.
 
+Repeated splitters leave some intervals empty. If every worker has zero rows, there are no
+sampled keys from which to make splitters. No row needs routing, but the proposed
+`ComputeBoundaries` still owes a terminal value. Its empty-input representation is unspecified.
+
 ### Round robin
 
 A **round_robin** exchange deals rows or batches to successive workers of T. Unequal batch sizes can give workers different row counts. The
@@ -445,8 +453,8 @@ the same whichever alternative wins
 ### Decided
 
 `Exchange::decided_by(decision, alternatives)` holds several labeled modes, all with the same
-target (V19), and a `Decision` value computed at run time picks one. Every worker computes the same
-label from the same merged statistics, so they all switch together. It prints like this:
+target (V19). Each worker uses the same decision label. Workers can compute it from the same
+merged statistics, or receive it from a designated worker. It prints like this:
 
 ```text
 Exchange x2 <~ d1 {broadcast: broadcast, partitioned: hash(o_orderkey)} -> compute[4]
@@ -464,16 +472,16 @@ Every exchange follows one protocol, and none of it is configurable.
 - **Completion.** A receiver's input is complete after \|S\| distinct EOS messages, one from each
   sender. A duplicate EOS is harmless. Workers that a gather does not target have no receiving
   side.
-- **Close.** A satisfied `Limit` closes its input. Across an exchange, close goes upstream to every
-  sender. A sender then drops further batches for that receiver and still sends EOS. Its stage
-  stops early once every receiver has closed, and ends `closed`, which is not a failure
+- **Close.** A streaming `Limit` that has enough rows closes its input. Across an exchange, close goes upstream to every
+  sender. A sender then drops further batches for that receiver and still sends EOS. If that stream was the stage's last live consumer, the stage can stop early with outcome `closed`
   ([Close is not end of stream](../part-5/07-failure-cancellation-and-recovery.md#close-is-not-end-of-stream)).
-- **Failure.** Any failure on any worker fails the whole execution. It travels along the plan's
-  edges in both directions, and the origin's error, with its worker and plan location, reaches
-  every reader and `wait()`
+- **Failure.** In the default fail-stop mode, an unrecovered stage failure propagates over the
+  plan's edges. Readers may already have observed end of stream. The host checks `wait()` to
+  learn the execution outcome
   ([Fail-stop, along the edges](../part-5/07-failure-cancellation-and-recovery.md#fail-stop-along-the-edges)).
-- **No backpressure in the plan.** The plan never tells a sender to wait. The engine paces senders
-  and spills what a slow receiver cannot take yet. V1 checks that those waits cannot deadlock
+- **Flow control.** The engine paces senders and can spill data a slow receiver cannot take yet.
+  V1 checks for cycles among modeled waits. Runtime progress still depends on draining queues
+  and scheduling work
   ([Credits and deadlock freedom](../part-5/08-running-at-scale.md#credits-and-deadlock-freedom),
   [open question 5](../reference/open-questions.md#5-backpressure)).
 
@@ -636,16 +644,13 @@ Output "result" on head[1]
          └─ Aggregate partial keys=[l_returnflag, l_linestatus] ...
 ```
 
-With about four groups, this plan moves a few state rows per worker and has one stage fewer. With
-many groups the hash plan wins, because it spreads the final work over four workers. You choose
-between them in the plan; the engine never picks one.
-[Plan B](../part-3/02-aggregation.md#plan-b-finish-on-the-head-worker) compares them.
+Gathering the partials removes one stage. It suits Q2's few groups. If the number of groups
+grows, a hash exchange can spread the final work across four workers. [Plan B](../part-3/02-aggregation.md#plan-b-finish-on-the-head-worker)
 
 ### Same plan, any machine
 
-Bind this plan to four GPUs of one machine with `Bindings::local()`, or to two hosts with two GPUs
-each: the plan text does not change. Each worker gets the same rows; only the transports that
-carry x1 differ
+Both deployments assign the same groups to each worker. With `Bindings::local()`, x1 moves
+states between GPUs of one host. With workers on two hosts, some states cross the network
 ([Same plan, different machines](04-stages-and-bindings.md#same-plan-different-machines)).
 
 Merging the partial states of two workers on one host before they cross x1 is a plan rewrite with

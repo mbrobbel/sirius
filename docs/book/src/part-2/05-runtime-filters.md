@@ -145,8 +145,7 @@ flowchart LR
 
 ## Scope: which rows does a filter know about?
 
-A filter is safe to apply only where it knows *every* key that could match, and a filter built on
-one worker knows only the keys that passed through that worker. Every filter therefore carries a
+A filter may rule out a probe key only if it covers every build row that could match that key. Every filter therefore carries a
 **scope**: the slice of the key space it covers. The builder derives the scope from the
 distribution of the relation you build on. You never set it.
 
@@ -239,14 +238,13 @@ invalid_plan: V17: runtime filter f1 has scope partition(x2), so it can only be 
 Scope (V16, V17) says whether the filter knows all the relevant keys. V18 says whether dropping a
 non-matching row is harmless. A filter is applied only on the probe-side lineage of the join whose
 build feeds it. On the way from the apply to the join, the rows may pass only key-preserving nodes
-(`Filter`, a plain `Project`, or an `Exchange` of any mode, including a decided one), and the join
+(`Filter`, a `Project` that passes the filtered keys through unchanged, or an `Exchange` of any mode), and the join
 type must discard non-matching probe rows. A filter with a key from a null-safe pair of that join
 has `NullKeys::pass`.
 
-An inner join discards probe rows without a match, so removing them early changes nothing. A left
-join probing its left input keeps them, padded with nulls, so a filter on its probe side would delete result rows. A
-`Project` that recomputes the key column would make the filtered value differ from the one the join
-compares. [Validation](07-validation.md) lists the error for each.
+An inner join discards unmatched probe rows. A left outer join that probes its left input keeps
+those rows, padded with nulls. Applying the same filter would delete them. Likewise, pushing a
+filter below a `Limit` can change which rows survive the limit. [Upstream example](https://github.com/sirius-db/sirius/issues/1123)
 
 A filter never stores a null key. By default an apply drops every row with a null in a filter key,
 because under a plain key pair such a row matches nothing. Under a
@@ -313,7 +311,9 @@ is [open question 7](../reference/open-questions.md#7-bloom-geometry-and-kinds).
 Kinds follow the same rule. For a filter merged across workers, the plan fixes the kind chain, so
 all workers agree before they build. `in_list(1 << 16).or_else(min_max())` degrades
 deterministically: the merged filter uses min-max if a local list or their union exceeds the cap.
-The fallback must cover all keys already seen, including those a different worker stored in its list. For a filter that never leaves one worker (`global` from a replicated input, or
+The fallback must cover all keys already seen, including those a different worker stored in its list.
+
+For a filter that never leaves one worker (`global` from a replicated input, or
 `partition`-scoped), the engine may choose among the kinds the spec allows, per worker.
 
 ## Waiting, or not
@@ -350,8 +350,8 @@ Each worker that produces a value finishes exactly once, in one of four states. 
   input ([Close is not end of
   stream](../part-5/07-failure-cancellation-and-recovery.md#close-is-not-end-of-stream)). The
   filter behaves as absent.
-- **failed**: the build went wrong. A filter failure degrades to `skipped` and never fails the
-  query.
+- **failed**: the build went wrong. If only the optional filter fails, the engine skips it. A failure to read rows required
+  by the join still fails the query.
 - **cancelled**: the execution was cancelled.
 
 An empty build has no matching key. An empty filter can reject every non-null probe key.
@@ -409,16 +409,12 @@ known before any key is inserted. The proposal moves that agreement into the pla
 A top-N also publishes the current bound of its leading sort key into a filter object the host
 supplies, and tightens it as better rows arrive. It publishes only once it holds limit plus offset
 rows, only for a sort that puts nulls last, and never a null bound. With several sort keys the
-bound is inclusive, so rows that tie on the leading key stay in.  The
+bound is inclusive, so rows that tie on the leading key stay in. The
 bound is a refinable value, which the Plan IR lists as
 [additive later](../reference/extension-points.md#additive-later).
 
-The edge is implicit today. A planner pass finds the scans a join's filter can reach and connects
-them through a shared object outside the operator tree, so the tree does not show the edge. The
-filter kind is chosen at run time from the build size and the GPU's cache size. In distributed mode the existing publisher can all-gather compatible Bloom
-filters across ranks and OR the shares. If a rank cannot supply a usable share, the key's filter
+A local planner pass connects the join to eligible probe scans through a shared filter object.
+In distributed mode, the publisher can all-gather compatible Bloom filters across ranks and OR
+the shares. If a rank cannot supply a usable share, the key's filter
 is skipped. The proposed `ValueExchange` makes this dependency visible in the plan.
 [Upstream cross-rank filter protocol](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#dynamic-filters-across-ranks)
-[Runtime values in the engine](../part-5/03-runtime-values-in-the-engine.md) maps each piece to
-the proposal, and [Related designs](../appendix/related-designs.md#dynamic-filters) compares
-Apache DataFusion's dynamic filters.

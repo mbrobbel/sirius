@@ -30,7 +30,7 @@ them.
 
 ## Start from defaults
 
-The smallest configuration is the default one:
+Build a snapshot of the defaults directly.
 
 ```cpp
 #include <sirius/context/config_builder.hpp>
@@ -49,9 +49,9 @@ fn default_config() -> Result<ContextConfig, ConfigError> {
 }
 ```
 
-The defaults suit a single machine. They use every GPU the process can see (honoring
-`CUDA_VISIBLE_DEVICES`) and size the GPU and pinned host memory tiers as a *fraction* of what the
-hardware offers; the GPU tier defaults to 95% of each device's memory. Spilling to disk stays off
+By default the engine selects every visible GPU, honoring `CUDA_VISIBLE_DEVICES`. The default
+capacity budgets are 95% of each device’s memory and 90% of each backing NUMA node’s RAM for
+pinned host memory. Spilling to disk stays off
 until you name a directory for it.
 
 `build()` never looks at the hardware. It keeps fractions as fractions and leaves GPU selection
@@ -103,7 +103,7 @@ of times.
 
 ## Handle configuration errors
 
-Loading can fail in three ways:
+These three codes distinguish file and configuration errors.
 
 | Code | Rust variant | Meaning |
 |---|---|---|
@@ -212,17 +212,13 @@ The YAML `topology` section selects the GPUs available to this process. A distri
   endpoint, a specific GPU in a specific process, at prepare time; see
   [Bindings](../part-2/04-stages-and-bindings.md#bindings-where-never-what).
 
-**Configuration never changes what a plan means.** Settings tune *how* the engine works: memory
-limits, thread counts, batch sizes. Under
-[the ownership rule](../part-2/01-everything-in-the-plan.md#the-ownership-rule), they may shape
-how the engine carries rows between workers, never which rows arrive. Two processes with
-different memory limits can run the same plan together and still agree on every row they
-exchange.
+Memory limits, thread counts and batch sizes tune how the engine executes a plan. Processes with
+different memory budgets can participate in the same exchange because the plan supplies the
+partitioning and schema.
 
 Today a few operator parameters still steer choices that the plan will own, such as the build
 size below which a join broadcasts its build side instead of hash-partitioning it, or whether the
 engine creates runtime filters on join edges.
 
-**Transport is configuration; peers are not.** `with_transport` says *how* this process can
-talk to others, for example the address it listens on. *Who* it talks to, and about which
-exchange, comes from the plan and the bindings.
+The proposed `with_transport` configures the local transport, including its listening address.
+The peer for each exchange comes from the plan and its bindings.

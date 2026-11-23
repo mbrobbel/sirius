@@ -382,9 +382,9 @@ ran once. The engine may run the shared part once and feed both branches, or rec
 for this subtree both give the same rows.
 
 Recomputing does not give the same rows for every subtree. `Plan::create` rejects a shared node
-whose subtree contains an `Input` (a channel is read once), a `volatile` node such as one that
-calls `random()`, or an `effectful` node. Sharing those needs an explicit "evaluate once and fan
-out" node, which is
+whose subtree has concurrent consumers and contains an `Input` (a channel is read once), a `volatile` node such as one that
+calls `random()`, or an `effectful` node. Consumers in mutually exclusive arms of one `Choose` are the exception. Supporting
+simultaneous readers would require explicit fan-out, discussed in
 [open question 10](../reference/open-questions.md#10-shared-subplans-and-multicast). The rule is in
 [Shared subplans](../reference/extension-points.md#shared-subplans).
 

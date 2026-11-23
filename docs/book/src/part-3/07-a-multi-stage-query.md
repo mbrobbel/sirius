@@ -1,17 +1,19 @@
 # A multi-stage query
 
-This chapter combines the earlier walkthroughs in one query and follows the plan through each form,
-from the joined plan to the report after the run.
+The shipping-priority query joins three tables. Customers are broadcast to orders workers, then
+orders and line items are partitioned by order key. A runtime filter can remove work at each
+join. The final gather carries at most forty candidates for the top ten.
 
 ## The question
 
 **Q7 (shipping priority).** Take customers in the BUILDING market segment, their orders placed
 before 1995-03-15, and those orders' line items shipped after 1995-03-15. For each (order key,
 order date, ship priority), compute the revenue `sum(l_extendedprice * (1 - l_discount))`. Return
-the 10 groups with the highest revenue, ties broken by earlier order date.
+the 10 groups with the highest revenue, ties broken by earlier order date. Groups tied on
+both fields at the cutoff can trade places across executions.
 
-`customer` is small (16 files), `orders` medium (64) and `lineitem` large (256), so the plan treats
-each join differently.
+This example assumes the filtered customer keys fit comfortably on each GPU. The file counts
+alone do not establish that.
 
 ## The single-worker plan
 
@@ -238,28 +240,15 @@ Output "result" on head[1]
                                        └─ Scan customer [c_custkey, c_mktsegment]  on compute[4]  shards=files_round_robin
 ```
 
-Six details of this tree:
+The two filters have different scopes. Every worker has a complete copy of the BUILDING customer
+keys, so it can apply `f1` locally. Before the orders shuffle (`x3`), each worker knows only
+the matching orders in its own files. The four shares of `f2` must be merged into `f3` before
+any lineitem worker can safely discard a row. If `f3` takes more than 20 ms, that worker can
+start sending unfiltered rows. [Filter scopes](../part-2/05-runtime-filters.md#scope-which-rows-does-a-filter-know-about)
 
-1. **`f1` is global without a `ValueExchange`.** Its input comes out of a broadcast, so it is
-   `replicated(compute[4])`: every worker builds the filter from *all* BUILDING customers. The
-   filter applies on the same worker with no merge, so `f1` is not in `values:`.
-2. **`f2` is `partial` and must be merged.** It is built *before* `x3`, on orders that are still
-   `arbitrary`, so each worker's filter knows only the early BUILDING orders in its own files.
-   `merge_to(compute)` ORs the four partials into `f3`
-   ([Merging to global](../part-2/05-runtime-filters.md#merging-to-global)).
-   [Alternatives and trade-offs](#alternatives-and-trade-offs) covers building it after `x3`.
-3. **`x1` and `x3` are co-partitioned (V8).** They share `HashScheme::v1`, the key type (`int64`),
-   one partition per worker and the target `compute[4]`, so the join prints
-   `mode=co_partitioned(x1, x3)`.
-4. **The single-phase `Aggregate` is legal (V6).** The join output is `hashed` on `l_orderkey`,
-   a group key, so no exchange is needed between join and aggregate.
-5. **There are two `TopN` nodes (V14).** The local one keeps at most 10 groups per worker, so `x4`
-   carries at most 40 rows. The one on `head[1]` sits on `single`, where a global top-N is legal.
-6. **`f3` races the lineitem scan.** `f3` exists only after every worker has scanned its orders,
-   joined them with the customers and published its `f2` share. The lineitem scan is running by
-   then. `wait=up_to(20ms)` lets `RuntimeFilterApply` hold its first batches for up to 20 ms.
-   After that they pass unfiltered, and pruning starts when `f3` arrives
-   ([Waiting, or not](../part-2/05-runtime-filters.md#waiting-or-not)).
+The two hash exchanges use the same order-key type, hash scheme, partition count and worker
+set. Each worker can therefore finish the join and aggregate its groups without moving the
+rows again. The local top tens send at most 40 candidates to `head#0`, which chooses the final ten.
 
 ## Stages
 
@@ -420,10 +409,10 @@ The engine picks the transport from the bindings; the plan never names one. `x4`
 to `head#0` stays on one GPU, `x1` from `compute#0` to `compute#1` crosses GPUs in one process,
 and `x1` from `compute#0` to `compute#2` crosses the network.
 
-Only host A hosts `head#0`, so only host A gets a reader for the result ([Readers go where the
+Only host A hosts `head#0`, so that process gets the result reader ([Readers go where the
 Output lives](../part-2/04-stages-and-bindings.md#readers-go-where-the-output-lives)).
 [Sirius on its own: Distributed Sirius](../part-4/03-distributed-sirius.md) covers how the
-processes check that they agree before any row moves, and how each one starts, reads and finishes.
+processes check agreement on each edge before using it.
 
 ## Bound to one machine
 
@@ -489,23 +478,11 @@ process's report covers the stage instances it hosted, and `ExecutionReport::com
 
 ## What the engine does
 
-On one machine, today's engine runs a query of this shape with the same building blocks, chosen
-implicitly: `CONCAT` over `PARTITION` wrappers on the children of both joins and runtime filters
-found while planning, as in [Q4](04-partitioned-join-and-runtime-filters.md#what-the-engine-does),
-and `TOP_N` then `MERGE_TOP_N`, as in [Q6a](06-sort-top-n-and-limit.md#what-the-engine-does). Each
-join decides at run time, from measured bytes, whether to broadcast
-([Q5](05-adaptive-join.md#what-the-engine-does)). The customer build is small, so the engine would
-most likely broadcast it. In the plan, `x2` says so up front.
+Upstream's single-process planner wraps eligible joins in `CONCAT` and `PARTITION`. The join
+can select broadcast from the measured build size, the estimated probe-to-build ratio and local
+memory budgets. Q7 fixes the customer broadcast at `x2`. [Broadcast selection](05-adaptive-join.md#what-the-engine-does)
 
-Filter consumers never wait today. `wait=up_to(20ms)` is new, and the engine needs a timer in its
-task creator to honor the deadline.
-
-Across machines, the multi-process prototype starts from the same single-machine plan. It infers
-its exchanges from the shapes of those wrappers and merges Bloom filters across processes with a
-collective hidden inside the filter publisher. With the proposed API you write the exchanges and
-the merge, and the engine checks them.
-
-[From plan to pipelines](../part-5/01-from-plan-to-pipelines.md) gives the rules that turn each
-stage into pipelines,
-[Exchanges in the engine](../part-5/02-exchanges-in-the-engine.md) covers `x1` to `x4`, and
-[Runtime values in the engine](../part-5/03-runtime-values-in-the-engine.md) covers `f1` to `f3`.
+Across ranks, the distributed rewrite inserts exchanges and the join's filter publisher performs
+the Bloom merge. Q7 exposes those as separate edges. Having `f2` and `f3` in the plan also gives
+the report names for the four contributions and the filter delivered to each lineitem scan.
+[Upstream Bloom merge](04-partitioned-join-and-runtime-filters.md#what-the-engine-does)

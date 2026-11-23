@@ -1,10 +1,8 @@
 # Sort, top-N and limit
 
-On one worker, ordering is one node. On four workers, a top-N, a full sort and a limit each need a
-different plan. The plan says where the global answer is assembled, which rows go to which worker,
-and how a scan learns that it can stop.
-
-The three queries, Q6a, Q6b and Q6c, read `orders`.
+Finding ten orders, sorting all orders and stopping after any hundred orders place different
+demands on the workers. A worker can discard rows outside its local top ten before a gather.
+A full sort must keep all the rows. An unordered limit can stop reading as soon as it has enough.
 
 ## The shared starting point
 
@@ -164,8 +162,7 @@ Every 1996 order comes back, so there is no small answer to gather. Two plans do
 ### Range partitioning with boundaries
 
 The first plan splits the key space into four ranges, sends each range to one worker, sorts there,
-and reads the workers back in order. Balanced ranges need a look at the data, which takes three
-runtime-value nodes:
+and reads the workers back in order. The plan estimates boundaries from a sample in three steps.
 
 1. `Observe key_sample(...)` takes up to 1024 sort keys per worker. At the end of its input it
    publishes them with the number of rows the worker saw (`s1`, `partial`).
@@ -238,10 +235,12 @@ flowchart LR
   S1 -.->|"s1 → s2 merge, then b1"| S1
 ```
 
-Boundaries are a *required* value: `x1` cannot route a row until `b1` exists, and `b1` needs every
-worker's sample, so the dotted edge loops back into S1. Each worker keeps scanning while it waits,
-and its filtered rows sit in `x1`'s spillable input queue. Every 1996 order is read before any
-moves. That is the cost of balanced ranges.
+The dotted edge loops back into S1. Each worker must finish sampling its qualifying orders
+before `x1` can route a single row. Until then, its rows sit in a spillable queue. Equal keys
+always go to the same interval, so even a representative sample can yield an uneven split.
+
+If no order qualifies anywhere, there are no sampled keys. The value protocol still needs to
+specify how that case finishes. [Range](../part-2/03-exchanges.md#range)
 
 This is `compute#2`'s instance of the sort stage:
 
@@ -278,9 +277,9 @@ receiving worker.
 |---|---|---|
 | Runtime values | key sample, merge, boundaries | none |
 | Rows crossing workers | most rows twice (`x1`, then `x2`) | each row once |
-| Waits | every row waits for `b1` | none |
+| Before the first ordered output | wait for global boundaries, repartition and sort | each local sort must produce a row or end of stream before the merge can choose the first row |
 | Work on `head` | concatenate in worker order | k-way merge of every row |
-| Skew risk | uneven ranges if the sample misleads | none |
+| Skew risk | repeated keys or an unrepresentative sample can overload one range | uneven file sizes or selectivity can overload one local sort |
 | Best when | the sorted result stays on `compute[4]`, or `head` would be the bottleneck | the result is gathered anyway |
 
 To keep the sorted data distributed, put the range variant's `Output` on `compute[4]` instead of
@@ -372,7 +371,9 @@ becomes an in-process range repartition, and `s1 -> s2` merges four samples in o
 
 ## What the engine does
 
-The engine already has most of the pieces, wired implicitly on one machine:
+Upstream uses these operator sequences within one process. Its distributed rewrite also gathers
+rank-local top-N candidates to rank 0 and derives range boundaries from samples gathered across
+ranks. [Upstream distributed rewrite](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#the-plan-rewrite)
 
 | Engine operators today | Plan nodes | What changes |
 |---|---|---|
@@ -388,9 +389,4 @@ engine-owned.
 Both limit operators work only inside one process. `UNORDERED_STREAMING_LIMIT` streams input known
 to carry no order, and `STREAMING_LIMIT` waits for the complete input of anything else. The `Limit`
 node has the same two contracts: it streams when its input carries no order and is a full barrier
-when its input is sorted, so only a sorted input pays for the wait.
-
-[From plan to pipelines](../part-5/01-from-plan-to-pipelines.md) shows how a local `TopN` and a
-`Sort` become pipeline sinks, and
-[Runtime values in the engine](../part-5/03-runtime-values-in-the-engine.md) covers the
-`Boundaries` value edge.
+when sorted batches can arrive out of sequence.

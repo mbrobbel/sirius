@@ -1,23 +1,27 @@
 # Failure, cancellation and recovery
 
-By default Sirius is **fail-stop**: any failure fails the whole execution, as in today's engine.
-
-Recovery is opt-in per exchange, through its **durability**. With it, a host can re-run one failed
-stage instance under a new attempt, on the same endpoint or a new one, and every receiver still
-gets exactly one complete copy of that instance's output.
+The distributed SQL engine generally aborts a failed query across ranks. When the transport loses a
+peer, subsequent distributed queries can fail until all ranks restart. The proposed API would also
+let a host retry an individual stage if its inputs remain available and the failed attempt has
+exposed no irreversible output. [Current failure
+handling](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#limits)
+· [Lost-peer recovery](https://github.com/sirius-db/sirius/issues/2373)
 
 ## How an execution ends
 
-Every stage instance ends exactly once, with one of four outcomes. An execution ends the same way.
+An attempt has one outcome. A stage instance that succeeds on retry has two entries in the report, one for each attempt.
 
 | Outcome | A stage instance | An execution | `wait()` returns |
 |---|---|---|---|
 | `succeeded` | Produced its full output, sent end of stream on every exchange it feeds, and ended every value edge it produces. | Every output was read to its end. | The report |
 | `closed` | Stopped early because every receiver of its output closed, or never ran because it belongs only to arms of a `Choose` that were not chosen. It still sent end of stream and ended every value edge it produces. | The host closed every output before its end, by dropping its `BatchReader`. | The report |
-| `failed` | Hit an error of its own. | Some instance failed and was not retried. | The first error: `execution`, `source_mismatch`, `transport`, `binding_mismatch` or `runtime_unavailable` |
+| `failed` | Hit an error of its own. | Some instance failed and was not retried. | The originating error, such as `execution`, `source_mismatch`, `transport`, `binding_mismatch` or `runtime_unavailable` |
 | `cancelled` | Stopped because the execution was cancelled, or because a failure elsewhere reached it. | `request_cancel()` was called, or the `Execution` was dropped. | A `cancelled` error |
 
-**Closed is not a failure.** In Q6c (any 100 orders), the final `Limit 100` on `head#0` closes `x1`
+The proposal defines the cases where all readers drain or all close early. The outcome for a mixture
+of drained and early-closed readers still needs a rule.
+
+In Q6c (any 100 orders), the final `Limit 100` on `head#0` closes `x1`
 as soon as it has its rows. An S1 instance that was still scanning ends `closed`; one whose local
 `Limit` had already produced its 100 rows ends `succeeded` (see
 [How the plan stops work](../part-3/06-sort-top-n-and-limit.md#how-the-plan-stops-work)). A stage
@@ -27,38 +31,10 @@ waits for the label, then ends `closed` without reading anything.
 Today's engine has the in-process half: an operator that has exhausted its limit lets its pipeline
 finish early (`is_limit_exhausted()` in `src/op/sirius_physical_operator.hpp`).
 
-A failure has one origin. That instance ends `failed`; every instance the failure reached ends
-`cancelled`. The error that every reader and `wait()` receives names the origin's worker and plan
-location.
-
-The report shows each instance's outcome, and each attempt if the instance was retried:
-
-```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-Result<std::size_t> count_closed(PreparedPlan prepared) {
-  SIRIUS_TRY(result, std::move(prepared).collect());       // failed or cancelled: an Error
-  std::size_t closed = 0;
-  for (const StageReport& stage : result.report.stages()) {
-    if (stage.outcome() == Outcome::closed) ++closed;       // stopped early, not a failure
-  }
-  return closed;
-}
-```
-
-```rust
-use sirius::prelude::*;
-use std::time::Duration;
-
-fn count_closed(prepared: PreparedPlan) -> Result<usize, ExecutionError> {
-    let result = prepared.collect()?;                         // failed or cancelled: an Err
-    let closed = result.report.stages().iter()
-        .filter(|stage| stage.outcome() == Outcome::Closed)   // stopped early, not a failure
-        .count();
-    Ok(closed)
-}
-```
+If a single instance fails, the error names its worker and plan location. Instances stopped
+by that failure end `cancelled`. If two ranks fail independently, each can observe a different
+error first. The proposal still needs to say what a combined report or a reader returns in
+that case. [Coordination and failure](../reference/open-questions.md#4-coordination-and-failure)
 
 ## Close is not end of stream
 
@@ -71,17 +47,17 @@ is complete only after one end of stream from every sender in its sender set (se
 [Exchanges](../part-2/03-exchanges.md#the-exchange-protocol)). A receiver that closed one input may
 still be waiting on others.
 
-A value's consumers may sit in a part of the plan that did not close. So a stage that stops early
-still ends every value edge it produces, according to its kind:
+Value consumers can outlive a stage's data consumers. A stage closing early must therefore
+settle each value it promised.
 
-| Value kind | What a closed producer does | Why that is safe |
-|---|---|---|
-| `Filter` (`RuntimeFilterBuild`) | Ends `skipped`. It never publishes a filter built from part of its input. | A partial filter could drop rows that match. Filters are optional, so a skipped share makes the merged filter absent and every row passes. |
-| `Statistics` (`Observe`) | Publishes what it saw, with a `truncated` flag. A merged value is truncated if any share is. | `Observe` never blocks and is required, so skipping it would fail the execution. The flag is recorded in the report, next to the value. |
-| `Boundaries`, `Decision`, `Assignment` | Always published, or the execution fails. | These are required. They are computed from a merged statistic, not from the closed stage's rows, so a close upstream never stops them; at worst their input is flagged `truncated`. |
+| Value | What happens on early close |
+|---|---|
+| Filter | An incomplete build ends `skipped`. Its missing keys could otherwise cause the probe to discard matches. A missing share disables the merged filter. |
+| Statistics | `Observe` publishes the prefix it saw, marked `truncated`. The merge retains that flag if any producer closed early. |
+| Boundaries, Decision, Assignment | A consumer that still needs one of these values must receive a valid result or fail. |
 
-The filter row is today's default: a producer right that is dropped without finishing ends `SKIPPED`
-(`sirius_dynamic_filter_set::producer` in `src/op/dynamic_filter/sirius_dynamic_filter.hpp`).
+A truncated count of zero cannot prove the build side of a mark join is empty. A consumer that
+needs that fact must see a complete count or fail. [Mark join requirements](../part-2/03-exchanges.md#mark-joins-need-the-whole-build)
 
 ## Fail-stop, along the edges
 
@@ -95,9 +71,9 @@ target, but has no list of every worker of the query (see
 - **Upstream**, on every exchange and value edge the failed instance receives from, the way a
   close travels. A sender that gets a failure message stops producing.
 
-Each worker that learns of the failure cancels its own stage instances and forwards the failure on
-all of their edges. In a connected plan every stage instance reaches every other through edges, so
-the failure floods the whole execution without anyone knowing its membership.
+When an unrecoverable failure reaches a worker, it cancels its local instances and forwards the
+failure on their edges. In a connected plan with responsive peers this reaches the rest of the
+execution.
 
 Cancellation uses the same path: `request_cancel()` on any process starts the flood. A message
 that arrives twice is ignored, so a host that also cancels every instance itself (the StarRocks
@@ -125,7 +101,7 @@ flowchart LR
   S4 --> HOST
 ```
 
-The first failure wins; a later failure caused by the cancellation never replaces it:
+A cancellation caused by this failure should preserve the original error, for example
 
 ```text
 execution: stage S3 on compute#2 failed in Join inner keys=[l_orderkey == o_orderkey]:
@@ -136,13 +112,14 @@ A filter that fails degrades to absent and does not fail the execution. A requir
 fails or is skipped fails it with `execution` (see
 [Optional and required values](../reference/node-catalog.md#optional-and-required-values)).
 
-Today, inside one process, an error fails only the affected query: a failed stream is poisoned,
-and the first failure wins (`exec::batch_stream::fail`, contracts P1-P4 in
+Today, inside one process, an error fails only the affected query: a failed stream is poisoned, and
+the first failure wins (`exec::batch_stream::fail`, contracts P1-P4 in
 `docs/super-sirius/streaming-sessions.md`). Cancellation is polled every 25 ms while a query runs,
 but kernels already submitted are not preempted, and a query blocked on a memory reservation or a
 spill is not cancelled promptly. The design makes spills cancellable
-([Memory](06-memory.md#the-downgrade-executor)). In the multi-process prototype a failed query
-sends an abort to every process.
+([Memory](06-memory.md#the-downgrade-executor)). In the distributed engine, a rank aborts a
+numbered, attached query on its peers. Some failures before the query is attached can leave peers
+waiting for a timeout.
 
 ### The first-contact deadline
 
@@ -161,7 +138,7 @@ SIRIUS_TRY(prepared, context.prepare_with(plan, std::move(bindings), std::move(o
 ```
 
 ```rust
-let options = PrepareOptions::default().with_first_contact_deadline(Duration::from_secs(30));
+let options = PrepareOptions::default().with_first_contact_deadline(std::time::Duration::from_secs(30));
 let prepared = context.prepare_with(&plan, bindings, options)?;
 ```
 
@@ -182,59 +159,20 @@ senders in frag1[6]; frag1#5 never answered
 
 ### When the device itself fails
 
-Every failure so far ends one execution and leaves the engine ready for the next query. Two things
-**latch** the engine as unavailable for the whole process: a fatal device error, such as a sticky
-CUDA error, and GPU work whose completion the engine cannot confirm. The execution that hit the
-fault fails with `runtime_unavailable`, and so does every later call on any handle of that
-process.
-[How long a context lives](../part-1/03-context-and-session.md#how-long-a-context-lives) has the
-full rules, including what `Context::create` returns afterwards.
+A recoverable query error leaves the engine available. A fatal CUDA error or unconfirmed
+cleanup of GPU work can latch the local engine until the process restarts. The proposed public
+error is `runtime_unavailable`. Operations that require that engine fail. Building a plan can
+still proceed without a context. [Context lifetime](../part-1/03-context-and-session.md#how-long-a-context-lives)
 
-The two codes mean different things:
+A host can fall back to its own engine for later queries. Replaying the **current** query needs a
+separate check. The host may already have seen rows, or a write may already have taken effect. The
+DuckDB extension checks these conditions before CPU replay. A peer reporting `runtime_unavailable`
+should identify the affected worker, since the receiving process's own engine may still be healthy.
+[Replay
+admission](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/transparent/replay_admission.hpp)
 
-| Code | What failed | What still works |
-|---|---|---|
-| `execution` | This query: an I/O error, out of memory after reservation retries, a required value that failed, a device error the engine recovered from | The engine. The next query runs normally. |
-| `runtime_unavailable` | The engine of this process | Nothing on the GPU until the process restarts. Building plans needs no context and keeps working. |
-
-Today the latch is per engine and has no public code. Inside sirius-duckdb, a fatal CUDA error or
-a failed mandatory cleanup makes the engine refuse GPU queries until the process restarts, and
-DuckDB runs later queries on the CPU where it can.
-
-A transport's named shared memory or listening ports can outlive a crashed process. A restarted
-process cleans up or ignores the stale ones; that is engine work and needs no API.
-
-Sirius never replays failed work, on the GPU or on the CPU. A host with its own CPU engine, such as
-DuckDB, Axiom or Bolt, treats `runtime_unavailable` like `unsupported` for every later query until
-the process restarts. A running query is not switched over mid-flight; the host reruns it from the
-start, if it can:
-
-```cpp
-auto report = std::move(started.execution).wait();
-if (!report && report.error().code == ErrorCode::runtime_unavailable) {
-  host.gpu_available = false;                           // host code: later queries keep their plan
-  return host_query.rerun_from_start(report.error());   // host code, if the host can
-}
-```
-
-```rust
-match started.execution.wait() {
-    Err(e @ ExecutionError::RuntimeUnavailable { .. }) => {
-        host.gpu_available = false;                  // host code: later queries keep their own plan
-        return host_query.rerun_from_start(e);       // host code, if the host can
-    }
-    other => { other?; }
-}
-```
-
-The engines of other processes are unaffected. Their readers and `wait()` still receive the
-origin's `runtime_unavailable`, with the origin's worker, so a host checks that worker before it
-treats its own engine as down. Whether peers should see a different code is part of
-[open question 4](../reference/open-questions.md#4-coordination-and-failure).
-
-For retry, a process whose engine is unavailable counts as a **lost process**, like one that
-crashed (see [A worked retry](#a-worked-retry-q4-on-two-hosts)). Its stage instances are retried on
-another process, or on the same machine after a restart, never in place on the same GPU.
+A retry after a fatal device error must account for the loss of that process and anything it held,
+including spools. [Stage retry](#retrying-a-stage-instance)
 
 ## Every message has a key
 
@@ -260,10 +198,9 @@ On a hash exchange, the batch from `compute#0` carrying partition 2 of `x1` migh
 receiver can tell a complete stream from one with a gap. When a transport redelivers a message
 after a reconnect, the receiver already has that sequence number and drops the copy.
 
-**An `ExecutionId` is single use per hosted worker, and Sirius enforces it.** A `Context`
-remembers each id that every worker it hosts has run under, and refuses to start a worker again
-under the same id. A peer refuses a handshake for an id it has already finished. Otherwise a late
-message from a finished execution could land in a new one with the same keys:
+The proposal requires a fresh `ExecutionId` for each new execution on a hosted worker. A duplicate
+start must be detected across context handles that share that worker, or a delayed message could
+arrive in an unrelated execution with the same keys.
 
 ```text
 binding_mismatch: execution id 3f9c0a1e... was already used by compute#2 in this context; every
@@ -297,63 +234,37 @@ emptied when its batches are sent, so it spills to host memory and disk like eve
 repository (see [Memory](06-memory.md)). Today nothing in the engine retains an exchange's output
 after it is consumed.
 
-You set durability on the exchange description. Here are Q4's three exchanges from
-[Partitioned join and runtime filters](../part-3/04-partitioned-join-and-runtime-filters.md), all
-spooled:
-
-```cpp
-SIRIUS_TRY(probe, pruned.exchange(
-    Exchange::hash({"l_orderkey"}, compute).with_durability(Durability::spooled())));
-SIRIUS_TRY(build_side, build.relation.exchange(
-    Exchange::hash({"o_orderkey"}, compute).with_durability(Durability::spooled())));
-// join, project and aggregate exactly as in Q4, giving per_order
-SIRIUS_TRY(gathered, per_order.exchange(
-    Exchange::gather(head).with_durability(Durability::spooled())));
-```
-
-```rust
-let probe = pruned.exchange(&Exchange::hash(&["l_orderkey"], &compute,
-        Partitions::one_per_worker(), HashScheme::v1()).with_durability(Durability::spooled()))?;
-let build_side = build.relation.exchange(&Exchange::hash(&["o_orderkey"], &compute,
-        Partitions::one_per_worker(), HashScheme::v1()).with_durability(Durability::spooled()))?;
-// join, project and aggregate exactly as in Q4, giving per_order
-let gathered = per_order.exchange(&Exchange::gather(&head, GatherOrder::any())
-        .with_durability(Durability::spooled()))?;
-```
-
-On a decided exchange you set it once, on the result of `decided_by`, and it applies to every
-alternative; an alternative that sets its own is rejected with `invalid_plan`. The plan prints
-`durability=spooled` at the end of the Exchange line; pipelined is not printed:
+For example, Q4's join could read spooled copies of the hash exchanges and write a spooled
+gather. If the join fails before completing its attempt, the host can retry just that instance
+while its input spools remain available.
 
 ```text
-Plan "q4_urgent_march_revenue" (joined)
-worker sets: head[1], compute[4]
-values:
-  f2 = ValueExchange merge f1 -> compute[4]
 Output "result" on head[1]
 └─ Exchange x3 gather -> head[1]  durability=spooled
-   └─ Aggregate keys=[o_orderkey, o_orderdate] measures=[revenue = sum(rev)]
-      └─ Project [o_orderkey, o_orderdate, rev = l_extendedprice * (1 - l_discount)]
+   └─ Aggregate keys=[o_orderkey, o_orderdate] ...
+      └─ Project ...
          └─ Join inner keys=[l_orderkey == o_orderkey] build=right  mode=co_partitioned(x1, x2)
             ├─ Exchange x1 hash(l_orderkey) -> compute[4]  durability=spooled
-            │  └─ RuntimeFilterApply [l_orderkey] <~ f2  wait=never
-            │     └─ Scan lineitem [l_orderkey, l_extendedprice, l_discount]  on compute[4]  shards=files_round_robin
+            │  └─ ...
             └─ Exchange x2 hash(o_orderkey) -> compute[4]  durability=spooled
-               └─ RuntimeFilterBuild keys=[o_orderkey] spec=bloom(fixed 8MiB)  scope=partial ~> f1
-                  └─ Filter o_orderdate >= 1995-03-01 and o_orderdate < 1995-04-01 and o_orderpriority == "1-URGENT"
-                     └─ Scan orders [o_orderkey, o_orderdate, o_orderpriority]  on compute[4]  shards=files_round_robin
+               └─ ...
 ```
+
+Use `with_durability(Durability::spooled())` on the exchange. On a decided exchange the setting
+applies to all alternatives. [Full Q4 plan](../part-3/04-partitioned-join-and-runtime-filters.md)
 
 In split and instance form both halves of the edge carry it, at the end of the line:
 `ExchangeSink x3 gather -> [head#0]  durability=spooled` and
 `ExchangeSource x1 partition=2/4 <- senders=[compute#0..3]  durability=spooled`.
 
-Spooling is opt-in because it costs latency and memory: nothing streams through a spooled edge,
-and the whole output is kept until the execution ends.
+A receiver can consume output from a completed sender while another sender is still running. The
+spool retains completed output until the execution ends. The costs are storage and the wait for each
+sender to complete.
 
 The cost varies by edge. In Q4, `x3` follows an aggregate, which emits nothing until its input is
-complete, so spooling `x3` costs almost no latency. Spooling `x1` means the probe in S3 cannot
-overlap the scan that produces its rows.
+complete, so the extra wait on `x3` starts only when that sender begins emitting aggregate rows.
+Spooling `x1` prevents S3 from probing rows from a sender while that same scan attempt is still
+running.
 
 Value edges have no durability property. Values are small and bounded, so the engine keeps every
 value share until the execution ends, and a re-run instance receives the values it consumes again.
@@ -367,8 +278,7 @@ receiver notices.
 
 A failed stage instance is **retryable** when all of these hold:
 
-1. Every data input of the instance is a scan or a spooled exchange, so its input can be read
-   again in full.
+1. Every data input can be reopened at the same snapshot or replayed in full from a surviving spool. A list of filenames alone cannot guarantee that the files still hold the same rows.
 2. Every exchange it sends on is spooled, so no receiver has consumed any of the failed attempt's
    output.
 3. Every value it produces is either not yet published, or its producing subtree is
@@ -381,11 +291,11 @@ A failed stage instance is **retryable** when all of these hold:
 5. It has not closed a spooled input. A receiver that closed an input gave up the rest of it, so it
    cannot read that input in full again.
 
-A retried instance runs the same plan under attempt n+1. Receivers ignore every message from any
-other attempt of that sender. Because a spooled receiver consumes only a completed attempt, the
-rerun **need not be deterministic**. A re-run lineitem scan in Q4 may prune more rows than the
-original, because by then the merged filter `f2` has arrived; the receivers get attempt 1's rows
-and never see attempt 0.
+A retried instance runs the same plan under attempt n+1. Its receivers discard buffered output from
+the failed attempt and reject late messages from that attempt. Because a spooled receiver consumes
+only a completed attempt, the rerun **need not be deterministic**. A re-run lineitem scan in Q4 may
+prune more rows than the original, because by then the merged filter `f2` has arrived; the receivers
+get attempt 1's rows and never see attempt 0.
 
 The `Output` stage is never retried once its first batch has reached the host's reader: the host
 has seen those rows. The stages feeding it can still be retried, if the exchange into `Output` is
@@ -393,111 +303,49 @@ spooled.
 
 ### A worked retry: Q4 on two hosts
 
-Take Q4 with all three exchanges spooled, as printed above, bound to the two-host cluster from the
-[running example](../part-3/00-running-example.md): `compute#0` and `compute#1` on host A,
-`compute#2` and `compute#3` on host B, and `head#0` sharing host A's GPU 0. Partition 2 of the order
-key is heavily skewed this time.
+In Q4 the join stage S3 on `compute#2` reads partition 2 from spooled exchanges `x1` and
+`x2` and sends results to `head#0` on spooled `x3`. Suppose its first attempt runs out of GPU
+memory. Its process is still healthy and the input spools are intact.
 
-1. **Before the failure.** Every S1 and S2 instance has finished under attempt 0. Their outputs sit
-   in their spools, and the merged filter `f2` has been published. The S3 instances on
-   `compute#0`, `#1` and `#3` have finished and sent their aggregated rows on `x3`. Those three
-   attempts completed, so `head#0` has already handed their rows to the host's reader.
-2. **The failure.** S3 on `compute#2` has built its hash table from partition 2 of `x2`, probed it
-   with partition 2 of `x1`, and sent two batches on `x3`, keyed
-   `(E, 0, 0, x3, compute#2, head#0, 0)` and `(..., 1)`. Then it runs out of memory after its
-   reservation retries, because another execution on host B's GPU 0 holds most of it. The instance
-   ends `failed`.
-3. **Is it retryable?** Yes, conditions 1-5 hold: inputs `x1` and `x2` and output `x3` are spooled,
-   it produces no values, every node in it is `none`, and it closed nothing. The S4 `Output`
-   instance on `head#0` has delivered rows, but it did not fail, so that does not matter.
-4. **The host decides.** The engine on host B reports the failure as retryable. The launcher picks a
-   spare GPU on host C and tells every process to retry S3 on `compute#2` there. Each process moves
-   to binding epoch 1. How a process on host C joins the running execution to host the new attempt
-   is part of [open question 28](../reference/open-questions.md#28-retry-api-and-who-decides).
-5. **What reruns.** Only S3 on `compute#2`, now attempt 1, on host C. Every S1 and S2 sender replays
-   partition 2 of its spool to the new endpoint. A replay reuses the original keys, such as
-   `(E, 0, 0, x1, compute#0, compute#2, 0)`, because it is the same output of the same attempt.
-6. **What receivers discard.** `head#0` drops the two attempt-0 batches it was holding from
-   `compute#2`; it never handed them to `Output`, because attempt 0 never completed. Any attempt-0
-   message still in flight is dropped on arrival. `head#0` consumes attempt 1 once it completes.
+1. `head#0` discards batches buffered from the failed attempt. It may already have delivered
+   rows from other senders that completed successfully.
+2. Once memory becomes available on the same GPU, the host requests attempt 1 of S3 on
+   `compute#2`. The upstream senders replay partition 2 from their completed spools.
+3. `head#0` ignores late messages from attempt 0 of S3 and releases attempt 1's rows once that
+   attempt completes. The report records the failed and successful attempts separately.
 
-```mermaid
-sequenceDiagram
-  participant S as S1, S2 senders (spools)
-  participant B as compute#2 attempt 0 (hostB/gpu0)
-  participant C as compute#2 attempt 1 (hostC/gpu0)
-  participant H as head#0
-  S->>B: x1, x2 partition 2 (attempt 0 of each sender)
-  B->>H: x3 batches 0, 1 (attempt 0), held, not consumed
-  Note over B: fails: out of memory
-  Note over H: drops attempt 0 of compute#2
-  S->>C: replay x1, x2 partition 2 from the spools
-  C->>H: x3 batches, then end of stream (attempt 1)
-  Note over H: consumes attempt 1, x3 complete
-```
+The upstream senders themselves never restarted. Their replayed batches still have the original
+sender attempt and sequence numbers. The restarted **receiver** needs fresh read positions for
+those streams, or it will discard its replay as duplicate data. The retry protocol must distinguish
+these legitimate replays from messages left over from the earlier receiver attempt.
+[Message identity](#every-message-has-a-key)
 
-The report records two entries for S3 on `compute#2`: attempt 0 `failed` and attempt 1
-`succeeded`. The execution itself `succeeded`, with the same result as a run without the failure.
-
-Losing a whole process applies the same rule to more instances. If host B's process dies, every
-instance it hosted dies with it: S3 on `compute#2` and `compute#3`, and the spools of S1 and S2 on
-those workers. The S1 and S2 instances read only scans, so they are retryable, and they re-run
-first. Their filter shares `f1` re-publish under the new attempt; the subtree that builds them
-(`Scan`, `Filter`, `RuntimeFilterBuild`) is deterministic, so the shares match the ones already
-merged into `f2`. A receiver that was part-way through reading a lost spool has consumed part of an
-attempt that no longer exists, so it is retried too.
+A lost process is a different case. Its completed spools may be gone, and a downstream
+consumer may already have exposed their rows to the host. Re-running the producer under a new
+attempt can give different rows or a different order. An unchanged filter digest says nothing
+about the data in that spool. Recovery here would need a surviving copy or a way to prove that
+every affected consumer can restart from a consistent point. If output already reached a host
+that cannot roll it back, recovery may be impossible. The proposed stage retry alone does not
+cover this case. [Retry protocol](../reference/open-questions.md#28-retry-api-and-who-decides)
 
 ### Who decides
 
-Sirius never retries on its own. Whether a retry is worth it, and where it should run, depends on
-the cluster, the budget and the error, which only the host knows. A sum that overflows its result
-type will overflow again on any GPU. So the engine reports each failure as an event, says whether
-retry is allowed, and leaves the choice to the host:
+The host knows whether another attempt is worth its cost. An overflow will recur with the
+same input, while memory pressure might ease on a different GPU. The proposed engine would
+identify an eligible failed instance and report its error and attempt number. In a closed plan
+every participant must agree on the retry and any replacement endpoint. In an open plan the
+scheduler can notify the affected peers.
 
-```cpp
-// A sketch: the exact names are open question 28.
-SIRIUS_TRY(event, started.execution.next_event());   // blocks until an instance fails or the run ends
-if (const auto* failed = std::get_if<InstanceFailed>(&event)) {
-  if (!failed->retryable) return std::unexpected(failed->error);   // fail-stop
-  SIRIUS_TRY(epoch, started.execution.retry_stage(failed->instance, spare_gpu));
-}
-```
-
-```rust
-// A sketch: the exact names are open question 28.
-if let ExecutionEvent::InstanceFailed(failed) = started.execution.next_event()? {
-    if !failed.retryable { return Err(failed.error.into()); }  // fail-stop
-    let epoch = started.execution.retry_stage(&failed.instance, Some(spare_gpu))?;
-}
-```
-
-In a closed plan, every process must apply the same retry, as every process uses the same
-bindings. In Distributed Sirius the launcher hears about the failure from the process that hosted
-the instance and passes the same retry to every process, the way it handed out the `ExecutionId`.
-In StarRocks the frontend already tracks every fragment instance, and it would send the retry to
-the compute nodes that host the instance's peers.
-
-How a host opts in to hear failures before they become fatal, and how long a failed instance waits
-for the host's answer, are part of
-[open question 28](../reference/open-questions.md#28-retry-api-and-who-decides).
+A tentative API uses `Execution::next_event` and `Execution::retry_stage`. How long to wait for
+the host, how to fence old attempts and how a replacement process joins a running execution are
+open questions. [Retry API and ownership](../reference/open-questions.md#28-retry-api-and-who-decides)
 
 ## Binding epochs
 
-A retry may move a worker. In the worked retry, `compute#2` moves from host B's GPU 0 to host C.
-That is a change of *where*, never of *what*
-([rule 4](../part-2/01-everything-in-the-plan.md#the-ownership-rule)): the plan, its fingerprint
-and every edge signature stay as they were. Only the bindings change.
-
-So bindings carry a **binding epoch**: 0 when the execution starts, and one more for every retry
-the execution applies. The bindings digest that closed plans compare at the handshake covers the
-epoch. When a moved instance starts, its edges handshake again, comparing the execution id, the
-unchanged fingerprint and the new digest. A process that has not applied the same rebinding has a
-different digest, and the handshake fails with `binding_mismatch` before a single row moves.
-
-Open plans compare edge signatures, which do not include endpoints. The moved instance handshakes
-again with its edge peers, and the host's retry message tells those peers its new endpoint.
-
-The book prints the epoch on the binding block of a bound plan. A block without one is epoch 0:
+A **binding epoch** identifies a version of the worker-to-endpoint map. The initial map has
+epoch 0. The proposed counter advances for every retry. Moving a worker requires all affected peers to agree on its new endpoint
+before routing data there. Closed-plan peers can compare binding digests. Open instances need
+their scheduler to supply the changed endpoints.
 
 ```text
 binding epoch=1:
@@ -508,8 +356,11 @@ binding epoch=1:
   head#0    -> hostA/gpu0
 ```
 
-The binding epoch is unrelated to the reserved epoch in the message key, and never appears in a
-key.
+Here `compute#2` moves to host C. A problem remains if only its join stage restarts. Spools
+from **other** stages of `compute#2` may still live on host B. Looking up those spools solely
+through the new worker binding would send a replay request to the wrong process. The retry API
+needs a way to locate retained output and fence earlier attempts. The separate epoch reserved
+in the message key is for future iteration or streaming. [Retry API](../reference/open-questions.md#28-retry-api-and-who-decides)
 
 ## Side effects decide what may rerun
 
@@ -518,30 +369,28 @@ Re-running a stage instance re-runs every node in it. Retry condition 4 reads ea
 
 | Node | Side-effect class | May a retry re-run it? |
 |---|---|---|
-| Relational, distribution and runtime-value nodes; `Scan` of Parquet | `none` | Yes |
+| Read-only relational nodes and Parquet scans | `none` | If their inputs still meet the replay conditions |
 | A registered scan kind that holds a lease, keyed by the `ExecutionId`, on host state such as a snapshot | `idempotent`, while the lease holds | Yes, if the lease is still valid |
 | `Input` | `effectful`: a channel is read once | No |
 | `Output`, once its first batch has reached the host | `effectful` | No |
 
-A future write with a commit step would declare its own class in the same way.
+The current DuckDB extension supports Parquet export through `COPY TO`. A write in the proposed
+public plan would need to specify when output becomes visible and which effects can survive a failed
+attempt. [Parquet export](https://github.com/sirius-db/sirius/pull/2575)
 
-Today's engine applies the same logic to a whole query. When a GPU execution fails inside
-sirius-duckdb, the extension may replay the query on DuckDB's CPU executor. It refuses when a
-result was already emitted, when the query was cancelled, when the captured transaction is no
-longer valid, or when non-rollbackable state was touched (`src/transparent/replay_admission.hpp`).
-It also refuses when the query's own cleanup could not be confirmed; then only later queries keep
-DuckDB's plan.
+The DuckDB extension checks whole-query CPU replay separately. A cancelled query, a changed
+transaction, non-rollbackable effects or a result already emitted can each veto a replay. [CPU
+replay
+admission](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/transparent/replay_admission.hpp)
 
 ## How other systems recover
 
-| System | Default between stages | Durable exchange | What reruns | Who decides |
-|---|---|---|---|---|
-| Spark | Shuffle output written to local files at every stage boundary | Always | Failed tasks; lost map output is recomputed from lineage | The driver's scheduler |
-| Trino | Pipelined; a failure fails the query | Opt-in fault-tolerant execution (`retry-policy` QUERY or TASK); task retries spool exchange data through an exchange manager | The whole query, or failed tasks | The coordinator |
-| Ballista | Each stage's shuffle output written to files on its executor | Always | Failed tasks; map tasks whose output was lost with an executor | The scheduler |
-| Sirius | Pipelined; fail-stop | Opt-in per exchange: `Durability::spooled()` | One stage instance, under a new attempt | The host |
+| System | Recovery unit and owner |
+|---|---|
+| Spark | The driver's scheduler can retry a failed task and recompute missing shuffle output from its inputs. |
+| Trino | The coordinator can retry a query or, with task-level fault tolerance and an exchange manager, a failed task. |
+| Ballista | The scheduler can retry failed tasks and regenerate missing shuffle output. |
+| Proposed Sirius API | The host can request a stage-instance retry across eligible spooled edges. |
 
-Trino is the closest relative, but it turns spooling on for a whole query; Sirius turns it on per
-exchange, in the plan. Each of the others is its own coordinator and decides retries itself.
-Related designs has more on [Ballista](../appendix/related-designs.md#ballista) and on
-[Spark and Trino](../appendix/related-designs.md#spark-trino-and-snowflake).
+[Related designs](../appendix/related-designs.md) compares how these systems schedule stages and
+transfer intermediate results.

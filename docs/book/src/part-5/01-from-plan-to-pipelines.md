@@ -1,22 +1,23 @@
 # From plan to pipelines
 
-In Sirius, a **pipeline** runs a sequence of GPU operators on a batch. **Lowering** chooses
-those operators and connects the pipelines. Today Sirius builds them from its internal operator
-tree. The proposed API would also accept an explicit plan in which the host has already specified
-which workers exchange rows. The Q2 example below shows where that saves a wait.
+A Sirius **pipeline** runs a sequence of operators on the GPU. **Lowering** chooses those
+operators and connects their pipelines. Today Sirius executes its internal operator tree. The
+public C API can also construct immutable physical plans. The proposal extends that vocabulary
+to explicit worker sets and exchanges and describes how to run them. In Q2, knowing the exchange
+partition count in advance lets workers send aggregate states as soon as they produce them.
+[C plan construction](https://github.com/sirius-db/sirius/pull/2500)
 
 ## What the engine runs today
 
-The engine executes **pipelines**. A pipeline is an ordered list of operators: the first is its
-source, the last its sink. A task runs one pipeline over one input: it calls `execute()` on every
-operator in order, then the sink's `sink()`.
+A pipeline starts at a source and ends at a sink. A task runs that pipeline over one input.
 
-A sink pushes its output into a **repository** (a `cucascade::shared_data_repository`), and the
-next pipeline's source pulls from it. Each repository sits behind a **port** on the consuming
-operator: `default` for most inputs, `build` for a hash join's build side. A port's **barrier** determines when its consumer can run.
-A `FULL` barrier waits for the producer to finish. `PARTIAL` allows the consumer to process
-batches as they arrive. `PIPELINE` needs no synchronization between individual operators.
-Operators declare this per input in `input_barrier_for`. [Operator implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/sirius_physical_operator.cpp)
+A sink pushes its output into a **repository** (a `cucascade::shared_data_repository`), and the next
+pipeline's source pulls from it. Each repository sits behind a **port** on the consuming operator:
+`default` for most inputs, `build` for a hash join's build side.  A port's **barrier** determines
+when its consumer can run. A `FULL` barrier waits for the producer to finish. `PARTIAL` allows the
+consumer to process batches as they arrive. `PIPELINE` needs no synchronization between individual
+operators. Operators declare this per input in `input_barrier_for`. [Operator
+implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/sirius_physical_operator.cpp)
 
 Scheduling is pull-based. The task creator asks an operator for `get_next_task_hint()`, which
 answers `READY` or `WAITING_FOR_INPUT_DATA` and, when waiting, names the producer to schedule
@@ -25,20 +26,22 @@ from repositories to host memory or disk (see [Memory](06-memory.md)).
 
 ### How today's operator tree gets its shape
 
-For a query on one machine, `insert_gpu_pipeline_operators` adds operators that distribute
-work across the process's GPUs. It puts a partition and merge after a partial aggregate, and a
-partition and concatenation below each hash-join input. Windows need all rows of a group on one
-GPU. Sorts need samples, range partitions and a merge. Top-N needs a final merge of the local
-candidates. With one process per GPU, a second pass inserts exchanges between ranks.
-[Local planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/sirius_physical_plan_generator.cpp) · [Distributed planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/distributed_plan.cpp)
+For a query on one machine, `insert_gpu_pipeline_operators` adds operators that distribute work
+across the process's GPUs. It puts a partition and merge after a partial aggregate, and a partition
+and concatenation below each hash-join input. Windows need all rows of a group on one GPU. Sorts
+need samples, range partitions and a merge. Top-N needs a final merge of the local candidates. With
+one process per GPU, a second pass inserts exchanges between ranks. [Local
+planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/sirius_physical_plan_generator.cpp)
+· [Distributed
+planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/distributed_plan.cpp)
 
 Then `mark_fusable_merge_pipelines` decides which merges fold into their downstream pipeline. The
 pipeline construction pass in `src/pipeline/` cuts the tree into pipelines, wires the
 repositories, hands every `PARTITION` consumer the admitted GPU ids, and orders the pipelines
 leaf first.
 
-In pipeline notation, `[A, B, C]` is one pipeline and an arrow is a repository labelled with its
-barrier. A grouped aggregation today (illustrative):
+The brackets below enclose operators in the same pipeline. Each arrow labels the barrier on the
+repository between two pipelines. A grouped aggregation can run as follows.
 
 ```text
 [GPU_SCAN, FILTER, PROJECTION, HASH_GROUP_BY] -FULL-> [PARTITION] -FULL-> [MERGE_GROUP_BY, RESULT_COLLECTOR]
@@ -50,7 +53,7 @@ the [worked example](#worked-example-q2-stage-s1)).
 
 ## What lowering receives
 
-Under the proposal, `prepare` checks the plan and bindings and resolves worker-local
+In the proposed API, `prepare` checks the plan and bindings and resolves worker-local
 properties marked `auto`. Each process lowers the stage instances for its workers. This view
 of Q2 shows the **two** stages that run on `compute#2`. The file list and the receive partition
 belong to this worker. [Q2, plan A](../part-3/02-aggregation.md)
@@ -99,13 +102,9 @@ ExchangeSink x2 gather order=merge[l_returnflag asc, l_linestatus asc] -> [head#
 
 ## Worked example: Q2 stage S1
 
-Apply the rules to S1 on `compute#2`:
-
-- `Scan` starts a pipeline (rule 3). `Filter` and `Project` stream, so they stay in it.
-- `Aggregate partial` ends it (rule 2).
-- `ExchangeSink x1` starts the next pipeline (rule 3) and ends it (rule 2). In a single-process
-  binding that is a single-node `PARTITION` pipeline.
-- The sink's input is streaming, so the edge between the two pipelines is `PARTIAL` (rule 1).
+On `compute#2`, the scan starts a pipeline. Filter and projection stream through it. The
+partial aggregate ends the pipeline and sends state rows to the exchange sink. Within a
+process, a `PARTITION` task can route them to the next stage.
 
 ```mermaid
 flowchart LR
@@ -151,10 +150,12 @@ the whole input is one group. `CONCAT` gathers a complete local partition for a 
 ```
 
 Local partition sizing uses measured input bytes. If an explicit exchange already supplied complete
-window groups, the engine could reuse those partitions. In either case, a window task must fit
-its local table and results in GPU memory, within cuDF's row limit. Hashing again cannot divide
-one oversized group. The planner checks supported functions and types, including floating-point
-running minima and maxima. [Window planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/sirius_plan_window.cpp) · [Floating-point support](https://github.com/sirius-db/sirius/pull/2542)
+window groups, the engine could reuse those partitions. In either case, a window task must fit its
+local table and results in GPU memory, within cuDF's row limit. Hashing again cannot divide one
+oversized group. The planner checks supported functions and types, including floating-point running
+minima and maxima. [Window
+planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/sirius_plan_window.cpp)
+· [Floating-point support](https://github.com/sirius-db/sirius/pull/2542)
 
 ## Many stage instances, one process
 
@@ -172,4 +173,3 @@ during the capability check. A missing exchange that makes a join invalid is a p
 Within a worker the engine still chooses scheduling, batching and local subpartitioning. For a
 worker-local property exposed in the API, such as the build side of a co-partitioned join,
 `prepare` resolves `auto` and checks explicit choices. [Worker-local choices](../part-2/01-everything-in-the-plan.md#inside-one-worker)
-

@@ -252,7 +252,8 @@ follow:
   `Relation::scan` with `invalid_plan`. The other shard kinds do not use sizes to assign splits.
 - **Sizes are plan facts.** The fingerprint covers every declared size, under every shard kind.
   Two processes that declare different sizes for one file hold different plans, and `start` fails
-  with `binding_mismatch` (V25) before a row is read. Take the sizes from one place that every
+  with `binding_mismatch` (V25) when the peers check the closed plan. The check precedes row
+  transfer on that edge. Take the sizes from one place that every
   process shares, such as a catalog.
 - **A wrong size is caught.** When a worker opens a sized file whose size differs from the declared
   one, the execution fails with `source_mismatch`
@@ -292,8 +293,8 @@ the one worker.
 | `Scan` | `arbitrary(W)`, or `replicated(W)` with `shards=replicated` |
 | `Values` | `single(W)`, or `replicated(W)` |
 | `Input` | `arbitrary(W)` |
-| `Filter` | Same as its input |
-| `Project` | Same as its input if every hash or range key passes through as a plain column; otherwise `arbitrary` |
+| `Filter` | Retained rows stay on their workers. A filter preserves identical replicas only if each copy gets the same predicate result. |
+| `Project` | Preserves hash or range placement when it passes the keys through unchanged. Preserving identical replicas also requires the same expression results on each worker. |
 | `Aggregate partial` / `combine` | Keeps hash or range partitioning only if every partition key survives as a grouping column. For grouping sets each partition key must occur in every set. Otherwise those partitioning facts are lost |
 | `Aggregate` / `Aggregate final` | Same as its (required) input |
 | `Join` | Co-partitioned: `hashed` on the keys that are never null-padded (either list for `inner`, the left keys for `left`, `left_semi`, `left_anti` and `mark`, the right keys for `right`, `right_semi` and `right_anti`), `arbitrary` for `full`. Broadcast build: the probe's distribution. Single inputs: `single`. Decided inputs: the meet |
@@ -319,7 +320,7 @@ give:
    `l_orderkey` and `o_orderkey`, so its output is hashed on either one.
 4. The projection keeps `o_orderkey` as a plain column, so the result is still hashed and the
    single-phase aggregate runs without another exchange (V6).
-5. The gather `x3` makes it `single(head[1])`, which `Output` on `head[1]` needs.
+5. The gather `x3` makes it `single(head[1])`, so one worker produces this result.
 
 A left join would be hashed on `l_orderkey` only, because an unmatched line item has a null
 `o_orderkey` but stays on the worker its own key hashed to. The projection drops `l_orderkey`, so
@@ -412,9 +413,5 @@ The fix is the broadcast exchange from the previous chapter,
 `nations.exchange(Exchange::broadcast(compute))`. Both inputs are then on `compute[4]`, the build
 side is `replicated`, and the join derives `mode=broadcast_build`.
 
-A join never picks its own distribution. It checks that its inputs form one of the legal
-combinations (V8) and reports which; see
-[co-partitioning](03-exchanges.md#the-partitioning-signature-and-co-partitioning).
-
-On `local[1]` neither error can happen. To move a plan to a larger set, add the exchanges these
-errors ask for; the next chapter, [Exchanges](03-exchanges.md), covers them.
+Hashing both inputs on the corresponding join keys would also bring matching rows together.
+[Co-partitioning](03-exchanges.md#the-partitioning-signature-and-co-partitioning)

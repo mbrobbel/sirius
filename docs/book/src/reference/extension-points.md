@@ -1,13 +1,8 @@
 # Extension points
 
-This page lists where the Plan IR can grow and what a new member must declare so that validation,
-rewrites and the agreement check keep working. The node vocabulary is in the
-[Node catalog](node-catalog.md).
-
-One rule governs every entry: an extension states, as data, every fact two workers must agree on
-and every property later nodes may rely on. This is the
-[ownership rule](../part-2/01-everything-in-the-plan.md#the-ownership-rule) applied to growth.
-Something that cannot state those facts cannot be in a plan.
+A host can register functions, policies and sources. Some additions, such as a new join type,
+require an IR version. In either case, the validator needs to know the input requirements,
+output guarantees and identities that peers will compare. [Node catalog](node-catalog.md)
 
 ## The node contract
 
@@ -65,7 +60,7 @@ place the exchange that meets it.
 | co-partitioned pair | Both inputs `hashed`, equal signatures, keys aligned positionally. | `Join`, mode `co_partitioned` (V8) |
 | replicated build | Build `replicated(W)`, probe on W, build side not preserved. | `Join`, mode `broadcast_build` (V8, V9) |
 | `sorted(keys)` | An input sorted on those keys within each worker. | `Exchange` with `gather order=merge` (V14) |
-| global value | A value of scope `global` on every set it controls. | `Decide`, `ComputeBoundaries`, `AssignPartitions` (V15) |
+| global value | A global input wherever the policy is evaluated, with the result available to all consumers. | `Decide`, `ComputeBoundaries`, `AssignPartitions` (V15) |
 
 One distribution is an exception to every row: `hashed` under `NullRouting::to_all` satisfies a
 requirement, `any` included, only as the build input of a `mark` join (V10, V28).
@@ -88,13 +83,13 @@ volatile, and a composite takes the most volatile class of its parts.
 |---|---|---|---|
 | `deterministic` | The same inputs give the same outputs, on every worker and in every execution. | Arithmetic, comparisons, `cast`, `is_null` | Output stays `replicated`. |
 | `per_execution` | Constant within one execution. For a function, the builder replaces the call with a literal of its value when the plan is built; for a node, the engine fixes its choice once per execution. | `now()`, `current_date()`; a `Shards::dynamic()` scan | Output stays `replicated`: by then the call is a literal. |
-| `volatile` | May differ per row, per call or per worker. | `random()` | Output degrades to `arbitrary(W)`. |
+| `volatile` | May differ per row, per call or per worker. | `random()` | Replicas may differ. Their multiplicity still matters downstream ([open question 27](open-questions.md#27-requirements-as-data-and-equivalence-properties)). |
 
 - **Functions.** Each function's registry entry carries its class, and `Expression::call` and
   `Expression::call_in` read it ([open question 16](open-questions.md#16-expression-semantics)).
 - **`per_execution` in the plan.** The plan stores and prints the literal and the fingerprint
   covers it, so processes that build the same closed plan independently (SPMD) must agree on the
-  value. Such a host reads the value once, shares it like the `ExecutionId`, and has every process
+  value. Reusing the plan reuses the literal, including a folded timestamp. Such a host reads the value once, shares it like the `ExecutionId`, and has every process
   build the literal with `Expression::literal` instead of calling the function.
 - **Nodes.** A node's class is the most volatile among its expressions and its own. The engine
   picks the rows kept by a `Limit` on an unsorted input, a `Limit` on a sorted input whose cut
@@ -105,7 +100,7 @@ volatile, and a composite takes the most volatile class of its parts.
 - **Where `replicated` is required.** A `volatile` node over a broadcast build leaves the join
   without a legal mode:
   `invalid_plan: V8: Join has no legal mode: build is arbitrary(compute[4]) after volatile Project
-  over replicated input; move random() above the join`.
+  over replicated input; compute random() after the join if that preserves the intended result`.
 - **Policies and merge rules** are always `deterministic`. A `Decide` policy, a `ComputeBoundaries`
   rule, an `AssignPartitions` policy or a value kind's merge rule of another class cannot be
   registered.
@@ -168,12 +163,12 @@ plan construction:
   `Context::check` and `prepare` reject a member this engine build does not implement with
   `unsupported` (V21, V22).
 
-| List | Today's members | Closed or open | How a member is added | Carried in the fingerprint and edge signature |
+| List | Proposed members | Closed or open | How a member is added | Carried in the fingerprint and edge signature |
 |---|---|---|---|---|
 | Node kinds | The nodes of the [node catalog](node-catalog.md#node-index) | Open, later | A registered node declares the full [node contract](#the-node-contract). | Its identity and parameters. |
 | Functions | The expression combinators (`add`, `eq`, `cast`, ...) and the registry entries behind `Expression::call` and `Expression::call_in` | Open | A registry entry: identity, argument and result types, determinism class; side effects `none`. | The identity of every function called. |
 | Data types | `boolean`, `int8` to `int64`, `uint8` to `uint64`, `float32`, `float64`, `decimal`, `string`, `date32`, `timestamp`, `list`, `struct` | Open, via extension types | An extension type is a name plus a storage type; hashing, comparison and the wire go through the storage type. | Each column's type identity, including its storage type. |
-| Aggregate state types | `count_state`, `sum_state`, `min_state`, `max_state`, `avg_state`, `var_state`, `distinct_state` ([table](node-catalog.md#aggregate-state-types)) | Open | An Arrow schema for the state plus named, versioned combine and final functions; combine is associative and commutative. | The state type identity in the schema. |
+| Aggregate state types | `count_state`, `sum_state`, `min_state`, `max_state`, `avg_state`, `var_state`, `distinct_state` ([table](node-catalog.md#aggregate-state-types)) | Open | An Arrow schema for the state plus named, versioned combine and final functions; the state specifies its combine rule and any sensitivity to merge order. | The state type identity in the schema. |
 | Value kinds | `Filter`, `Statistics`, `Boundaries`, `Decision`, `Assignment` | Open interface | A layout, a merge rule (associative, commutative, deterministic), optional or required, and scope rules. | The kind identity and its layout. |
 | `ValueExchange` modes | `merge` | Open tag | A new mode with its delivery rule. `prefix` is the planned next one ([question 29](open-questions.md#29-windows-over-a-global-order-prefix-value-mode)). | The mode tag. |
 | Decide policies | `threshold`, `partition_count` | Open | A deterministic function from a global `Statistics` to one label, over integer or decimal inputs. | The policy identity with its version, and its parameters. |
@@ -222,8 +217,9 @@ far plans built by one release must run on another. How plans travel between pro
 ## Reserved now: epochs
 
 Every [message key](../part-5/07-failure-cancellation-and-recovery.md#every-message-has-a-key),
-every end of stream and every value completion carries an **epoch**, always 0 today. A
-receiver is complete for epoch e after one end of stream for e from every sender, and a value is
+every end of stream and every value completion carries an **epoch**, zero in this proposal. A
+receiver finishes epoch e once every sender has sent EOS for e and all batches through its
+final sequence number have arrived, and a value is
 complete for e after one completion for e from every producing worker.
 
 The reserved field lets iteration (recursive CTEs, iterative algorithms) and streaming arrive
@@ -263,8 +259,9 @@ A node with several consumers prints once, marked `#A`; later uses print `Ref #A
 
 ## Hash canonicalization in v1
 
-`HashScheme::v1` hashes each key in the canonical form of its type, combined in key order; the
-function and seed are fixed by v1. The form defines how a value hashes and when two values of one
+`HashScheme::v1` hashes each key in the canonical form of its type, combined in key order; a portable v1
+requires a fixed algorithm, seed and tuple encoding. The proposal specifies canonical values below.
+The remaining wire details are tracked in [question 18](open-questions.md#18-hash-scheme-stability). The form defines how a value hashes and when two values of one
 type are equal. It is used only for hashing and comparison: no cast is inserted into the data.
 
 | Key type | Canonical form | Equality |
@@ -285,7 +282,7 @@ key types are part of the partitioning signature. Two exchanges whose keys diffe
 never co-partitioned, even where the forms coincide, as for `int32` and `int64`. To bring two
 types together, cast one side in a `Project`.
 
-Each of these types may be a join key, a group key, a window key and a hash key. v1 defines no
+Each listed scalar type may be a join key, a group key, a window key and a hash key. v1 defines no
 other key type: `Context::check` and `prepare` reject any other, including `list`, `struct` and
 every state type, with `unsupported` (V21). A new scheme may define more types; v1 never does.
 
@@ -301,13 +298,14 @@ range exchange carries each key's direction (`asc` or `desc`) and null placement
 
 ## Additive later
 
-Each of these fits the [node contract](#the-node-contract) without changing the meaning of any plan
-valid today. None is designed yet.
+These extensions have sketches but no agreed IR contract. The distributed write and commit
+sketch below is distinct from the DuckDB extension's existing local Parquet export.
+[Parquet COPY TO implementation](https://github.com/sirius-db/sirius/pull/2575)
 
 | Feature | How it fits | What it needs |
 |---|---|---|
 | More window functions and frames | Further forms of [`Window`](node-catalog.md#window), such as `lag`, `lead`, `ntile`, bounded frames and frames that share a value among peers, with the same input requirement. | A tie rule per form. A window without keys over a `ranged` input needs the `prefix` value mode ([question 29](open-questions.md#29-windows-over-a-global-order-prefix-value-mode)). |
-| More data types | A time of day, a timestamp with a time zone, an interval, a binary string, a map, a fixed-size list and 128-bit integers, each as a new `DataType`. | Per type: its Arrow form and its comparison rule, and to be a key a canonical form in a hash scheme. Until then a host passes a map through as a list of key-value structs, a fixed-size list as a list, and a signed 128-bit integer as `decimal(38,0)`. |
+| More data types | A time of day, a timestamp with a time zone, an interval, a binary string, a map, a fixed-size list and 128-bit integers, each as a new `DataType`. | Per type: its Arrow form and its comparison rule, and to be a key a canonical form in a hash scheme. Until then a host passes a map through as a list of key-value structs, a fixed-size list as a list, and signed 128-bit integers as `decimal(38,0)` only when every value fits 38 digits. |
 | Unnest and table functions | A node whose function comes from the registry, with its own determinism class. | Output `arbitrary`; not key-preserving. |
 | Sampling | A `Sample` node. A sample with a seed fixed in the plan is `deterministic`; one without is `volatile`. | Nothing new. |
 | ASOF and inequality joins | New join types (an IR version). Inequality joins use a broadcast build and a nested-loop join ([question 17](open-questions.md#17-join-coverage)). | ASOF needs equality keys co-partitioned and each side sorted. |

@@ -15,8 +15,8 @@ runtime value that crosses workers. What the plan fixes about one edge is its **
 the engine carries it out is its **physical shape**. [The logical edge and its physical
 shape](#the-logical-edge-and-its-physical-shape) lists both.
 
-The test: *what each receiving worker ends up with is in the plan; the route the bytes take to get
-there is not.* The plan may deliberately leave row placement open. A round-robin exchange, for instance,
+For a hash exchange the plan fixes which worker owns a key. The engine chooses the route
+the bytes take. The plan may deliberately leave row placement open. A round-robin exchange, for instance,
 promises to distribute its input but gives a downstream join no guarantee about matching keys.
 
 The following rules apply to plans built with the proposed API.
@@ -58,23 +58,9 @@ Output "result" on local[1]
             └─ Scan orders [o_orderkey, o_orderdate, o_orderpriority]  on local[1]  shards=files_round_robin
 ```
 
-Running it on `compute[4]` raises questions the tree leaves open. Each answer changes which worker
-sees which rows, and in Sirius each answer is a node or an edge.
-
-| Open question | Sirius answer |
-|---|---|
-| Which worker reads which `lineitem` files? | `Scan ... on compute[4]  shards=files_round_robin`: a shard rule on the leaf, resolved into per-worker split lists when the scan is built |
-| Where do `lineitem` rows go before the join? | `Exchange x1 hash(l_orderkey) -> compute[4]` |
-| Broadcast `orders`, or hash both sides? | The exchange mode on each join input; the join's `mode=` is derived from them |
-| How many partitions, and which worker owns partition 3? | `Partitions` on the hash exchange; partition p goes to worker `p mod 4` |
-| Which hash function, and over which key types? | `HashScheme::v1`, part of the exchange's partitioning signature |
-| Can the `lineitem` scan skip rows using what `orders` found? | `RuntimeFilterBuild ~> f1`, `ValueExchange` to `f2`, `RuntimeFilterApply <~ f2` |
-| Is the aggregate one step or two? | A single-phase `Aggregate`, legal because its input is `hashed` on a group key (V6) |
-| Where does the result land, and how many readers are there? | `Exchange x3 gather -> head[1]` and `Output "result" on head[1]` |
-| When does a limit stop upstream work? | A `Limit` node; when satisfied it closes its input, and close travels upstream |
-
-The front-end's planner answers these questions and Sirius checks the answers. The same query,
-with the answers in the tree:
+With four workers, the two scans can read matching rows on different GPUs. This version hashes
+both inputs on order key. The orders workers also merge a Bloom filter and send it back to the
+lineitem workers so they can discard some rows before the shuffle.
 
 ```text
 Plan "q4_urgent_march_revenue" (joined)
@@ -102,19 +88,11 @@ this tree.
 
 ## Three examples that motivated the design
 
-Engines usually handle the next three cases behind the scenes. In Sirius each is a small piece of
-the plan.
-
-The worker sets `compute` and `head` and the `TableSource`s come from [The running
-example](../part-3/00-running-example.md). The relations `urgent_orders` (the filtered orders
-scan), `lineitem_rows`, `building` (the filtered customer scan) and `priced` (the projected
-lineitem rows) are built as in Part I.
-
 ### Exchanging filter information between workers
 
-A runtime filter built on one worker knows only the rows that worker saw. Before another worker
-uses it, the filter must travel, and that trip is a node. Three lines of the plan above carry it:
-the merge, the consumer on the lineitem side and the producer on the orders side.
+The orders workers each see only some build keys. A lineitem worker that relied on a single
+worker's Bloom filter could discard a row that matches on another worker. Merging the four
+filters gives every lineitem worker the information it needs to rule out a match.
 
 ```text
 values:
@@ -123,44 +101,13 @@ RuntimeFilterApply [l_orderkey] <~ f2  wait=never
 RuntimeFilterBuild keys=[o_orderkey] spec=bloom(fixed 8MiB)  scope=partial ~> f1
 ```
 
-```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-Result<Relation> probe_lineitem(const Relation& urgent_orders, const Relation& lineitem_rows,
-                                const WorkerSet& compute) {
-  SIRIUS_TRY(geometry, BloomGeometry::fixed(8 << 20));
-  SIRIUS_TRY(build, urgent_orders.build_runtime_filter({"o_orderkey"},
-                                                       RuntimeFilterSpec::bloom(geometry)));
-  SIRIUS_TRY(merged, build.filter.merge_to(compute));   // inserts the ValueExchange: f1 -> f2
-  // keep building the orders side from build.relation: it passes the rows on towards x2
-  return lineitem_rows.apply_runtime_filter(merged, {"l_orderkey"});
-}
-```
-```rust
-use sirius::prelude::*;
-
-fn probe_lineitem(urgent_orders: &Relation, lineitem_rows: &Relation, compute: &WorkerSet)
-    -> Result<Relation, PlanError> {
-    let geometry = BloomGeometry::fixed(8 << 20)?;
-    let build = urgent_orders.build_runtime_filter(&["o_orderkey"],
-                                                   RuntimeFilterSpec::bloom(geometry))?;
-    let merged = build.filter.merge_to(compute)?;   // inserts the ValueExchange: f1 -> f2
-    // keep building the orders side from build.relation: it passes the rows on towards x2
-    lineitem_rows.apply_runtime_filter(&merged, &["l_orderkey"], WaitPolicy::never())
-}
-```
-
-If you apply `build.filter` without `merge_to`, `Plan::create` rejects the plan (V16). The
-filter is `partial`: it knows only the keys one worker saw. The merged `f2` knows every key, so it
-is `global`. [Runtime filters](05-runtime-filters.md) covers
-[scopes](05-runtime-filters.md#scope-which-rows-does-a-filter-know-about), kinds and waiting.
+`wait=never` lets early rows through while the merge is in flight. The join checks all
+candidates, including Bloom false positives. [Runtime filters](05-runtime-filters.md)
 
 ### A broadcast exchange
 
-When one side of a join is tiny, sending all of it to every worker is cheaper than hashing the big
-side. That copy is an `Exchange` with mode `broadcast`, and the join derives
-`mode=broadcast_build` from its inputs.
+In Q3 the nation table has only 25 rows. Broadcasting it lets each worker join the customers
+it scanned against a complete copy.
 
 ```text
 Join inner keys=[c_nationkey == n_nationkey] build=right  mode=broadcast_build
@@ -168,31 +115,14 @@ Join inner keys=[c_nationkey == n_nationkey] build=right  mode=broadcast_build
 └─ Exchange x1 broadcast -> compute[4]
 ```
 
-```cpp
-SIRIUS_TRY(nations, Relation::scan(nation, ScanOptions::on(head)
-                                               .with_columns({"n_nationkey", "n_name"})));
-SIRIUS_TRY(everywhere, nations.exchange(Exchange::broadcast(compute)));
-SIRIUS_TRY(on, JoinOn::keys({{"c_nationkey", "n_nationkey"}}));
-SIRIUS_TRY(joined, building.join(everywhere, JoinType::inner, std::move(on),
-                                 JoinOptions::defaults()));
-```
-```rust
-let nations = Relation::scan(&nation, ScanOptions::on(&head)
-                                          .with_columns(&["n_nationkey", "n_name"]))?;
-let everywhere = nations.exchange(&Exchange::broadcast(&compute))?;
-let on = JoinOn::keys(&[("c_nationkey", "n_nationkey")])?;
-let joined = building.join(&everywhere, JoinType::Inner, on, JoinOptions::default())?;
-```
-
-A `right` join over the same inputs fails construction, because a broadcast build cannot be the
-preserved side (V9); see [Broadcast](03-exchanges.md#broadcast). [Broadcast
-join](../part-3/03-broadcast-join.md) walks through this query end to end.
+A right outer join cannot use the same plan: a worker with no matching customer for a nation
+cannot tell whether another worker found one. [Broadcast join](../part-3/03-broadcast-join.md)
 
 ### Partial and final aggregation across workers
 
-A grouped aggregate on four workers needs every row of a group on the same worker. The usual
-answer is to aggregate locally into small states, move the states, then finish. Both phases and
-the move between them are nodes.
+For a pricing summary, every row with the same return flag and line status belongs to one group.
+A worker can aggregate its own rows before it sends anything. The hash exchange then brings the
+states for each group to the worker that will finish it.
 
 ```text
 Aggregate final keys=[l_returnflag, l_linestatus]
@@ -200,24 +130,8 @@ Aggregate final keys=[l_returnflag, l_linestatus]
    └─ Aggregate partial keys=[l_returnflag, l_linestatus] ...
 ```
 
-```cpp
-SIRIUS_TRY(partial, priced.aggregate_partial({"l_returnflag", "l_linestatus"}, measures));
-SIRIUS_TRY(moved, partial.exchange(Exchange::hash({"l_returnflag", "l_linestatus"}, compute)));
-SIRIUS_TRY(totals, moved.aggregate_final());
-```
-```rust
-let partial = priced.aggregate_partial(&["l_returnflag", "l_linestatus"], measures)?;
-let moved = partial.exchange(&Exchange::hash(&["l_returnflag", "l_linestatus"], &compute,
-                                             Partitions::one_per_worker(), HashScheme::v1()))?;
-let totals = moved.aggregate_final()?;
-```
-
-The partial aggregate's output schema carries *state types* such as `sum_state<decimal(38,2)>`.
-The bytes that cross the exchange therefore have a declared layout, and the final aggregate needs
-only that schema. [State types travel in the
-schema](03-exchanges.md#state-types-travel-in-the-schema) lists the types, and [Two-phase
-aggregation, end to end](03-exchanges.md#two-phase-aggregation-end-to-end) builds this example in
-full.
+The exchange carries typed state columns. An average, for example, needs the sum and count
+from each worker so the final can recover the global average. [Aggregation](../part-3/02-aggregation.md)
 
 ## Routing moves into the plan
 
@@ -264,9 +178,6 @@ so `ProducerCount` belongs to `InputChannel`, the live input that comes later.
 
 ## What stays implicit
 
-The engine owns three things: how each edge is carried out, how one worker processes the rows it
-holds, and the choices the plan leaves open.
-
 ### The logical edge and its physical shape
 
 | The plan owns the logical edge | The engine owns its physical shape |
@@ -275,11 +186,7 @@ holds, and the choices the plan leaves open.
 | Target set, sender set and ordered destinations | Flow control, credits and connection pooling; where a spool lives |
 | For a value edge: kind, merge rule and wait policy | Direct delivery or forwarding through an intermediate worker, and the shape of a merge or a shuffle |
 
-[Exchanges in the
-engine](../part-5/02-exchanges-in-the-engine.md#the-logical-edge-and-its-physical-shape) has the
-full table for exchanges.
-
-Two edges of the Q4 plan above show the difference.
+In Q4, the Bloom merge and the hash exchange each allow several physical implementations.
 
 - `f2 = ValueExchange merge f1 -> compute[4]` says that every compute worker ends up with the OR of
   all four partial filters. On two hosts, the engine may OR the two shares on each host and send
@@ -355,12 +262,8 @@ flowchart TB
 
 ## Three hosts, one plan
 
-Part IV proposes a common preparation API for three hosts. Each would supply a different view of the plan.
+Part IV applies the same proposed preparation API to three hosts.
 
-- sirius-duckdb translates the host's optimized plan with the builder.
-- StarRocks expresses each fragment instance its scheduler placed as an instance plan.
-- Every Distributed Sirius process builds the same joined plan, with no coordinator.
-
-For the integration details see [sirius-duckdb](../part-4/01-duckdb-extension.md), [StarRocks](../part-4/02-starrocks.md),
-[Distributed Sirius](../part-4/03-distributed-sirius.md), and [what they have in
-common](../part-4/04-one-ir-three-integrations.md).
+- The DuckDB extension would translate its optimized plan into builder calls. [DuckDB integration](../part-4/01-duckdb-extension.md)
+- StarRocks would supply one plan for each fragment instance it schedules. [StarRocks integration](../part-4/02-starrocks.md)
+- The Distributed Sirius processes would each supply the same joined plan. [Distributed integration](../part-4/03-distributed-sirius.md)

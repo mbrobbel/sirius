@@ -1,24 +1,10 @@
 # Sirius on its own: Distributed Sirius
 
-> [!TIP]
-> **TL;DR**
->
-> - Closed plan, no coordinator: every process runs the same builder code and builds the same plan.
-> - The launcher starts processes, gathers `device_endpoints()` and hands out one `ExecutionId`;
->   peers handshake at start on execution id, fingerprint and bindings digest (V25).
-> - Every cross-host link is an `Exchange` or `ValueExchange`; only `head#0`'s process reads.
-> - Bindings say only where, so the same plan runs on two hosts, four processes or one machine.
-> - Fail-stop: any failure fails the execution, filters stay optional, retries are the launcher's.
-> - Every process builds and checks the whole plan, which fits tens to the low hundreds of GPUs.
-> - The prototype infers exchanges from local plans; the plan states each of them explicitly.
-
-[sirius-duckdb](01-duckdb-extension.md) runs one plan in one process.
-[StarRocks](02-starrocks.md) runs many small plans under a scheduler that Sirius never sees.
-Distributed Sirius has neither a host database nor a foreign scheduler. It runs across several
-machines on its own.
-
-Nothing outside the plan coordinates the processes. The plan says who scans which files, where
-each row goes, which filter crosses which link and who receives the result.
+Upstream Distributed Sirius runs the same SQL in several DuckDB processes, one per GPU. The
+planner inserts rank-to-rank exchanges, and rank 0 returns the result. This chapter asks how a
+standalone application could run that query by building the exchanges itself. In the proposed API,
+a worker belongs to a plan and can be bound to an endpoint in any participating process.
+[Upstream distributed execution](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md)
 
 ## The host's role
 
@@ -54,9 +40,10 @@ sequenceDiagram
   Note over A,B: equal, so the stages run
 ```
 
-Every process builds and checks the whole plan and takes part in admitting every query. That fits
-tens of GPUs up to the low hundreds
-([Three hosts, three scales](../part-5/08-running-at-scale.md#three-hosts-three-scales)).
+Each process must be able to reconstruct the same plan. If two processes enumerate files in a
+different order, even the same round-robin rule can assign different work to their GPUs.
+The fingerprint covers the ordered list. How much plan replication and collective admission
+cost at larger worker counts is a scaling question. [Running at scale](../part-5/08-running-at-scale.md)
 
 ## What it builds
 
@@ -78,41 +65,9 @@ them:
 
 ## A worked plan: Q7 on two hosts
 
-The plan is Q7 (shipping priority), unchanged from
-[A multi-stage query](../part-3/07-a-multi-stage-query.md);
-[The question](../part-3/07-a-multi-stage-query.md#the-question) says what it computes.
-
-```text
-Plan "q7_shipping_priority" (joined)
-worker sets: head[1], compute[4]
-values:
-  f3 = ValueExchange merge f2 -> compute[4]
-Output "result" on head[1]
-└─ TopN 10 [revenue desc, o_orderdate asc]
-   └─ Exchange x4 gather -> head[1]
-      └─ TopN 10 [revenue desc, o_orderdate asc]
-         └─ Aggregate keys=[l_orderkey, o_orderdate, o_shippriority] measures=[revenue = sum(rev)]
-            └─ Join inner keys=[l_orderkey == o_orderkey] build=right  mode=co_partitioned(x1, x3)
-               ├─ Exchange x1 hash(l_orderkey) -> compute[4]
-               │  └─ Project [l_orderkey, rev = l_extendedprice * (1 - l_discount)]
-               │     └─ RuntimeFilterApply [l_orderkey] <~ f3  wait=up_to(20ms)
-               │        └─ Filter l_shipdate > 1995-03-15
-               │           └─ Scan lineitem [l_orderkey, l_extendedprice, l_discount, l_shipdate]
-               │                            on compute[4]  shards=files_round_robin
-               └─ Exchange x3 hash(o_orderkey) -> compute[4]
-                  └─ RuntimeFilterBuild keys=[o_orderkey] spec=bloom(fixed 8MiB)  scope=partial ~> f2
-                     └─ Project [o_orderkey, o_orderdate, o_shippriority]
-                        └─ Join inner keys=[o_custkey == c_custkey] build=right  mode=broadcast_build
-                           ├─ RuntimeFilterApply [o_custkey] <~ f1  wait=never
-                           │  └─ Filter o_orderdate < 1995-03-15
-                           │     └─ Scan orders [o_orderkey, o_custkey, o_orderdate, o_shippriority]
-                           │                    on compute[4]  shards=files_round_robin
-                           └─ RuntimeFilterBuild keys=[c_custkey] spec=bloom(fixed 1MiB)  scope=global ~> f1
-                              └─ Exchange x2 broadcast -> compute[4]
-                                 └─ Project [c_custkey]
-                                    └─ Filter c_mktsegment == "BUILDING"
-                                       └─ Scan customer [c_custkey, c_mktsegment]  on compute[4]  shards=files_round_robin
-```
+Q7 joins customers, orders and line items, groups by order, and returns the ten orders with
+the most revenue under its date and market-segment predicates. The [worked plan](../part-3/07-a-multi-stage-query.md#the-joined-plan)
+specifies every exchange. Here the same four compute workers are spread across two hosts.
 
 Four of its five stages run on `compute[4]`, across both hosts. One runs on `head[1]`:
 
@@ -149,8 +104,7 @@ facts matter across hosts:
   the only value merge between workers, and it is in the `values:` block. `f1` is already
   `global` on every worker.
 - **The wait is a parameter.** `wait=up_to(20ms)` says how long the lineitem scan may hold back
-  for `f3`. The merge takes longer across hosts than inside one, and the node is where you change
-  that trade-off.
+  for `f3`. The scan can continue after its budget expires even if a remote share is still in flight.
 
 ## SPMD: the same plan everywhere
 
@@ -304,28 +258,16 @@ pruned on each worker.
 
 ## Failure and cancellation
 
-Distributed Sirius is
-[fail-stop](../part-5/07-failure-cancellation-and-recovery.md#fail-stop-along-the-edges):
+A failure on the required data path must reach the participating processes and their callers.
+If only the optional filter merge fails and the rows are still available, the scan can proceed
+without pruning. A timeout on first contact with a required peer fails the execution. After
+output has reached the application, the launcher must account for those rows before retrying.
+[Failure propagation](../part-5/07-failure-cancellation-and-recovery.md#fail-stop-along-the-edges)
 
-- **Any failure fails the execution.** An error on `compute#3` reaches every reader and every
-  `wait()` on both hosts, with its worker and plan location.
-- **A filter failure only drops the filter.** If the merge for `f3` fails, `f3` counts as skipped
-  and the lineitem scan runs unfiltered.
-- **Cancellation reaches every peer.** Any process can call `request_cancel()` on its
-  `CancellationHandle`, and the request travels along the plan's edges.
-- **A missing peer is an error.** If host B's process never starts, host A's edges fail with
-  `transport` once the first-contact deadline (`PrepareOptions::with_first_contact_deadline`)
-  expires.
-
-Whether to retry, and where, stays with the launcher:
-
-- If the plan's exchanges are `durability=spooled`, the launcher may re-run one failed stage
-  instance instead of the whole query, on the same GPU or a spare one. Every process applies the
-  same retry
-  ([Retrying a stage instance](../part-5/07-failure-cancellation-and-recovery.md#retrying-a-stage-instance)).
-- After a fatal GPU error every call in that process returns `runtime_unavailable` until it
-  restarts, so the launcher retries on another process or a restarted one, never in place
-  ([When the device itself fails](../part-5/07-failure-cancellation-and-recovery.md#when-the-device-itself-fails)).
+Spooling can make a completed intermediate result available to another attempt. Retrying a
+stage also requires surviving inputs, a way to select the winning attempt, and consumers that
+can avoid duplicate effects or rows. The launcher would have to coordinate that retry on every
+participating process. [Retrying a stage instance](../part-5/07-failure-cancellation-and-recovery.md#retrying-a-stage-instance)
 
 The retry API is [open question 28](../reference/open-questions.md#28-retry-api-and-who-decides),
 and liveness and the rest of coordination are
@@ -343,43 +285,22 @@ Bindings say only where, so the same plan runs on other machines unchanged
   host, and the exchanges move data between GPUs in one process instead of over the network.
   sirius-duckdb binds its plans the same way.
 
-## Today versus explicit
+## Distributed execution on upstream main
 
-The prototype runs one process per GPU and has run on up to 16 GPUs across four machines. It
-already uses hash, broadcast, range and gather exchanges, a merged Bloom filter and sampled
-boundaries for global sorts.
+Distributed SQL landed in [PR #2337](https://github.com/sirius-db/sirius/pull/2337).
+At the revision reviewed here, each rank runs the same statements in the same order, with the
+same peer list and its own rank index. Independent CPU fallback is disabled because one rank
+executing the query alone would produce a different result.
 
-What differs is where those decisions come from. Today each process plans the query on its own.
-A pass then walks the local plan, recognizes the shapes the local multi-GPU planner produced and
-infers where data must cross processes. Each inference has an explicit home in the plan:
-
-| Today, in the prototype | In the plan |
+| Upstream SQL path | Proposed builder path |
 |---|---|
-| Each process plans the query independently and must arrive at the same shape. | One builder runs identically on every process, and the fingerprint proves agreement. |
-| Exchanges are inferred by pattern-matching the shapes of the local plan. | `Exchange` nodes the builder wrote. |
-| Stream ids come from a per-connection query counter plus the order in which the pass visits operators. Only one connection per process may run distributed queries. | `ExchangeId` and `ValueId` assigned by `Plan::create`, carried with the `ExecutionId`. |
-| After planning, the processes all-gather a hash of the plan's shape to detect disagreement. | The fingerprint and bindings digest, compared in a handshake at start (V25). |
-| Broadcast or hash is chosen inside the inferring pass from size estimates. | A builder choice (`x2 broadcast` in Q7) or a `Decide` node (Q5). |
-| The sampling step of a global sort pushes its boundaries into the exchange through a callback. | `Observe key_sample` -> `ValueExchange` -> `ComputeBoundaries` -> range `Exchange` (Q6b). |
-| The Bloom filter merge is set up through a side channel on the join, with a two-minute timeout in a default, and it is cancelled when the estimated build is small. | `RuntimeFilterBuild` -> `ValueExchange` -> `RuntimeFilterApply`, with its spec and `WaitPolicy` on the nodes. |
-| A process with an empty build leaves the filter merge early through a hidden coupling between two operators. | Every producing worker ends exactly once. An empty build publishes an empty filter. |
-| Constant rows are kept on the first process and emptied on the others, and only the first process's result is meaningful. | `Values` and `Output` on `head[1]`. Only the process that hosts `head#0` gets a reader. |
-| The peer list and the process's own index are configuration settings, and setting them connects to every peer at once. | Endpoints in `Bindings`, per execution. |
-| Scan work is sliced per process while table information is loaded: the files are laid end to end, and each process gets one contiguous span of equal bytes. Processes that see different file sizes read some row groups twice and others not at all. | Splits on the `Scan` node: usually `files_round_robin`, `byte_ranges` or `Shards::dynamic()`. The file sizes behind a `byte_ranges` cut are in the plan and covered by the fingerprint, so processes that see different sizes fail the handshake. |
+| Each rank lowers its local plan. `distribute_plan()` recognizes supported operator shapes and inserts hash, range, broadcast or gather exchanges. | The caller builds the exchanges. Plan validation checks the properties the downstream operators require. |
+| Ranks compare a hash of the rewritten plan shape before running. The connection's query count contributes to stream IDs. | Processes compare a plan fingerprint and a bindings digest for the same execution ID. |
+| Local Parquet files are laid end to end and divided by byte span. Each rank reads the row groups starting in its span. Remote files are assigned by file index. | The scan specifies its shard rule or split list. A host can reproduce a particular assignment with explicit splits. |
+| A distributed sort shares samples to compute boundaries. A publishing join can merge compatible Bloom filters across ranks. | The samples, boundaries and filter merges become named values and dependencies in the plan. |
+| Rank 0 returns the result. After transport failure, recovering the distributed session requires restarting the ranks. | The plan names the output worker. Retry, transport recovery and handling already delivered output need a separate protocol. |
 
-Sirius adds no shard kind for the prototype's slicing. A host that wants it cuts the spans itself
-and passes them with `Shards::explicit_splits`.
-
-Below the plan, the prototype moves batches with credit-based one-sided writes
-([The protocol](../part-5/02-exchanges-in-the-engine.md#the-protocol)). Between machines it stages
-bytes through host memory over TCP; RDMA between machines is still to come.
-
-Two of today's limits have no row in the table:
-
-- A transport failure stops distributed queries on every process until all of them restart
-  (nothing reconnects), while each GPU engine keeps serving local queries. That stays a lifecycle
-  concern outside the plan.
-  [Failure, cancellation and recovery](../part-5/07-failure-cancellation-and-recovery.md)
-  describes what the explicit design does instead.
-- Operators that the inferring pass does not recognize are refused. In the explicit design, the
-  builder either places an exchange or `Plan::create` reports which invariant is broken.
+The merged guide records single-host tests and lists multi-host qualification as outstanding.
+A separate four-node study measured join-heavy queries on a development build with host-staged
+TCP. Those results describe that configuration. Cross-host transport work has its own PR.
+[Distributed guide and limits](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#limits) · [Four-node measurements](https://github.com/sirius-db/sirius/issues/2465) · [Multi-host transport](https://github.com/sirius-db/sirius/pull/2623)

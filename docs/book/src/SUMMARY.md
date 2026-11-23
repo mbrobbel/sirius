@@ -33,7 +33,7 @@
 - [Adaptive join](part-3/05-adaptive-join.md)
 - [Sort, top-N and limit](part-3/06-sort-top-n-and-limit.md)
 - [A multi-stage query](part-3/07-a-multi-stage-query.md)
-- [Live inputs and union]()
+- [Live inputs and union (planned)]()
 
 # Part IV: Ways to use Sirius
 
@@ -66,6 +66,6 @@
 - [Glossary](reference/glossary.md)
 - [Open questions](reference/open-questions.md)
 - [Extension points](reference/extension-points.md)
-- [The C ABI]()
-- [Arrow interoperability]()
-- [Streaming inputs and buffering]()
+- [The C ABI (planned)]()
+- [Arrow interoperability (planned)]()
+- [Streaming inputs and buffering (planned)]()

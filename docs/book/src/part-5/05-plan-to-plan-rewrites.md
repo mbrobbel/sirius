@@ -1,17 +1,13 @@
 # Plan-to-plan rewrites
 
-Rule 6 of [Everything in the plan](../part-2/01-everything-in-the-plan.md) says every
-transformation produces another plan in the same IR. This chapter applies it to the passes inside
-today's engine.
+A plan rewrite takes an immutable plan and returns another plan that you can print or
+validate. For example, a pushdown rewrite can add a pruning hint to a scan while leaving the
+exact filter above it. The host chooses which rewrites run before `prepare`.
 
-Today's engine wraps aggregates into partial and final halves, inserts routers under joins, splits
-sorts into three phases, and threads runtime filters from joins to scans. It does this in place, on
-its own operator tree, during lowering. The result is never visible, so you cannot check it, reuse
-it, or ask another process to run the same thing.
-
-In the explicit design the `wrap_*` passes, which place exchanges, leave Sirius: whoever builds the
-plan writes its exchanges, and validation checks them. The other passes become functions in
-`sirius::rewrite`, so `explain()`, the validator and lowering apply to their output.
+Sirius already rewrites its internal operator tree, both within a process and across ranks. The
+proposed API would expose selected transformations on the public plan. A host could then inspect the
+resulting exchanges and filters before executing them. [Current distributed
+planner](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/planner/distributed_plan.cpp)
 
 ## The rewrites at a glance
 
@@ -28,37 +24,31 @@ plan writes its exchanges, and validation checks them. The other passes become f
 Every rewrite takes a plan by reference and returns `Result<Plan>`. Its output passes V1-V20, V24
 and V26-V28, so a rewrite cannot produce a plan you could not have written by hand.
 
-The list is open. A host writes its own rewrite as a function from `Plan` to `Plan` that reads the
-plan through the [node view](../reference/api-at-a-glance.md#node-view) and builds the result with
-the builder. The view shows node kinds and data edges, not parameters. For now such a rewrite
-cannot rebuild a node over a different input; it can only build on the relations it finds.
+The public node view exposes node kinds and data edges. A host can add nodes above a relation
+it finds this way, but it cannot yet read every parameter needed to rebuild a node with a new
+input. That limits which custom rewrites the proposed interface can express.
+[Node view](../reference/api-at-a-glance.md#node-view)
 
-**Prepare never rewrites a plan.** A rewrite runs only when you call it, before you prepare.
-`prepared.plan()` is the plan you built with each `auto` resolved, for example `build=auto->right`
-([Preparing a plan](../part-1/06-prepare-and-execute.md#preparing-a-plan)).
-
-Rewrites are pure, so processes that apply the same rewrites in the same order to the same plan
-hold equal plans with the same fingerprint. A process that skipped one holds a different plan, and
-the handshake at start (V25) rejects it.
+Call rewrites before `prepare`. Preparation resolves worker-local `auto` values in the submitted
+plan. Peers with closed plans compare the fingerprints of the submitted plans at start. For open plans
+the handshake checks shared edges. [Preparing a plan](../part-1/06-prepare-and-execute.md#preparing-a-plan)
 
 ## Today's multi-GPU wrapping moves to the front-end
 
-Today the engine's `wrap_*` passes add the multi-GPU operators to
-[its operator tree](01-from-plan-to-pipelines.md#how-todays-operator-tree-gets-its-shape) around
-grouped aggregations, hash-join inputs, sorts, top-N and, with `wrap_ungrouped_aggregate`,
-ungrouped aggregates. `build_window_exchange` does the same under each window. The passes are a
-small planner: they choose where rows move, how many partitions there are, and whether to broadcast
-or hash.
+Today the engine's `wrap_*` passes add the multi-GPU operators to [its operator
+tree](01-from-plan-to-pipelines.md#how-todays-operator-tree-gets-its-shape) around grouped
+aggregations, hash-join inputs, sorts, top-N and, with `wrap_ungrouped_aggregate`, ungrouped
+aggregates. `build_window_exchange` does the same under each window. The passes are a small planner.
+They place routing operators around the computation. On a single machine the partition consumer can
+choose the partition count and broadcast policy at run time.
 
-In the explicit design that planner leaves the engine and does not move into the Sirius API. Sirius
-has no `distribute` rewrite and no default distribution policy. It keeps the vocabulary
-(`Exchange`, `Decide`, `Choose`, value edges), the validation, and the input requirements every
-node declares as data.
+In the proposal the host chooses the distribution and writes the exchanges into the plan. The
+library checks their compatibility with the operators that consume them. Whether to offer a helper
+for single-machine placement remains open.
 
-The front-end writes the exchanges. StarRocks, Axiom and Spark already plan distribution.
-sirius-duckdb's translation of DuckDB's optimized plan writes the `Exchange` nodes for
-`compute[N]`, as in
-[the Q5 worked plan](../part-4/01-duckdb-extension.md#a-worked-plan-q5-on-four-local-gpus).
+StarRocks, Axiom and Spark already plan distribution. The proposed DuckDB adapter would translate
+its optimized plan into `Exchange` nodes for `compute[N]`, as in [the Q5 worked
+plan](../part-4/01-duckdb-extension.md#a-worked-plan-q5-on-four-local-gpus).
 
 A front-end's planner can read the node requirements to place exchanges, as DataFusion's physical
 optimizer and the datafusion-distributed library do
@@ -66,26 +56,9 @@ optimizer and the datafusion-distributed library do
 model gains equivalence classes is
 [open question 27](../reference/open-questions.md#27-requirements-as-data-and-equivalence-properties).
 
-Q2 (pricing summary) on `local[1]` needs no exchange:
-
-```text
-Plan "q2_pricing_summary" (joined)
-worker sets: local[1]
-Output "result" on local[1]
-└─ Sort [l_returnflag asc, l_linestatus asc]
-   └─ Aggregate keys=[l_returnflag, l_linestatus]
-      │  measures=[sum_qty = sum(l_quantity), sum_revenue = sum(revenue),
-      │            avg_price = avg(l_extendedprice), count_order = count_star()]
-      └─ Project [l_returnflag, l_linestatus, l_quantity, l_extendedprice,
-         │        revenue = l_extendedprice * (1 - l_discount)]
-         └─ Filter l_shipdate <= 1998-09-02
-            └─ Scan lineitem [l_returnflag, l_linestatus, l_quantity, l_extendedprice,
-                              l_discount, l_shipdate]  on local[1]  shards=files_round_robin
-```
-
-On four GPUs, sirius-duckdb writes into the plan the pieces that `wrap_hash_group_by` and
-`wrap_order_by` add today. `priced` is the filtered and projected lineitem rows on `compute[4]`;
-`keys`, `measures` and `order` are those of [Exchanges](../part-2/03-exchanges.md):
+For Q2 on four GPUs, a host can place the two exchanges explicitly. First it moves
+partial states to the worker for each group. After final aggregation it gathers sorted rows for
+the result. [Q2 input, keys and measures](../part-3/02-aggregation.md)
 
 ```cpp
 SIRIUS_TRY(partial, priced.aggregate_partial(keys, measures));
@@ -129,28 +102,14 @@ Output "result" on head[1]
                                        l_discount, l_shipdate]  on compute[4]  shards=files_round_robin
 ```
 
-That is plan A from [Aggregation](../part-3/02-aggregation.md), node for node. Each plan node
-replaces a piece of today's wrapping and shows what that piece hides:
+Q2's hash exchange names the keys and the destination set. The proposed partial-state schema
+lets the builder check that the final aggregate can read those states. The ordered gather merges
+the sorted streams into one result. In a single process, the engine instead collects batches using
+their recorded positions. In the distributed SQL engine, a gather sends results to rank 0.
 
-- **`HASH_GROUP_BY` becomes `Aggregate partial`.** Its output schema shows the state types, which
-  today are set inside the wrapping pass.
-- **The `PARTITION` between the halves becomes `Exchange x1`.** It shows the keys, hash scheme and
-  partition count.
-- **`MERGE_GROUP_BY` becomes `Aggregate final`.** Merge fusion stays a lowering choice
-  ([lowering rule 4](01-from-plan-to-pipelines.md#the-lowering-rules)) and does not appear.
-- **`Exchange x2 gather` to `head[1]` has no operator today:** a single process collects the
-  result. Its `order=` is what today's result collector does when it combines positioned batches
-  in ascending position. sirius-duckdb declares `head[1]` to receive it
-  ([One process, N workers](../part-4/01-duckdb-extension.md#one-process-n-workers)).
-
-Today's multi-GPU engine therefore corresponds to plans like this one on `compute[N]`, bound with
-`Bindings::local()` and written by sirius-duckdb. For a join, today's wrapping chooses broadcast or
-hash at run time, so the extension writes decided exchanges, the Q5 shape from
-[Adaptivity in the engine](04-adaptivity-in-the-engine.md). The thresholds and partition counts
-are the extension's policy.
-
-If the front-end omits or misplaces an exchange, validation rejects the plan with a typed error
-that names the exchange to insert (V6 for this aggregate).
+A host could also express the existing in-process broadcast heuristic with a decision and two
+exchange alternatives. Validation rejects incompatible join inputs. It cannot infer the cheapest
+legal distribution or always name a unique repair. [Adaptive joins](04-adaptivity-in-the-engine.md)
 
 One case is open. On one machine with several GPUs, every front-end would carry the policy the
 `wrap_*` passes hold today. A small Sirius helper could turn a single-worker plan into one on
@@ -195,7 +154,7 @@ a split plan gives back an equivalent joined plan.
 Today a table scan can take filters, and its reader uses them to skip row groups and rows. The
 engine also fuses runtime filters into the scan
 ([RuntimeFilterApply](03-runtime-values-in-the-engine.md#runtimefilterapply-a-snapshot-or-a-short-wait)).
-Neither is visible: both happen while the engine builds its operator tree.
+The proposed plan would show both the pruning hint and the filter consumer.
 
 `push_filters_into_scans` does the same work as a rewrite. The lineitem side of Q7 before:
 
@@ -230,8 +189,7 @@ Three details make the rewrite safe:
 
 - The pushed predicate is a pruning hint. The `Filter` stays above the scan, so the plan is
   correct whether or not the reader skips anything.
-- The apply moves through the `Filter` into the scan. Both only drop rows, so their order does not
-  change the result.
+- Moving the apply through this date comparison preserves its result. A rewrite over arbitrary predicates would also need to preserve observable errors and side effects.
 - The fused apply keeps its value id and wait policy, so the value edge stays where it was. The
   scan prints it on a `fused=[...]` continuation line, next to `pushed=`.
 
@@ -255,7 +213,7 @@ Today runtime filter discovery runs while the hash join operator is built. It ch
 build side filters anything, admits the join keys, and walks the probe side to a scan, or to an
 endpoint it splices in when no scan can take the filter
 ([Today's filter channel](03-runtime-values-in-the-engine.md#todays-filter-channel)). The result
-appears in no plan.
+lives in the internal operator tree and publication state.
 
 `rewrite::insert_runtime_filters(plan, policy)` does the same walk on the plan and writes the
 result as nodes. The walk is narrower than today's: V18 lets a filter pass only key-preserving

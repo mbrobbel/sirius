@@ -7,8 +7,9 @@ broadcast or hash distribution. Workers can still choose how to execute their lo
 
 ## How the engine adapts today
 
-The `PARTITION` operators feeding a consumer share a `partition_exchange` that coordinates
-their choice of layout. [Partition exchange implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/partition/partition_exchange.hpp)
+The `PARTITION` operators feeding a consumer share a `partition_exchange` that coordinates their
+choice of layout. [Partition exchange
+implementation](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/partition/partition_exchange.hpp)
 
 One input is the **sizing input**, for a hash join its build side. A `FULL` barrier in front of
 its `PARTITION` makes the input complete before the operator runs. The operator then calls
@@ -21,7 +22,7 @@ its `PARTITION` makes the input complete before the operator runs. The operator 
   least `num_gpus * 1.25` times larger. A candidate is replicated only if it also qualifies for
   `BUILD_PROBE`.
 - **Partition count.** Otherwise the "natural" count is the measured bytes divided by a
-  per-partition byte target, and at least the number of GPUs.
+  per-partition byte target, rounded up. The GPU-count minimum applies once the input clears the small-table threshold.
 - **Join algorithm.** `BUILD_PROBE`, which builds one resident hash table per partition, when the
   table fits and the join type allows it; otherwise `STANDARD`.
 - **Placement.** Which GPU each partition runs on.
@@ -44,10 +45,10 @@ bindings. The rest stays with the engine.
 | Partition count across GPUs | Worker set size, `Partitions::fixed`, or `Partitions::decided_by` |
 | `BUILD_PROBE` or `STANDARD` | Engine-owned: a local algorithm on one worker |
 | Partition count inside one GPU, for memory | Engine-owned: local sub-partitioning |
-| Placement on GPUs | Bindings, plus "partition p goes to worker p mod \|W\|" |
+| Placement on GPUs | The default or explicit partition map selects the worker. Bindings select its GPU. |
 
 Partition count appears twice because today's count does two jobs. It **routes**: partition *p*
-runs on one GPU, so the count decides which GPU sees which rows. It also **bounds partition size**:
+runs on one GPU, so the count decides which GPU sees which rows. It also **targets an average partition size**:
 a merge or join task processes one whole partition, which is why the count derives from a
 per-partition byte target. `MERGE_GROUP_BY` raises it further so that an average partition holds at
 most 2^30 rows; a cuDF column must hold fewer than 2^31.
@@ -93,7 +94,7 @@ flowchart LR
   DE -.->|"d1"| R2
 ```
 
-### The lineitem side waits, and that is fine
+### Where the lineitem rows wait
 
 `d1` is unknown until the orders side finishes, but the lineitem scan does not wait for it. Its
 batches queue in x1's router input repository, which can spill.
@@ -103,22 +104,11 @@ a dotted edge in the plan instead of a flag inside `partition_exchange`.
 
 ### Every worker computes the same label
 
-Today each shared `partition_exchange` resolves its layout once, under a mutex, inside one process.
-Across processes there is no shared object to lock. Each worker instead evaluates `Decide` locally,
-from the same merged `s2`, with the same pure rule. There is no coordinator and no round trip
-beyond the merge. This is why V15 requires the input of a `Decide` to be global on every set it
-controls.
-
-The merged `s2` must be identical bit for bit on every worker, whatever engine or encoding each
-one uses. That is why `Observe` counts logical bytes, computed from Arrow type widths and never
-from encoded, compressed or device bytes.
-[Why every worker picks the same label](../part-2/06-adaptive-plans.md#why-every-worker-picks-the-same-label)
-gives the full rules. Label digests on every decided exchange check the result at run time, and a
-mismatch fails the execution with an `execution` error.
-
-When a decision needs one place to happen, for example a timeout, the plan can
-[decide on a leader](../part-2/06-adaptive-plans.md#deciding-on-a-leader) instead. The label digest
-guards that decision too.
+Within one process the `partition_exchange` resolves its layout once, under a mutex. In
+the proposed Q5 plan every worker evaluates the same threshold on the same merged byte count.
+`Observe` measures logical bytes so compression and spill format cannot affect the choice.
+A digest on the decided exchange detects disagreement. An alternative is to evaluate the policy
+once on a leader and distribute its label. [Decision agreement](../part-2/06-adaptive-plans.md#why-every-worker-picks-the-same-label)
 
 ## What the report records
 
@@ -149,16 +139,15 @@ Join inner keys=[l_orderkey == o_orderkey] build=right  mode=broadcast_build
          └─ Scan orders [o_orderkey, o_orderdate]  on compute[4]  shards=files_round_robin
 ```
 
-Today this information exists only in logs. Diff the resolved plans of two runs to see which
-choice changed.
+Comparing two resolved plans would show whether their joins took different paths.
 
 ## Deciding the partition count
 
-Q5's variant decides the partition count instead of the mode:
-`d2 = Decide partition_count(s2.bytes, target=1GiB, min=4, max=64)`, used as `partitions=<~d2` on
-both x1 and x2. The rule is ceil(bytes / target), clamped to the range. That is today's "natural"
-count, with the per-partition byte target as `target` and the GPU count as `min`. It only routes
-([Where each decision goes](#where-each-decision-goes)).
+Q5's variant decides the partition count instead of the mode: `d2 = Decide partition_count(s2.bytes,
+target=1GiB, min=4, max=64)`, used as `partitions=<~d2` on both x1 and x2. The rule is ceil(bytes /
+target), clamped to the range. Today's sizing function also rounds up. It applies its GPU-count
+floor only above a small-table threshold. [Partition
+sizing](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/partition/partition_sizing.hpp)
 
 Both sides must use the same Decision (V20), or matching keys would land in different partitions.
 Today the shared `partition_exchange` enforces that inside one process by binding the build and
@@ -174,8 +163,7 @@ The linked section builds one for Q2 (pricing summary).
 - **Every arm is built.** The pipelines, ports, exchange sinks and exchange sources of every arm
   exist from `prepare`, so handshakes and admission do not depend on the label.
 - **A stage of the losing arms waits, then closes.** Its pipelines depend on the Decision's value
-  channel, as a decided router does. When the label names another arm, the stage instance sends end
-  of stream on every exchange it feeds and ends `closed`, without scheduling a task.
+  channel, as a decided router does. When the label names another arm, the stage instance closes its exchange streams without executing the unused operators.
 - **A shared stage drops the losing pipelines.** In a stage that holds nodes of several arms, the
   shared nodes run as usual and their output ports buffer, in spillable memory, until the label
   arrives. Then the engine connects the chosen arm's pipelines to those ports, and the other arms'
@@ -190,17 +178,11 @@ which delivers the label to `compute[4]` through a one-sender `ValueExchange`.
 
 ## What does not map one to one
 
-Today's broadcast rule also looks at the probe-to-build ratio and the estimated hash table size.
-`Decision::threshold` looks at one merged statistic. A richer pure policy, for example one that
-compares two statistics, is a possible extension, related to open questions
-[11 (`Choose` limits and richer policies)](../reference/open-questions.md#11-choose-limits-and-richer-policies) and
-[12 (decision determinism)](../reference/open-questions.md#12-decision-determinism-and-replay).
+The in-process join considers the probe-to-build ratio and estimated hash table size. Q5's threshold
+uses only total build bytes, so it need not choose the same route. A richer policy would need a way
+to name and compare both inputs. [Decision
+policies](../reference/open-questions.md#11-choose-limits-and-richer-policies)
 
-`BUILD_PROBE` versus `STANDARD` stays an engine choice, made on each worker from what that worker
-holds. Whether the report should also list engine-owned choices is part of
-[open question 19](../reference/open-questions.md#19-the-implicit-boundary).
-
-Adaptivity weakens the join's output distribution to the meet of the alternatives, `arbitrary`, so
-Q5 needs a two-phase aggregation above the join
-([The other cost: a weaker distribution](../part-2/06-adaptive-plans.md#the-other-cost-a-weaker-distribution)).
-The hash-distributed arm alone can sometimes aggregate locally. Adding a broadcast alternative can therefore add a shuffle even on a run that ultimately chooses hash.
+Each worker can choose a local join algorithm such as `BUILD_PROBE` after routing. Q5's
+two-phase aggregate, however, must work for either distribution the join can produce.
+[Distribution after an adaptive join](../part-2/06-adaptive-plans.md#the-other-cost-a-weaker-distribution)

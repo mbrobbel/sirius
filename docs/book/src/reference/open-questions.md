@@ -1,11 +1,8 @@
 # Open questions
 
-The plan owns every fact two workers must agree on and every property later nodes rely on; the
-engine owns how each edge is carried out. These questions are what that division leaves open: some
-concern what lives *around* the plan (lifecycle, failure, coordination), others how far the plan
-vocabulary should grow. Chapters refer to them by number. A question settled elsewhere is marked
-**Answered** or **Partly answered**, links there, and keeps its number. Each entry states the
-question, the options and the current leaning, if there is one. A leaning is not a decision.
+These are design decisions for the proposed API. “Answered” means the book adopts a contract.
+Implementation status is a separate question. The numbers stay stable so chapters can refer to a
+decision as the design changes.
 
 | Theme | Questions |
 |---|---|
@@ -51,11 +48,13 @@ level; `aggregate_combine` is already in the proposed API, so no new node is nee
 [Running at scale](../part-5/08-running-at-scale.md#worker-granularity) compares the two
 granularities.
 
-On one machine, the first measurements support the leaning. The distributed prototype in
+The measurements reported in the merged distributed execution PR use one process per GPU.
+The implementation in
 [sirius-db/sirius#2337](https://github.com/sirius-db/sirius/pull/2337) runs one process per GPU with
 exchanges between processes. On four GB200 GPUs at scale factor 3000, it reached 2.49 times the
-speed of one GPU over 20 queries, against 1.56 times for today's single-process engine with its
-balancing inside the machine.
+speed of the single-GPU baseline over 20 queries. The single-process comparison in that PR
+reached 1.56 times the baseline. This comparison changes both process layout and exchange
+implementation, so it does not isolate the effect of worker granularity.
 
 Across machines the first runs are mixed. At scale factor 30000 on four-GPU machines, going from 8
 to 16 GPUs made TPC-H Q1 and Q6 about twice as fast, while TPC-H Q3, Q5 and Q9 got no faster
@@ -81,34 +80,25 @@ validation to `prepare`.
 
 ## 4. Coordination and failure
 
-[Failure, cancellation and recovery](../part-5/07-failure-cancellation-and-recovery.md#how-an-execution-ends)
-settles the core (outcomes, fail-stop along edges, the first-contact deadline, single-use execution
-ids, message keys, opt-in stage retry). Still open: who distributes endpoints and execution ids,
-how a process finds its peers, whether liveness after first contact needs heartbeats, and how hosts
-learn whether a failed execution had side effects.
+The proposal gives each execution an ID and each edge a first-contact deadline. Open plans have
+no global list of participants. Several decisions still depend on who can see the whole query.
+[Failure and recovery](../part-5/07-failure-cancellation-and-recovery.md#how-an-execution-ends)
 
-**Leaning:** the host keeps distributing execution ids, and peers keep `Endpoint` bytes. The bytes
-need not pass through a coordinator: a StarRocks compute node fetches them from its peers and caches
-them, so the frontend ships only each instance's id and backend address and carries no Sirius
-fields. Endpoint bytes stay opaque to hosts. They carry at least a transport agent address that
-peers can reach and the identity of the device. Buffer addresses and peer-access facts, such as
-whether two GPUs can reach each other directly, can wait for a hello at first contact.
-
-Sirius owns readiness, the first-contact deadline (a prepare option) and liveness inside
-`Execution`. A transport failure fails one execution, not the engine. An error gains a
-classification: whether it is retryable and whether side effects may have happened, derived from
-the side-effect classes of the nodes that ran
-([Extension points](extension-points.md#side-effect-classes)). A fatal device error makes the
-engine unavailable for the whole process, so `runtime_unavailable` is classified as not retryable
-within that process (question 15). Which code that process's peers see is open, given that the
-origin's error is carried unchanged. Who decides a retry, and through which call, is question 28.
-
-[sirius-db/sirius#1807](https://github.com/sirius-db/sirius/issues/1807) records an alternative for
-finding peers: a peer is named by an opaque id that the embedding backend resolves to a transport
-agent, through a resolver the host supplies. Then no host handles endpoint bytes, but every process
-depends on a host callback before it can reach a peer, and every process's resolver must map the
-same id to the same agent. Either way, the number of transport agents per context is the engine's
-choice.
+- **Discovery.** One option is for the host to distribute an execution ID and opaque endpoint
+  bytes. A compute node could fetch and cache its peers' endpoints. Another is to put an opaque
+  peer ID in a binding and let a host callback resolve it to a transport agent. Each process
+  would then depend on its resolver before first contact. [Resolver proposal](https://github.com/sirius-db/sirius/issues/1807)
+- **Peer loss.** An initial deadline detects a peer that never joined. How should surviving
+  workers detect a peer that joined and then disappeared? A fatal GPU error can leave that
+  process unusable for further queries, while its peers may still have healthy engines.
+- **Failure reporting.** A single failure has an origin. If independent workers fail
+  concurrently, is there a query-wide choice of error? What can the host learn about effects
+  already visible outside the query? The side-effect declarations restrict which stages can be
+  retried. [Side effects](extension-points.md#side-effect-classes) · [Retry decisions](#28-retry-api-and-who-decides)
+- **Multiple outputs.** When one output was drained and another closed early, which outcome
+  does `wait()` report? Also, `collect()` returns a flat list of batches. Two named outputs
+  can have the same schema. Should collection accept just one output, or group batches by
+  output and worker?
 
 ## 5. Backpressure
 
@@ -120,7 +110,7 @@ Buffers are still bounded, and then waits can block each other: a merging receiv
 exchange cannot route a row until its required `Decision` arrives. Which waits must the validator
 see, and what happens when every tier is full?
 
-**Leaning:** within one execution, deadlock freedom is a property of the plan
+**Proposed check.** Within one execution, validate the waits represented in the plan
 ([Credits and deadlock freedom](../part-5/08-running-at-scale.md#credits-and-deadlock-freedom)).
 Credits are granted per logical stream, so a stream without credit never holds up another stream on
 the same connection. V1 requires an acyclic wait-for graph, so a plan whose waits could form a
@@ -128,11 +118,10 @@ cycle is rejected when it is built. Optional values never add a wait-for edge, b
 never waits and `wait=up_to(t)` gives up after `t`. When every memory tier is full, the execution
 fails with an `execution` error instead of hanging.
 
-The plan cannot see waits between executions. Until one engine runs executions concurrently
-(question 15), a host must not feed an `Input` from another live Sirius execution in the same
-process: the second execution may wait for the slot the first one holds. Chain executions through
-completed, spillable results instead: run the producer to completion, then bind its batches to the
-consumer as a completed input (question 33).
+The plan cannot see waits between executions. A producer that holds the last admission slot can
+block on a consumer waiting for that slot. A higher concurrency limit only changes how many jobs
+can participate. The proposed API chains executions through completed inputs. Within an execution,
+progress also depends on fair scheduling and enough space to drain or spill buffered data.
 
 ## 6. Filter waits
 
@@ -168,16 +157,16 @@ until their layout is fixed, and plan distinct counts as two-level groupings mea
 
 ## 9. Open-plan composition
 
-`rewrite::join_stages` composes open instance plans back into a joined plan. It groups them by
-hosting set and needs one instance per worker of each set it recovers; an unsized set becomes sized
-by the number of instances supplied, whose indices must be 0 to n-1. Its exact rules are open: how
-edge signatures must match, and how a plan states whether a stage boundary is materialized or
-pipelined (the StarRocks prototype materializes at every exchange).
-**Leaning:** every exchange and value id must have sinks in exactly one producing set and sources in
-each consuming set, all with equal edge signatures. Materialization is the exchange's durability
-property: under `durability=spooled` a receiver consumes a sender attempt's output only after that
-attempt completed, and durability is part of the edge signature (see
-[Durability](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled)).
+A tool with every instance plan can reconstruct a joined plan. It needs a consistent set of
+worker indices, matching signatures at both ends of every edge, and the scan ranges assigned
+to each instance. The proposed signature includes whether the receiver can consume rows as they
+arrive or must wait for a completed sender attempt. [Spooling](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled)
+
+An independently prepared fragment has less evidence. A scan receiving a runtime filter can
+check its key type and sender set. It cannot see whether a downstream outer join must preserve
+rows the filter would remove. Which checks require the host to assemble the plan, and what
+evidence can the host give Sirius when it prepares fragments separately?
+[Validation of open plans](../part-2/07-validation.md#three-gates)
 
 ## 10. Shared subplans and multicast
 
@@ -191,7 +180,7 @@ result changes what each consumer ends up with, so it belongs in the plan. Until
 declares one `Input` per reader and feeds each the same batches. A `RecordBatch` is cheap to copy,
 so this shares the data.
 
-Today's `exec::streaming_fragment` has the same rule: a declared input may be read by at most one
+Upstream’s `exec::streaming_fragment` has the same rule: a declared input may be read by at most one
 plan leaf. An upstream draft ([#2157](https://github.com/sirius-db/sirius/pull/2157)) would let a
 shared subtree read one input twice by giving each extra reader its own copy of every pushed batch.
 
@@ -229,11 +218,11 @@ Must re-running the joined plan on the same data draw the same key sample, and s
 The rest is settled. Every worker computes the same label from the same merged value
 ([Adaptive plans](../part-2/06-adaptive-plans.md#why-every-worker-picks-the-same-label): logical
 bytes, integer or decimal policy inputs, sender-ordered samples, digests, the
-[leader pattern](../part-2/06-adaptive-plans.md#deciding-on-a-leader)). A report is enough to
-replay a run: replay runs the
+[leader pattern](../part-2/06-adaptive-plans.md#deciding-on-a-leader)). To repeat the recorded decisions, use the
 [resolved plan](../part-2/06-adaptive-plans.md#after-the-run-decisions-and-the-resolved-plan), from
 `rewrite::resolve` over `report.decisions()` or from `report.resolved_plan()`, which also
-substitutes assignments and dynamic split claims.
+substitutes assignments and dynamic split claims. Reproducing the rows also requires the same
+input data. Results can still differ for volatile functions, unordered limits and ties.
 
 **Leaning:** yes where it is cheap. Each worker keeps the rows with the smallest key hashes under a
 fixed seed, so its sample depends only on which rows it holds, not on batch boundaries or arrival
@@ -267,7 +256,7 @@ scan kind is registered (question 25), and which units a registered scan lists a
 **Partly answered.** The proposal has one engine per process, and `Context::create` enforces the
 limit ([How long a context lives](../part-1/03-context-and-session.md#how-long-a-context-lives)).
 The upstream design is [sirius-db/sirius#2448](https://github.com/sirius-db/sirius/issues/2448),
-with the enforcement in [#2457](https://github.com/sirius-db/sirius/issues/2457) and the public
+with enforcement proposed in [#2457](https://github.com/sirius-db/sirius/issues/2457) and the public
 `Context` contract in [#2460](https://github.com/sirius-db/sirius/issues/2460).
 
 [sirius-db/sirius#2461](https://github.com/sirius-db/sirius/issues/2461) stages the execution API
@@ -275,7 +264,10 @@ and leaves concurrent executions on one engine and independent contexts per proc
 first stages. Until then a `Context` may be shared between threads, but its executions may still run
 one at a time (question 5). #2461 also names a `Session` that may arrive later as a planning
 environment, with a catalog and settings, for catalog-backed or SQL preparation. Nothing in the
-proposal depends on it: `check` and `prepare` live on `Context`. Six points remain open:
+proposal depends on it: `check` and `prepare` live on `Context`. The published C++ API leaves the one-context limit to the caller. Its handle has unique
+ownership. [Current context contract](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/include/sirius/context/context.hpp)
+
+Six points remain open.
 
 - **A matching second create.** Should a second `Context::create` whose configuration matches the
   live engine share it instead of failing?
@@ -290,7 +282,9 @@ proposal depends on it: `check` and `prepare` live on `Context`. Six points rema
   is engine state. Admission and `max_concurrent_queries` sit on the line. **Leaning:** admission
   is engine-level, because
   [gang admission](../part-5/08-running-at-scale.md#admission-across-processes) needs one admitter
-  per process that sees every query.
+  per process that sees every query. Sorting requests by the same priority key does not make
+  reservations atomic when different participants see different sets of requests. The proposal
+  still needs a way to commit a common admission or withdraw partial reservations.
 - **One admission unit for several instance plans.** A compute node's instance plans of one query
   under one `ExecutionId` are admitted as one unit: they all wait or all run
   ([StarRocks](../part-4/02-starrocks.md#what-prepare-binds)). `PreparedPlan::start()` starts one
@@ -323,7 +317,11 @@ Still open are the function catalog, the conversions `cast` accepts, which types
 accepts (ordering a boolean or a `list`, for example), the precision of a decimal product, the
 result of `div`, what arithmetic does on overflow, and how `and`, `or`, arithmetic and function
 calls treat nulls. Whether a schema may have no fields, and whether plans and expressions have a
-depth limit, are undecided too. How the catalog is extended is partly answered: functions resolve
+depth limit, are undecided too. The proposed builder folds `now()` to a literal. Reusing the plan then
+reuses the timestamp from construction. A host promising the time of the current query must
+supply a fresh value for each query. Should the plan have an execution-time parameter for this?
+Floating-point addition is also sensitive to reduction order. Should a floating-point aggregate
+guarantee the same bits across partition counts and retries? Function names resolve as follows: functions resolve
 when the plan is built, in an immutable, context-free `Registry` that plan construction takes
 ([Closed and open lists](extension-points.md#closed-and-open-lists), question 25).
 **Leaning:** nothing implicit in the open parts either. A result type follows from the operand
@@ -359,12 +357,20 @@ One smaller point remains around null-safe pairs. A runtime filter with a key fr
 null key pass (V18); a filter that also records whether the build holds a null key could drop them
 when it does not.
 
+A mark join with an extra residual predicate needs its own proof. With a null probe key, a
+nonempty build and a residual that is false for every pair, the combined condition is false
+for every row. A global count alone cannot decide the mark for that probe. A nullable residual
+can also introduce unknown when the key comparisons themselves are null-safe. Which residuals
+can a partitioned mark join evaluate with the information it receives?
+
 ## 18. Hash scheme stability
 
 `HashScheme::v1` fixes the hash function, seed and key canonicalization, so every worker of a hash
 exchange must be a Sirius worker. Canonicalization has to be exact for every key type
 ([Hash canonicalization in v1](extension-points.md#hash-canonicalization-in-v1)). Must `v1` stay
-identical across releases and languages, and how do other schemes, such as Spark's Murmur3 hash
+identical across releases and languages? Interoperability also needs the hash algorithm and seed,
+byte order, null encoding, framing of variable-length keys, and shared test vectors. The
+canonicalization table alone does not define a wire-compatible hash. How do other schemes, such as Spark's Murmur3 hash
 with seed 42, Iceberg bucket hashing, or Velox's or Presto's hash partitioning, fit in?
 **Leaning:** `v1` is frozen forever for the types it defines, and any change becomes a new scheme
 with a new name, which also changes the partitioning signature. Other schemes are registered under
@@ -482,26 +488,26 @@ side's rows are broadcast, while all other keys hash as usual. The output is the
 
 ## 27. Requirements as data and equivalence properties
 
-To reject a plan whose exchange is missing or misplaced, the validator must know what each node
-needs from its inputs, such as rows hashed on the grouping keys before a final aggregate. Today
-that knowledge is code for the built-in nodes, so a node added through the node contract
-([Extension points](extension-points.md#the-node-contract)) would need changes in the validator.
-Should every node declare its required input distributions and orderings as data
-([Requirements are data](extension-points.md#requirements-are-data)), which the validator checks
-and any front-end's planner can read? And should the property model track equivalent columns and
-constants, so that a relation hashed on `l_orderkey` also counts as hashed on `o_orderkey` after an
-inner join on those keys, and a column fixed by a filter such as `x == 5` can be dropped from a key
-list when a requirement is checked?
+An aggregate needs all rows of a group on one worker. A validator can check this from the
+grouping columns and the input distribution. The proposal would expose each node's requirements
+as data so the validator and a front-end planner can use the same rules. [Node requirements](extension-points.md#requirements-are-data)
 
-**Leaning:** yes to requirements as data. The validator checks the declarations, and its typed
-error names the unmet requirement and the exchange that would meet it. A front-end's planner reads
-the same declarations to place its exchanges, so the planner and validation cannot disagree on what
-a node needs. Sirius ships no pass that inserts exchanges: the front-end writes them, where
-DataFusion and Spark use a pass inside their own optimizers
-([Related designs](../appendix/related-designs.md#what-sirius-borrows)). A helper scoped to one
-machine is [question 36](#36-a-distribution-helper-for-one-machine). Equivalence classes generalize
-what the inner join already does with its two key lists, and they must respect join types, because
-an outer join's unmatched rows carry NULL on the other side. Constants come later.
+Two cases need more than the names of the distribution keys.
+
+- **Equivalent columns.** After an inner join on `a == b`, hashing on `a` also implies hashing on
+  `b`. Outer joins can pad one side with nulls, so this inference depends on join type. A filter
+  can also fix a column to a constant. The proposal favors tracking equivalent join keys first.
+- **Replicas and row counts.** Broadcast one row to four workers and give each copy a different
+  `random()` value. The four rows are no longer identical, but gathering them still yields four
+  rows for one logical input row. Calling this distribution `arbitrary` loses that fact. The
+  same problem arises when `Choose` can return either replicated or partitioned rows, or when
+  replicas select different rows tied at a `TopN` cutoff. Before such output feeds a gather,
+  an aggregate or a shared result, the validator needs proof of how many copies it can consume.
+  Should the IR track row multiplicity separately from placement, provide an operation that
+  selects one replica, or reject plans whose multiplicity cannot be proved?
+
+The replica rule is unresolved. Plans in the examples use replication where each worker
+intentionally needs a copy, such as the build side of a broadcast join.
 
 ## 28. Retry: API and who decides
 
@@ -517,7 +523,11 @@ attempt and whether retry is allowed, and offers `Execution::retry_stage`. Siriu
 its own, and the `Output` stage is never retried after its first batch reached the host. These
 names are a sketch ([API at a glance](api-at-a-glance.md#failure-events-and-retry-sketch)); the
 exact API, how a host opts in to hear failures before they become fatal, and how long a failed
-instance waits for the host's answer are open.
+instance waits for the host's answer are open. A committed spool also needs a failure domain:
+can the next attempt read it after its worker or host is lost? Rerunning only the failed instance
+requires its inputs to remain available and the consumers to agree on the attempt they read. A binding names a worker, while retry
+names a stage instance. If two stages share the worker, moving only one instance needs a rule
+for finding the other's committed spool and rejecting messages from the superseded attempt.
 
 ## 29. Windows over a global order (prefix value mode)
 
@@ -587,10 +597,11 @@ does a host declare an `Input` whose fields have state types, such as the reduce
 aggregate split by a Spark shuffle, or a StarRocks fragment that receives partial states from
 another? The API can read a state type through `DataType::state()` but cannot declare one today.
 
-**Leaning:** casts wherever they give identical values, such as an integer sum under ANSI mode cast
-back to int64 with an overflow check; registered functions for hashing, Bloom probes and wrapping
-arithmetic; and registered state types only where the host's other engine must read Sirius states.
-Until then, both halves of such an aggregate run on Sirius. Every registration follows question 25.
+**Leaning.** Use a cast when only the result type differs. A cast after a wider sum can miss
+an intermediate overflow, so it cannot implement Spark's checked sum in general. Use a
+host-compatible function for hashing, Bloom probes or arithmetic when their behavior differs.
+If partial aggregate states cross into a foreign engine, both sides need the same state layout
+and merge semantics. [Dialect example](../part-4/05-plans-from-other-systems.md#dialect-semantics)
 
 ## 32. A Velox plan adapter
 
@@ -615,186 +626,82 @@ pin to, only a version of the specification.
 
 ## 33. Re-planning beyond the plan's alternatives
 
-Decided exchanges, decided partitions and `Choose` pick only among alternatives written into the
-plan before it runs. Some choices cannot be listed in advance at a sensible size: a six-way join
-has hundreds of join orders, an estimate off by a factor of a thousand can make every listed
-alternative wrong, and the best plan for the rest of a query can depend on sizes that exist only
-after its first stages ran. Spark and Ballista re-plan at stage boundaries for this reason
-([Related designs](../appendix/related-designs.md#spark-trino-and-snowflake)). Should Sirius
-support re-planning, and how? There are two approaches.
+A decision can choose among listed join orders. It cannot introduce a new one when row counts
+turn out very differently from the estimates. Should a host be able to materialize an
+intermediate result, inspect its size and build a new plan for the remaining work?
 
-**A. Explicit plan chains.** The host cuts the query where everything below the cut is
-materialized. It runs plan 1, whose results stay on the workers as retained, partitioned outputs. It
-reads the row and logical byte counts from plan 1's report, and builds plan 2, which reads those
-results as sources that declare their partitioning. Sirius never re-plans: the host does,
-between immutable plans.
+One option would keep partitioned outputs on workers across executions. The second plan would
+read them with a declared distribution. The host could choose a new join order, at the cost of
+a pipeline break, a second preparation, and rules for retention, cleanup and worker loss.
+Diagnostics would have to connect the two plans.
 
-| Pros | Cons |
-|---|---|
-| Every plan is still immutable, validated and printable before it runs, so none of the IR's guarantees change. | It needs results that outlive an execution: retention, memory and spill limits, cleanup, and what happens when a worker that holds them fails. |
-| Any re-optimization is possible, including join orders nobody listed, because a planner builds plan 2 from real sizes. | Each cut is a full barrier. Nothing above it starts until everything below it has finished, so pipelining across the cut is lost. |
-| The record is the chain of resolved plans, and each can be replayed. | Every cut adds a round trip to the host, a plan build, a `prepare` and new handshakes. |
-| Sirius stays free of planning. The re-planning lives in the host, such as Distributed Sirius or Axiom, where the optimizer already is. | A query is no longer one plan, so tools that read one plan (`explain()`, fingerprints, the report) must understand chains. Hosts that already re-plan, such as StarRocks, and Spark through Bolt, gain nothing. |
-
-**B. No re-planning in Sirius.** Every runtime choice is a `Decide` or a `Choose` in one plan.
-Anything that cannot be listed is decided by the host's optimizer before the run. A host that wants
-to re-plan anyway does it outside Sirius, for example by ending one execution at an `Output`,
-running it to completion, and binding its batches into the next plan as a completed `Input`,
-subject to the cross-execution rule in [question 5](#5-backpressure).
-
-| Pros | Cons |
-|---|---|
-| One query is one plan: the simplest model, and every runtime choice stays a plan value ([rule 3](../part-2/01-everything-in-the-plan.md#the-ownership-rule)). | Alternatives must be listed, and every arm is prepared and admitted, so their number cannot grow far (question 11). |
-| No result lifetimes, no new API, and no failure handling across executions. | A misestimate outside the listed alternatives cannot be corrected while the query runs. |
-| Every decision is made without a coordinator and recorded in one report. | A host that re-plans anyway moves intermediate results through its own `Output` and `Input`, through host memory, which costs far more than leaving them on the workers. |
-
-A third variant, a plan with a hole that the host fills in while it runs, is left out: the plan
-would no longer be known before it starts, a property both approaches keep.
-
-**Leaning:** B for now; A stays possible. What A needs first, results that stay on the workers and
-that a later plan can read with a declared partitioning, is useful on its own, for result caching
-and shared intermediate results. It builds on spooled exchanges
-([Failure, cancellation and recovery](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled))
-and on sources that declare their partitioning ([question 13](#13-hints-and-certified-properties)).
-Revisit A when a host wants mid-query re-optimization and the listed alternatives are not enough.
+The book favors keeping runtime choices within one plan for now. A host can already *express*
+a boundary as an `Output` followed by a completed `Input` in another plan, though it then owns
+the intermediate data. Retained worker-side results would also be useful for caching.
+[Spool durability](../part-5/07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) ·
+[Certified source properties](#13-hints-and-certified-properties)
 
 ## 34. Scans over GPU-resident data
 
-Today `pin_table` loads a table into GPU memory before any query reads it. It deals the table's
-chunks round robin over the GPUs, and a scan of a pinned table runs each chunk on the GPU that
-already holds it, so the scan never copies. In the plan, a scan's splits are assigned to workers
-when the scan is built, and the bindings later say which GPU each worker runs on. A pinned chunk
-sits on one GPU before either is known. If the plan gives it to a worker bound to another GPU, the
-engine copies it there: the result is correct, but the point of pinning is lost. How should a scan
-over GPU-resident data be written? There are three approaches.
+A GPU-tier `pin_table` places chunks on devices before a plan binds its workers. A split may
+therefore be assigned to a worker on a different GPU. The result can be correct while paying for
+the copy that pinning was meant to avoid.
 
-**A. Residency as input to the builder.** The context reports where its cached chunks live, as
-splits per endpoint. The host builds the scan with `explicit_splits`, so that worker *k* reads what
-one GPU holds, and binds worker *k* to that GPU. `prepare` counts the splits that must be copied
-and records them in the report.
+| Option | What the host or engine must do | Cost |
+|---|---|---|
+| Build from residency | The host obtains splits per endpoint, uses `explicit_splits`, and binds the corresponding workers there. Count nonlocal reads in the report. | Requires placement at build time. Eviction or later placement changes can invalidate the locality assumption. |
+| Prefer local dynamic claims | Each worker claims its resident splits first, then unclaimed work. | Flexible under load, but a worker may still copy another's chunk. Only works if downstream operators accept any assignment. |
+| Resolve a resident shard kind at prepare | Bind each split using actual cache residency and worker placement. | The plan fingerprint would omit a decision that affects which worker reads which split. |
 
-| Pros | Cons |
-|---|---|
-| The plan still says which worker reads which split, and nothing new enters the IR. | The plan depends on the cache when it is built. An eviction or a new pin between building and running turns resident reads into copies. |
-| A mismatch between plan and cache is visible in the report, never silent. | The host must know the bindings while it builds the plan, which couples the two steps the book keeps apart. |
-| It works the same for one process and for several. | It cannot follow GPUs that admission picks late ([question 35](#35-choosing-gpus-at-admission)). |
-
-**B. Dynamic claims that prefer resident splits.** The scan uses `Shards::dynamic()`
-([question 22](#22-dynamic-split-assignment)). Each worker claims the splits resident on its own
-GPU first, then any split no one has claimed.
-
-| Pros | Cons |
-|---|---|
-| No new shard kind. It is already legal, because the scan's output is `arbitrary(W)`. | It only works where no later node relies on which worker reads which split. |
-| It follows cache changes and any GPU choice made at admission. | The assignment is known only after the run; the report records it. |
-| A GPU that runs ahead takes over unread splits, which also brings back some balancing inside a machine. | A worker that falls behind leaves its resident chunks to others, which then copy them. |
-
-**C. A new shard kind, `Shards::resident()`.** `prepare` resolves which worker reads which split
-from the cache and the bindings, so every split is read where it lives.
-
-| Pros | Cons |
-|---|---|
-| The simplest form for hosts, and every read is local while the cache holds. | The plan no longer says which worker reads which split; the bindings decide it. That bends "bindings say where, never what", even though no later node relies on it. |
-| No run-time claims. | The fingerprint cannot cover the assignment, so the resolved plan and the report must carry it. |
-
-A fourth case touches [question 13](#13-hints-and-certified-properties). If a table is pinned by
-key, with the same hash scheme and partition count as an exchange, a co-partitioned join could skip
-that exchange ([sirius-db/sirius#1018](https://github.com/sirius-db/sirius/issues/1018)). Then
-residency is no longer only about speed: the scan declares `hashed` on its keys, and each partition
-must be read by the worker that owns it, which makes the chunk-to-worker assignment a plan fact.
-
-[sirius-db/sirius#2545](https://github.com/sirius-db/sirius/issues/2545) lists pinned tables with
-the DuckDB storage scan that it plans to turn into a connector supplied by the extension. It does
-not say who then reports residency, the context or the registered scan kind.
-
-**No leaning yet.**
+A table pinned by key raises a separate correctness question. Skipping an exchange requires proof
+that the source has the same key canonicalization, hash scheme, partition count and assignment
+as its consumer. Residency alone proves none of these. Which component reports residency if
+the DuckDB extension supplies the scan connector also remains open.
+[Partition-aware pinning](https://github.com/sirius-db/sirius/issues/1018) ·
+[Connector boundary](https://github.com/sirius-db/sirius/issues/2545)
 
 ## 35. Choosing GPUs at admission
 
-Today admission narrows each query to a subset of the process's GPUs (`gpus_per_query`,
-`admission_bytes_per_gpu`). The subset is always the first *k* GPUs of the engine's sorted list, so
-concurrent queries share the same leading GPUs and idle ones can stay idle. Which subset to pick is
-upstream work
-([sirius-db/sirius#1749](https://github.com/sirius-db/sirius/issues/1749)). In the plan, the set
-size is fixed when the plan is built, `compute[2]` for example, and `prepare` maps workers to
-endpoints through the bindings. On one machine, who picks *which* GPUs? There are two approaches.
+The in-process engine can cap a query's GPUs with `gpus_per_query` and further narrow them
+using `admission_bytes_per_gpu`. The selected devices are a prefix of the sorted list. Two small
+queries can therefore compete on the first GPU while others are idle.
+[GPU selection](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/sirius_engine.cpp) ·
+[GPU admission issue](https://github.com/sirius-db/sirius/issues/1749)
 
-**A. Fixed at prepare.** The bindings name the GPUs. `Bindings::local()` deals each set round robin
-from the first endpoint, the same way every time. Admission only waits until those GPUs have room.
+With explicit workers the plan fixes the count, for example `compute[2]`. The open choice is when
+local bindings pick the two devices.
 
-| Pros | Cons |
-|---|---|
-| `prepare` knows everything, and per-device checks and preparation happen once. | Concurrent small queries on `compute[1]` all land on GPU 0, as they do today, unless the host rotates its bindings itself. |
-| The same model as several processes, where the bindings are agreed before the run. | The host must pick GPUs without knowing the engine's load and free memory. Idle GPUs can stay idle. |
+- At **prepare**, the host can name the devices and the engine checks them once. Prefetch can
+  start early, but the host has to account for load.
+- At **admission**, the engine could resolve `Bindings::local()` against current capacity.
+  Explicit endpoint bindings would stay fixed. Checks and prefetch that depend on a device
+  would have to wait or cover every candidate. This option works within one process.
 
-**B. `Bindings::local()` resolved at admission.** Explicit `Bindings::builder()` devices stay fixed.
-`Bindings::local()` means "any *k* GPUs of this context", and admission picks them when it admits
-the execution, by free memory and load.
-
-| Pros | Cons |
-|---|---|
-| It spreads concurrent queries over idle GPUs, which today's engine does not do. | `prepare` cannot finish binding: its device checks must cover every GPU the execution might get, or run again at admission. |
-| The plan text and fingerprint stay the same, because bindings never change what a worker ends up with. The report records the GPUs chosen. | Work that needs the device, such as prefetching scan data, waits until admission. |
-| Hosts on one machine need no load information. | It only works inside one process; several processes must agree on their bindings first. Two kinds of bindings then behave differently. |
-
-Both need engine-level admission ([question 15](#15-one-context-per-process)). Approach B also
-interacts with scans over pinned data ([question 34](#34-scans-over-gpu-resident-data)): GPUs picked
-late fit dynamic claims, but not a plan built against the cache.
-
-**No leaning yet.**
+Pinned splits make the choice observable in transfer costs. [GPU-resident scans](#34-scans-over-gpu-resident-data)
 
 ## 36. A distribution helper for one machine
 
-Today the engine distributes every plan over the GPUs of one process on its own: the `wrap_*`
-passes in `insert_gpu_pipeline_operators` insert the partitions, merges and broadcasts
-([Plan-to-plan rewrites](../part-5/05-plan-to-plan-rewrites.md#todays-multi-gpu-wrapping-moves-to-the-front-end)).
-In the explicit design the front-end writes every exchange, so sirius-duckdb must write those of a
-plan on `compute[N]` ([Embedded in a host](../part-4/01-duckdb-extension.md#inside-one-machine)).
-Front-ends that run on many machines, such as StarRocks, Axiom and Spark through Bolt, already plan
-distribution, so this question is only about single-node multi-GPU. Who turns a single-worker plan
-into one that uses every GPU of one machine? There are three approaches.
+For single-process multi-GPU queries the engine can insert partitions, merges and broadcasts.
+The proposed IR makes each exchange visible. Who should translate a single-worker plan for
+several local GPUs? [Current wrapping passes](../part-5/05-plan-to-plan-rewrites.md#todays-multi-gpu-wrapping-moves-to-the-front-end)
 
-**A. No helper.** sirius-duckdb's translation places the exchanges itself. It is a front-end,
-and it already translates DuckDB's plan node by node.
-
-| Pros | Cons |
+| Option | Consequence |
 |---|---|
-| Sirius owns no planner. | sirius-duckdb carries today's `wrap_*` policy, such as partition counts and broadcast or hash. |
-| One owner per policy: the front-end that knows the query. | Any other single-node front-end must write its own. |
+| Let each front end place exchanges | The host owns partition counts and broadcast thresholds, but each single-node host must implement the policy. |
+| Offer a one-machine rewrite | A common helper would read node requirements and emit a printable, validated plan. Its API must specify which decisions the caller supplies and which it can defer to a `Decide`. |
+| Keep implicit wrapping on one machine | Preserves the existing execution path. GPU-to-GPU movement would remain invisible to the proposed validator, leaving local and distributed execution with different contracts. |
 
-**B. A Sirius helper scoped to one machine.** It turns a single-worker plan into one on
-`compute[N]` bound to one process. It works mechanically from the requirements each node declares
-([question 27](#27-requirements-as-data-and-equivalence-properties)). Every policy choice, such as
-the threshold between broadcast and hash or the partition count, is supplied by the caller or
-emitted as a `Decide`.
-
-| Pros | Cons |
-|---|---|
-| It reproduces today's single-node multi-GPU behavior for any single-node front-end. | It is a planner in Sirius, even if a small one. |
-| Its output is an ordinary plan, visible in `explain()` and checked by validation. | There will be pressure to grow it to many machines. |
-| | It must keep up with every node kind. |
-
-**C. Keep the engine's implicit wrapping, for single-node multi-GPU only.**
-
-| Pros | Cons |
-|---|---|
-| No work. | It breaks [rule 1](../part-2/01-everything-in-the-plan.md#the-ownership-rule): the exchanges the engine infers are not nodes. |
-| | Single-node multi-GPU plans are not visible in `explain()` and not checked by validation. |
-| | There are two execution models to maintain. |
-
-**No leaning yet.** B is worth exploring for single-node multi-GPU only, never as a planner for
-many machines.
+The choice is open. The helper under discussion is scoped to a single machine. [Node requirements](#27-requirements-as-data-and-equivalence-properties)
 
 ## 37. Remote-source settings and credentials
 
-A scan of an object store needs more than a URI: an endpoint, a region and credentials. Which
-object owns them, and what may a plan or its printout reveal?
-[sirius-db/sirius#2461](https://github.com/sirius-db/sirius/issues/2461) asks this. The earlier
-bridge, `<sirius/ffi.hpp>`, keeps an immutable snapshot of object-store settings (endpoint, region,
-credentials and an optional URI prefix) on its context, replaces it as a whole when credentials
-rotate, and captures it when binding begins
-([#2348](https://github.com/sirius-db/sirius/pull/2348)). A C builder for one such configuration
-is the draft [#2609](https://github.com/sirius-db/sirius/pull/2609).
+A remote scan needs a location, endpoint and credentials. The existing FFI context holds
+immutable configurations by URI prefix. A host can replace one scope independently. Binding
+captures the current set and selects the longest matching prefix. The C API also provides a
+builder for one immutable object-store configuration. Where should a caller supply these
+settings in the proposed execution API?
+[Current FFI contract](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/include/sirius/ffi.hpp) · [C builder](https://github.com/sirius-db/sirius/pull/2609) ·
+[Execution API issue](https://github.com/sirius-db/sirius/issues/2461)
 
 **Leaning:** the plan carries only the location, and the caller passes the settings to `prepare`.
 
@@ -805,9 +712,8 @@ is the draft [#2609](https://github.com/sirius-db/sirius/pull/2609).
   prefix, and the prepared plan keeps that choice. A location with no matching entry fails
   `prepare`. A host rotates credentials by passing a new registry to the next `prepare`; a plan
   that is already prepared never sees the change.
-- **The `Context` holds no settings.** A process has one engine and several hosts can share it,
-  so a registry stored there would share their credentials. The engine may still share
-  connections, per endpoint.
+- **Credential scope.** A process has one engine and several hosts can share it,
+  so a registry stored there would share their credentials. Any connection reuse must respect the effective credentials and TLS settings.
 - **Nothing secret is a plan fact.** Settings and credentials never enter the plan or its
   fingerprint, so two processes with different credentials for one location still agree on the
   plan. A URI is a location, not a credential: put no secret in it.

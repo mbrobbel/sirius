@@ -33,7 +33,7 @@ Boolean and 64-bit integer fields, a local Parquet scan with a supplied schema, 
 references, literals, comparisons and filters. The public C++ API exposes configuration and
 context creation. The safe Rust crate exposes configuration. There is also an older execution
 bridge used by the experimental integrations. These are the interfaces on upstream
-`main` at `ef7eb295` (20 November 2026). [C plan builder](https://github.com/sirius-db/sirius/pull/2500) · [C++ headers](https://github.com/sirius-db/sirius/tree/ef7eb2951a370f4293784549bc05fc46c7cc64f6/include/sirius) · [Rust bindings](https://github.com/sirius-db/sirius/tree/ef7eb2951a370f4293784549bc05fc46c7cc64f6/rust/crates)
+`main` at `ef7eb295` (20 November 2026). [C plan builder](https://github.com/sirius-db/sirius/pull/2500) · [Working C example](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/test/cmake/installed_consumer/plan.c) · [C++ headers](https://github.com/sirius-db/sirius/tree/ef7eb2951a370f4293784549bc05fc46c7cc64f6/include/sirius) · [Rust bindings](https://github.com/sirius-db/sirius/tree/ef7eb2951a370f4293784549bc05fc46c7cc64f6/rust/crates)
 
 **This book is a design proposal.** The C++ and Rust walkthroughs show what a caller could write
 with a fuller plan API. Upstream proposes delivering execution with completed inputs and

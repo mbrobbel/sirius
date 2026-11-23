@@ -143,8 +143,8 @@ No coordinator collects the statistics and tells the workers what to do. Each co
 decides on its own, and three facts make them agree:
 
 - **Every worker sees the same input.** `s2` is the merge of every worker's `s1`, and a `Decide`
-  input must be global on every set it controls (V15). The value is the same bit for bit, because
-  its units do not depend on the engine: `Metric::rows` is a row count, and `Metric::bytes` counts
+  input must be global where the decision is evaluated (V15). In Q5 every compute worker
+  evaluates it. `Metric::rows` is a row count, and `Metric::bytes` counts
   **logical bytes** computed from Arrow type widths (see
   [Observe](../reference/node-catalog.md#observe)). Sums are exact and samples are ordered by
   sender, so arrival order cannot matter.
@@ -158,8 +158,8 @@ If each worker decided from its own `s1`, `compute#0` might see 10 MiB and broad
 `compute#3` sees 70 MiB and hashes. The join would get neither a complete broadcast nor a clean
 partitioning, and rows would be lost. V15 makes that a construction error.
 
-Most engines that adapt at run time have a coordinator that decides once.
-[Related designs](../appendix/related-designs.md#where-sirius-differs) compares the two.
+Spark provides an example of an adaptive planner that can revise the remaining work between stages.
+[Related designs](../appendix/related-designs.md#where-sirius-differs)
 
 The engine still checks, in case a bug breaks one of the three facts. Every batch and every end of
 stream on a decided exchange carries a digest of the label its sender chose, and every delivered
@@ -167,8 +167,7 @@ stream on a decided exchange carries a digest of the label its sender chose, and
 other than its own fails the execution with an `execution` error.
 
 A `Decision` is a required value: the senders on both sides wait for `d1` before they route a row.
-The scans may run ahead while buffering capacity remains. The lineitem scan starts with the query, and its output waits at `x1`'s
-sender, in memory that can spill. The wait is one cost of adaptivity: `d1` cannot exist until
+The lineitem scan can start immediately and buffer rows at the sender of `x1`, spilling as needed. The wait is one cost of adaptivity: `d1` cannot exist until
 every worker has seen the end of its filtered orders.
 
 ### Deciding on a leader
@@ -205,7 +204,8 @@ values:
 └─ Exchange x2 <~ d2 {broadcast: broadcast, partitioned: hash(o_orderkey)} -> compute[4]
 ```
 
-Here `d2` is the delivered decision, not the partition count of a later section. With direct delivery, the leader receives N statistics and sends N decisions. Forwarding or a
+Here `d2` names the delivered decision. With direct delivery, the leader receives N statistics
+and sends N decisions. Forwarding or a
 tree reduction can change the physical message counts for either plan. It needs no new rule (V12, V15):
 `Decide` reads a value that is global on `head[1]`, where it runs, and the `Decision` reaches
 `compute[4]` as a global value. The plan says which form runs.
@@ -527,11 +527,11 @@ list such choices is [open question 19](../reference/open-questions.md#19-the-im
 
 ## Adaptivity today
 
-Today's engine adapts inside its operators. When a hash join's inputs are partitioned across GPUs,
-the join chooses at run time whether to broadcast its build side and how many partitions to use,
-from statistics measured on its inputs. A configured size limit (256 MiB by default) caps broadcast
-builds. The plan shows neither the alternatives nor the rule, and the choice is not recorded.
+Within one process, Sirius uses measured build size, the estimated probe-to-build ratio, the
+join type and per-GPU memory budgets to choose a layout. The default
+`max_broadcast_join_size` is 256 MiB. A different rule in the distributed planner uses estimates
+to select the exchange between ranks. These choices can happen at different times in the same
+query. [Local layout selection](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/src/op/sirius_physical_hash_join.cpp#L802-L837) · [Distributed rewrite](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#the-plan-rewrite)
 
-The proposal keeps the measurements and moves the choice into `Observe` and `Decide` nodes.
-[Adaptivity in the engine](../part-5/04-adaptivity-in-the-engine.md) shows how the existing logic
-lowers onto them.
+In Q5 the front-end chooses one threshold, and the workers evaluate it against the measured
+size of the filtered orders. [Adaptivity in the engine](../part-5/04-adaptivity-in-the-engine.md)

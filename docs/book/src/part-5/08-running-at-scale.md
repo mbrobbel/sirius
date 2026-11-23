@@ -1,54 +1,48 @@
 # Running at scale
 
-Every plan so far ran on `compute[4]`. On a thousand workers the plan holds the same facts. What
-changes is cost, which grows with the number of workers, with its square, or with the number of
-files.
-
-The engine absorbs most of that cost by choosing the physical shape of each edge
-([Everything in the plan](../part-2/01-everything-in-the-plan.md)). Where a fix changes what a
-worker ends up with, it is a plan node that you can print.
+At 1,000 workers, one all-to-all hash exchange has a million logical streams. Does it
+need a million network connections? Could an idle GPU help a worker with a large partition?
+Those questions have different answers. The engine can pool streams without changing the plan.
+Moving a partition to another worker changes the assignment that both sides of a join must use.
 
 ## Three hosts, three scales
 
-The three hosts in [Part IV](../part-4/04-one-ir-three-integrations.md) use the same Plan IR at
-different scales. The ranges are design targets, not measurements: the Distributed Sirius prototype
-has run on up to 16 GPUs across four machines.
+| Proposed integration | Who places work | Where the costs fall |
+|---|---|---|
+| Embedded DuckDB | The extension builds a closed plan for one machine. | The process shares memory and I/O resources across its GPUs. |
+| Distributed Sirius | Every process builds the same closed plan. | Each process pays for planning and checks its agreement with peers. |
+| StarRocks or another coordinator | The scheduler gives each worker an open instance plan. | The coordinator handles placement and tracks failures. Workers check the edges they share. |
 
-| Host | Plan it builds | Target scale | What limits it |
-|---|---|---|---|
-| [sirius-duckdb](../part-4/01-duckdb-extension.md) | One closed plan in one process | One machine, a handful of GPUs | One machine; interactive queries |
-| [Distributed Sirius](../part-4/03-distributed-sirius.md) | The same closed plan, built by every process (SPMD); no coordinator | Tens of GPUs, up to the low hundreds; batch-style queries | Every process builds and checks the whole plan; admission spans every process; fail-stop unless exchanges are [spooled](07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) |
-| A coordinator: [StarRocks](../part-4/02-starrocks.md) today, a future Sirius coordinator | One open instance plan per worker, built by whoever schedules it | Hundreds of GPUs and beyond | The coordinator owns scheduling, admission and retry |
-
-Distributed Sirius has a ceiling because it has no coordinator. Up to the low hundreds of GPUs,
-with batch queries that run for seconds to minutes, the costs in its row are small next to the
-work. Beyond that, something has to schedule. A coordinator changes the plan form and keeps the
-Plan IR, so a query means the same thing under every host.
+The book explores tens to low hundreds of GPUs for a closed plan and larger installations with a
+coordinator. Where that trade-off pays off is a measurement question. The merged distributed SQL
+engine runs one process per GPU. Its upstream guide documents single-host testing. A separate
+four-host experiment on a development branch used 16 GPUs. Doubling from 8 to 16 helped scan-heavy
+TPC-H Q1 and Q6, while warm Q3, Q5 and Q9 slowed. Those results describe the tested software and
+network. [Merged execution path](https://github.com/sirius-db/sirius/pull/2337) · [Four-host
+measurements](https://github.com/sirius-db/sirius/issues/2465)
 
 ## What grows with the worker count
 
-The numbers in this section use one cluster: **1,000 workers on 125 hosts with 8 GPUs each**, one
-process per host. N is the number of workers. The counts follow from the plan. None of the
-techniques in the last column is in the engine today; its only cross-process transport is the
-prototype's.
+Consider 1,000 workers on 125 hosts, eight GPUs and one hypothetical engine process per
+host. These are cost estimates for the proposed model. Today's distributed SQL engine runs one
+process per GPU.
 
-| Cost | Grows as | At 1,000 workers | What keeps it in check |
-|---|---|---|---|
-| Streams of one all-to-all exchange | senders x receivers | 1,000,000 logical streams, each ending with its own end of stream | The engine pools streams per process pair: 125 x 125 ordered pairs (15,500 of them across hosts), 64 logical streams each |
-| A broadcast | senders x receivers | Every batch reaches 1,000 workers | The engine multicasts or forwards through intermediate workers (relay broadcast): each batch crosses each host link once |
-| A value merge to every worker, logically | N^2 shares | An 8 MiB Bloom filter: 1,000,000 shares, about 7.6 TiB | The engine reduces it as a tree: 1,998 transfers, about 15.6 GiB; about 1.9 GiB on the network if each host merges first |
-| A value merge through a leader | 2N messages | 2,000 messages | A plan choice: [Deciding on a leader](../part-2/06-adaptive-plans.md#deciding-on-a-leader) |
-| The handshake at `start` | edges x peer process pairs | 5 edges x 15,500 ordered cross-host pairs: 77,500 comparisons | The engine sends one message per process pair, carrying everything that pair compares |
-| Plan size with inline split lists | files, on every process | 1,000,000 splits, about 100 MB per process; 125 separate listings | A [split manifest](#split-manifests): the plan holds a digest, constant in size; the 100 MB manifest is fetched once per process and cached |
+| Item | Count in this example | Possible reduction |
+|---|---|---|
+| Streams of one all-to-all exchange | 1,000 × 1,000 sender-receiver pairs including self-delivery | Pool the 64 logical streams between a pair of hosts. |
+| One broadcast batch | 1,000 logical recipients | Send one copy to each receiving host, then fan out locally. |
+| One 8 MiB Bloom merge | About 7.6 TiB of logical shares across all recipients | A tree reduction and broadcast transfer about 15.6 GiB in total. |
+| Five shared edge signatures | Up to 77,500 comparisons if all five span every ordered cross-host process pair | Batch signatures for each pair. A closed plan can compare one fingerprint. |
+| One million inline splits | About 100 MB per process at an assumed 100 bytes per split | Fingerprint a manifest digest and cache the manifest by digest. |
 
 ### Exchanges: N squared streams
 
-A hash exchange from `compute[1000]` to `compute[1000]` has a stream from every sender to every
+In this model, a hash exchange from `compute[1000]` to `compute[1000]` has a stream from every sender to every
 receiver. The [protocol](02-exchanges-in-the-engine.md#the-protocol) ends each with its own end of
 stream, even when it carried zero rows. The plan cannot remove those streams, because every sender
 may hold rows for every partition.
 
-The engine reduces the cost per stream instead:
+Several transport choices could reduce the cost per stream.
 
 - It pools streams per process pair and reuses connections across executions: 7,750 connections if
   each carries both directions.
@@ -64,9 +58,8 @@ changes what a receiver ends up with.
 ### Value merges: all to all in the plan, a tree on the wire
 
 A `ValueExchange` that merges a partial runtime filter into a global one on every worker is all to
-all *logically*: every receiver ends up with the merge of every sender's share. Merge rules are
-associative and commutative, so the engine may reduce the shares in any shape. For an 8 MiB Bloom
-filter:
+all *logically*. Every receiver needs the merge of every sender's share. For an 8 MiB Bloom filter
+with identical geometry and key hashing, bitwise OR gives the same result in any merge order.
 
 - **Literally all to all:** 1,000 x 1,000 shares of 8 MiB, which is about 7.6 TiB.
 - **Tree reduction:** the shares are ORed up a binary tree to one root (999 transfers), and the
@@ -84,92 +77,27 @@ messages. [What it costs](#what-it-costs) uses it for a partition assignment.
 
 ### Handshakes
 
-At `start`, every process compares each of its edges with its peers
-([Agreement before the first byte](02-exchanges-in-the-engine.md#agreement-before-the-first-byte)).
-The engine batches the comparisons into one message per process pair, so the handshake costs one
-round trip:
-
-- For a closed plan the message carries one record (the execution id, the fingerprint and the
-  bindings digest), because the fingerprint already covers every edge.
-- For open plans it carries the signature of every edge the pair shares.
-
-A peer that never answers fails the edge with `transport` after the first-contact deadline
-([Failure, cancellation and recovery](07-failure-cancellation-and-recovery.md)).
+For a closed plan the proposed handshake compares the execution id, plan fingerprint and
+bindings digest. For open plans each peer pair compares signatures of its shared edges.
+Batching those records can save round trips. Success on one pair proves agreement only for that
+pair. [Agreement before the first byte](02-exchanges-in-the-engine.md#agreement-before-the-first-byte)
 
 ### Plan size and build cost
 
-A scan stores, per worker, the exact list of splits that worker reads
-([Shard kinds](../part-2/02-workers-and-distribution.md#shard-kinds)). Take a table with
-**1,000,000 files** on 1,000 workers:
-
-- Every process that builds the closed plan lists the table itself, so the object store answers
-  125 listings of a million entries.
-- Each process holds the full split lists, about 100 bytes per split, and the fingerprint hashes
-  all of it.
-- Two listings taken a moment apart can differ if a file appeared in between. The fingerprints then
-  differ and `start` fails with `binding_mismatch`.
-
-The splits must stay in the plan: by
-[rule 4](../part-2/01-everything-in-the-plan.md#the-ownership-rule), bindings say where, never
-what. What can change is *how* the plan holds them.
+If 125 processes each expand the same file glob, the storage service has to return the listing
+125 times. If a file appears between two listings, the processes can build different plans.
+A host can enumerate once and give every process the same manifest.
 
 ## Split manifests
 
-A **split manifest** is an immutable list of splits, identified by a digest of its contents. A
-`TableSource` built from a manifest carries the manifest instead of a file list. A scan over it
-stores its shard rule and the manifest's digest, and the plan's fingerprint covers the digest.
+A **split manifest** identifies a list of file or byte-range splits by its content digest.
+The host lists the table once, then distributes the serialized manifest. The proposed
+`SplitManifest::from_bytes` reads the manifest and checks its digest. Each process can
+cache the verified list by digest.
 
-The per-worker lists are still fixed when the plan is built: they follow from the rule, the
-manifest and the set size, so every process that holds the same manifest derives the same lists.
-
-The host lists the table once, wherever it plans, and ships the manifest's bytes to every process
-the same way it ships endpoints:
-
-```cpp
-#include <sirius/sirius.hpp>
-using namespace sirius;
-
-// On the one process that lists the table.
-Result<std::vector<std::byte>> list_lineitem_once(std::vector<Split> splits) {
-  SIRIUS_TRY(manifest, SplitManifest::create(std::move(splits)));   // 1,000,000 splits
-  return manifest.to_bytes();
-}
-```
-
-```rust
-use sirius::prelude::*;
-
-// On the one process that lists the table.
-fn list_lineitem_once(splits: Vec<Split>) -> Result<Vec<u8>, PlanError> {
-    let manifest = SplitManifest::try_new(splits)?;  // 1,000,000 splits
-    Ok(manifest.to_bytes())
-}
-```
-
-Every process builds its table source from those bytes. `from_bytes` recomputes the digest, so a
-damaged manifest never reaches a plan:
-
-```cpp
-SIRIUS_TRY(manifest, SplitManifest::from_bytes(shipped));
-SIRIUS_TRY(lineitem, TableSource::from_manifest("lineitem", manifest, lineitem_schema));
-SIRIUS_TRY(rows, Relation::scan(lineitem, ScanOptions::on(compute)
-                                              .with_columns({"l_orderkey", "l_extendedprice",
-                                                             "l_discount"})
-                                              .with_shards(Shards::files_round_robin())));
-```
-
-```rust
-let manifest = SplitManifest::from_bytes(&shipped)?;
-let lineitem = TableSource::from_manifest("lineitem", &manifest, &lineitem_schema)?;
-let rows = Relation::scan(&lineitem, ScanOptions::on(&compute)
-                                         .with_columns(&["l_orderkey", "l_extendedprice",
-                                                         "l_discount"])
-                                         .with_shards(Shards::files_round_robin()))?;
-```
-
-Over a manifest, `files_round_robin` deals manifest entries: entry *i* goes to worker *i mod n*.
-An entry may be a whole file or a byte range. `byte_ranges` is not offered over a manifest,
-because the manifest already fixes the splits; cut ranges when you create it.
+With `files_round_robin`, entry *i* belongs to worker *i mod n*. A manifest of byte ranges
+already specifies the cuts. Changing the number of workers changes the assignment without
+requiring another listing.
 
 In joined and split form the scan prints its rule, then the manifest's short digest and size:
 
@@ -186,23 +114,17 @@ Scan lineitem [l_orderkey, l_extendedprice, l_discount]
               manifest=3f9a1c2e  splits=[2, 1002, 2002, ..., 999002] (1000 of 1000000)
 ```
 
-The plan holds only a digest, so building, printing, diffing and fingerprinting it is cheap at any
-table size, and two processes cannot disagree by listing at different moments. Also:
-
-- Each process fetches the manifest once and caches it by digest, so later queries over the same
-  snapshot fetch nothing.
-- How a manifest reaches a process is the host's business
-  ([open question 1](../reference/open-questions.md#1-how-plans-travel)).
-- An instance plan built by a coordinator rarely needs a manifest, because `Shards::splits` lists
-  only its own worker's splits.
+The digest keeps the plan text small. Creating or verifying a new manifest still requires
+reading every entry. An instance plan built by a coordinator can also carry just its worker's
+splits. A split list identifies which inputs to open. Replaying exactly the same bytes also
+requires a stable version of each underlying object. [How plans travel](../reference/open-questions.md#1-how-plans-travel)
 
 ## Dynamic splits
 
-With fixed split lists, a worker that finishes early cannot help a slow one. On a thousand workers
-some worker is always slow, and the whole stage waits for it.
+With fixed split lists, a worker that finishes early cannot help a peer with more work.
 
-With `Shards::dynamic()`, the scan's splits, from the file list or the manifest, are **claimed by
-the workers of the set at run time, exactly once each**. Today's engine balances scans only inside
+With `Shards::dynamic()`, the scan's splits, from the file list or the manifest, are **assigned to
+workers of the set at run time, with one logical owner per split**. Today's engine balances scans only inside
 one process ([Worker granularity](#worker-granularity)).
 
 ```cpp
@@ -229,39 +151,19 @@ Scan lineitem [l_orderkey, l_extendedprice, l_discount]
 
 ### Why it is legal
 
-A scan's output is `arbitrary(W)`: the plan says nothing about which worker holds which row, and no
-later node may rely on it. So the plan may leave open which worker reads which split, as it leaves
-open which rows a `round_robin` exchange sends where.
+A dynamic scan on multiple workers produces `arbitrary(W)`. No downstream operator may assume that
+particular keys are on particular workers. So the plan may leave open which worker reads which
+split, as it leaves open which rows a `round_robin` exchange sends where.
 
 What the workers must agree on is in the plan and compared at `start`: the split list (by digest),
-the set, and the rule that every split is read exactly once. How claims are served (which worker
+the set, and the rule that every split contributes once to a complete successful scan. How claims are served (which worker
 serves them, how many splits a claim takes, how far a worker prefetches) is physical shape.
 
-The outcome is recorded. `report.split_claims()` lists, for every dynamic scan and every worker,
-the splits it claimed:
-
-```cpp
-// a started execution, as in Prepare and execute
-SIRIUS_TRY(report, std::move(started.execution).wait());
-for (const SplitClaim& claim : report.split_claims()) {
-  std::cout << claim.worker.set << "#" << claim.worker.index << " read "
-            << claim.splits.size() << " splits\n";
-}
-```
-
-```rust
-// a started execution, as in Prepare and execute
-let report = started.execution.wait()?;
-for claim in report.split_claims() {
-    println!("{}#{} read {} splits", claim.worker.set, claim.worker.index, claim.splits.len());
-}
-```
-
-`report.resolved_plan()` also turns each dynamic scan into an explicit one,
-`shards=explicit_splits (resolved from dynamic)`, whose per-worker lists are the claims. Its
-instance form prints each worker's claimed splits as indices into the manifest. Running the
-resolved plan reads every split on the same worker as before, which helps when you chase a wrong
-answer.
+`report.split_claims()` identifies the splits each worker claimed. The resolved plan replaces
+`shards=dynamic` with explicit worker lists so a later execution can reuse the assignment. A claim
+records ownership. A failed attempt might read a split again. Exactly-once delivery requires
+accepting output only from a successful attempt. [Stage
+retry](07-failure-cancellation-and-recovery.md#retrying-a-stage-instance)
 
 ### Where it does not apply
 
@@ -269,20 +171,21 @@ Dynamic claiming fits only where no per-worker property is relied on:
 
 - `replicated` scans have nothing to claim.
 - A future source-declared partitioning, where split *i* must land on a given worker for the rows
-  to count as `hashed`, needs a fixed assignment. A dynamic scan always produces `arbitrary(W)`.
+  to count as `hashed`, needs a fixed assignment. On a multi-worker set, a dynamic scan offers only `arbitrary(W)`.
 - The set must be sized (V24). An instance plan with an unsized hosting set reads exactly what its
   coordinator gave it with `Shards::splits`.
 
 Claims are recorded per attempt, so a retried stage instance first re-reads the splits its failed
 attempt claimed. Unclaimed splits stay open to every worker of the set, the retried one included.
 
-This answers [open question 22](../reference/open-questions.md#22-dynamic-split-assignment): split
-assignment moves at run time only through an explicit shard kind. There is no implicit stealing.
+The dynamic shard kind gives a host an explicit choice between balancing scan work and fixing the
+assignment in advance. [Dynamic split
+assignment](../reference/open-questions.md#22-dynamic-split-assignment)
 
 ## Skew: more partitions than workers
 
-Hash partitioning spreads distinct keys evenly, not rows. When some keys have far more rows than
-others, one worker gets more than its share.
+Hash partitioning sends equal keys to the same partition. Even a uniform hash of distinct keys can
+give one worker most of the rows when a single key is frequent.
 
 The first answer is **over-partitioning**: `Partitions::fixed(P)` with P greater than |T|, so that
 each worker holds several partitions. With the default rule, partition *p* still goes to worker
@@ -357,12 +260,10 @@ single-phase aggregate on `c_custkey` needs no further exchange (V6).
 
 ### The policy
 
-`balanced` is a pure function with integer inputs, so every worker computes the same map from the
-same histogram, as V15 requires of `AssignPartitions`. It takes partitions largest first, ties by
-partition index, and gives each to the worker with the smallest load so far, ties by worker index.
-
-Like a `Boundaries` value, every delivered assignment carries a digest, and so does every batch on
-an assigned exchange. A receiver that sees a different digest fails the execution with `execution`.
+`balanced` takes the largest partition first, breaking ties by partition index, and assigns
+it to the least-loaded worker so far, breaking ties by worker index. Integer weights and explicit
+tie rules make the map reproducible from the same histogram. A digest on each assigned exchange
+checks that its sender and receiver use the same map.
 
 Suppose partition 0 holds 40 GiB and each of the other 15 holds 4 GiB: 100 GiB in total, 25 GiB
 per worker on average.
@@ -394,53 +295,28 @@ The histogram has P buckets. With 16 partitions per worker on 1,000 workers, P i
 an 8-byte counter per partition one share is about 125 KiB. Merged to every worker, that is about
 119 GiB logically, before the engine's tree reduction.
 
-The leader pattern fits better: merge the histogram to `head[1]`, assign there, and deliver the
-assignment through a one-sender `ValueExchange`. With a 4-byte worker index per partition, the
-assignment is about 62 KiB:
+An alternative is to send the histograms to `head#0`, compute the map there and distribute
+the map. With a 4-byte worker index per partition the map is 62.5 KiB. Both inputs of the join
+must receive the same final assignment. The worker set being assigned partitions and the
+worker that evaluates the assignment play different roles. [Leader decisions](../part-2/06-adaptive-plans.md#deciding-on-a-leader)
 
-```text
-values:
-  s2 = ValueExchange merge s1 -> head[1]
-  a1 = AssignPartitions balanced(s2) -> compute[1000]
-  a2 = ValueExchange merge a1 -> compute[1000]
-```
-
-Both exchanges then read `a2`, which holds the same map as `a1`.
-
-The resolved plan substitutes the map that was used. For the 16-partition plan above, the values
-block abbreviates it like a file list, as
-`a1 = {0:#0, 1:#1, 2:#2, 3:#3, 4:#1, ..., 15:#3} (resolved)`, and each exchange prints it as
-`partitions=16 assign={0:#0, 1:#1, ..., 15:#3}`. With the leader pattern, `a1` and the delivered
-`a2` both print that map.
+The resolved plan prints the map, for example
+`partitions=16 assign={0:#0, 1:#1, ..., 15:#3}`. It can replay this choice without measuring
+the histogram again.
 
 ## Worker granularity
 
-Each worker is bound to exactly one GPU. Moving rows between two GPUs is always an exchange, so the
-plan says which GPU holds which partition. At scale this has two costs.
+Each worker binds to one GPU. The plan names the worker that owns a partition, and the bindings identify its GPU. This has two costs.
 
-The first is streams. With G GPUs, an all-to-all exchange has G^2 logical streams
-([Exchanges: N squared streams](#exchanges-n-squared-streams)). If a worker were a process with
-8 GPUs, 1,000 GPUs would need 125 x 125, or 15,625. Pooling and two-level shuffles close most of
-that gap on the wire, but the logical count still drives the handshake, the end-of-stream count and
-the report.
+With one worker per GPU, the 1,000-GPU example needs a million logical streams for an all-to-all
+exchange. A worker per eight-GPU process would need 125², or 15,625. Connection pooling reduces
+network state, but logical streams still need identities and completion tracking.
 
-The second is load balancing inside one machine. Today the engine places a query's work on the
-GPUs of its process at run time: splits round robin by default, other tasks by data locality
-([Inside one machine](../part-4/01-duckdb-extension.md#inside-one-machine)). With one worker per
-GPU, the plan fixes which GPU reads which split and owns which partition, so a GPU that falls
-behind cannot hand work to its neighbor. Dynamic splits and assigned partitions recover much of
-this, explicitly, but not all.
-
-The alternative is a worker that is a process with a set of devices: exchanges between processes
-stay in the plan, and the engine places work on the GPUs inside each process. That would cut the
-logical streams and keep today's balancing inside each process. It would also move a fact out of
-the plan: which GPU holds which rows, and so which GPU's memory a hash table or a Bloom filter
-occupies.
-
-The model stays one worker per GPU for now. The trade-off, the engine evidence for both sides and
-the first measurements are in
-[open question 2](../reference/open-questions.md#2-worker-granularity). The measurements compare
-setups that differ in more than placement, so they support the leaning without proving it.
+A coarser worker would give the engine more freedom to move work between local GPUs. A worker
+bound to one GPU makes the placement of a large hash table explicit. Dynamic splits can help
+balance the scan, and partition assignments can spread distinct partitions. Neither can divide
+the join state for a single heavy key. The current proposal keeps one GPU per worker while
+allowing workers to share a GPU. [Worker granularity](../reference/open-questions.md#2-worker-granularity)
 
 ### One machine: one process or one per GPU
 
@@ -452,8 +328,8 @@ text, fingerprint and results; only the bindings differ.
 |---|---|---|
 | Engines | One engine shares the memory tiers, the pinned host memory of each NUMA node, the table cache and the I/O reactors. | One engine per GPU. Each process gets its own share of host memory and its own cache. |
 | Exchanges between GPUs | A peer copy or host staging inside the process. | The transport between processes, which may still copy over NVLink. Each pair needs a handshake. |
-| Admission | One admitter for every GPU. | Gang admission across the processes ([Admission across processes](#admission-across-processes)). |
-| A fatal device error | Makes the one engine unavailable, so every GPU of the machine stops taking Sirius work until the process restarts. | Takes down only that GPU's process. A query that ran on it still fails, but the others keep serving. |
+| Admission | One engine admits queries across its GPUs. | Gang admission across the processes ([Admission across processes](#admission-across-processes)). |
+| A fatal device error | The shared engine stops accepting GPU work until restart. | Other processes can still serve local work. Distributed queries using the current failed transport require a restart of all ranks. |
 | Hosts | Hosts that live in one process, such as sirius-duckdb. | Hosts that already launch processes, such as Distributed Sirius. |
 
 Neither shape changes what any worker ends up with, so the choice can be made per deployment and
@@ -480,45 +356,29 @@ sequenceDiagram
   Note over A,B: each process holds the slot the other needs
 ```
 
-Neither query can start, and neither slot is released. The first-contact deadline turns the hang
-into two `transport` failures.
+Neither query can start, and neither slot is released. A deadline may eventually abort a waiting
+execution, but both otherwise lack a way to make progress.
 
-The fix is **gang admission**: an execution is admitted everywhere or nowhere, and every process
-admits in the same order.
+The proposal uses **gang admission** for a closed plan. Each process tentatively reserves a slot
+and uses the same ordering for competing executions, by priority and then `ExecutionId`. In the
+example, if X precedes Y, B can give up Y's tentative slot so X can start on both processes.
 
-- Every execution has an **admission key**: its priority, then its `ExecutionId`. Keys are
-  ordered by priority, highest first, then by execution id. Every process computes the same key,
-  because the execution id is shared and peers compare the priority when they admit.
-- A process admits an execution tentatively, then tells its peers. The execution starts only when
-  every process that hosts one of its workers has admitted it.
-- A tentative admission yields to a waiting execution whose key comes earlier. Nothing has run
-  yet, so yielding costs nothing.
+A common ordering addresses that cycle. A complete protocol still has to say when tentative
+reservations become irrevocable, how a peer withdraws an offer, and how a timeout or lost peer
+releases it. Otherwise one process could start Y while another gives Y's slot to X. An open instance
+plan may lack a complete participant list, so its host must arrange admission across instances. A
+first-contact deadline detects silence from a peer. A peer that has answered but is still queued
+presents a different timeout question. [Coordination and
+failure](../reference/open-questions.md#4-coordination-and-failure) · [Admission
+ownership](../reference/open-questions.md#15-one-context-per-process)
 
-No cycle can form, because the waiting execution whose key comes first is eventually admitted
-everywhere. In the example, if X's key comes first, B's tentative admission of Y yields to X, X
-runs on both processes, then Y does.
-
-`ExecutionId::random()` orders executions arbitrarily. A host that wants first come, first served
-puts a timestamp or a sequence number in the leading bytes and builds the id with
-`ExecutionId::from_bytes`.
-
-Admission happens in `start`, which returns once every peer has admitted the execution and the
-handshake has passed, or fails with `transport` when the first-contact deadline expires. A
-coordinator admits queries centrally, and each Sirius process only needs enough room for what the
-coordinator sends it.
-
-Gang admission needs one admitter per process, so admission is engine-level:
-`max_concurrent_queries` and the admission order belong to the engine, not to a `Context` handle or
-a prepared plan. Instance plans of one query that a process hosts under one `ExecutionId` are
-admitted as one unit, so they all wait or all run. How the process starts them as one unit, and how
-independent contexts in one process (which come later) would share admission, are part of
-[open question 15](../reference/open-questions.md#15-one-context-per-process).
-
-Gang admission cannot help when one execution waits on another in the same process. Until
-concurrent executions exist, an engine may run its executions one at a time. So do not feed an
-`Input` from another live Sirius execution in the same process: the second may wait for the slot
-the first holds. Run the producer to completion and bind its batches to the consumer as a
-[completed input](../part-1/06-prepare-and-execute.md#feeding-completed-inputs).
+Today Sirius admits bounded concurrent SQL queries inside a process. With distributed SQL, one
+connection per process issues the matching sequence of distributed statements. Other connections can
+run local work if admission permits. In the proposed API, a live producer and consumer that need the
+same single slot can block one another. Chaining through a completed input avoids that dependency.
+[Distributed admission
+limits](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#limits)
+· [Completed inputs](../part-1/06-prepare-and-execute.md#feeding-completed-inputs)
 
 ### Quotas and priority
 
@@ -586,36 +446,28 @@ So the engine distinguishes two kinds of queues, derived from the plan:
   transfer; it never withholds them while it can spill.
 
 The barrier queues are the router of an exchange that needs a required value, the build input of a
-join, the probe input of a join while its build is incomplete, and each per-sender queue of a
-receiver that reads its senders in a fixed order (`GatherOrder::merge` or
-`GatherOrder::by_worker`).
+join, the probe input of a join while its build is incomplete, and each per-sender queue of an
+ordered gather. A by-worker gather waits for earlier workers. A merge gather may need the next key,
+or end of stream, from each sender before emitting the smallest head row.
 
-With that rule, deadlock freedom within one execution is a property of the plan, and the validator
-checks it. V1 requires the **wait-for graph** to be acyclic. The graph holds:
+V1 would check for cycles among declared dependencies, including the required
+value, build-before-probe and per-stream credit waits. In an open instance plan a local check
+can only inspect the visible part of the graph. Composing all the instances makes cross-stage
+cycles visible.
 
-- the data and value edges;
-- the ordered waits: a required value before rows, a join's build before its probe, every sender
-  before a merge step;
-- a credit wait from each producer to each streaming queue it feeds.
-
-Every cycle a builder can make passes through a barrier queue, so most plans pass by construction.
-The check matters for plans composed from instance plans with `rewrite::join_stages`, where ids are
-matched by hand. Waits between two executions are outside any one plan; the rule for those is in
-[Admission across processes](#admission-across-processes).
-
-Barrier queues are still bounded by the capacity of the memory tiers. When those fill, the
-execution fails with `execution` instead of hanging
-([Memory](06-memory.md#no-backpressure-inside-a-process-by-design)).
-
-This is the leaning of [open question 5](../reference/open-questions.md#5-backpressure).
+Acyclic dependencies alone cannot guarantee progress. For the Q5 example to finish, an
+`Observe` task must be scheduled, its output must be able to spill, and the control message
+carrying its statistic must still travel when data credits run out. Exhausted storage must lead
+to a reported error while the control path can still run. These are obligations of the scheduler
+and transport that a plan validator cannot test. [Backpressure discussion](../reference/open-questions.md#5-backpressure)
 
 ## Observability at scale
 
-On 1,000 workers, `report.exchanges()` holds a million per-pair records per exchange.
-`report.exchange_summaries()` returns one record per exchange instead, with totals, quantiles of
-the bytes per receiver and per sender-receiver pair, and the heaviest receivers. The ratio of the
-largest receiver to the mean is the skew from the table in [The policy](#the-policy), as one
-number:
+Across all 1,000 workers, full reporting for one all-to-all exchange can produce a million
+sender-receiver records. A process-local report covers its own workers.
+`report.exchange_summaries()` returns one record per exchange instead, with totals, quantiles of the
+bytes per receiver and per sender-receiver pair, and the heaviest receivers. The ratio of the
+largest receiver to the mean is the skew from the table in [The policy](#the-policy), as one number:
 
 ```cpp
 for (const ExchangeSummary& summary : report.exchange_summaries()) {
@@ -641,35 +493,16 @@ the workers this process hosts: per stage instance, rows and bytes consumed and 
 claimed and finished, and what it waits for right now (a value, credits on an exchange, or
 nothing). Polled every second, it gives a live view.
 
-A coordinator or launcher gathers every process's snapshots with `ExecutionProgress::combine`, as
-it gathers reports with `ExecutionReport::combine`, and spots the worker that lags. What it does
-then (wait, cancel, or with
-[spooled exchanges](07-failure-cancellation-and-recovery.md#durability-pipelined-or-spooled) retry
-that stage instance) is the host's decision.
+A launcher could combine process snapshots to find a lagging worker and distinguish slow scans,
+credit waits and missing required values. Slow progress alone does not make a running stage
+eligible for the proposed failure-retry protocol.
 
 ## How other systems do it
 
-The comparison follows each system's public documentation.
-[Spark, Trino and Snowflake](../appendix/related-designs.md#spark-trino-and-snowflake) goes
-deeper.
-
-**Spark** schedules more tasks than it has slots, so a slow task delays only its own slice of a
-stage. Adaptive query execution re-plans at stage boundaries from the sizes of materialized shuffle
-outputs. Optional speculative execution starts a second copy of a slow task and keeps whichever
-finishes first. The driver decides all of this at run time, without a plan you could print in
-advance. In Sirius the alternatives are in the plan: decided exchanges and partition counts,
-assigned partitions, and dynamic splits.
-
-**Trino**'s coordinator enumerates splits as the query runs and hands each to a worker with room
-in its queue, so a fast worker ends up with more splits. A dynamic scan in Sirius gives the same
-balancing without a coordinator in the data path. A coordinator such as StarRocks remains free to
-deliver work its own way.
-
-**Snowflake**, as described in its published design, lets an idle worker steal scan files from a
-slower peer. That is close to `Shards::dynamic`, except that in Sirius the scan says it may be
-claimed dynamically, and the report says who read what.
-[Generalized skew handling](https://www.snowflake.com/en/blog/engineering/generalized-skew-handling/)
-watches the edges between operators while a query runs and moves rows from busy workers to idle
-ones. In Sirius, moving rows is legal only where the plan says `arbitrary`; on a hashed edge it
-changes what a worker ends up with, which is why skew-aware exchanges are
-[open question 26](../reference/open-questions.md#26-skew-aware-exchanges).
+Spark can start a speculative copy of a task and replan from materialized shuffle output. Trino
+schedules splits as workers have room. Snowflake describes scan workers stealing files and an
+adaptive exchange that can redistribute work under skew. In this proposal a dynamic scan allows late
+split assignment, while a co-partitioned join needs a placement rule shared by both inputs.
+Splitting a single heavy key across workers would need an additional exchange rule. [Related
+designs](../appendix/related-designs.md#spark-trino-and-snowflake) · [Skew-aware
+exchanges](../reference/open-questions.md#26-skew-aware-exchanges)

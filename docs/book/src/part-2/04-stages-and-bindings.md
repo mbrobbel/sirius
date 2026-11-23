@@ -51,8 +51,8 @@ Four properties follow from the definition:
   worker set (V2, see [Validation](07-validation.md)). A join whose inputs are on two sets is
   missing an exchange.
 - **Stage ids in this tree follow the exchanges.** S1 sends on x1, S2 sends on x2, and S3
-  owns the output. A shared subplan can have several consumers, so this shortcut applies to
-  trees with one sink per stage.
+  owns the output. A stage with several exchange sinks takes its lowest exchange number.
+  [Stage and exchange ids](../reference/node-catalog.md#ids)
 - **Value edges do not join stages.** Only data edges connect nodes into a stage, so a runtime
   filter built in one stage and applied in another leaves them two stages. In split form its
   `ValueExchange` becomes a `ValueSink` in the producing stage and a `ValueSource` in the consuming
@@ -60,12 +60,6 @@ Four properties follow from the definition:
 - **Adaptive exchanges keep the stage graph.** Every alternative of a decided exchange targets the
   same set, so the stages are the same whichever label wins (see
   [Stage graphs do not change](06-adaptive-plans.md#stage-graphs-do-not-change)).
-
-Stages are derived because a declared stage would be a second description of the same program, and
-two descriptions can disagree.
-
-[From plan to pipelines](../part-5/01-from-plan-to-pipelines.md) shows what the engine does with a
-stage instance.
 
 ## Split form and instance form
 
@@ -263,7 +257,8 @@ flowchart TB
 
 ## Every process prepares the same plan
 
-Sirius has no coordinator process. For a closed plan, every process does the same thing:
+The proposed closed-plan protocol runs on each participating process. The host distributes the
+execution id, endpoint list and plan inputs before the processes start.
 
 1. Build the same plan from the same ordered inputs, including file lists, and apply the same rewrites.
 2. Build the same `Bindings`: same execution id, same endpoint list in the same order.
@@ -354,9 +349,8 @@ cluster some crossed the network.
 ## Open plans: authoring stages and instances directly
 
 A host whose own scheduler decides which stages exist and which machine runs each one can author a
-split-form stage plan directly instead of calling `rewrite::split`. The stage starts at an
-`ExchangeSource` and ends at an `ExchangeSink`, and the far side of each is not in the plan. That is
-an **open plan**.
+split-form stage plan directly instead of calling `rewrite::split`. A stage with an exchange or value edge whose far end is supplied by another plan is an
+**open plan**. A leaf stage can start at a scan, and the last stage can end at an output.
 
 Here is S2 of Q2 as an open plan. The host chooses the exchange ids, because there is no joined
 plan to number them. `states` is the schema that S1's partial aggregate produces. It carries the

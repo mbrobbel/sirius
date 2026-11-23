@@ -1,9 +1,9 @@
 # Aggregation
 
-Grouped aggregation is the first query where workers cooperate: each of four workers sees a quarter
-of the line items, but a group's total needs all of its rows. The plan states this as two
-aggregate nodes with an exchange between them and typed state columns on the wire. The validator
-checks it (V5, V6).
+The four scan workers each read 64 lineitem files. A return flag can occur in every file, so
+summing on each worker gives up to four totals for the same flag. Q2 sends partial aggregate
+states to the worker that will finish each group. For an average, the state carries both a sum and
+a count, so workers with different numbers of line items contribute the right weight.
 
 ## The question
 
@@ -177,7 +177,7 @@ Output "result" on head[1]
 Follow the distribution up from the scan:
 
 - Up to the partial aggregate, rows are `arbitrary(compute[4])`. A partial aggregate accepts any
-  distribution except `replicated` on more than one worker (V7), and preserves it.
+  distribution except `replicated` on more than one worker (V7). Its output here stays `arbitrary`.
 - `x1` makes them `hashed([l_returnflag, l_linestatus])` on `compute[4]`. A grouped final
   aggregate needs its input `single` or hashed on a subset of its keys (V6).
 - `Sort` sorts within each worker. `x2` with `order=merge[...]` merges the four sorted runs into
@@ -323,7 +323,8 @@ The code changes from `partial` on:
 | Sort | 4 local sorts, merged on `head#0` | one sort on `head#0` |
 | Better when | there are many groups | there are few groups |
 
-With ten million groups, B would put ten million partial rows per worker on `head#0`, while A
+With ten million groups, B sends at least one partial per group to `head#0`, and possibly
+several partials for each group. A
 spreads the final work over four workers.
 
 A decided exchange cannot switch between the two at run time: all its alternatives must target
@@ -555,7 +556,7 @@ between workers (see [Three gates](../part-2/07-validation.md#three-gates)). How
 travel between workers is [open question
 8](../reference/open-questions.md#8-nested-types-on-the-wire).
 
-The two-level plan uses only flat key columns and `count_state`, so it runs everywhere. Its
+The two-level plan needs only flat keys and `count_state` at its exchanges. Its
 intermediate data is bounded by the number of distinct pairs, not by the largest set one worker
 accumulates.
 
@@ -578,8 +579,7 @@ hash mode, across processes to the exchange sink and source operators. `Aggregat
 `MERGE_AGGREGATE`. A partial with grouping sets lowers to the same `HASH_GROUP_BY`, which computes
 every set of a batch and emits a set id next to the keys; `MERGE_GROUP_BY` groups on that id too.
 
-State types fix the storage of each state before the query starts, and the engine flattens struct
-states into their components on the wire.
-
-Part V covers the lowering rules in [From plan to pipelines](../part-5/01-from-plan-to-pipelines.md)
-and the movement of rows in [Exchanges in the engine](../part-5/02-exchanges-in-the-engine.md).
+The proposal exposes state types and their wire layouts. Upstream already has distributed
+aggregation. For a grouped distinct count, the distributed rewrite can hash the raw rows before
+local aggregation because its wire format cannot carry partial distinct lists.
+[Upstream distribution rewrite](https://github.com/sirius-db/sirius/blob/ef7eb2951a370f4293784549bc05fc46c7cc64f6/docs/super-sirius/distributed-sirius.md#the-plan-rewrite)
