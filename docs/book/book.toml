@@ -1,0 +1,21 @@
+[book]
+title = "The Sirius Book"
+description = "Explicit plans for local and distributed GPU execution with Sirius and the Sirius Plan IR."
+authors = ["The Sirius developers"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "../../build/docs/book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+additional-css = ["theme/libsirius.css"]
+additional-js = ["theme/lang-tabs.js", "theme/mermaid-init.js"]
+git-repository-url = "https://github.com/sirius-db/sirius"
+
+[output.html.fold]
+enable = true
+level = 1

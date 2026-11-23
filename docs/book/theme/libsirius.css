@@ -1,0 +1,71 @@
+/* Tabs for paired C++/Rust examples (see lang-tabs.js). */
+.lang-tabs {
+  margin: 1em 0;
+}
+
+.lang-tabs pre {
+  margin-top: 0;
+}
+
+.lang-tabs-bar {
+  display: flex;
+  gap: 0.25em;
+}
+
+.lang-tabs-button {
+  border: 1px solid var(--quote-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85em;
+  padding: 0.2em 0.9em;
+}
+
+.lang-tabs-button[aria-selected="true"] {
+  background: var(--quote-bg);
+  font-weight: 600;
+}
+
+/* Mermaid diagrams; centered, with source shown as preformatted text if loading fails. */
+.mermaid {
+  margin: 1em 0;
+  text-align: center;
+}
+
+.mermaid.mermaid-source {
+  font-family: var(--mono-font);
+  text-align: left;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Plan trees are wide; avoid wrapping them. */
+code.language-text {
+  white-space: pre;
+}
+
+/* Sirius icon and wordmark, drawn as masks so they take each theme's text colour. */
+.menu-title::before {
+  content: "";
+  display: inline-block;
+  width: 1.3em;
+  height: 1.1em;
+  margin-right: 0.4em;
+  vertical-align: -0.15em;
+  background-color: currentColor;
+  -webkit-mask: url("../images/sirius-icon.svg") center / contain no-repeat;
+  mask: url("../images/sirius-icon.svg") center / contain no-repeat;
+}
+
+.sirius-wordmark {
+  width: 240px;
+  max-width: 100%;
+  aspect-ratio: 615 / 206;
+  margin: 0 0 1.5em;
+  background-color: var(--fg);
+  -webkit-mask: url("../images/sirius-wordmark.svg") left center / contain no-repeat;
+  mask: url("../images/sirius-wordmark.svg") left center / contain no-repeat;
+}
