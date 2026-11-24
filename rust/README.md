@@ -13,7 +13,7 @@ Before [#2436](https://github.com/sirius-db/sirius/pull/2436), `sirius` and
 crates; the existing C++ bridge lives in `sirius-ffi`.
 
 CMake uses Corrosion to build `sirius-engine` as a single Rust static library
-for libSirius. It includes the Quent telemetry bridge and `sirius-substrait`,
+for libsirius. It includes the Quent telemetry bridge and `sirius-substrait`,
 the crate reserved for importing Substrait plans.
 
 ## Configuration
@@ -100,9 +100,9 @@ discover the Sirius artifact under `$SIRIUS_BUILD_DIR` (default
   `-C link-arg=-Wl,--allow-multiple-definition` on the final binary; this flag is
   applied to these crates' own targets but not propagated to dependent applications.
 
-Rust crates embedded in libSirius, such as `sirius-substrait`, depend on
+Rust crates embedded in libsirius, such as `sirius-substrait`, depend on
 `sirius` with `default-features = false`. Cargo can then build the Rust archive
-before libSirius exists. CMake resolves its C ABI calls against the engine
+before libsirius exists. CMake resolves its C ABI calls against the engine
 objects at the final link. Cargo combines features across dependencies, so
 every dependency on `sirius` or `sirius-sys` in that build must leave
 `link-native` disabled. Corrosion builds the engine archive in its own Cargo
