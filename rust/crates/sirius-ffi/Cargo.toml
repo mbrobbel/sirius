@@ -10,7 +10,7 @@ publish = false
 static = ["sirius-sys/static"]
 
 [dependencies]
-sirius-sys.workspace = true
+sirius-sys = { workspace = true, features = ["link-native"] }
 cxx.workspace = true
 arrow-array = { version = "60.1", features = ["ffi"] }
 arrow-schema = "60"

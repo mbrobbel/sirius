@@ -3026,6 +3026,9 @@ dependencies = [
 [[package]]
 name = "sirius-substrait"
 version = "0.1.0"
+dependencies = [
+ "sirius",
+]
 
 [[package]]
 name = "sirius-sys"

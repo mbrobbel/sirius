@@ -55,7 +55,7 @@ adds execution support.
 
 ## Building and testing
 
-All three crates link a Sirius library artifact. Only `sirius-ffi` compiles a C++20
+By default, all three crates link a Sirius library artifact. Only `sirius-ffi` compiles a C++20
 bridge and requires a matching C++ toolchain. Build Sirius first, then use cargo:
 
 ```bash
@@ -86,8 +86,9 @@ and `sirius-sys` references without native compilation or linking. The
 
 ## Linkage
 
-`build.rs` discovers the Sirius artifact under `$SIRIUS_BUILD_DIR` (default
-`build/release`) and links one Sirius library:
+The default `link-native` feature on `sirius` and `sirius-sys` tells Cargo to
+discover the Sirius artifact under `$SIRIUS_BUILD_DIR` (default
+`build/release`) and link one Sirius library:
 
 - By default, `libsirius.so` supplies its dependencies through `DT_NEEDED`.
 - The `static` feature requires an externally bundled `libsirius.a`. The current
@@ -99,7 +100,15 @@ and `sirius-sys` references without native compilation or linking. The
   `-C link-arg=-Wl,--allow-multiple-definition` on the final binary; this flag is
   applied to these crates' own targets but not propagated to dependent applications.
 
-`sirius-sys/build.rs` supplies library linking for both API paths.
+Rust crates embedded in libSirius, such as `sirius-substrait`, depend on
+`sirius` with `default-features = false`. Cargo can then build the Rust archive
+before libSirius exists. CMake resolves its C ABI calls against the engine
+objects at the final link. Cargo combines features across dependencies, so
+every dependency on `sirius` or `sirius-sys` in that build must leave
+`link-native` disabled. Corrosion builds the engine archive in its own Cargo
+invocation.
+
+`sirius-sys/build.rs` supplies library linking for external Rust consumers.
 `sirius-ffi/build.rs` compiles the execution bridge against the public `include`
 directory. Configuration uses the C declarations in
 `sirius-sys/src/c_api.rs`. Neither path includes internal engine headers.

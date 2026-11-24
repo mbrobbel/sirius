@@ -8,6 +8,8 @@ license = "Apache-2.0"
 publish = false
 
 [features]
+default = ["link-native"]
+link-native = ["sirius-sys/link-native"]
 # Forwarded to sirius-sys: link a bundled libsirius.a
 # instead of the default libsirius.so. See sirius-sys for details.
 static = ["sirius-sys/static"]

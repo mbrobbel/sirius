@@ -17,6 +17,11 @@ fn main() {
         return;
     }
 
+    // Embedded consumers get the C ABI definitions at the enclosing native link.
+    if !cfg!(feature = "link-native") {
+        return;
+    }
+
     let repo = manifest
         .join("../../..")
         .canonicalize()
@@ -24,7 +29,7 @@ fn main() {
     let build_dir = std::env::var_os("SIRIUS_BUILD_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| repo.join("build/release"));
-    let static_link = std::env::var_os("CARGO_FEATURE_STATIC").is_some();
+    let static_link = cfg!(feature = "static");
     // Link the single Sirius artifact.
     let lib_dir = resolve_lib_dir(&build_dir, static_link);
     println!("cargo:rustc-link-search=native={}", lib_dir.display());

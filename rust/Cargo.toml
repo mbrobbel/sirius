@@ -22,4 +22,4 @@ edition = "2024"
 # version-coupled). The shared "1" caret + the lockfile keep them in lockstep.
 cxx = "1"
 cxx-build = "1"
-sirius-sys = { path = "crates/sirius-sys" }
+sirius-sys = { path = "crates/sirius-sys", default-features = false }

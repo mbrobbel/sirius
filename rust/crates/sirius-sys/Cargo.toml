@@ -12,9 +12,12 @@ publish = false
 name = "sirius_sys"
 
 [features]
+default = ["link-native"]
+# Let Cargo find and link libSirius on behalf of the final target.
+link-native = []
 # Link a bundled `libsirius.a` instead of `libsirius.so`; the C++ runtime is
 # linked separately. Point SIRIUS_BUILD_DIR at the build tree with that archive.
-static = []
+static = ["link-native"]
 
 # Maintainer-only: ordinary builds use the checked-in declarations.
 generate-bindings = ["dep:bindgen"]
