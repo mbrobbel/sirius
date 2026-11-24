@@ -6,22 +6,22 @@
     "CMAKE_BUILD_TYPE": "Release",
     "CMAKE_POLICY_VERSION_MINIMUM": "3.5",
     "DUCKDB_EXPLICIT_PLATFORM": "linux_amd64",
-    "DUCKDB_EXPLICIT_VERSION": "v2.0.0",
+    "DUCKDB_EXPLICIT_VERSION": "v2.0.1",
     "EXTENSION_STATIC_BUILD": "OFF",
     "PAIMON_ENABLE_OSS": "OFF",
     "PAIMON_ENABLE_REST": "OFF",
     "PAIMON_ENABLE_S3": "OFF"
   },
-  "duckdb_version": "v2.0.0",
+  "duckdb_version": "v2.0.1",
   "extension_version": "307fc34",
   "format_version": 1,
   "platform": "linux_amd64",
   "sources": {
     "duckdb": {
-      "commit": "d54cbbe3df17e8e5ce68312f483b4155836112aa",
-      "sha256": "93e3d1f9c84b6ec3493237d21565c01c2c19b9862e54e5552d3d7999ccc3bbb4",
-      "size_bytes": 106492327,
-      "url": "https://codeload.github.com/duckdb/duckdb/tar.gz/d54cbbe3df17e8e5ce68312f483b4155836112aa"
+      "commit": "8d78114e90a53823803660bf821f6073ac87da8c",
+      "sha256": "09b5c7757b41427da38f001d80fb51726deffe9367cff92ac92210d8bbeb7dbe",
+      "size_bytes": 119481030,
+      "url": "https://codeload.github.com/duckdb/duckdb/tar.gz/8d78114e90a53823803660bf821f6073ac87da8c"
     },
     "extension": {
       "commit": "307fc34c04623fe18f0ac39125b6319ea0013c0f",
