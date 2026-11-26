@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.30)
+project(sirius_static_consumer LANGUAGES CXX CUDA)
+find_package(sirius CONFIG REQUIRED)
+add_executable(sirius_static_consumer main.cpp)
+target_link_libraries(sirius_static_consumer PRIVATE sirius::sirius_static)

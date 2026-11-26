@@ -73,3 +73,6 @@ plans/
 # Core dumps (debugging concurrency crashes writes these into the repo root)
 core
 core.*
+
+# rattler-build output
+/output/

@@ -1,0 +1,189 @@
+schema_version: 1
+
+context:
+  version: "0.0.0"
+  rapids_version: "26.10"
+
+recipe:
+  name: sirius-packages
+  version: ${{ version }}
+
+source:
+  path: ..
+  # The checkout's git metadata is tens of GB; the vcpkg checkout is cloned by the static build.
+  filter:
+    exclude:
+      - .git
+      - .git/**
+      - "**/.git"
+      - bench/**
+      - docs/**
+      - experimental/**
+      - sirius-duckdb/vcpkg/**
+      - test/**
+      - test_datasets/**
+      - tools/**
+
+outputs:
+  - package:
+      name: libsirius
+    build:
+      number: 0
+      string: cuda${{ cuda_version }}_h${{ hash }}_${{ build_number }}
+      script: build-libsirius.sh
+      skip:
+        - not linux
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+        - clang 22.*
+        - cmake >=3.30.4
+        - cuda-nvcc
+        - git
+        - libclang 22.*
+        - meson
+        - ninja
+        - pkg-config
+        - rust
+        - unzip
+        - wget
+        - xxhash
+      host:
+        - cuda-version =${{ cuda_version }}
+        - cuda-cudart-dev
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+        - libcudf ${{ rapids_version }}.*
+        - libcuvs ${{ rapids_version }}.*
+        - libraft-headers ${{ rapids_version }}.*
+        - librmm ${{ rapids_version }}.*
+        - spdlog 1.*
+        - yaml-cpp
+        - libabseil
+        - libutf8proc
+        - croaring
+        - liburing
+        - openssl
+        - zlib
+        - asio
+        - tomlplusplus
+        - ucx =1.21.0
+      run:
+        - libcudf ${{ rapids_version }}.*
+        - libcuvs ${{ rapids_version }}.*
+        - librmm ${{ rapids_version }}.*
+      run_constraints:
+        - __cuda >=${{ cuda_version }}
+      run_exports:
+        - ${{ pin_subpackage('libsirius', upper_bound='x.x') }}
+    tests:
+      - package_contents:
+          lib:
+            - sirius
+          include:
+            - sirius-c/version.h
+      - script: test-libsirius.sh
+        files:
+          recipe:
+            - tests/library-consumer/
+        requirements:
+          run:
+            - ${{ compiler('cxx') }}
+            - cmake
+            - ninja
+            - patchelf
+
+  - package:
+      name: libsirius-static
+    build:
+      number: 0
+      string: cuda${{ cuda_version }}_h${{ hash }}_${{ build_number }}
+      script:
+        file: build-libsirius-static.sh
+        env:
+          # Set it to reuse dependency builds, e.g. clear;files,/path/to/cache,readwrite
+          VCPKG_BINARY_SOURCES: ${{ env.get('VCPKG_BINARY_SOURCES', default='') }}
+      skip:
+        - not linux
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ stdlib('c') }}
+        - ${{ compiler('cxx') }}
+        - autoconf
+        - automake
+        - bison
+        - clang 22.*
+        - cmake >=3.30.4
+        - cuda-cudart-dev
+        - cuda-nvcc
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - flex
+        - git
+        - libclang 22.*
+        - libcurand-dev
+        - libnvjitlink-dev
+        - libtool
+        - make
+        - ninja
+        - patchelf
+        - pkg-config
+        - rust
+        - unzip
+        - wget
+        - zip
+      host:
+        - cuda-version =${{ cuda_version }}
+        - cuda-cudart-dev
+        - cuda-nvml-dev
+        - cuda-nvrtc-dev
+        - libcurand-dev
+        - libnvjitlink-dev
+      run_constraints:
+        - __cuda >=${{ cuda_version }}
+      # Everything is statically embedded or shipped inside the package.
+      ignore_run_exports:
+        from_package:
+          - ${{ compiler('c') }}
+          - ${{ compiler('cxx') }}
+        by_name:
+          - cuda-cudart
+          - cuda-nvrtc
+          - libcurand
+          - libnvjitlink
+    about:
+      # The archive also contains the nvCOMP and culibos NVIDIA libraries; the
+      # licenses of all bundled dependencies are in share/licenses.
+      license: Apache-2.0 AND MIT AND LicenseRef-NVIDIA-Proprietary
+    tests:
+      - script: test-libsirius-static.sh
+        files:
+          recipe:
+            - tests/static-consumer/
+        requirements:
+          run:
+            - ${{ compiler('cxx') }}
+            - ${{ stdlib('c') }}
+            - cmake >=3.30.4
+            - ninja
+            - cuda-version =${{ cuda_version }}
+            - cuda-nvcc
+            - cuda-cudart-static
+            - cuda-nvrtc-static
+            - cuda-nvml-dev
+            - libcublas-static
+            - libcurand-static
+            - libcusolver-static
+            - libcusparse-static
+            - libnvjitlink-static
+
+about:
+  homepage: https://github.com/sirius-db/sirius
+  repository: https://github.com/sirius-db/sirius
+  license: Apache-2.0 AND MIT
+  license_file: LICENSE
+  summary: GPU-native SQL engine library

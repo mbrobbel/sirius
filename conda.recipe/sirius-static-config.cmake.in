@@ -1,0 +1,54 @@
+# Self-contained Sirius archive: everything except the CUDA toolkit libraries
+# and the UCX transports is merged into lib/libsirius.a.
+get_filename_component(_sirius_prefix "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+
+set(sirius_DUCKDB_REVISION "@DUCKDB_REVISION@")
+include("${CMAKE_CURRENT_LIST_DIR}/sirius-duckdb-revision.cmake")
+
+include(CMakeFindDependencyMacro)
+find_dependency(CUDAToolkit)
+find_dependency(Threads)
+if(NOT CUDAToolkit_VERSION_MAJOR EQUAL @CUDA_VERSION@)
+  set(sirius_FOUND FALSE)
+  set(sirius_NOT_FOUND_MESSAGE
+      "This Sirius package needs a CUDA @CUDA_VERSION@ toolkit, found ${CUDAToolkit_VERSION}"
+  )
+  return()
+endif()
+
+if(NOT TARGET sirius::sirius_static)
+  add_library(sirius::culibos STATIC IMPORTED)
+  set_target_properties(
+    sirius::culibos PROPERTIES IMPORTED_LOCATION
+                               "${_sirius_prefix}/lib/libculibos.a")
+
+  add_library(sirius::archive STATIC IMPORTED)
+  set_target_properties(
+    sirius::archive
+    PROPERTIES IMPORTED_LOCATION "${_sirius_prefix}/lib/libsirius.a"
+               IMPORTED_LINK_INTERFACE_LANGUAGES "CXX")
+
+  foreach(_sirius_transport IN ITEMS uct_cma uct_cuda ucm_cuda)
+    add_library(sirius::${_sirius_transport} STATIC IMPORTED)
+    set_target_properties(
+      sirius::${_sirius_transport}
+      PROPERTIES IMPORTED_LOCATION
+                 "${_sirius_prefix}/lib/ucx/lib${_sirius_transport}.a"
+                 IMPORTED_LINK_INTERFACE_LANGUAGES "C")
+  endforeach()
+
+  add_library(sirius::sirius_static INTERFACE IMPORTED)
+  set_target_properties(
+    sirius::sirius_static
+    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_sirius_prefix}/include"
+               INTERFACE_LINK_DEPENDS
+               "${CMAKE_CURRENT_LIST_DIR}/sirius-cuda-fatbin.ld"
+               INTERFACE_LINK_LIBRARIES
+               "$<LINK_GROUP:RESCAN,$<LINK_LIBRARY:WHOLE_ARCHIVE,sirius::uct_cma,sirius::uct_cuda,sirius::ucm_cuda>,sirius::archive>;CUDA::cudart_static;CUDA::cublas_static;CUDA::cublasLt_static;CUDA::cusolver_static;CUDA::cusparse_static;CUDA::curand_static;CUDA::nvrtc_static;CUDA::nvrtc_builtins_static;CUDA::nvJitLink_static;CUDA::nvptxcompiler_static;CUDA::cuda_driver;CUDA::nvml;sirius::culibos;Threads::Threads;${CMAKE_DL_LIBS};rt;m"
+               INTERFACE_LINK_OPTIONS
+               "$<HOST_LINK:LINKER:-T,${CMAKE_CURRENT_LIST_DIR}/sirius-cuda-fatbin.ld>;LINKER:--export-dynamic-symbol=InitializeInjectionNvtx2;LINKER:--export-dynamic-symbol=dlopen;LINKER:--undefined=InitializeInjectionNvtx2;LINKER:--undefined=ucp_global_init;LINKER:--undefined=uct_init;LINKER:--undefined=ucs_init;LINKER:--allow-multiple-definition"
+  )
+  unset(_sirius_transport)
+endif()
+set(sirius_static_FOUND TRUE)
+unset(_sirius_prefix)
